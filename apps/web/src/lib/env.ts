@@ -16,5 +16,5 @@ export const env = {
   hashCreditManager: getEnvString('VITE_HASH_CREDIT_MANAGER'),
   btcSpvVerifier: getEnvString('VITE_BTC_SPV_VERIFIER'),
   checkpointManager: getEnvString('VITE_CHECKPOINT_MANAGER'),
+  apiUrl: getEnvString('VITE_API_URL'),
 } as const;
-

@@ -64,6 +64,29 @@ function getErrorMessage(err: unknown): string {
   return String(err)
 }
 
+function getLocalStorageString(key: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const v = window.localStorage.getItem(key)
+    return v === null ? fallback : v
+  } catch {
+    return fallback
+  }
+}
+
+function setLocalStorageString(key: string, value: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    // ignore
+  }
+}
+
+function normalizeBaseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, '')
+}
+
 function App() {
   // Config (read-only provider)
   const [rpcUrl, setRpcUrl] = useState(env.rpcUrl)
@@ -71,6 +94,18 @@ function App() {
   const [managerAddress, setManagerAddress] = useState(env.hashCreditManager)
   const [spvVerifierAddress, setSpvVerifierAddress] = useState(env.btcSpvVerifier)
   const [checkpointManagerAddress, setCheckpointManagerAddress] = useState(env.checkpointManager)
+
+  // Operator API (demo-only; do not use production tokens here)
+  const [apiUrl, setApiUrl] = useState(() => getLocalStorageString('hashcredit_api_url', env.apiUrl))
+  const [apiToken, setApiToken] = useState(() => getLocalStorageString('hashcredit_api_token', ''))
+  const [apiBusy, setApiBusy] = useState<boolean>(false)
+  const [apiLog, setApiLog] = useState<string>('')
+  const [apiDryRun, setApiDryRun] = useState<boolean>(false)
+  const [apiCheckpointHeight, setApiCheckpointHeight] = useState<string>('')
+  const [apiTxid, setApiTxid] = useState<string>('')
+  const [apiVout, setApiVout] = useState<string>('0')
+  const [apiProofCheckpointHeight, setApiProofCheckpointHeight] = useState<string>('')
+  const [apiTargetHeight, setApiTargetHeight] = useState<string>('')
 
   // Wallet connection (write txs)
   const [walletAccount, setWalletAccount] = useState<string>('')
@@ -402,6 +437,14 @@ function App() {
     }
   }, [spvVerifierRead, spvBorrower])
 
+  useEffect(() => {
+    setLocalStorageString('hashcredit_api_url', apiUrl)
+  }, [apiUrl])
+
+  useEffect(() => {
+    setLocalStorageString('hashcredit_api_token', apiToken)
+  }, [apiToken])
+
   // Convenience: compute keccak256(btcAddressString) for registerBorrower
   useEffect(() => {
     if (!adminBtcAddr) return
@@ -412,6 +455,196 @@ function App() {
       // ignore
     }
   }, [adminBtcAddr])
+
+  async function apiRequest(path: string, init?: RequestInit): Promise<unknown> {
+    const base = normalizeBaseUrl(apiUrl)
+    if (!base) throw new Error('API URL이 비어 있습니다. (VITE_API_URL 또는 입력값)')
+
+    const headers = new Headers(init?.headers)
+    if (!headers.has('content-type')) headers.set('content-type', 'application/json')
+    if (apiToken) headers.set('X-API-Key', apiToken)
+
+    const res = await fetch(`${base}${path}`, { ...init, headers })
+    const text = await res.text()
+    let json: unknown = null
+    try {
+      json = text ? JSON.parse(text) : null
+    } catch {
+      json = { raw: text }
+    }
+    if (!res.ok) {
+      const msg = typeof json === 'object' && json !== null && 'detail' in json ? String((json as any).detail) : text
+      throw new Error(`API ${res.status}: ${msg}`)
+    }
+    return json
+  }
+
+  async function apiRun(label: string, fn: () => Promise<unknown>): Promise<void> {
+    setApiBusy(true)
+    setApiLog('')
+    try {
+      const result = await fn()
+      setApiLog(`${label}\n${JSON.stringify(result, null, 2)}`)
+    } catch (e) {
+      setApiLog(`${label}\nERROR: ${getErrorMessage(e)}`)
+    } finally {
+      setApiBusy(false)
+    }
+  }
+
+  async function apiHealth(): Promise<void> {
+    await apiRun('GET /health', async () => apiRequest('/health', { method: 'GET' }))
+  }
+
+  async function apiSetCheckpoint(): Promise<void> {
+    const height = Number(apiCheckpointHeight)
+    if (!Number.isFinite(height) || height <= 0) {
+      setApiLog('POST /checkpoint/set\nERROR: height가 올바르지 않습니다.')
+      return
+    }
+    await apiRun('POST /checkpoint/set', async () =>
+      apiRequest('/checkpoint/set', {
+        method: 'POST',
+        body: JSON.stringify({ height, dry_run: apiDryRun }),
+      }),
+    )
+  }
+
+  async function apiSetBorrowerPubkeyHash(): Promise<void> {
+    if (!ethers.isAddress(spvBorrower)) {
+      setApiLog('POST /borrower/set-pubkey-hash\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      return
+    }
+    if (!adminBtcAddr) {
+      setApiLog('POST /borrower/set-pubkey-hash\nERROR: BTC 주소가 비어 있습니다.')
+      return
+    }
+    await apiRun('POST /borrower/set-pubkey-hash', async () =>
+      apiRequest('/borrower/set-pubkey-hash', {
+        method: 'POST',
+        body: JSON.stringify({ borrower: spvBorrower, btc_address: adminBtcAddr, dry_run: apiDryRun }),
+      }),
+    )
+  }
+
+  async function apiRegisterBorrower(): Promise<void> {
+    if (!ethers.isAddress(adminBorrower)) {
+      setApiLog('POST /manager/register-borrower\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      return
+    }
+    if (!adminBtcAddr) {
+      setApiLog('POST /manager/register-borrower\nERROR: BTC 주소가 비어 있습니다.')
+      return
+    }
+    await apiRun('POST /manager/register-borrower', async () => {
+      const result = await apiRequest('/manager/register-borrower', {
+        method: 'POST',
+        body: JSON.stringify({ borrower: adminBorrower, btc_address: adminBtcAddr, dry_run: apiDryRun }),
+      })
+      if (typeof result === 'object' && result !== null && 'btc_payout_key_hash' in (result as any)) {
+        const keyHash = (result as any).btc_payout_key_hash
+        if (typeof keyHash === 'string') setAdminBtcKeyHash(keyHash)
+      }
+      return result
+    })
+  }
+
+  async function apiBuildProof(): Promise<void> {
+    const outputIndex = Number(apiVout)
+    const checkpointHeight = Number(apiProofCheckpointHeight)
+    const targetHeight = Number(apiTargetHeight)
+    if (!apiTxid) {
+      setApiLog('POST /spv/build-proof\nERROR: txid가 비어 있습니다.')
+      return
+    }
+    if (!Number.isFinite(outputIndex) || outputIndex < 0) {
+      setApiLog('POST /spv/build-proof\nERROR: vout이 올바르지 않습니다.')
+      return
+    }
+    if (!Number.isFinite(checkpointHeight) || checkpointHeight <= 0) {
+      setApiLog('POST /spv/build-proof\nERROR: checkpoint_height가 올바르지 않습니다.')
+      return
+    }
+    if (!Number.isFinite(targetHeight) || targetHeight <= 0) {
+      setApiLog('POST /spv/build-proof\nERROR: target_height가 올바르지 않습니다.')
+      return
+    }
+    if (!ethers.isAddress(spvBorrower)) {
+      setApiLog('POST /spv/build-proof\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      return
+    }
+
+    await apiRun('POST /spv/build-proof', async () => {
+      const result = await apiRequest('/spv/build-proof', {
+        method: 'POST',
+        body: JSON.stringify({
+          txid: apiTxid,
+          output_index: outputIndex,
+          checkpoint_height: checkpointHeight,
+          target_height: targetHeight,
+          borrower: spvBorrower,
+        }),
+      })
+      if (typeof result === 'object' && result !== null && (result as any).success && typeof (result as any).proof_hex === 'string') {
+        setProofHex((result as any).proof_hex)
+      }
+      return result
+    })
+  }
+
+  async function apiSubmitProof(): Promise<void> {
+    if (!proofHex || !isHexBytes(proofHex) || proofHex === '0x') {
+      setApiLog('POST /spv/submit\nERROR: proof_hex가 올바르지 않습니다.')
+      return
+    }
+    await apiRun('POST /spv/submit', async () =>
+      apiRequest('/spv/submit', {
+        method: 'POST',
+        body: JSON.stringify({ proof_hex: proofHex, dry_run: apiDryRun }),
+      }),
+    )
+  }
+
+  async function apiBuildAndSubmit(): Promise<void> {
+    const outputIndex = Number(apiVout)
+    const checkpointHeight = Number(apiProofCheckpointHeight)
+    const targetHeight = Number(apiTargetHeight)
+    if (!apiTxid || !Number.isFinite(outputIndex) || outputIndex < 0) {
+      setApiLog('원클릭\nERROR: txid/vout 입력이 필요합니다.')
+      return
+    }
+    if (!Number.isFinite(checkpointHeight) || checkpointHeight <= 0 || !Number.isFinite(targetHeight) || targetHeight <= 0) {
+      setApiLog('원클릭\nERROR: checkpoint_height/target_height 입력이 필요합니다.')
+      return
+    }
+    if (!ethers.isAddress(spvBorrower)) {
+      setApiLog('원클릭\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      return
+    }
+
+    await apiRun('원클릭: build-proof -> submit', async () => {
+      const built = await apiRequest('/spv/build-proof', {
+        method: 'POST',
+        body: JSON.stringify({
+          txid: apiTxid,
+          output_index: outputIndex,
+          checkpoint_height: checkpointHeight,
+          target_height: targetHeight,
+          borrower: spvBorrower,
+        }),
+      })
+      if (!(typeof built === 'object' && built !== null && (built as any).success && typeof (built as any).proof_hex === 'string')) {
+        return { build: built, submit: null }
+      }
+      const builtProofHex = (built as any).proof_hex as string
+      setProofHex(builtProofHex)
+      const submitted = await apiRequest('/spv/submit', {
+        method: 'POST',
+        body: JSON.stringify({ proof_hex: builtProofHex, dry_run: apiDryRun }),
+      })
+      return { build: built, submit: submitted }
+    })
+  }
 
   async function submitProof(): Promise<void> {
     if (!ethers.isAddress(managerAddress)) {
@@ -526,20 +759,20 @@ function App() {
             </div>
             <div className="brand-copy">
               <div className="brand-title">HashCredit.stream</div>
-              <div className="brand-subtitle">Creditcoin testnet SPV operations dashboard</div>
+              <div className="brand-subtitle">Creditcoin 테스트넷 SPV 데모 대시보드</div>
             </div>
             <nav className="brand-nav" aria-label="Sections">
               <button type="button" className="nav-pill active">
-                Overview
+                개요
               </button>
               <button type="button" className="nav-pill">
-                Credit
+                크레딧
               </button>
               <button type="button" className="nav-pill">
-                Proofs
+                Proof
               </button>
               <button type="button" className="nav-pill">
-                Admin
+                운영
               </button>
             </nav>
           </div>
@@ -742,29 +975,138 @@ function App() {
           <div className="hint">
             금액 입력은 “사람이 보는 단위”로 입력합니다. (예: `1000` = 1000 USDC)
           </div>
-        </section>
+	        </section>
 
-        <section className="card">
-          <h2>Submit payout proof</h2>
-          <div className="hint">
-            `hashcredit-prover build-proof --hex` 또는 `submit-proof`(추가 예정)로 만든 proof hex(`0x...`)를 붙여넣고 제출합니다.
-          </div>
-          <textarea
-            value={proofHex}
-            onChange={(e) => setProofHex(e.target.value.trim())}
-            placeholder="0x..."
-            rows={6}
-          />
-          <div className="actions">
-            <button className="btn" onClick={() => void submitProof()} disabled={!walletAccount}>
-              submitPayout
-            </button>
-          </div>
-        </section>
+	        <section className="card">
+	          <h2>SPV 데모 자동화(API)</h2>
+	          <div className="hint">
+	            Railway에 배포한 `hashcredit-api`를 호출해서, SPV 체크포인트/borrower 등록/증명 생성/제출을 버튼으로 수행합니다.
+	            (데모 목적: 브라우저에 API 토큰을 입력하므로, 데모 후 토큰을 반드시 교체하세요.)
+	          </div>
 
-        <section className="card">
-          <h2>Checkpoint (read)</h2>
-          <div className="kv">
+	          <div className="form">
+	            <label>
+	              <div className="label">API URL</div>
+	              <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://...railway.app" />
+	            </label>
+	            <label>
+	              <div className="label">API TOKEN (X-API-Key)</div>
+	              <input
+	                value={apiToken}
+	                onChange={(e) => setApiToken(e.target.value)}
+	                placeholder="(demo token)"
+	                type="password"
+	              />
+	            </label>
+	            <label className="row">
+	              <input type="checkbox" checked={apiDryRun} onChange={(e) => setApiDryRun(e.target.checked)} />
+	              <span className="label">dry_run</span>
+	            </label>
+	            <div className="actions">
+	              <button className="btn secondary" onClick={() => void apiHealth()} disabled={apiBusy}>
+	                Health
+	              </button>
+	            </div>
+	          </div>
+
+	          <div className="form">
+	            <label>
+	              <div className="label">Checkpoint height</div>
+	              <input value={apiCheckpointHeight} onChange={(e) => setApiCheckpointHeight(e.target.value)} placeholder="예: 4842343" />
+	            </label>
+	            <div className="actions">
+	              <button className="btn secondary" onClick={() => void apiSetCheckpoint()} disabled={apiBusy}>
+	                체크포인트 등록(API)
+	              </button>
+	            </div>
+	          </div>
+
+	          <div className="form">
+	            <label>
+	              <div className="label">Borrower (EVM)</div>
+	              <input value={spvBorrower} onChange={(e) => setSpvBorrower(e.target.value)} placeholder="0x..." />
+	            </label>
+	            <label>
+	              <div className="label">Borrower BTC 주소</div>
+	              <input value={adminBtcAddr} onChange={(e) => setAdminBtcAddr(e.target.value)} placeholder="tb1..." />
+	            </label>
+	            <div className="actions">
+	              <button className="btn secondary" onClick={() => void apiSetBorrowerPubkeyHash()} disabled={apiBusy}>
+	                pubkeyHash 등록(API)
+	              </button>
+	            </div>
+	          </div>
+
+	          <div className="form">
+	            <label>
+	              <div className="label">registerBorrower: borrower</div>
+	              <input value={adminBorrower} onChange={(e) => setAdminBorrower(e.target.value)} placeholder="0x..." />
+	            </label>
+	            <div className="actions">
+	              <button className="btn secondary" onClick={() => void apiRegisterBorrower()} disabled={apiBusy}>
+	                registerBorrower(API)
+	              </button>
+	            </div>
+	            <div className="hint">BTC 주소 문자열 keccak은 API에서 계산합니다. (응답의 btc_payout_key_hash로 아래 input도 자동 채움)</div>
+	          </div>
+
+	          <div className="form">
+	            <label>
+	              <div className="label">txid</div>
+	              <input value={apiTxid} onChange={(e) => setApiTxid(e.target.value.trim())} placeholder="(display format) e.g. e4c6..." />
+	            </label>
+	            <label>
+	              <div className="label">vout</div>
+	              <input value={apiVout} onChange={(e) => setApiVout(e.target.value)} placeholder="0" />
+	            </label>
+	            <label>
+	              <div className="label">checkpoint_height</div>
+	              <input value={apiProofCheckpointHeight} onChange={(e) => setApiProofCheckpointHeight(e.target.value)} placeholder="예: 4842333" />
+	            </label>
+	            <label>
+	              <div className="label">target_height</div>
+	              <input value={apiTargetHeight} onChange={(e) => setApiTargetHeight(e.target.value)} placeholder="예: 4842343" />
+	            </label>
+	            <div className="actions">
+	              <button className="btn secondary" onClick={() => void apiBuildProof()} disabled={apiBusy}>
+	                proof 생성(API) → proofHex 채우기
+	              </button>
+	              <button className="btn secondary" onClick={() => void apiSubmitProof()} disabled={apiBusy}>
+	                proof 제출(API)
+	              </button>
+	              <button className="btn" onClick={() => void apiBuildAndSubmit()} disabled={apiBusy}>
+	                원클릭(생성+제출)
+	              </button>
+	            </div>
+	          </div>
+
+	          <div className="kv">
+	            <div className="row">
+	              <div className="k">API result</div>
+	              <div className="v mono pre">{apiLog || '—'}</div>
+	            </div>
+	          </div>
+	        </section>
+
+	        <section className="card">
+	          <h2>submitPayout (지갑)</h2>
+	          <div className="hint">API에서 proof를 만들었으면 위 버튼이 `proofHex`를 자동으로 채웁니다.</div>
+	          <textarea
+	            value={proofHex}
+	            onChange={(e) => setProofHex(e.target.value.trim())}
+	            placeholder="0x..."
+	            rows={6}
+	          />
+	          <div className="actions">
+	            <button className="btn" onClick={() => void submitProof()} disabled={!walletAccount}>
+	              submitPayout
+	            </button>
+	          </div>
+	        </section>
+
+	        <section className="card">
+	          <h2>Checkpoint (조회)</h2>
+	          <div className="kv">
             <div className="row">
               <div className="k">latestCheckpointHeight</div>
               <div className="v mono">{latestCheckpointHeight ?? '—'}</div>
@@ -776,8 +1118,8 @@ function App() {
           </div>
         </section>
 
-        <section className="card">
-          <h2>SPV verifier (read)</h2>
+	        <section className="card">
+	          <h2>SPV verifier (조회)</h2>
           <div className="kv">
             <div className="row">
               <div className="k">owner</div>
@@ -790,8 +1132,8 @@ function App() {
           </div>
         </section>
 
-        <section className="card">
-          <h2>Admin (Manager)</h2>
+	        <section className="card">
+	          <h2>Admin (Manager, 지갑)</h2>
           <div className="hint">owner만 성공합니다. 실패 시 revert 이유를 아래 상태에서 확인하세요.</div>
           <div className="form">
             <label>
@@ -834,8 +1176,8 @@ function App() {
           </div>
         </section>
 
-        <section className="card">
-          <h2>Admin (SPV verifier)</h2>
+	        <section className="card">
+	          <h2>Admin (SPV verifier, 지갑)</h2>
           <div className="hint">
             `setBorrowerPubkeyHash`는 SPV 경로에서 필수입니다. (주소 디코딩 자동화는 prover/툴링 티켓에서 진행)
           </div>

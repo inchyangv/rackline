@@ -56,6 +56,16 @@ HASH_CREDIT_MANAGER_ABI = [
         "stateMutability": "nonpayable",
         "type": "function",
     },
+    {
+        "inputs": [
+            {"name": "borrower", "type": "address"},
+            {"name": "btcPayoutKeyHash", "type": "bytes32"},
+        ],
+        "name": "registerBorrower",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
 ]
 
 
@@ -197,4 +207,17 @@ class EVMClient:
             self.settings.hash_credit_manager or "",
             bytes.fromhex(data[2:]),
             gas_limit=800000,
+        )
+
+    async def register_borrower(self, borrower: str, btc_payout_key_hash: bytes) -> TxReceipt:
+        """Call HashCreditManager.registerBorrower()."""
+        contract = self.get_hash_credit_manager()
+        data = contract.encodeABI(
+            fn_name="registerBorrower",
+            args=[self.w3.to_checksum_address(borrower), btc_payout_key_hash],
+        )
+        return await self.send_transaction(
+            self.settings.hash_credit_manager or "",
+            bytes.fromhex(data[2:]),
+            gas_limit=500000,
         )

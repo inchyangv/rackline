@@ -28,6 +28,8 @@ from .models import (
     BuildProofRequest,
     BuildProofResponse,
     HealthResponse,
+    RegisterBorrowerRequest,
+    RegisterBorrowerResponse,
     SetBorrowerPubkeyHashRequest,
     SetBorrowerPubkeyHashResponse,
     SetCheckpointRequest,
@@ -36,6 +38,8 @@ from .models import (
     SubmitProofResponse,
 )
 from .proof import ProofBuilder
+
+from web3 import Web3
 
 # Configure logging
 structlog.configure(
@@ -466,6 +470,86 @@ async def set_borrower_pubkey_hash(
         return SetBorrowerPubkeyHashResponse(
             success=False,
             borrower=request.borrower,
+            dry_run=request.dry_run,
+            error=str(e),
+        )
+
+
+# ============================================================================
+# Manager Admin (Borrower Registration)
+# ============================================================================
+
+
+@app.post(
+    "/manager/register-borrower",
+    response_model=RegisterBorrowerResponse,
+    dependencies=[Depends(verify_api_token)],
+)
+async def register_borrower(
+    request: RegisterBorrowerRequest,
+    settings: Settings = Depends(get_settings),
+) -> RegisterBorrowerResponse:
+    """
+    Register a borrower on HashCreditManager (owner-only).
+
+    Computes btcPayoutKeyHash = keccak256(utf8(btc_address)) and calls
+    HashCreditManager.registerBorrower(borrower, btcPayoutKeyHash).
+    """
+    if not _evm_client:
+        raise HTTPException(status_code=503, detail="EVM client not initialized")
+
+    if not settings.private_key and not request.dry_run:
+        raise HTTPException(status_code=503, detail="Private key not configured")
+
+    if not settings.hash_credit_manager:
+        raise HTTPException(status_code=503, detail="HASH_CREDIT_MANAGER not configured")
+
+    try:
+        btc_payout_key_hash = Web3.keccak(text=request.btc_address)
+        btc_payout_key_hash_hex = f"0x{btc_payout_key_hash.hex()}"
+
+        if request.dry_run:
+            logger.info(
+                "Dry run: would register borrower",
+                borrower=request.borrower,
+                btc_payout_key_hash=btc_payout_key_hash_hex,
+            )
+            return RegisterBorrowerResponse(
+                success=True,
+                borrower=request.borrower,
+                btc_address=request.btc_address,
+                btc_payout_key_hash=btc_payout_key_hash_hex,
+                dry_run=True,
+            )
+
+        receipt = await _evm_client.register_borrower(
+            borrower=request.borrower,
+            btc_payout_key_hash=btc_payout_key_hash,
+        )
+
+        logger.info(
+            "Borrower registered",
+            borrower=request.borrower,
+            tx_hash=receipt["transactionHash"].hex(),
+        )
+
+        return RegisterBorrowerResponse(
+            success=receipt["status"] == 1,
+            borrower=request.borrower,
+            btc_address=request.btc_address,
+            btc_payout_key_hash=btc_payout_key_hash_hex,
+            tx_hash=receipt["transactionHash"].hex(),
+            gas_used=receipt["gasUsed"],
+            dry_run=False,
+        )
+
+    except Exception as e:
+        logger.error("Failed to register borrower", error=str(e), borrower=request.borrower)
+        return RegisterBorrowerResponse(
+            success=False,
+            borrower=request.borrower,
+            btc_address=request.btc_address,
+            btc_payout_key_hash=None,
             dry_run=request.dry_run,
             error=str(e),
         )

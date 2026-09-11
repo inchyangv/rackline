@@ -156,6 +156,43 @@ class SubmitProofResponse(BaseModel):
 
 
 # ============================================================================
+# Register Borrower (Manager)
+# ============================================================================
+
+class RegisterBorrowerRequest(BaseModel):
+    """Request to register borrower on HashCreditManager (owner-only)."""
+
+    borrower: str = Field(..., description="Borrower EVM address (0x...)")
+    btc_address: str = Field(..., description="Borrower BTC payout address (string)")
+    dry_run: bool = Field(False, description="If true, return data without sending tx")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "borrower": "0x1234567890abcdef1234567890abcdef12345678",
+                    "btc_address": "tb1q...",
+                    "dry_run": False,
+                }
+            ]
+        }
+    }
+
+
+class RegisterBorrowerResponse(BaseModel):
+    """Response from registering borrower."""
+
+    success: bool = Field(..., description="Whether borrower was registered successfully")
+    borrower: str = Field(..., description="Borrower EVM address")
+    btc_address: str = Field(..., description="BTC payout address (string)")
+    btc_payout_key_hash: Optional[str] = Field(None, description="keccak256(btc_address) as bytes32 (0x...)")
+    tx_hash: Optional[str] = Field(None, description="Transaction hash (if not dry run)")
+    gas_used: Optional[int] = Field(None, description="Gas used (if not dry run)")
+    dry_run: bool = Field(False, description="Whether this was a dry run")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+# ============================================================================
 # Health Check
 # ============================================================================
 
