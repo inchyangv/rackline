@@ -194,11 +194,12 @@ async def health_check(settings: Settings = Depends(get_settings)) -> HealthResp
     response_model=BtcAddressHistoryResponse,
     dependencies=[Depends(verify_api_token)],
 )
-async def btc_address_history(address: str, limit: int = 25) -> BtcAddressHistoryResponse:
+async def btc_address_history(address: str, limit: int = 25, mining_only: bool = False) -> BtcAddressHistoryResponse:
     """
     Get address-level BTC history from an external Esplora-compatible indexer.
 
     This endpoint is read-only and used by demo/ops UI to show address activity.
+    Optional `mining_only=true` filters to direct coinbase reward receipts.
     """
     if _btc_indexer is None:
         raise HTTPException(status_code=503, detail="BTC indexer not initialized")
@@ -212,7 +213,7 @@ async def btc_address_history(address: str, limit: int = 25) -> BtcAddressHistor
         )
 
     try:
-        result = await _btc_indexer.get_address_history(address=address, limit=limit)
+        result = await _btc_indexer.get_address_history(address=address, limit=limit, mining_only=mining_only)
         return BtcAddressHistoryResponse(
             success=True,
             address=result["address"],

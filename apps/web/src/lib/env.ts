@@ -17,4 +17,5 @@ export const env = {
   btcSpvVerifier: getEnvString('VITE_BTC_SPV_VERIFIER'),
   checkpointManager: getEnvString('VITE_CHECKPOINT_MANAGER'),
   apiUrl: getEnvString('VITE_API_URL'),
+  btcExplorerTxBase: getEnvString('VITE_BTC_EXPLORER_TX_BASE'),
 } as const;

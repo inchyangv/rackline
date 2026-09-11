@@ -129,66 +129,78 @@ class BtcIndexer:
             block_hash if isinstance(block_hash, str) else None,
         )
 
-    async def get_address_history(self, address: str, limit: int = 25) -> dict[str, Any]:
+    def _build_tx_item(self, tx: dict[str, Any], address: str, tip_height: int) -> Optional[dict[str, Any]]:
+        txid = tx.get("txid")
+        if not isinstance(txid, str):
+            return None
+
+        sent_sats = self._sum_address_inputs(tx, address)
+        received_sats = self._sum_address_outputs(tx, address)
+        net_sats = received_sats - sent_sats
+        has_coinbase_input = self._has_coinbase_input(tx)
+        is_mining_reward = has_coinbase_input and received_sats > 0
+
+        direction = "self"
+        if is_mining_reward:
+            direction = "mining"
+        elif received_sats > 0 and sent_sats == 0:
+            direction = "in"
+        elif sent_sats > 0 and received_sats == 0:
+            direction = "out"
+
+        confirmed, block_height, block_time, block_hash = self._status(tx)
+        confirmations = None
+        if confirmed and isinstance(block_height, int):
+            confirmations = max(1, tip_height - block_height + 1)
+
+        fee = tx.get("fee")
+        return {
+            "txid": txid,
+            "confirmed": confirmed,
+            "block_height": block_height,
+            "block_time": block_time,
+            "block_hash": block_hash,
+            "confirmations": confirmations,
+            "fee_sats": fee if isinstance(fee, int) else None,
+            "sent_sats": sent_sats,
+            "received_sats": received_sats,
+            "net_sats": net_sats,
+            "direction": direction,
+            "has_coinbase_input": has_coinbase_input,
+            "is_mining_reward": is_mining_reward,
+        }
+
+    async def get_address_history(self, address: str, limit: int = 25, mining_only: bool = False) -> dict[str, Any]:
         limit = max(1, min(limit, 100))
         tip_height = await self.get_tip_height()
         address_info = await self.get_address_info(address)
 
-        txs: list[dict[str, Any]] = []
+        tx_items: list[dict[str, Any]] = []
         batch = await self.get_address_txs(address)
-        txs.extend(batch)
+        page_count = 1
+        max_pages = 12 if mining_only else max(1, (limit + 24) // 25)
+        while batch and len(tx_items) < limit:
+            for tx in batch:
+                tx_item = self._build_tx_item(tx, address, tip_height)
+                if tx_item is None:
+                    continue
+                if mining_only and not tx_item["is_mining_reward"]:
+                    continue
+                tx_items.append(tx_item)
+                if len(tx_items) >= limit:
+                    break
 
-        # Confirmed pagination (25 per request on Esplora)
-        while len(txs) < limit and batch:
+            if len(tx_items) >= limit:
+                break
+            if page_count >= max_pages:
+                break
+
+            # Confirmed pagination (25 per request on Esplora)
             last_seen_txid = batch[-1].get("txid")
             if not isinstance(last_seen_txid, str) or not last_seen_txid:
                 break
             batch = await self.get_address_txs_chain(address, last_seen_txid)
-            if not batch:
-                break
-            txs.extend(batch)
-
-        tx_items: list[dict[str, Any]] = []
-        for tx in txs[:limit]:
-            txid = tx.get("txid")
-            if not isinstance(txid, str):
-                continue
-            sent_sats = self._sum_address_inputs(tx, address)
-            received_sats = self._sum_address_outputs(tx, address)
-            net_sats = received_sats - sent_sats
-            has_coinbase_input = self._has_coinbase_input(tx)
-            is_mining_reward = has_coinbase_input and received_sats > 0
-            direction = "self"
-            if is_mining_reward:
-                direction = "mining"
-            elif received_sats > 0 and sent_sats == 0:
-                direction = "in"
-            elif sent_sats > 0 and received_sats == 0:
-                direction = "out"
-
-            confirmed, block_height, block_time, block_hash = self._status(tx)
-            confirmations = None
-            if confirmed and isinstance(block_height, int):
-                confirmations = max(1, tip_height - block_height + 1)
-
-            fee = tx.get("fee")
-            tx_items.append(
-                {
-                    "txid": txid,
-                    "confirmed": confirmed,
-                    "block_height": block_height,
-                    "block_time": block_time,
-                    "block_hash": block_hash,
-                    "confirmations": confirmations,
-                    "fee_sats": fee if isinstance(fee, int) else None,
-                    "sent_sats": sent_sats,
-                    "received_sats": received_sats,
-                    "net_sats": net_sats,
-                    "direction": direction,
-                    "has_coinbase_input": has_coinbase_input,
-                    "is_mining_reward": is_mining_reward,
-                }
-            )
+            page_count += 1
 
         chain_stats = address_info.get("chain_stats") if isinstance(address_info.get("chain_stats"), dict) else {}
         mempool_stats = address_info.get("mempool_stats") if isinstance(address_info.get("mempool_stats"), dict) else {}

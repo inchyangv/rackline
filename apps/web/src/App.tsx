@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BrowserProvider, Contract, ethers, JsonRpcProvider, Wallet } from 'ethers'
 import type { ContractTransactionResponse, InterfaceAbi } from 'ethers'
 import './App.css'
@@ -117,7 +117,15 @@ function normalizeBaseUrl(url: string): string {
   return url.trim().replace(/\/+$/, '')
 }
 
+function getBtcTxExplorerUrl(txid: string): string {
+  const txidHex = txid.replace(/^0x/, '').trim()
+  if (!/^[0-9a-fA-F]{64}$/.test(txidHex)) return ''
+  const base = normalizeBaseUrl(env.btcExplorerTxBase || 'https://mempool.space/testnet/tx')
+  return `${base}/${txidHex}`
+}
+
 type TabId = 'dashboard' | 'ops' | 'proof' | 'admin' | 'config'
+const BTC_HISTORY_REFRESH_INTERVAL_MS = 30_000
 
 type DemoWallet = {
   name: string
@@ -159,6 +167,7 @@ type BtcAddressHistoryItem = {
 type BtcAddressHistorySnapshot = {
   fetchedAt: number
   address: string
+  miningOnly: boolean
   balanceChainSats: number | null
   balanceMempoolDeltaSats: number | null
   txCountChain: number | null
@@ -269,6 +278,8 @@ function App() {
   const [btcChainHistoryByAddress, setBtcChainHistoryByAddress] = useState<Record<string, BtcAddressHistorySnapshot>>({})
   const [btcChainHistoryLoading, setBtcChainHistoryLoading] = useState<Record<string, boolean>>({})
   const [btcChainHistoryError, setBtcChainHistoryError] = useState<Record<string, string>>({})
+  const [btcHistoryMiningOnly, setBtcHistoryMiningOnly] = useState<boolean>(false)
+  const [btcHistoryAutoRefreshEnabled, setBtcHistoryAutoRefreshEnabled] = useState<boolean>(false)
 
   // Wallet connection (write txs)
   const [walletAccount, setWalletAccount] = useState<string>('')
@@ -696,79 +707,109 @@ function App() {
     setSpvBorrower(address)
   }
 
-  async function apiRequest(path: string, init?: RequestInit): Promise<unknown> {
-    const base = normalizeBaseUrl(apiUrl)
-    if (!base) throw new Error('API URL is empty. (VITE_API_URL or input value)')
+  const apiRequest = useCallback(
+    async (path: string, init?: RequestInit): Promise<unknown> => {
+      const base = normalizeBaseUrl(apiUrl)
+      if (!base) throw new Error('API URL is empty. (VITE_API_URL or input value)')
 
-    const headers = new Headers(init?.headers)
-    if (!headers.has('content-type')) headers.set('content-type', 'application/json')
-    if (apiToken) headers.set('X-API-Key', apiToken)
+      const headers = new Headers(init?.headers)
+      if (!headers.has('content-type')) headers.set('content-type', 'application/json')
+      if (apiToken) headers.set('X-API-Key', apiToken)
 
-    const res = await fetch(`${base}${path}`, { ...init, headers })
-    const text = await res.text()
-    let json: unknown = null
-    try {
-      json = text ? JSON.parse(text) : null
-    } catch {
-      json = { raw: text }
-    }
-    if (!res.ok) {
-      const msg = typeof json === 'object' && json !== null && 'detail' in json ? String((json as any).detail) : text
-      throw new Error(`API ${res.status}: ${msg}`)
-    }
-    return json
-  }
-
-  async function fetchBtcAddressHistory(address: string, limit = 12): Promise<void> {
-    const key = address.trim().toLowerCase()
-    if (!key) return
-    setBtcChainHistoryLoading((prev) => ({ ...prev, [key]: true }))
-    setBtcChainHistoryError((prev) => ({ ...prev, [key]: '' }))
-    try {
-      const q = new URLSearchParams({ address: address.trim(), limit: String(limit) })
-      const result = await apiRequest(`/btc/address-history?${q.toString()}`, { method: 'GET' })
-      if (!(typeof result === 'object' && result !== null)) {
-        throw new Error('Unexpected API response')
+      const res = await fetch(`${base}${path}`, { ...init, headers })
+      const text = await res.text()
+      let json: unknown = null
+      try {
+        json = text ? JSON.parse(text) : null
+      } catch {
+        json = { raw: text }
       }
-      if ((result as any).success !== true) {
-        throw new Error(typeof (result as any).error === 'string' ? (result as any).error : 'Failed to fetch history')
+      if (!res.ok) {
+        const msg = typeof json === 'object' && json !== null && 'detail' in json ? String((json as any).detail) : text
+        throw new Error(`API ${res.status}: ${msg}`)
       }
-      const itemsRaw: unknown[] = Array.isArray((result as any).items) ? (result as any).items : []
-      const items: BtcAddressHistoryItem[] = itemsRaw
-        .filter((x: unknown): x is Record<string, unknown> & { txid: string } => isRecord(x) && typeof x.txid === 'string')
-        .map((x) => ({
-          txid: String(x.txid),
-          confirmed: Boolean(x.confirmed),
-          block_time: typeof x.block_time === 'number' ? x.block_time : null,
-          block_height: typeof x.block_height === 'number' ? x.block_height : null,
-          confirmations: typeof x.confirmations === 'number' ? x.confirmations : null,
-          sent_sats: typeof x.sent_sats === 'number' ? x.sent_sats : 0,
-          received_sats: typeof x.received_sats === 'number' ? x.received_sats : 0,
-          net_sats: typeof x.net_sats === 'number' ? x.net_sats : 0,
-          direction: typeof x.direction === 'string' ? x.direction : 'self',
-          has_coinbase_input: Boolean(x.has_coinbase_input),
-          is_mining_reward: Boolean(x.is_mining_reward),
+      return json
+    },
+    [apiUrl, apiToken],
+  )
+
+  const fetchBtcAddressHistory = useCallback(
+    async (address: string, limit = 12, miningOnly: boolean = btcHistoryMiningOnly): Promise<void> => {
+      const key = address.trim().toLowerCase()
+      if (!key) return
+      setBtcChainHistoryLoading((prev) => ({ ...prev, [key]: true }))
+      setBtcChainHistoryError((prev) => ({ ...prev, [key]: '' }))
+      try {
+        const q = new URLSearchParams({ address: address.trim(), limit: String(limit) })
+        if (miningOnly) q.set('mining_only', 'true')
+        const result = await apiRequest(`/btc/address-history?${q.toString()}`, { method: 'GET' })
+        if (!(typeof result === 'object' && result !== null)) {
+          throw new Error('Unexpected API response')
+        }
+        if ((result as any).success !== true) {
+          throw new Error(typeof (result as any).error === 'string' ? (result as any).error : 'Failed to fetch history')
+        }
+        const itemsRaw: unknown[] = Array.isArray((result as any).items) ? (result as any).items : []
+        const items: BtcAddressHistoryItem[] = itemsRaw
+          .filter((x: unknown): x is Record<string, unknown> & { txid: string } => isRecord(x) && typeof x.txid === 'string')
+          .map((x) => ({
+            txid: String(x.txid),
+            confirmed: Boolean(x.confirmed),
+            block_time: typeof x.block_time === 'number' ? x.block_time : null,
+            block_height: typeof x.block_height === 'number' ? x.block_height : null,
+            confirmations: typeof x.confirmations === 'number' ? x.confirmations : null,
+            sent_sats: typeof x.sent_sats === 'number' ? x.sent_sats : 0,
+            received_sats: typeof x.received_sats === 'number' ? x.received_sats : 0,
+            net_sats: typeof x.net_sats === 'number' ? x.net_sats : 0,
+            direction: typeof x.direction === 'string' ? x.direction : 'self',
+            has_coinbase_input: Boolean(x.has_coinbase_input),
+            is_mining_reward: Boolean(x.is_mining_reward),
+          }))
+
+        setBtcChainHistoryByAddress((prev) => ({
+          ...prev,
+          [key]: {
+            fetchedAt: Date.now(),
+            address: typeof (result as any).address === 'string' ? (result as any).address : address.trim(),
+            miningOnly,
+            balanceChainSats: typeof (result as any).balance_chain_sats === 'number' ? (result as any).balance_chain_sats : null,
+            balanceMempoolDeltaSats:
+              typeof (result as any).balance_mempool_delta_sats === 'number' ? (result as any).balance_mempool_delta_sats : null,
+            txCountChain: typeof (result as any).tx_count_chain === 'number' ? (result as any).tx_count_chain : null,
+            txCountMempool: typeof (result as any).tx_count_mempool === 'number' ? (result as any).tx_count_mempool : null,
+            items,
+          },
         }))
+      } catch (e) {
+        setBtcChainHistoryError((prev) => ({ ...prev, [key]: getErrorMessage(e) }))
+      } finally {
+        setBtcChainHistoryLoading((prev) => ({ ...prev, [key]: false }))
+      }
+    },
+    [apiRequest, btcHistoryMiningOnly],
+  )
 
-      setBtcChainHistoryByAddress((prev) => ({
-        ...prev,
-        [key]: {
-          fetchedAt: Date.now(),
-          address: typeof (result as any).address === 'string' ? (result as any).address : address.trim(),
-          balanceChainSats: typeof (result as any).balance_chain_sats === 'number' ? (result as any).balance_chain_sats : null,
-          balanceMempoolDeltaSats:
-            typeof (result as any).balance_mempool_delta_sats === 'number' ? (result as any).balance_mempool_delta_sats : null,
-          txCountChain: typeof (result as any).tx_count_chain === 'number' ? (result as any).tx_count_chain : null,
-          txCountMempool: typeof (result as any).tx_count_mempool === 'number' ? (result as any).tx_count_mempool : null,
-          items,
-        },
-      }))
-    } catch (e) {
-      setBtcChainHistoryError((prev) => ({ ...prev, [key]: getErrorMessage(e) }))
-    } finally {
-      setBtcChainHistoryLoading((prev) => ({ ...prev, [key]: false }))
-    }
-  }
+  const refreshAllLinkedBtc = useCallback(async (): Promise<void> => {
+    const linkedAddresses = Array.from(
+      new Set(
+        Object.values(borrowerBtcMap)
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0),
+      ),
+    )
+    if (linkedAddresses.length === 0) return
+    const limit = btcHistoryMiningOnly ? 50 : 12
+    await Promise.all(linkedAddresses.map(async (address) => fetchBtcAddressHistory(address, limit, btcHistoryMiningOnly)))
+  }, [borrowerBtcMap, btcHistoryMiningOnly, fetchBtcAddressHistory])
+
+  useEffect(() => {
+    if (!btcHistoryAutoRefreshEnabled) return
+    void refreshAllLinkedBtc()
+    const timer = window.setInterval(() => {
+      void refreshAllLinkedBtc()
+    }, BTC_HISTORY_REFRESH_INTERVAL_MS)
+    return () => window.clearInterval(timer)
+  }, [btcHistoryAutoRefreshEnabled, refreshAllLinkedBtc])
 
   async function apiRun(label: string, fn: () => Promise<unknown>): Promise<void> {
     setApiBusy(true)
@@ -1321,6 +1362,29 @@ function App() {
                 <button className="btn" onClick={() => createDemoWallet(3)}>
                   Generate 3 Wallets
                 </button>
+                <button className="btn ghost" onClick={() => void refreshAllLinkedBtc()} disabled={Object.keys(borrowerBtcMap).length === 0}>
+                  Refresh linked BTC
+                </button>
+              </div>
+              <div className="hint">
+                <label style={{ marginRight: 16 }}>
+                  <input
+                    type="checkbox"
+                    checked={btcHistoryMiningOnly}
+                    onChange={(e) => setBtcHistoryMiningOnly(e.target.checked)}
+                    style={{ marginRight: 6 }}
+                  />
+                  Mining rewards only (`mining_only=true`)
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={btcHistoryAutoRefreshEnabled}
+                    onChange={(e) => setBtcHistoryAutoRefreshEnabled(e.target.checked)}
+                    style={{ marginRight: 6 }}
+                  />
+                  Auto-refresh every {Math.floor(BTC_HISTORY_REFRESH_INTERVAL_MS / 1000)}s
+                </label>
               </div>
 
               {demoWallets.length === 0 ? (
@@ -1354,7 +1418,7 @@ function App() {
                             </button>
                             <button
                               className="btn tiny ghost"
-                              onClick={() => void fetchBtcAddressHistory(linkedBtcAddress)}
+                              onClick={() => void fetchBtcAddressHistory(linkedBtcAddress, btcHistoryMiningOnly ? 50 : 12, btcHistoryMiningOnly)}
                               disabled={!linkedBtcAddress || chainHistoryLoading}
                             >
                               {chainHistoryLoading ? 'Loading...' : 'Load BTC history'}
@@ -1375,7 +1439,8 @@ function App() {
                           <div className="hint">
                             BTC chain balance: {chainHistory.balanceChainSats ?? 0} sats
                             {chainHistory.balanceMempoolDeltaSats ? ` (mempool delta: ${chainHistory.balanceMempoolDeltaSats} sats)` : ''} | tx count:{' '}
-                            {chainHistory.txCountChain ?? 0} | mining rewards: {miningRewardCount} | refreshed:{' '}
+                            {chainHistory.txCountChain ?? 0} | mining rewards: {miningRewardCount} | mode:{' '}
+                            {chainHistory.miningOnly ? 'mining-only' : 'all'} | refreshed:{' '}
                             {new Date(chainHistory.fetchedAt).toLocaleTimeString()}
                           </div>
                         ) : null}
@@ -1385,9 +1450,17 @@ function App() {
                             {chainHistory.items.slice(0, 3).map((item) => {
                               const directionLabel = item.is_mining_reward ? 'mining reward' : item.direction
                               const txLabel = `${directionLabel} ${item.net_sats >= 0 ? '+' : ''}${item.net_sats} sats`
+                              const txUrl = getBtcTxExplorerUrl(item.txid)
                               return (
                                 <span key={item.txid}>
-                                  <span className="mono">{shortAddr(`0x${item.txid.replace(/^0x/, '')}`)}</span> ({txLabel})
+                                  {txUrl ? (
+                                    <a href={txUrl} target="_blank" rel="noreferrer" className="mono">
+                                      {shortAddr(`0x${item.txid.replace(/^0x/, '')}`)}
+                                    </a>
+                                  ) : (
+                                    <span className="mono">{shortAddr(`0x${item.txid.replace(/^0x/, '')}`)}</span>
+                                  )}{' '}
+                                  ({txLabel})
                                   {' '}
                                 </span>
                               )
@@ -1414,7 +1487,7 @@ function App() {
                   {recentDemoBtcPayoutHistory.map((item) => {
                     const linkedWallet = demoWallets.find((w) => w.address.toLowerCase() === item.borrower.toLowerCase())
                     const txidHex = item.txid.replace(/^0x/, '')
-                    const txUrl = /^[0-9a-fA-F]{64}$/.test(txidHex) ? `https://mempool.space/testnet/tx/${txidHex}` : ''
+                    const txUrl = getBtcTxExplorerUrl(txidHex)
                     return (
                       <div className="list-item" key={item.id}>
                         <div className="list-head">
