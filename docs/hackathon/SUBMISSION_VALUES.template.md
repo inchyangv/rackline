@@ -37,14 +37,14 @@ RPC URL (참고):
 - https://rpc.cc3-testnet.creditcoin.network
 
 배포 모드:
-- TODO (SPV / MVP)
+- SPV (고정)
 
 컨트랙트 주소:
 - HashCreditManager: TODO
 - LendingVault: TODO
 - CheckpointManager (SPV): TODO
 - BtcSpvVerifier (SPV): TODO
-- Verifier (MVP - RelayerSigVerifier): TODO
+- (해당 없음) Verifier (MVP - RelayerSigVerifier)
 
 익스플로러 링크 (선택, 가능하면):
 - TODO
