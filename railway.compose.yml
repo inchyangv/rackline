@@ -1,0 +1,25 @@
+version: "3.9"
+
+# Railway monorepo helper:
+# - Railway can import multiple services from a Compose file (drag-and-drop on the canvas).
+# - This file is intentionally "no-secrets". Set real values in Railway Variables/Secrets.
+#
+# Services
+# - hashcredit-api: public HTTP API (binds to $PORT)
+# - hashcredit-prover: background worker (no public networking needed)
+services:
+  hashcredit-api:
+    build:
+      context: ./offchain/api
+      dockerfile: Dockerfile
+    environment:
+      # For local `docker compose up` convenience. Railway overrides PORT.
+      PORT: "8000"
+      HOST: "0.0.0.0"
+    ports:
+      - "8000:8000"
+
+  hashcredit-prover:
+    build:
+      context: ./offchain/prover
+      dockerfile: Dockerfile
