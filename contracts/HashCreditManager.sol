@@ -187,6 +187,17 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
     }
 
     /**
+     * @notice Grant credit limit directly (testnet only)
+     * @param borrower Borrower address
+     * @param creditLimitAmount Credit limit in stablecoin decimals (e.g. 1000e6 = 1000 USDT)
+     */
+    function grantTestnetCredit(address borrower, uint128 creditLimitAmount) external onlyOwner {
+        BorrowerInfo storage info = _borrowers[borrower];
+        if (info.status == BorrowerStatus.None) revert BorrowerNotRegistered();
+        info.creditLimit = creditLimitAmount;
+    }
+
+    /**
      * @notice Unfreeze a borrower
      * @param borrower Address to unfreeze
      */

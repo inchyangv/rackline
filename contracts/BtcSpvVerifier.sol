@@ -150,6 +150,54 @@ contract BtcSpvVerifier is IVerifierAdapter {
         emit BorrowerPubkeyHashSet(borrower, pubkeyHash);
     }
 
+    // ============================================
+    // On-chain BTC Signature Verification
+    // ============================================
+
+    error InvalidBtcSignature();
+
+    /**
+     * @notice Claim BTC address ownership via on-chain signature verification.
+     *         BTC and ETH both use secp256k1. We verify the BTC signature on-chain
+     *         using ecrecover + sha256/ripemd160 precompiles.
+     *
+     * @param pubKeyX X coordinate of the signer's public key (32 bytes)
+     * @param pubKeyY Y coordinate of the signer's public key (32 bytes)
+     * @param btcMsgHash Bitcoin double-SHA256 message hash
+     * @param v Recovery id (27 or 28)
+     * @param r Signature r component
+     * @param s Signature s component
+     *
+     * @dev Flow:
+     *  1. ecrecover(btcMsgHash, v, r, s) proves this pubkey signed the message
+     *  2. Compress pubkey → ripemd160(sha256(compressed)) = BTC pubkeyHash
+     *  3. Store mapping: msg.sender → pubkeyHash
+     */
+    function claimBtcAddress(
+        bytes32 pubKeyX,
+        bytes32 pubKeyY,
+        bytes32 btcMsgHash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        // 1. Verify signature was made by this public key
+        address ethDerived = address(uint160(uint256(keccak256(abi.encodePacked(pubKeyX, pubKeyY)))));
+        address recovered = ecrecover(btcMsgHash, v, r, s);
+        if (recovered == address(0) || recovered != ethDerived) revert InvalidBtcSignature();
+
+        // 2. Compress public key: prefix (0x02 even / 0x03 odd) + X
+        bytes1 prefix = uint256(pubKeyY) % 2 == 0 ? bytes1(0x02) : bytes1(0x03);
+        bytes memory compressed = abi.encodePacked(prefix, pubKeyX);
+
+        // 3. BTC pubkeyHash = RIPEMD160(SHA256(compressedPubKey))
+        bytes20 pubkeyHash = ripemd160(abi.encodePacked(sha256(compressed)));
+
+        // 4. Store mapping: caller's EVM address → BTC pubkeyHash
+        borrowerPubkeyHash[msg.sender] = pubkeyHash;
+        emit BorrowerPubkeyHashSet(msg.sender, pubkeyHash);
+    }
+
     /**
      * @notice Transfer ownership
      */

@@ -105,3 +105,55 @@ def verify_bip137_signature(*, btc_address: str, message: str, signature_b64: st
 
     got = _hash160(pubkey_bytes)
     return got == expected_hash
+
+
+def extract_onchain_params(*, message: str, signature_b64: str) -> dict:
+    """
+    Extract parameters needed for on-chain BTC signature verification
+    via BtcSpvVerifier.claimBtcAddress().
+
+    Returns dict with: pubKeyX, pubKeyY, btcMsgHash, v, r, s
+    All as 0x-prefixed hex strings.
+    """
+    sig = base64.b64decode(signature_b64)
+    if len(sig) != 65:
+        raise ValueError("Signature must be 65 bytes")
+
+    header = sig[0]
+    if header < 27 or header > 42:
+        raise ValueError(f"Invalid BIP-137 header byte: {header}")
+
+    # Determine recId from header
+    if 27 <= header <= 30:
+        recid = header - 27
+    elif 31 <= header <= 34:
+        recid = header - 31
+    elif 39 <= header <= 42:
+        recid = header - 39
+    else:
+        raise ValueError(f"Unsupported BIP-137 header: {header}")
+
+    r_bytes = sig[1:33]
+    s_bytes = sig[33:65]
+
+    msg_hash = bitcoin_message_hash(message)
+
+    # Recover UNCOMPRESSED public key (needed for ecrecover compatibility)
+    recoverable = sig[1:] + bytes([recid])
+    pubkey = PublicKey.from_signature_and_message(recoverable, msg_hash, hasher=None)
+    uncompressed = pubkey.format(compressed=False)
+    # uncompressed = 0x04 + X(32) + Y(32)
+    pub_x = uncompressed[1:33]
+    pub_y = uncompressed[33:65]
+
+    # ecrecover v = recId + 27
+    v = recid + 27
+
+    return {
+        "pub_key_x": f"0x{pub_x.hex()}",
+        "pub_key_y": f"0x{pub_y.hex()}",
+        "btc_msg_hash": f"0x{msg_hash.hex()}",
+        "v": v,
+        "r": f"0x{r_bytes.hex()}",
+        "s": f"0x{s_bytes.hex()}",
+    }

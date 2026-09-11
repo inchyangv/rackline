@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .address import decode_btc_address
-from .btc_signmessage import verify_bip137_signature
+from .btc_signmessage import verify_bip137_signature, extract_onchain_params
 from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d
 from .btc_indexer import BtcIndexer, BtcIndexerConfig
 from .claim import build_claim_message, issue_claim_token, verify_claim_token
@@ -35,6 +35,8 @@ from .models import (
     ClaimCompleteResponse,
     ClaimStartRequest,
     ClaimStartResponse,
+    ExtractSigParamsRequest,
+    ExtractSigParamsResponse,
     HealthResponse,
     SetCheckpointRequest,
     SetCheckpointResponse,
@@ -503,6 +505,30 @@ async def claim_complete(
         btc_payout_key_hash=btc_payout_key_hash_hex,
         dry_run=True,
     )
+
+
+# ============================================================================
+# On-chain BTC Signature Params Extraction
+# ============================================================================
+
+
+@app.post("/claim/extract-sig-params", response_model=ExtractSigParamsResponse)
+async def extract_sig_params(request: ExtractSigParamsRequest) -> ExtractSigParamsResponse:
+    """
+    Extract on-chain verification parameters from a BIP-137 BTC signature.
+
+    Returns (pubKeyX, pubKeyY, btcMsgHash, v, r, s) for calling
+    BtcSpvVerifier.claimBtcAddress() on-chain.
+    """
+    try:
+        params = extract_onchain_params(
+            message=request.message,
+            signature_b64=request.signature_b64,
+        )
+        return ExtractSigParamsResponse(success=True, **params)
+    except Exception as e:
+        logger.error("Failed to extract sig params", error=str(e))
+        return ExtractSigParamsResponse(success=False, error=str(e))
 
 
 # ============================================================================

@@ -49,6 +49,7 @@ export const HashCreditManagerAbi = [
           { internalType: 'uint64', name: 'lastPayoutTimestamp', type: 'uint64' },
           { internalType: 'uint64', name: 'registeredAt', type: 'uint64' },
           { internalType: 'uint32', name: 'payoutCount', type: 'uint32' },
+          { internalType: 'uint64', name: 'lastDebtUpdateTimestamp', type: 'uint64' },
         ],
         internalType: 'struct IHashCreditManager.BorrowerInfo',
         name: 'info',
@@ -96,6 +97,16 @@ export const HashCreditManagerAbi = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    inputs: [
+      { internalType: 'address', name: 'borrower', type: 'address' },
+      { internalType: 'uint128', name: 'creditLimitAmount', type: 'uint128' },
+    ],
+    name: 'grantTestnetCredit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ] as const;
 
 export const BtcSpvVerifierAbi = [
@@ -126,6 +137,20 @@ export const BtcSpvVerifierAbi = [
       { internalType: 'bytes20', name: 'pubkeyHash', type: 'bytes20' },
     ],
     name: 'setBorrowerPubkeyHash',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes32', name: 'pubKeyX', type: 'bytes32' },
+      { internalType: 'bytes32', name: 'pubKeyY', type: 'bytes32' },
+      { internalType: 'bytes32', name: 'btcMsgHash', type: 'bytes32' },
+      { internalType: 'uint8', name: 'v', type: 'uint8' },
+      { internalType: 'bytes32', name: 'r', type: 'bytes32' },
+      { internalType: 'bytes32', name: 's', type: 'bytes32' },
+    ],
+    name: 'claimBtcAddress',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',

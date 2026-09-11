@@ -127,6 +127,31 @@ class ClaimCompleteResponse(BaseModel):
 
 
 # ============================================================================
+# On-chain BTC Signature Params
+# ============================================================================
+
+
+class ExtractSigParamsRequest(BaseModel):
+    """Request to extract on-chain verification params from a BIP-137 signature."""
+
+    message: str = Field(..., description="The message that was signed")
+    signature_b64: str = Field(..., description="BIP-137 signature (base64)")
+
+
+class ExtractSigParamsResponse(BaseModel):
+    """Params for BtcSpvVerifier.claimBtcAddress() on-chain call."""
+
+    success: bool = Field(..., description="Whether extraction succeeded")
+    pub_key_x: Optional[str] = Field(None, description="Public key X (bytes32)")
+    pub_key_y: Optional[str] = Field(None, description="Public key Y (bytes32)")
+    btc_msg_hash: Optional[str] = Field(None, description="Bitcoin double-SHA256 message hash (bytes32)")
+    v: Optional[int] = Field(None, description="Recovery id for ecrecover (27 or 28)")
+    r: Optional[str] = Field(None, description="Signature r (bytes32)")
+    s: Optional[str] = Field(None, description="Signature s (bytes32)")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+# ============================================================================
 # BTC Address History
 # ============================================================================
 
