@@ -10,7 +10,6 @@ import { TxStatusPill } from '@/components/shared/tx-status-pill'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useWalletStore } from '@/stores/wallet-store'
-import { useConfigStore } from '@/stores/config-store'
 import { useApiStore } from '@/stores/api-store'
 import { useManagerReads } from '@/hooks/use-manager-reads'
 import { useBorrowerInfo } from '@/hooks/use-borrower-info'
@@ -33,7 +32,6 @@ export function AppShell() {
 
   const walletAccount = useWalletStore((s) => s.walletAccount)
   const txState = useWalletStore((s) => s.txState)
-  const chainId = useConfigStore((s) => s.chainId)
   const borrowerAddress = useApiStore((s) => s.borrowerAddress)
   const setBorrowerAddress = useApiStore((s) => s.setBorrowerAddress)
 
