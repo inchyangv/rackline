@@ -55,8 +55,11 @@ Bitcoin(testnet/main)  ->  Railway(API/Worker/DB)  ->  Creditcoin EVM(contracts)
 
 메인넷에서는 임의 매핑 공격을 막기 위해, **소유권 증명(양쪽 서명) 기반 claim**이 필요합니다.
 - 서버가 nonce 발급
-- borrower가 EVM 서명 + BTC 서명(BIP-322 권장)
+- borrower가 EVM 서명 + BTC 서명(지갑 `signmessage` 기반. 장기적으로는 BIP-322 방식 권장)
 - 검증 후에만 온체인에 pubkeyHash/borrower 등록 트랜잭션 실행
+
+현재 구현:
+- `offchain/api`에 `BORROWER_MAPPING_MODE=claim`를 켜면 `/claim/start`, `/claim/complete`로 위 플로우를 수행할 수 있습니다.
 
 ## 로컬 개발(요약)
 
@@ -92,4 +95,3 @@ npm run dev
 ## License
 
 MIT
-

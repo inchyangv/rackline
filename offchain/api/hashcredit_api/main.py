@@ -14,19 +14,25 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .address import decode_btc_address
 from .auth import verify_api_token
+from .btc_signmessage import verify_bip137_signature
 from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d
+from .claim import build_claim_message, issue_claim_token, verify_claim_token
 from .proof import BlockHeader
 from .config import Settings, get_settings
 from .evm import EVMClient
 from .models import (
     BuildProofRequest,
     BuildProofResponse,
+    ClaimCompleteRequest,
+    ClaimCompleteResponse,
+    ClaimStartRequest,
+    ClaimStartResponse,
     HealthResponse,
     RegisterBorrowerRequest,
     RegisterBorrowerResponse,
@@ -40,6 +46,8 @@ from .models import (
 from .proof import ProofBuilder
 
 from web3 import Web3
+from eth_account import Account
+from eth_account.messages import encode_defunct
 
 # Configure logging
 structlog.configure(
@@ -412,6 +420,9 @@ async def set_borrower_pubkey_hash(
     if not settings.btc_spv_verifier:
         raise HTTPException(status_code=503, detail="BTC_SPV_VERIFIER not configured")
 
+    if settings.borrower_mapping_mode.lower() == "claim":
+        raise HTTPException(status_code=403, detail="Direct mapping is disabled in claim mode. Use /claim/*.")
+
     try:
         # Decode Bitcoin address
         result = decode_btc_address(request.btc_address)
@@ -504,6 +515,9 @@ async def register_borrower(
     if not settings.hash_credit_manager:
         raise HTTPException(status_code=503, detail="HASH_CREDIT_MANAGER not configured")
 
+    if settings.borrower_mapping_mode.lower() == "claim":
+        raise HTTPException(status_code=403, detail="Direct borrower registration is disabled in claim mode. Use /claim/*.")
+
     try:
         btc_payout_key_hash = Web3.keccak(text=request.btc_address)
         btc_payout_key_hash_hex = f"0x{btc_payout_key_hash.hex()}"
@@ -553,6 +567,218 @@ async def register_borrower(
             dry_run=request.dry_run,
             error=str(e),
         )
+
+
+# ============================================================================
+# Borrower Claim (mainnet-grade mapping)
+# ============================================================================
+
+
+@app.post("/claim/start", response_model=ClaimStartResponse)
+async def claim_start(
+    request: ClaimStartRequest,
+    http_request: Request,
+    settings: Settings = Depends(get_settings),
+) -> ClaimStartResponse:
+    """
+    Start a borrower claim.
+
+    Returns a claim token and a message to sign with BOTH:
+    - EVM wallet (personal_sign)
+    - BTC wallet (signmessage; BIP-137 style, base64 output)
+    """
+    if settings.borrower_mapping_mode.lower() != "claim":
+        return ClaimStartResponse(
+            success=False,
+            borrower=request.borrower,
+            btc_address=request.btc_address,
+            error="Claim flow is disabled (BORROWER_MAPPING_MODE is not 'claim')",
+        )
+
+    if not settings.claim_secret:
+        return ClaimStartResponse(
+            success=False,
+            borrower=request.borrower,
+            btc_address=request.btc_address,
+            error="CLAIM_SECRET not configured",
+        )
+
+    if settings.claim_require_api_token and settings.api_token:
+        api_key = http_request.headers.get("X-API-Key", "")
+        if api_key != settings.api_token:
+            raise HTTPException(status_code=401, detail="API token required for claim endpoints")
+
+    # Validate BTC address format early.
+    decoded = decode_btc_address(request.btc_address.strip())
+    if decoded is None:
+        return ClaimStartResponse(
+            success=False,
+            borrower=request.borrower,
+            btc_address=request.btc_address,
+            error="Invalid or unsupported Bitcoin address format",
+        )
+
+    try:
+        borrower = Web3.to_checksum_address(request.borrower.strip())
+    except Exception:
+        return ClaimStartResponse(
+            success=False,
+            borrower=request.borrower,
+            btc_address=request.btc_address,
+            error="Invalid borrower EVM address",
+        )
+    btc_address = request.btc_address.strip()
+
+    token, payload = issue_claim_token(
+        secret=settings.claim_secret,
+        borrower=borrower,
+        btc_address=btc_address,
+        chain_id=settings.chain_id,
+        ttl_seconds=settings.claim_ttl_seconds,
+    )
+    message = build_claim_message(payload)
+    return ClaimStartResponse(
+        success=True,
+        borrower=borrower,
+        btc_address=btc_address,
+        claim_token=token,
+        message=message,
+        expires_at=payload.expires_at,
+    )
+
+
+@app.post("/claim/complete", response_model=ClaimCompleteResponse)
+async def claim_complete(
+    request: ClaimCompleteRequest,
+    http_request: Request,
+    settings: Settings = Depends(get_settings),
+) -> ClaimCompleteResponse:
+    """
+    Complete a borrower claim:
+    1) Verify claim token (HMAC)
+    2) Verify EVM signature over message
+    3) Verify BTC signature over message
+    4) If not dry-run, register on-chain:
+       - BtcSpvVerifier.setBorrowerPubkeyHash(borrower, pubkeyHash)
+       - HashCreditManager.registerBorrower(borrower, keccak256(btc_address))
+    """
+    if settings.borrower_mapping_mode.lower() != "claim":
+        return ClaimCompleteResponse(success=False, dry_run=request.dry_run, error="Claim flow is disabled")
+
+    if not settings.claim_secret:
+        return ClaimCompleteResponse(success=False, dry_run=request.dry_run, error="CLAIM_SECRET not configured")
+
+    if settings.claim_require_api_token and settings.api_token:
+        api_key = http_request.headers.get("X-API-Key", "")
+        if api_key != settings.api_token:
+            raise HTTPException(status_code=401, detail="API token required for claim endpoints")
+
+    if not _evm_client:
+        raise HTTPException(status_code=503, detail="EVM client not initialized")
+
+    try:
+        payload = verify_claim_token(secret=settings.claim_secret, token=request.claim_token)
+    except Exception as e:
+        return ClaimCompleteResponse(success=False, dry_run=request.dry_run, error=f"Invalid claim token: {e}")
+
+    message = build_claim_message(payload)
+
+    # Verify EVM signature
+    try:
+        recovered = Account.recover_message(encode_defunct(text=message), signature=request.evm_signature)
+    except Exception as e:
+        return ClaimCompleteResponse(
+            success=False,
+            borrower=payload.borrower,
+            btc_address=payload.btc_address,
+            dry_run=request.dry_run,
+            error=f"Invalid EVM signature: {e}",
+        )
+    if recovered.lower() != payload.borrower.lower():
+        return ClaimCompleteResponse(
+            success=False,
+            borrower=payload.borrower,
+            btc_address=payload.btc_address,
+            dry_run=request.dry_run,
+            error="EVM signature does not match borrower address",
+        )
+
+    # Verify BTC signature
+    try:
+        ok = verify_bip137_signature(btc_address=payload.btc_address, message=message, signature_b64=request.btc_signature)
+    except Exception as e:
+        return ClaimCompleteResponse(
+            success=False,
+            borrower=payload.borrower,
+            btc_address=payload.btc_address,
+            dry_run=request.dry_run,
+            error=f"BTC signature verification error: {e}",
+        )
+    if not ok:
+        return ClaimCompleteResponse(
+            success=False,
+            borrower=payload.borrower,
+            btc_address=payload.btc_address,
+            dry_run=request.dry_run,
+            error="BTC signature does not match btc_address",
+        )
+
+    decoded = decode_btc_address(payload.btc_address)
+    if decoded is None:
+        return ClaimCompleteResponse(
+            success=False,
+            borrower=payload.borrower,
+            btc_address=payload.btc_address,
+            dry_run=request.dry_run,
+            error="Unsupported BTC address type",
+        )
+    pubkey_hash, _addr_type = decoded
+    pubkey_hash_hex = f"0x{pubkey_hash.hex()}"
+
+    btc_payout_key_hash = Web3.keccak(text=payload.btc_address)
+    btc_payout_key_hash_hex = f"0x{btc_payout_key_hash.hex()}"
+
+    if request.dry_run:
+        return ClaimCompleteResponse(
+            success=True,
+            borrower=payload.borrower,
+            btc_address=payload.btc_address,
+            pubkey_hash=pubkey_hash_hex,
+            btc_payout_key_hash=btc_payout_key_hash_hex,
+            dry_run=True,
+        )
+
+    if not settings.private_key:
+        raise HTTPException(status_code=503, detail="Private key not configured")
+    if not settings.btc_spv_verifier:
+        raise HTTPException(status_code=503, detail="BTC_SPV_VERIFIER not configured")
+    if not settings.hash_credit_manager:
+        raise HTTPException(status_code=503, detail="HASH_CREDIT_MANAGER not configured")
+
+    # 1) Always (re-)set pubkey hash (owner-only).
+    receipt_set = await _evm_client.set_borrower_pubkey_hash(borrower=payload.borrower, pubkey_hash=pubkey_hash)
+    tx_set = receipt_set["transactionHash"].hex()
+
+    # 2) Register borrower if not registered (status==0)
+    tx_reg = None
+    try:
+        status = await _evm_client.get_borrower_status(payload.borrower)
+    except Exception:
+        status = 0
+    if status == 0:
+        receipt_reg = await _evm_client.register_borrower(payload.borrower, btc_payout_key_hash)
+        tx_reg = receipt_reg["transactionHash"].hex()
+
+    return ClaimCompleteResponse(
+        success=True,
+        borrower=payload.borrower,
+        btc_address=payload.btc_address,
+        pubkey_hash=pubkey_hash_hex,
+        btc_payout_key_hash=btc_payout_key_hash_hex,
+        tx_set_pubkey_hash=tx_set,
+        tx_register_borrower=tx_reg,
+        dry_run=False,
+    )
 
 
 # ============================================================================

@@ -66,6 +66,30 @@ HASH_CREDIT_MANAGER_ABI = [
         "stateMutability": "nonpayable",
         "type": "function",
     },
+    {
+        "inputs": [{"name": "borrower", "type": "address"}],
+        "name": "getBorrowerInfo",
+        "outputs": [
+            {
+                "components": [
+                    {"name": "status", "type": "uint8"},
+                    {"name": "btcPayoutKeyHash", "type": "bytes32"},
+                    {"name": "totalRevenueSats", "type": "uint128"},
+                    {"name": "trailingRevenueSats", "type": "uint128"},
+                    {"name": "creditLimit", "type": "uint128"},
+                    {"name": "currentDebt", "type": "uint128"},
+                    {"name": "lastPayoutTimestamp", "type": "uint64"},
+                    {"name": "registeredAt", "type": "uint64"},
+                    {"name": "payoutCount", "type": "uint32"},
+                    {"name": "lastDebtUpdateTimestamp", "type": "uint64"},
+                ],
+                "name": "",
+                "type": "tuple",
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    },
 ]
 
 
@@ -221,3 +245,15 @@ class EVMClient:
             bytes.fromhex(data[2:]),
             gas_limit=500000,
         )
+
+    async def get_borrower_status(self, borrower: str) -> int:
+        """
+        Read borrower status from HashCreditManager.getBorrowerInfo().
+
+        Returns:
+            status enum as int (0=None, 1=Active, 2=Frozen, 3=Closed)
+        """
+        contract = self.get_hash_credit_manager()
+        info = await contract.functions.getBorrowerInfo(self.w3.to_checksum_address(borrower)).call()
+        # web3 returns tuple-like for structs; status is the first field
+        return int(info[0])

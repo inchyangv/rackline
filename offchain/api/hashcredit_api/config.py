@@ -51,6 +51,32 @@ class Settings(BaseSettings):
         description="CORS allowed origins"
     )
 
+    # Borrower mapping mode
+    # - demo: operator sets mappings directly (testnet/demo)
+    # - claim: borrower must prove control (mainnet-grade)
+    borrower_mapping_mode: str = Field(
+        default="demo",
+        description="Borrower mapping mode: demo or claim",
+        alias="BORROWER_MAPPING_MODE",
+    )
+
+    # Claim flow (mainnet-grade mapping)
+    claim_secret: Optional[str] = Field(
+        default=None,
+        description="HMAC secret used to sign claim tokens (required for claim mode)",
+        alias="CLAIM_SECRET",
+    )
+    claim_ttl_seconds: int = Field(
+        default=900,
+        description="Claim token TTL in seconds",
+        alias="CLAIM_TTL_SECONDS",
+    )
+    claim_require_api_token: bool = Field(
+        default=False,
+        description="If true, claim endpoints also require X-API-Key (useful for gated demos)",
+        alias="CLAIM_REQUIRE_API_TOKEN",
+    )
+
     # Bitcoin RPC
     bitcoin_rpc_url: str = Field(
         default="http://localhost:18332",

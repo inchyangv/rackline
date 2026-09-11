@@ -3,9 +3,9 @@ Token-based authentication for the API.
 
 Security model:
 - If API_TOKEN is not set, authentication is disabled (local development only)
-- If API_TOKEN is set, all requests MUST include valid token via X-API-Key header
+- If API_TOKEN is set, endpoints that include `Depends(verify_api_token)` require a valid token via X-API-Key
 - No query param token support (prevents log/referrer leakage)
-- No local bypass when token is configured (prevents proxy bypass attacks)
+- No local bypass when token is configured for those endpoints (prevents proxy bypass attacks)
 
 WARNING: If running with HOST=0.0.0.0, you MUST set API_TOKEN and ensure
 the host is behind a firewall or reverse proxy with proper access control.

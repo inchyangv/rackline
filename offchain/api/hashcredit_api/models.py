@@ -193,6 +193,53 @@ class RegisterBorrowerResponse(BaseModel):
 
 
 # ============================================================================
+# Borrower Claim (mainnet-grade mapping)
+# ============================================================================
+
+
+class ClaimStartRequest(BaseModel):
+    """Request to start a borrower claim."""
+
+    borrower: str = Field(..., description="Borrower EVM address (0x...)")
+    btc_address: str = Field(..., description="Borrower Bitcoin payout address (bc1q.../tb1q.../1.../m.../n...)")
+
+
+class ClaimStartResponse(BaseModel):
+    """Response containing claim token and message to sign."""
+
+    success: bool = Field(..., description="Whether claim start succeeded")
+    borrower: str = Field(..., description="Borrower EVM address")
+    btc_address: str = Field(..., description="Borrower BTC address")
+    claim_token: Optional[str] = Field(None, description="HMAC-signed claim token (submit to /claim/complete)")
+    message: Optional[str] = Field(None, description="Message to sign (BTC + EVM)")
+    expires_at: Optional[int] = Field(None, description="Unix timestamp when token expires")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+class ClaimCompleteRequest(BaseModel):
+    """Request to complete a borrower claim and register on-chain mappings."""
+
+    claim_token: str = Field(..., description="Claim token from /claim/start")
+    evm_signature: str = Field(..., description="EVM signature over the provided message")
+    btc_signature: str = Field(..., description="BTC signature (base64, BIP-137 style) over the provided message")
+    dry_run: bool = Field(False, description="If true, verify only; do not send on-chain transactions")
+
+
+class ClaimCompleteResponse(BaseModel):
+    """Response from completing a borrower claim."""
+
+    success: bool = Field(..., description="Whether claim completed successfully")
+    borrower: Optional[str] = Field(None, description="Borrower EVM address")
+    btc_address: Optional[str] = Field(None, description="Borrower BTC address")
+    pubkey_hash: Optional[str] = Field(None, description="Extracted pubkey hash (0x...)")
+    btc_payout_key_hash: Optional[str] = Field(None, description="keccak256(utf8(btc_address)) (0x...)")
+    tx_set_pubkey_hash: Optional[str] = Field(None, description="Tx hash for setBorrowerPubkeyHash")
+    tx_register_borrower: Optional[str] = Field(None, description="Tx hash for registerBorrower")
+    dry_run: bool = Field(False, description="Whether this was a dry run")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+# ============================================================================
 # Health Check
 # ============================================================================
 
