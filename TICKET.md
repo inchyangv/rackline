@@ -290,7 +290,7 @@
 
 ### T1.8 Borrower BTC Address → pubkeyHash 등록 툴링 (BtcSpvVerifier)
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: borrower의 **Bitcoin testnet** 주소(P2WPKH bech32 `tb1...` / P2PKH base58 `m...`/`n...`)를 받아 **20-byte pubkey hash**를 추출하고 `BtcSpvVerifier.setBorrowerPubkeyHash()`를 실행한다.
 - 작업:
     - 주소 디코더 구현(bech32 v0 + base58check 최소 구현; 외부 무거운 라이브러리 의존 최소화)
@@ -298,6 +298,13 @@
     - 성공 후 `getBorrowerPubkeyHash(borrower)`로 검증
 - 완료 조건:
     - 실제 BTC 주소 1개로 pubkey hash가 올바르게 등록되고, 이후 SPV proof가 해당 주소로만 통과한다.
+- 완료 요약:
+    - Created `hashcredit_prover/address.py` with bech32 and base58check decoders
+    - Supports P2WPKH (tb1q.../bc1q...) and P2PKH (m.../n.../1...) addresses
+    - Added `set-borrower-pubkey-hash` CLI command
+    - Calls BtcSpvVerifier.setBorrowerPubkeyHash() with extracted pubkey hash
+    - Added unit tests in tests/test_address.py
+    - Updated README.md with command documentation
 
 ---
 

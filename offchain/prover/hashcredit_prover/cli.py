@@ -293,5 +293,113 @@ def set_checkpoint(
     asyncio.run(_set_checkpoint())
 
 
+@app.command()
+def set_borrower_pubkey_hash(
+    borrower: str = typer.Argument(..., help="Borrower EVM address (0x...)"),
+    btc_address: str = typer.Argument(..., help="Borrower's Bitcoin address (tb1.../m.../n... for testnet)"),
+    spv_verifier: Optional[str] = typer.Option(
+        None,
+        "--spv-verifier",
+        "-v",
+        envvar="BTC_SPV_VERIFIER",
+        help="BtcSpvVerifier contract address",
+    ),
+    evm_rpc_url: Optional[str] = typer.Option(
+        None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
+    ),
+    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    private_key: Optional[str] = typer.Option(
+        None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print data without sending transaction"),
+) -> None:
+    """
+    Register a borrower's Bitcoin pubkey hash on BtcSpvVerifier.
+
+    Decodes the Bitcoin address to extract the 20-byte pubkey hash and
+    registers it on-chain for SPV proof verification.
+
+    Supports:
+    - P2WPKH (bech32): tb1q... (testnet), bc1q... (mainnet)
+    - P2PKH (base58check): m.../n... (testnet), 1... (mainnet)
+
+    Example:
+        hashcredit-prover set-borrower-pubkey-hash \\
+            0x1234...borrower \\
+            tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx \\
+            --spv-verifier 0xABC123...
+    """
+
+    async def _set_pubkey_hash() -> None:
+        from .address import decode_btc_address
+
+        # Validate required params
+        if not spv_verifier:
+            typer.echo("Error: --spv-verifier or BTC_SPV_VERIFIER env var required", err=True)
+            raise typer.Exit(1)
+        if not private_key and not dry_run:
+            typer.echo("Error: --private-key or PRIVATE_KEY env var required", err=True)
+            raise typer.Exit(1)
+
+        # Decode Bitcoin address
+        typer.echo(f"Decoding Bitcoin address: {btc_address}")
+
+        result = decode_btc_address(btc_address)
+        if result is None:
+            typer.echo("Error: Invalid or unsupported Bitcoin address format", err=True)
+            typer.echo("Supported: P2WPKH (tb1q.../bc1q...) and P2PKH (1.../m.../n...)", err=True)
+            raise typer.Exit(1)
+
+        pubkey_hash, addr_type = result
+
+        typer.echo(f"\nAddress Info:")
+        typer.echo(f"  Type:        {addr_type.upper()}")
+        typer.echo(f"  PubkeyHash:  0x{pubkey_hash.hex()}")
+        typer.echo(f"  Borrower:    {borrower}")
+
+        if dry_run:
+            typer.echo("\n[Dry run - not sending transaction]")
+            typer.echo(f"\nContract call:")
+            typer.echo(f"  setBorrowerPubkeyHash(")
+            typer.echo(f"    borrower: {borrower},")
+            typer.echo(f"    pubkeyHash: 0x{pubkey_hash.hex()}")
+            typer.echo(f"  )")
+            return
+
+        # Setup EVM client
+        evm_config = EVMConfig(
+            rpc_url=evm_rpc_url or os.getenv("EVM_RPC_URL", "http://localhost:8545"),
+            chain_id=chain_id,
+            private_key=private_key or "",
+        )
+        evm_client = EVMClient(evm_config)
+
+        typer.echo(f"\nSending transaction from {evm_client.address}...")
+
+        try:
+            # Send transaction
+            receipt = await evm_client.set_borrower_pubkey_hash(
+                contract_address=spv_verifier,
+                borrower=borrower,
+                pubkey_hash=pubkey_hash,
+            )
+
+            typer.echo(f"\nTransaction successful!")
+            typer.echo(f"  TX Hash: {receipt['transactionHash'].hex()}")
+            typer.echo(f"  Block:   {receipt['blockNumber']}")
+            typer.echo(f"  Gas:     {receipt['gasUsed']}")
+
+            # Verify
+            registered_hash = await evm_client.get_borrower_pubkey_hash(spv_verifier, borrower)
+            typer.echo(f"\nVerification:")
+            typer.echo(f"  getBorrowerPubkeyHash({borrower}) = 0x{registered_hash.hex()}")
+
+        except Exception as e:
+            typer.echo(f"Error: {e}", err=True)
+            raise typer.Exit(1)
+
+    asyncio.run(_set_pubkey_hash())
+
+
 if __name__ == "__main__":
     main()

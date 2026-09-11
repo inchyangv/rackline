@@ -97,6 +97,44 @@ hashcredit-prover set-checkpoint 2500000 \
     --private-key $PRIVATE_KEY
 ```
 
+### Set borrower's BTC pubkey hash
+
+Register a borrower's Bitcoin address on the `BtcSpvVerifier` contract for SPV proof verification:
+
+```bash
+hashcredit-prover set-borrower-pubkey-hash \
+    <borrower_evm_address> \
+    <btc_address> \
+    --spv-verifier 0x1234...contract_address
+```
+
+Supported Bitcoin address formats:
+- P2WPKH (bech32): `tb1q...` (testnet), `bc1q...` (mainnet)
+- P2PKH (base58check): `m...`/`n...` (testnet), `1...` (mainnet)
+
+Required environment variables (or CLI options):
+- `BTC_SPV_VERIFIER`: Contract address (or use `--spv-verifier`)
+- `EVM_RPC_URL`: Creditcoin/EVM RPC URL
+- `CHAIN_ID`: Chain ID (default: 102031)
+- `PRIVATE_KEY`: Deployer private key
+
+Example:
+```bash
+# Dry run
+hashcredit-prover set-borrower-pubkey-hash \
+    0x1234567890123456789012345678901234567890 \
+    tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx \
+    --spv-verifier 0xABC123... \
+    --dry-run
+
+# Send transaction
+hashcredit-prover set-borrower-pubkey-hash \
+    0x1234567890123456789012345678901234567890 \
+    tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx \
+    --spv-verifier 0xABC123... \
+    --private-key $PRIVATE_KEY
+```
+
 ## Requirements
 
 - Python 3.11+
@@ -127,6 +165,7 @@ pytest tests/ -v
 hashcredit_prover/
 ├── __init__.py
 ├── bitcoin.py       # Bitcoin data structures and utilities
+├── address.py       # Bitcoin address decoding (bech32/base58)
 ├── rpc.py           # Bitcoin RPC client
 ├── evm.py           # EVM/Creditcoin contract interactions
 ├── proof_builder.py # Main proof generation logic
