@@ -206,7 +206,7 @@
 
 ### T1.3 BtcSpvVerifier — Header PoW + Merkle Inclusion + Output Parse (MVP 수준)
 - Priority: P1
-- Status: [ ]
+- Status: [x] DONE
 - 목적: rawTx가 특정 블록에 포함되었고, vout이 borrower payout key와 일치함을 온체인에서 검증한다.
 - 작업:
     - sha256d(header) <= target(bits) 검증(프리컴파일 sha256 사용)
