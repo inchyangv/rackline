@@ -66,3 +66,11 @@ Icon?
 coverage/
 htmlcov/
 .coverage
+
+# Hackathon submission (local-filled files)
+docs/hackathon/SUBMISSION_VALUES.md
+docs/hackathon/TEAM_INFO.md
+docs/hackathon/addresses.json
+
+# Local-only guides (do not commit)
+docs/guides/

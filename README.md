@@ -128,11 +128,10 @@ npm run dev
 
 ## Documentation
 
-- [LOCAL.md](./docs/guides/LOCAL.md) - Local development & debugging guide (Korean)
-- [DEMO.md](./docs/guides/DEMO.md) - Step-by-step demo walkthrough
-- [DEPLOY.md](./docs/guides/DEPLOY.md) - Deployment guide (local/testnet, MVP/SPV)
+- [DEPLOY.md](./DEPLOY.md) - 배포 가이드 (컨트랙트 별도 + Vercel + Railway)
 - [PROJECT.md](./docs/specs/PROJECT.md) - Full project specification
 - [TICKET.md](./docs/process/TICKET.md) - Implementation tickets
+- [Submission checklist](./docs/hackathon/SUBMISSION_CHECKLIST.md) - 해커톤 제출 체크리스트
 
 ## Tech Stack
 
