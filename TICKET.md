@@ -71,7 +71,7 @@
 
 ### T0.4 HashCreditManager — Borrower Registry + Credit Line Core
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: Borrower 등록, 상태 관리, payout 반영, creditLimit 산출을 구현한다.
 - 작업:
     - borrower 등록(`registerBorrower`)
@@ -111,7 +111,7 @@
 
 ### T0.6 RiskConfig + Admin Controls (Minimal)
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: 하드코딩을 제거하고 리스크 파라미터를 교체 가능하게 만든다.
 - 파라미터:
     - confirmationsRequired (MVP에서는 relayer가 준수, 온체인에서는 로그로만)
@@ -129,7 +129,7 @@
 
 ### T0.7 PoolRegistry Hook (MVP-Ready)
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: “풀 출처 검증”을 1차에 완벽 구현 못하더라도, 코드 구조에 훅을 박아둔다.
 - 작업:
     - `PoolRegistry` 컨트랙트(allowlist 기반)

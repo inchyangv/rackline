@@ -190,11 +190,14 @@ contract LendingVaultTest is Test {
         vm.prank(manager);
         vault.borrowFunds(borrower, 50_000e6);
 
-        // Repay
+        // Repay - manager needs to have tokens and approve vault
         uint256 repayAmount = 30_000e6;
+        stablecoin.mint(manager, repayAmount);
 
-        vm.prank(manager);
+        vm.startPrank(manager);
+        stablecoin.approve(address(vault), repayAmount);
         vault.repayFunds(borrower, repayAmount);
+        vm.stopPrank();
 
         assertEq(vault.totalBorrowed(), 20_000e6);
         assertEq(vault.availableLiquidity(), 80_000e6);
@@ -263,9 +266,14 @@ contract LendingVaultTest is Test {
         // Borrower repays with interest after 1 year
         vm.warp(block.timestamp + 365 days);
 
-        // Repay full amount (principal + interest)
-        vm.prank(manager);
-        vault.repayFunds(borrower, 55_000e6); // 50k + 5k interest
+        // Repay full amount (principal + interest) - manager needs tokens
+        uint256 repayAmount = 55_000e6; // 50k + 5k interest
+        stablecoin.mint(manager, repayAmount);
+
+        vm.startPrank(manager);
+        stablecoin.approve(address(vault), repayAmount);
+        vault.repayFunds(borrower, repayAmount);
+        vm.stopPrank();
 
         // Alice withdraws
         uint256 balanceBefore = stablecoin.balanceOf(alice);

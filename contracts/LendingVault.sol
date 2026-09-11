@@ -209,7 +209,9 @@ contract LendingVault is ILendingVault {
         uint256 actualRepay = amount > totalBorrowed ? totalBorrowed : amount;
         totalBorrowed -= actualRepay;
 
-        _asset.transferFrom(borrower, address(this), amount);
+        // Transfer from manager (msg.sender), not borrower
+        // Manager is responsible for collecting from borrower first
+        _asset.transferFrom(msg.sender, address(this), amount);
 
         emit RepaidToVault(borrower, amount);
     }
