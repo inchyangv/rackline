@@ -67,7 +67,7 @@ LP perspective: USDT depositors earn 10% APR — 2-3× standard DeFi rates (Aave
                         ┌──────────────────────┐              │
                         │  Frontend (Vercel)    │              │
                         │  React 19 + ethers.js ├──────────────┘
-                        │  Dashboard / Ops / Proof             │
+                        │  Dashboard / Checkpoint / Proof       │
                         └──────────────────────┘
 ```
 
@@ -101,7 +101,7 @@ Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierA
 | State | Zustand 5 |
 | Chain | ethers.js v6 |
 
-Tabs: **Dashboard** (read + borrow/repay) · **Operations** (checkpoint payload build + wallet setCheckpoint) · **Proof** (build proof via API + wallet submitPayout) · **Admin** (wallet-based borrower mapping) · **Settings** (RPC/contract config)
+Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet claim, settings) · **Checkpoint** (register Bitcoin block header checkpoint) · **Proof** (build SPV proof + submit payout)
 
 ---
 
@@ -256,7 +256,7 @@ offchain/
   api/                 FastAPI — proof/checkpoint payload builders, claim verification (no tx submit)
   prover/              Background SPV worker — auto-detect, prove, submit
 apps/
-  web/                 React 19 frontend — dashboard, operations, proof, admin
+  web/                 React 19 frontend — dashboard, checkpoint, proof
 docs/
   adr/                 Architecture Decision Records
   specs/               Protocol specifications

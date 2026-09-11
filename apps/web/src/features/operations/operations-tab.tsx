@@ -27,7 +27,7 @@ export function OperationsTab() {
       return
     }
 
-    await apiRun('POST /checkpoint/build -> wallet setCheckpoint', async () => {
+    await apiRun('Set checkpoint', async () => {
       const built = await apiRequest('/checkpoint/build', {
         method: 'POST',
         body: JSON.stringify({ height }),
@@ -43,7 +43,7 @@ export function OperationsTab() {
         typeof payload.timestamp !== 'number' ||
         typeof payload.bits !== 'number'
       ) {
-        throw new Error('Invalid /checkpoint/build response payload')
+        throw new Error('Invalid checkpoint response')
       }
 
       const chainWorkHex = payload.chain_work.startsWith('0x')
@@ -53,20 +53,20 @@ export function OperationsTab() {
       await sendContractTx('setCheckpoint', checkpointManagerAddress, CheckpointManagerAbi, (c) =>
         c.setCheckpoint(height, payload.block_hash, chainWorkHex, payload.timestamp, payload.bits),
       )
-      return { build: built, wallet: 'submitted via connected wallet (check Tx Status)' }
+      return { build: built, status: 'Submitted — check transaction status above' }
     })
   }
 
   return (
     <SectionCard
-      title="Operations (Wallet + API Build)"
-      description="API builds checkpoint payload. Wallet submits on-chain transaction."
+      title="Set Checkpoint"
+      description="Register a Bitcoin block header checkpoint on-chain."
       full
     >
       <div className="space-y-4">
         <div className="space-y-2">
           <div>
-            <Label className="text-[10px] uppercase tracking-widest">Checkpoint height</Label>
+            <Label className="text-[10px] uppercase tracking-widest">Block Height</Label>
             <Input
               value={apiCheckpointHeight}
               onChange={(e) => setApiCheckpointHeight(e.target.value)}
@@ -75,16 +75,15 @@ export function OperationsTab() {
             />
           </div>
           <Button variant="secondary" size="sm" onClick={() => void buildAndSetCheckpointWithWallet()} disabled={apiBusy}>
-            Build + setCheckpoint (Wallet)
+            Submit Checkpoint
           </Button>
-          <p className="text-xs text-muted-foreground">
-            Borrower mapping and payout submission are wallet-only in Admin / Proof tabs.
-          </p>
         </div>
 
-        <KeyValueList>
-          <KeyValueRow label="API Result" value={apiLog || '—'} mono pre />
-        </KeyValueList>
+        {apiLog && (
+          <KeyValueList>
+            <KeyValueRow label="Result" value={apiLog} mono pre />
+          </KeyValueList>
+        )}
       </div>
     </SectionCard>
   )

@@ -96,7 +96,7 @@ export function AppShell() {
           <Input
             value={borrowerAddress}
             onChange={(e) => setBorrowerAddress(e.target.value)}
-            placeholder="Borrower address (EVM) / wallet / payout target"
+            placeholder="Enter wallet address"
             className="font-mono text-xs"
           />
           <Button
@@ -111,25 +111,18 @@ export function AppShell() {
 
         {/* Metrics bar */}
         <MetricsBar>
-          <MetricCard label="Network" value={`Chain ${chainId}`} hint="Creditcoin Testnet" />
+          <MetricCard label="Network" value="Creditcoin Testnet" />
           <MetricCard
             label="Available Credit"
             value={availableCreditDisplay}
-            hint={`decimals: ${stablecoinDecimals}`}
             loading={isLoading}
           />
           <MetricCard
-            label="Stablecoin Balance"
+            label="Balance"
             value={stablecoinBalanceDisplay}
-            hint="Borrower-based view"
             loading={isLoading}
           />
-          <MetricCard
-            label="Transaction Status"
-            value={txOverview}
-            tone={txOverviewTone}
-            small
-          />
+          <MetricCard label="Status" value={txOverview} tone={txOverviewTone} small />
         </MetricsBar>
       </div>
 
@@ -142,7 +135,7 @@ export function AppShell() {
         {/* Tx Status always visible */}
         <div className="col-span-full">
           <div className="rounded-xl border border-border/40 bg-gradient-to-br from-card/80 to-card/60 p-4">
-            <h2 className="text-sm font-semibold text-foreground/90 mb-2">Tx Status</h2>
+            <h2 className="text-sm font-semibold text-foreground/90 mb-2">Transaction Status</h2>
             <TxStatusPill txState={txState} />
           </div>
         </div>

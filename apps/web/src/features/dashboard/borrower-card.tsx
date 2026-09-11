@@ -55,10 +55,10 @@ export function BorrowerCard() {
   }
 
   return (
-    <SectionCard title="Borrower">
+    <SectionCard title="My Credit">
       <div className="space-y-3">
         <div>
-          <Label className="text-[10px] uppercase tracking-widest">Borrower address (EVM)</Label>
+          <Label className="text-[10px] uppercase tracking-widest">Wallet Address</Label>
           <Input
             value={borrowerAddress}
             onChange={(e) => setBorrowerAddress(e.target.value)}
@@ -69,33 +69,33 @@ export function BorrowerCard() {
 
         <KeyValueList>
           <KeyValueRow
-            label="availableCredit"
+            label="Available Credit"
             value={
               isLoading ? (
                 <Skeleton className="h-4 w-32" />
               ) : availableCredit === null ? (
                 '—'
               ) : (
-                `${ethers.formatUnits(availableCredit, stablecoinDecimals)} (decimals=${stablecoinDecimals})`
+                `${ethers.formatUnits(availableCredit, stablecoinDecimals)} cUSD`
               )
             }
             mono
           />
           <KeyValueRow
-            label="stablecoinBalance"
+            label="Balance"
             value={
               isLoading ? (
                 <Skeleton className="h-4 w-32" />
               ) : stablecoinBalance === null ? (
                 '—'
               ) : (
-                ethers.formatUnits(stablecoinBalance, stablecoinDecimals)
+                `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} cUSD`
               )
             }
             mono
           />
           <KeyValueRow
-            label="borrowerInfo"
+            label="Loan Details"
             value={borrowerInfo ? JSON.stringify(borrowerInfo, null, 2) : '—'}
             mono
             pre
@@ -104,7 +104,7 @@ export function BorrowerCard() {
 
         <div className="space-y-2.5 pt-2">
           <div>
-            <Label className="text-[10px] uppercase tracking-widest">Borrow (Execute Loan)</Label>
+            <Label className="text-[10px] uppercase tracking-widest">Borrow</Label>
             <div className="flex gap-2 mt-1">
               <Input
                 value={borrowAmount}
@@ -118,7 +118,7 @@ export function BorrowerCard() {
             </div>
           </div>
           <div>
-            <Label className="text-[10px] uppercase tracking-widest">Approve (Stablecoin Allowance)</Label>
+            <Label className="text-[10px] uppercase tracking-widest">Approve Spending</Label>
             <div className="flex gap-2 mt-1">
               <Input
                 value={approveAmount}
@@ -146,10 +146,6 @@ export function BorrowerCard() {
             </div>
           </div>
         </div>
-
-        <p className="text-xs text-muted-foreground">
-          Enter amounts in human-readable units. (e.g. `1000` = 1000 USDC)
-        </p>
       </div>
     </SectionCard>
   )

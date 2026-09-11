@@ -17,7 +17,7 @@ Current demo scope (already running):
 - Manager credit updates from verified payout evidence.
 - Borrow/repay execution through vault.
 - Replay protection and risk-config driven policy.
-- API ops flow for checkpointing, borrower mapping, and proof submit.
+- Checkpoint registration, borrower mapping, and proof submission.
 
 What you can try right now:
 1. Register checkpoint.

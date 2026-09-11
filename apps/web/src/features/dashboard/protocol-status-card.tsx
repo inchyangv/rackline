@@ -16,24 +16,24 @@ export function ProtocolStatusCard() {
   return (
     <SectionCard
       title="Protocol Status"
-      description="Manager, Checkpoint, and SPV Verifier on-chain state."
+      description="Live on-chain state overview."
     >
       <div className="space-y-3">
         <div>
-          <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Manager</h3>
+          <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Credit Manager</h3>
           <KeyValueList>
-            <KeyValueRow label="owner" value={owner || '—'} mono />
-            <KeyValueRow label="verifier" value={verifier || '—'} mono />
-            <KeyValueRow label="stablecoin" value={stablecoin || '—'} mono />
-            <KeyValueRow label="vault" value={vault || '—'} mono />
+            <KeyValueRow label="Owner" value={owner || '—'} mono />
+            <KeyValueRow label="Verifier" value={verifier || '—'} mono />
+            <KeyValueRow label="Stablecoin" value={stablecoin || '—'} mono />
+            <KeyValueRow label="Vault" value={vault || '—'} mono />
           </KeyValueList>
         </div>
         <div>
           <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Checkpoint</h3>
           <KeyValueList>
-            <KeyValueRow label="latestCheckpointHeight" value={latestCheckpointHeight ?? '—'} mono />
+            <KeyValueRow label="Latest Height" value={latestCheckpointHeight ?? '—'} mono />
             <KeyValueRow
-              label="latestCheckpoint"
+              label="Checkpoint Data"
               value={latestCheckpoint ? JSON.stringify(latestCheckpoint, null, 2) : '—'}
               mono
               pre
@@ -43,9 +43,9 @@ export function ProtocolStatusCard() {
         <div>
           <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">SPV Verifier</h3>
           <KeyValueList>
-            <KeyValueRow label="owner" value={spvOwner || '—'} mono />
-            <KeyValueRow label="checkpointManager" value={spvCheckpointManagerOnchain || '—'} mono />
-            <KeyValueRow label="borrowerPubkeyHash" value={spvBorrowerOnchainPubkeyHash || '—'} mono />
+            <KeyValueRow label="Owner" value={spvOwner || '—'} mono />
+            <KeyValueRow label="Checkpoint Manager" value={spvCheckpointManagerOnchain || '—'} mono />
+            <KeyValueRow label="Pubkey Hash" value={spvBorrowerOnchainPubkeyHash || '—'} mono />
           </KeyValueList>
         </div>
       </div>

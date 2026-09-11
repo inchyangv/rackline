@@ -14,11 +14,9 @@ React-based dashboard for the HashCredit protocol on Creditcoin EVM.
 
 ## Tabs
 
-- **Dashboard** — Read on-chain state (credit limit, debt, payout history) + collapsible Admin section
-- **Operations** — Build checkpoint payload via API, then submit `setCheckpoint` with wallet
-- **Proof/Submit** — Build proof via API, then submit `submitPayout` with wallet
-
-Admin functions (`registerBorrower`, `setBorrowerPubkeyHash`, `setVerifier`) are in the Dashboard's collapsible "Admin (Owner-only)" section. RPC and contract configuration is read from environment variables (no Settings tab).
+- **Dashboard** — Credit overview, borrow/repay, protocol status, BTC wallet claim, and collapsible Settings section
+- **Checkpoint** — Register a Bitcoin block header checkpoint on-chain
+- **Proof** — Build an SPV proof and submit payout
 
 ## Setup
 

@@ -38,13 +38,13 @@ export function ProofTab() {
     const outputIndex = Number(apiVout)
     const checkpointHeight = Number(apiProofCheckpointHeight)
     const targetHeight = Number(apiTargetHeight)
-    if (!apiTxid) { toast.error('txid is empty'); return }
-    if (!Number.isFinite(outputIndex) || outputIndex < 0) { toast.error('invalid vout'); return }
-    if (!Number.isFinite(checkpointHeight) || checkpointHeight <= 0) { toast.error('invalid checkpoint_height'); return }
-    if (!Number.isFinite(targetHeight) || targetHeight <= 0) { toast.error('invalid target_height'); return }
-    if (!ethers.isAddress(spvBorrower)) { toast.error('invalid borrower EVM address'); return }
+    if (!apiTxid) { toast.error('Transaction ID is required'); return }
+    if (!Number.isFinite(outputIndex) || outputIndex < 0) { toast.error('Invalid output index'); return }
+    if (!Number.isFinite(checkpointHeight) || checkpointHeight <= 0) { toast.error('Invalid checkpoint height'); return }
+    if (!Number.isFinite(targetHeight) || targetHeight <= 0) { toast.error('Invalid target height'); return }
+    if (!ethers.isAddress(spvBorrower)) { toast.error('Invalid borrower address'); return }
 
-    await apiRun('POST /spv/build-proof', async () => {
+    await apiRun('Build proof', async () => {
       const result = await apiRequest('/spv/build-proof', {
         method: 'POST',
         body: JSON.stringify({
@@ -64,57 +64,59 @@ export function ProofTab() {
 
   async function submitProof() {
     if (!proofHex || !isHexBytes(proofHex) || proofHex === '0x') {
-      toast.error('Invalid proofHex. (0x...)')
+      toast.error('Invalid proof data')
       return
     }
     toast.promise(
       sendContractTx('submitPayout', managerAddress, HashCreditManagerAbi, (c) => c.submitPayout(proofHex)),
-      { loading: 'Submitting payout...', success: 'Payout submitted!', error: 'Submit failed' },
+      { loading: 'Submitting payout...', success: 'Payout submitted!', error: 'Submission failed' },
     )
   }
 
   return (
     <>
-      <SectionCard title="Proof Build (API)" description="Build proof from API, then submit with wallet." full>
+      <SectionCard title="Build Proof" description="Generate an SPV proof for a Bitcoin transaction." full>
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px] uppercase tracking-widest">txid</Label>
+              <Label className="text-[10px] uppercase tracking-widest">Transaction ID</Label>
               <Input value={apiTxid} onChange={(e) => setApiTxid(e.target.value.trim())} placeholder="e.g. e4c6..." className="mt-1 font-mono text-xs" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-widest">vout</Label>
+              <Label className="text-[10px] uppercase tracking-widest">Output Index</Label>
               <Input value={apiVout} onChange={(e) => setApiVout(e.target.value)} placeholder="0" className="mt-1 font-mono text-xs" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-widest">checkpoint_height</Label>
+              <Label className="text-[10px] uppercase tracking-widest">Checkpoint Height</Label>
               <Input value={apiProofCheckpointHeight} onChange={(e) => setApiProofCheckpointHeight(e.target.value)} placeholder="e.g. 4842333" className="mt-1 font-mono text-xs" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-widest">target_height</Label>
+              <Label className="text-[10px] uppercase tracking-widest">Target Height</Label>
               <Input value={apiTargetHeight} onChange={(e) => setApiTargetHeight(e.target.value)} placeholder="e.g. 4842343" className="mt-1 font-mono text-xs" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={() => void apiBuildProof()} disabled={apiBusy}>Build proof (API)</Button>
+            <Button variant="secondary" size="sm" onClick={() => void apiBuildProof()} disabled={apiBusy}>Build Proof</Button>
           </div>
-          <KeyValueList>
-            <KeyValueRow label="API Result" value={apiLog || '—'} mono pre />
-          </KeyValueList>
+          {apiLog && (
+            <KeyValueList>
+              <KeyValueRow label="Result" value={apiLog} mono pre />
+            </KeyValueList>
+          )}
         </div>
       </SectionCard>
 
-      <SectionCard title="submitPayout (Wallet)" description="If proof is built via API, buttons above auto-fill proofHex." full>
+      <SectionCard title="Submit Payout" description="Submit the generated proof to claim your mining payout." full>
         <div className="space-y-3">
           <Textarea
             value={proofHex}
             onChange={(e) => setProofHex(e.target.value.trim())}
-            placeholder="0x..."
+            placeholder="Proof data (0x...)"
             rows={6}
             className="font-mono text-xs"
           />
           <Button size="sm" onClick={() => void submitProof()} disabled={!walletAccount}>
-            submitPayout
+            Submit Payout
           </Button>
         </div>
       </SectionCard>

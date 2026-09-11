@@ -8,8 +8,8 @@ type Props = {
 
 const tabs: { id: TabId; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
-  { id: 'ops', label: 'Operations' },
-  { id: 'proof', label: 'Proof/Submit' },
+  { id: 'ops', label: 'Checkpoint' },
+  { id: 'proof', label: 'Proof' },
 ]
 
 export function Header({ tab, onTabChange }: Props) {
@@ -27,7 +27,7 @@ export function Header({ tab, onTabChange }: Props) {
         <div className="min-w-0">
           <div className="text-lg font-bold leading-tight sm:text-xl">HashCredit</div>
           <div className="text-xs text-muted-foreground mt-0.5">
-            Creditcoin Testnet SPV Demo Dashboard
+            Bitcoin Mining Credit Protocol
           </div>
         </div>
       </div>
