@@ -54,11 +54,48 @@ class BitcoinApiClient:
         self.client = httpx.Client(timeout=30.0)
 
     def get_address_txs(self, address: str) -> list[dict]:
-        """Get transactions for an address."""
-        url = f"{self.base_url}/address/{address}/txs"
-        response = self.client.get(url)
-        response.raise_for_status()
-        return response.json()
+        """
+        Get transactions for an address.
+
+        mempool/esplora returns transactions in pages (latest first).
+        To avoid missing older confirmed payouts, we follow the
+        `/txs/chain/<last_seen_txid>` pagination until exhausted.
+        """
+        base = f"{self.base_url}/address/{address}/txs"
+        txs: list[dict] = []
+        cursor_txid: Optional[str] = None
+        seen_cursors: set[str] = set()
+
+        while True:
+            if cursor_txid is None:
+                url = base
+            else:
+                # Guard against accidental cursor loops from upstream responses.
+                if cursor_txid in seen_cursors:
+                    logger.warning("address_txs_cursor_loop", address=address, cursor_txid=cursor_txid)
+                    break
+                seen_cursors.add(cursor_txid)
+                url = f"{base}/chain/{cursor_txid}"
+
+            response = self.client.get(url)
+            response.raise_for_status()
+            page = response.json()
+
+            if not page:
+                break
+
+            txs.extend(page)
+
+            # esplora page size is 25; shorter page means end of history.
+            if len(page) < 25:
+                break
+
+            last_txid = page[-1].get("txid")
+            if not last_txid:
+                break
+            cursor_txid = last_txid
+
+        return txs
 
     def get_address_utxos(self, address: str) -> list[AddressUtxo]:
         """Get UTXOs for an address."""
