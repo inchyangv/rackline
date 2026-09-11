@@ -110,7 +110,7 @@ class ClaimCompleteRequest(BaseModel):
 
     claim_token: str = Field(..., description="Claim token from /claim/start")
     evm_signature: str = Field(..., description="EVM signature over the provided message")
-    btc_signature: str = Field(..., description="BTC signature (base64, BIP-137 style) over the provided message")
+    btc_signature: Optional[str] = Field(None, description="BTC signature (base64, BIP-137 style). If omitted, BTC sig verification is skipped.")
     dry_run: bool = Field(True, description="Verify-only mode (API does not send on-chain transactions)")
 
 

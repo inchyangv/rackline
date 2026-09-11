@@ -459,25 +459,26 @@ async def claim_complete(
             error="EVM signature does not match borrower address",
         )
 
-    # Verify BTC signature
-    try:
-        ok = verify_bip137_signature(btc_address=payload.btc_address, message=message, signature_b64=request.btc_signature)
-    except Exception as e:
-        return ClaimCompleteResponse(
-            success=False,
-            borrower=payload.borrower,
-            btc_address=payload.btc_address,
-            dry_run=True,
-            error=f"BTC signature verification error: {e}",
-        )
-    if not ok:
-        return ClaimCompleteResponse(
-            success=False,
-            borrower=payload.borrower,
-            btc_address=payload.btc_address,
-            dry_run=True,
-            error="BTC signature does not match btc_address",
-        )
+    # Verify BTC signature (optional — skipped when using MetaMask BTC wallet)
+    if request.btc_signature:
+        try:
+            ok = verify_bip137_signature(btc_address=payload.btc_address, message=message, signature_b64=request.btc_signature)
+        except Exception as e:
+            return ClaimCompleteResponse(
+                success=False,
+                borrower=payload.borrower,
+                btc_address=payload.btc_address,
+                dry_run=True,
+                error=f"BTC signature verification error: {e}",
+            )
+        if not ok:
+            return ClaimCompleteResponse(
+                success=False,
+                borrower=payload.borrower,
+                btc_address=payload.btc_address,
+                dry_run=True,
+                error="BTC signature does not match btc_address",
+            )
 
     decoded = decode_btc_address(payload.btc_address)
     if decoded is None:
