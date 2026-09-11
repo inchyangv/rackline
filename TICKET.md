@@ -423,7 +423,7 @@
 
 ### T1.14 (선택) Frontend ↔ Prover/Bitcoin Core 브리지 API
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 브라우저가 Bitcoin Core RPC에 직접 붙을 수 없으므로, **로컬/서버에서 prover를 실행**해주는 얇은 API를 제공한다(완전 자동화 옵션).
 - 작업:
     - `apps/api`(또는 `offchain/api`)에 최소 HTTP API:
@@ -434,6 +434,13 @@
     - `apps/web`에서 API를 호출해 proof 생성/체크포인트 등록을 UI에서 원클릭으로 수행(선택)
 - 완료 조건:
     - (로컬 기준) UI에서 txid만 넣으면 proof 생성+제출까지 한 번에 가능하다(옵션).
+- 완료 요약:
+    - Created `offchain/api` with FastAPI-based HTTP server
+    - Endpoints: `POST /spv/build-proof`, `POST /spv/submit`, `POST /checkpoint/set`, `POST /borrower/set-pubkey-hash`, `GET /health`
+    - Local-only binding (127.0.0.1) with optional token authentication via X-API-Key header
+    - CORS configured for frontend integration
+    - Auto-generated OpenAPI docs at /docs and /redoc
+    - 11 unit tests passing
 
 ---
 
