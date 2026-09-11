@@ -169,7 +169,8 @@ Comment example
 
 ## 6. Troubleshooting (only things that occur frequently)
 - Wallet connection not possible: Check installation/activation of browser extension wallet (MetaMask)
-- Chain mismatch: Resolved with ‘Chain Conversion (102031)’ above.
-- API 4xx/5xx: Check token (X-API-Key), check Railway log
-- CORS error: FE domain must be included in `ALLOWED_ORIGINS` of API
+- Chain mismatch: Click `Chain 102031` button in the wallet panel to switch networks.
+- Admin tx revert: Only the owner (DEPLOYER) account can call registerBorrower, setBorrowerPubkeyHash, setCheckpoint. Switch to the owner wallet in MetaMask.
+- API 4xx/5xx: Check API URL is correct, check Railway service logs.
+- CORS error: FE domain must be included in `ALLOWED_ORIGINS` of API.
 - Proof failure: Check if the txid/vout/height combination is correct and target_height is not too small.
