@@ -18,9 +18,14 @@ export function Header({ tab, onTabChange }: Props) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border/40 bg-gradient-to-br from-[rgba(16,24,49,0.82)] to-[rgba(15,32,53,0.6)] p-3.5 sm:p-4">
       <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#51beb0] to-[#5f7ae8] shadow-[0_0_22px_rgba(79,167,154,0.42),inset_0_0_18px_rgba(255,255,255,0.12)]">
-          <span className="text-lg font-bold text-white">HC</span>
-        </div>
+        <img
+          src="/brand/logo.png"
+          alt="HashCredit"
+          className="h-10 w-10 shrink-0 rounded-full drop-shadow-[0_0_18px_rgba(79,167,154,0.24)]"
+          width={40}
+          height={40}
+          decoding="async"
+        />
         <div className="min-w-0">
           <div className="text-lg font-bold leading-tight sm:text-xl">HashCredit</div>
           <div className="text-xs text-muted-foreground mt-0.5">
