@@ -36,9 +36,9 @@ HASH_CREDIT_MANAGER=0x3cfb7fcf0647c78c3f932763e033b6184d79a936
 
 ### B. Wallet/Gas
 - Install MetaMask (or injection wallet)
-- **Creditcoin testnet gas (CTC)**
-- Administrator (owner) key: `PRIVATE_KEY` of Railway (API service) must be the owner account
-- Demo signing wallet (borrower): Planned to import and sign in MetaMask
+- **Creditcoin testnet gas (CTC)** for both owner and borrower wallets
+- Owner wallet: the DEPLOYER account that deployed the contracts (for Admin/Operations tab)
+- Borrower wallet: a separate account imported into MetaMask (for Borrow/Repay)
 
 ### C. Contract address (required)
 The three items below must be correctly entered in the settings tab of FE.
@@ -162,9 +162,9 @@ Comment example
 ## 5. Checklist just before demo (30 second check)
 - FE opens with `hashcredit.studioliq.com`
 - API is `api-hashcredit.studioliq.com/health` OK
-- MetaMask chainId 102031 can be converted
-- 3 contract addresses are correct
-- Prepare API token
+- MetaMask chainId 102031 connected
+- Owner wallet and borrower wallet both have CTC gas
+- 3 contract addresses are correct in Settings tab
 - Prepare txid/vout/checkpoint_height/target_height (for live proof)
 
 ## 6. Troubleshooting (only things that occur frequently)
