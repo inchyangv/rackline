@@ -1,0 +1,9 @@
+{
+  "name": "ctc-hashcredit-monorepo",
+  "private": true,
+  "workspaces": [
+    "offchain/api",
+    "offchain/prover"
+  ]
+}
+

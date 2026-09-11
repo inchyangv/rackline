@@ -1,0 +1,9 @@
+{
+  "name": "hashcredit-prover",
+  "private": true,
+  "description": "HashCredit SPV worker/prover (Dockerfile build; Python runtime).",
+  "scripts": {
+    "start": "echo \"This package is deployed via Dockerfile.\" && exit 0"
+  }
+}
+

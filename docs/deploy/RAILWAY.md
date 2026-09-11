@@ -25,6 +25,9 @@
 - 따라서 목표가 `API`/`Worker`를 분리 배포라면, 아래 방식 중 하나로 **서비스를 2개로 만들어야** 합니다.
   - (추천) Compose 드래그 앤 드롭으로 서비스 2개를 만들고, 이후 서비스별로 GitHub 연결(autodeploy) 설정
   - (대안) GitHub 레포 연결을 서비스별로 2번 생성하면서 Root Directory를 각각 지정
+  - (자동 스테이징) Railway의 "JS 모노레포 자동 감지"를 트리거하도록, 루트 `package.json` workspaces로 `offchain/api`, `offchain/prover`를 등록해 두었습니다.
+    - 레포를 새로 Import하면, `hashcredit-api` / `hashcredit-prover` 서비스가 자동으로 분리 스테이징되는 것을 기대합니다.
+    - 각 서비스는 **Dockerfile 빌드**가 기본이며, Node 런타임으로 실행되지 않습니다.
 
 ## 0.6) `start.sh not found` / Railpack 빌드 실패가 뜨는 이유와 해결
 
