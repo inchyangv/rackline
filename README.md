@@ -128,11 +128,11 @@ npm run dev
 
 ## Documentation
 
-- [LOCAL.md](./LOCAL.md) - Local development & debugging guide (Korean)
-- [DEMO.md](./DEMO.md) - Step-by-step demo walkthrough
-- [DEPLOY.md](./DEPLOY.md) - Deployment guide (local/testnet, MVP/SPV)
-- [PROJECT.md](./PROJECT.md) - Full project specification
-- [TICKET.md](./TICKET.md) - Implementation tickets
+- [LOCAL.md](./docs/guides/LOCAL.md) - Local development & debugging guide (Korean)
+- [DEMO.md](./docs/guides/DEMO.md) - Step-by-step demo walkthrough
+- [DEPLOY.md](./docs/guides/DEPLOY.md) - Deployment guide (local/testnet, MVP/SPV)
+- [PROJECT.md](./docs/specs/PROJECT.md) - Full project specification
+- [TICKET.md](./docs/process/TICKET.md) - Implementation tickets
 
 ## Tech Stack
 

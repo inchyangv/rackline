@@ -186,7 +186,7 @@ HashCredit는 **Bitcoin 채굴자의 미래 채굴 수익(해시레이트 기반
 - `/offchain/relayer` python
 - `/offchain/prover` python
 - `/docs` additional docs
-- `PROJECT.md`, `TICKET.md`
+- `docs/specs/PROJECT.md`, `docs/process/TICKET.md`
 
 ---
 

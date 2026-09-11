@@ -158,7 +158,7 @@ The layered defenses make self-transfer attacks economically unviable:
 
 ## References
 
-- [PROJECT.md Section 7.1](../PROJECT.md) - Attack model description
+- [PROJECT.md Section 7.1](./specs/PROJECT.md) - Attack model description
 - [ADR 0001](./adr/0001-btc-spv.md) - SPV verification design
 - `contracts/RiskConfig.sol` - Heuristic parameter implementation
 - `contracts/PoolRegistry.sol` - Source verification

@@ -155,4 +155,4 @@ Next steps for SPV mode (high level):
 3. Register the borrower on `HashCreditManager`
 4. Submit proofs via `hashcredit-prover` or `hashcredit-api`
 
-For a full SPV walkthrough, see `LOCAL.md`.
+For a full SPV walkthrough, see `docs/guides/LOCAL.md`.

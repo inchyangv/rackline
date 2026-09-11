@@ -278,8 +278,8 @@ This checklist is designed for auditors, security researchers, and code reviewer
 
 | Document | Location | Current | Verified |
 |----------|----------|---------|----------|
-| Project overview | `PROJECT.md` | Yes | [ ] |
-| Demo instructions | `DEMO.md` | Yes | [ ] |
+| Project overview | `specs/PROJECT.md` | Yes | [ ] |
+| Demo instructions | `guides/DEMO.md` | Yes | [ ] |
 | Threat model | `docs/threat-model.md` | Yes | [ ] |
 | Gas limits | `docs/gas-limits.md` | Yes | [ ] |
 | SPV design (ADR) | `docs/adr/0001-btc-spv.md` | Yes | [ ] |

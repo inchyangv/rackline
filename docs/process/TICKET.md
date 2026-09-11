@@ -165,7 +165,7 @@
 - Status: [x] DONE
 - 목적: 심사위원이 5분 내 이해 가능한 실행 절차를 제공한다.
 - 작업:
-    - `DEMO.md` 작성
+    - `docs/guides/DEMO.md` 작성
     - 실행 순서(배포 → borrower 등록 → relayer 실행 → payout 감지 → borrow/repay)
     - 스크린샷/로그 예시(선택)
 - 완료 조건:
@@ -362,14 +362,14 @@
     - `test/fixtures/`에 실제 메인넷/테스트넷 tx 기반(또는 최소한 고정 데이터 기반) proof 구성요소 저장
     - `BtcSpvVerifier.verifyPayout()` 성공/실패 테스트 추가(머클/헤더체인/출력 불일치 등)
     - `HashCreditManager.submitPayout()`까지 이어지는 E2E 테스트 추가(creditLimit 증가 + replay 방지)
-    - `LOCAL.md`에 Creditcoin testnet SPV 모드 실행/디버깅 섹션 추가
+    - `docs/guides/LOCAL.md`에 Creditcoin testnet SPV 모드 실행/디버깅 섹션 추가
 - 완료 조건:
     - `forge test`로 SPV 경로의 핵심 검증이 안정적으로 재현되고, 문서만 보고 testnet에서 end-to-end 실행 가능하다.
 - 완료 요약:
     - Created `test/SpvE2E.t.sol` with 8 E2E tests for SPV verification flow
     - Tests: deployment, borrower registration, checkpoint registration, error cases
     - Uses synthetic but structurally valid Bitcoin data for deterministic testing
-    - Updated `LOCAL.md` with comprehensive SPV mode execution guide
+    - Updated `docs/guides/LOCAL.md` with comprehensive SPV mode execution guide
     - Includes checkpoint registration, borrower setup, proof submission, relayer usage
     - All 143 tests passing
 
