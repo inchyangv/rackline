@@ -137,20 +137,35 @@ Registers borrower's Bitcoin pubkey hash on BtcSpvVerifier.
 
 ## Authentication
 
-By default, authentication is disabled for local development (127.0.0.1).
+By default, authentication is **disabled** for local development when `API_TOKEN` is not set.
 
 To enable authentication:
-1. Set `API_TOKEN` in `.env`
-2. Include token in requests via:
-   - Header: `X-API-Key: your-token`
-   - Query param: `?api_key=your-token`
+1. Set `API_TOKEN` in `.env` to a secure random value
+2. Include token in ALL requests via the `X-API-Key` header:
+   ```bash
+   curl -H "X-API-Key: your-secret-token" http://localhost:8000/health
+   ```
+
+**Security notes on authentication:**
+- When `API_TOKEN` is set, ALL requests require the token (no local bypass)
+- Query parameter authentication (`?api_key=...`) is NOT supported to prevent token leakage via logs/referrer
+- This prevents proxy bypass attacks when the API is behind a reverse proxy
 
 ## Security Notes
 
-1. **Local Only by Default**: The API binds to `127.0.0.1` by default
-2. **Private Key**: Never commit your private key; use environment variables
-3. **CORS**: Configure `ALLOWED_ORIGINS` for your frontend domain
-4. **Token Auth**: Enable `API_TOKEN` for production deployments
+> **CRITICAL**: If you set `HOST=0.0.0.0` (externally accessible), you MUST:
+> 1. Set `API_TOKEN` to a cryptographically secure random value
+> 2. Place the API behind a firewall or reverse proxy with proper access control
+> 3. Use HTTPS in production (via reverse proxy like nginx or Caddy)
+
+**Security checklist:**
+
+1. **Local Only by Default**: The API binds to `127.0.0.1` by default - safe for local dev
+2. **Token Required for External**: Set `API_TOKEN` before exposing externally
+3. **No Local Bypass**: Even localhost requests require token when `API_TOKEN` is set
+4. **Private Key Safety**: Never commit private keys; use environment variables or secrets managers
+5. **CORS**: Configure `ALLOWED_ORIGINS` for your frontend domain
+6. **Reverse Proxy**: In production, terminate TLS and handle rate limiting at the proxy level
 
 ## Development
 

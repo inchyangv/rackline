@@ -650,7 +650,7 @@
 
 ### T2.9 Trailing Revenue Window 실제 적용 + Min Payout 필터링
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: `RiskConfig.windowSeconds`에 맞는 trailing revenue window를 실제로 적용하고, `minPayoutSats` 이하의 스팸/미세 payout이 한도에 누적되지 않도록 한다.
 - 작업:
     - `contracts/HashCreditManager.sol`:
@@ -664,15 +664,23 @@
     - min payout 미만이 creditLimit에 영향 주지 않는지
 - 완료 조건:
     - trailing window가 실제로 동작하고, 스팸 payout으로 한도 누적이 불가하다.
+- 완료 요약:
+    - Add payout history storage with MAX_PAYOUT_RECORDS=100 DoS protection
+    - Implement lazy pruning of expired payouts in trailing window
+    - Add minPayoutSats filtering (below-minimum payouts marked processed but don't count toward credit)
+    - Separate newBorrowerPeriodSeconds from windowSeconds in RiskParams
+    - Add PayoutRecord struct, PayoutBelowMinimum and PayoutWindowPruned events
+    - Add getPayoutHistoryCount() and getPayoutRecord() view functions
+    - 8 new tests for trailing window, min payout filtering, and DoS protection
 
 ---
 
 ### T2.10 txid Endianness/표준화(온체인↔오프체인 일관성)
 - Priority: P2
-- Status: [ ] TODO
-- 목적: txid 표현(디스플레이 big-endian vs 내부 little-endian)이 컴포넌트별로 달라 verifier 교체/운영 시 혼선을 만들 수 있으므로, “프로토콜 표준 txid 바이트 순서”를 정하고 전 구간에 적용한다.
+- Status: [x] DONE
+- 목적: txid 표현(디스플레이 big-endian vs 내부 little-endian)이 컴포넌트별로 달라 verifier 교체/운영 시 혼선을 만들 수 있으므로, "프로토콜 표준 txid 바이트 순서"를 정하고 전 구간에 적용한다.
 - 작업:
-    - 표준 정의: `bytes32 txid`는 “Bitcoin 내부 바이트(sha256d 결과 그대로)”로 통일(권장)
+    - 표준 정의: `bytes32 txid`는 "Bitcoin 내부 바이트(sha256d 결과 그대로)"로 통일(권장)
     - `offchain/relayer`의 `txid_to_bytes32` 동작/주석 정정 및 reverse 처리 적용
     - `offchain/prover` proof builder도 표준에 맞춰 txid 계산/검증 로직 정리
     - 문서/예제 업데이트(입력 txid 포맷, hex reverse 여부)
@@ -680,12 +688,21 @@
     - 동일 tx에 대해 relayer/프로버/온체인에서 txid가 동일하게 취급됨을 단위 테스트로 확인
 - 완료 조건:
     - txid 관련 버그/운영 혼선(중복 처리, 검증 실패)이 표준화로 제거된다.
+- 완료 요약:
+    - Fix relayer's txid_to_bytes32() to reverse bytes (display -> internal format)
+    - Add bytes32_to_txid_display() for reverse conversion (debugging)
+    - Add explicit txid_display_to_internal() and txid_internal_to_display() to prover
+    - Update docstrings with clear byte order documentation
+    - Add unit tests for txid conversion in both relayer and prover
+    - Add consistency test verifying same display txid produces identical bytes
+    - Document txid format standard in LOCAL.md appendix
+    - Protocol standard: bytes32 txid = internal byte order (sha256d result without reversal)
 
 ---
 
 ### T2.11 Offchain API 인증/배포 하드닝(토큰/CSRF/프록시 안전)
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 로컬 API를 0.0.0.0로 노출하거나 리버스 프록시 뒤에 둘 때 `request.client.host` 기반 로컬 바이패스가 인증 우회를 만들 수 있으므로 안전한 기본값/정책으로 강화한다.
 - 작업:
     - `offchain/api/hashcredit_api/auth.py`:
@@ -696,7 +713,14 @@
 - 테스트:
     - 로컬/비로컬 요청 각각에 대해 토큰 정책이 의도대로 동작하는지 단위 테스트
 - 완료 조건:
-    - API를 잘못 노출해도 “무토큰”으로 키 사용/트랜잭션 전송이 불가하다.
+    - API를 잘못 노출해도 "무토큰"으로 키 사용/트랜잭션 전송이 불가하다.
+- 완료 요약:
+    - Remove local bypass in auth.py: when API_TOKEN is set, ALL requests require token
+    - Remove query param token support (?api_key=) to prevent log/referrer leakage
+    - Add security documentation warnings for HOST=0.0.0.0 usage
+    - Add WWW-Authenticate header to 401 responses
+    - 6 new authentication tests: token required, valid/invalid token, no local bypass, no query param
+    - Update README.md with security notes and deployment guidelines
 
 ---
 

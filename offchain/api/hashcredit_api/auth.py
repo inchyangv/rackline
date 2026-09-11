@@ -1,5 +1,14 @@
 """
-Simple token-based authentication for the API.
+Token-based authentication for the API.
+
+Security model:
+- If API_TOKEN is not set, authentication is disabled (local development only)
+- If API_TOKEN is set, all requests MUST include valid token via X-API-Key header
+- No query param token support (prevents log/referrer leakage)
+- No local bypass when token is configured (prevents proxy bypass attacks)
+
+WARNING: If running with HOST=0.0.0.0, you MUST set API_TOKEN and ensure
+the host is behind a firewall or reverse proxy with proper access control.
 """
 
 from typing import Optional
@@ -10,7 +19,7 @@ from fastapi.security import APIKeyHeader
 from .config import Settings, get_settings
 
 
-# API key can be passed via header or query param
+# API key via header only (no query param for security)
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
@@ -23,42 +32,37 @@ async def verify_api_token(
     Verify API token if configured.
 
     Security model:
-    - If API_TOKEN is not set, authentication is disabled (local use)
-    - If API_TOKEN is set, all requests must include valid token
-    - Token can be passed via X-API-Key header or api_key query param
+    - If API_TOKEN is not set, authentication is disabled (for local development)
+    - If API_TOKEN is set, ALL requests must include valid token via X-API-Key header
+    - No local bypass: once token is configured, it's always required
+    - No query param support: prevents token leakage via logs/referrer
 
-    For local development (127.0.0.1), authentication is optional
-    even if token is configured.
+    Returns:
+        True if authentication passes
+
+    Raises:
+        HTTPException: 401 if authentication fails
     """
-    # Get token from header or query param
-    token = api_key or request.query_params.get("api_key")
-
-    # If no token configured, allow all (local use only)
+    # If no token configured, allow all (local development mode)
+    # WARNING: Never run in production without API_TOKEN set
     if not settings.api_token:
         return True
 
-    # Allow local requests without token (for development convenience)
-    client_host = request.client.host if request.client else None
-    if client_host in ("127.0.0.1", "localhost", "::1"):
-        # Still verify if token is provided
-        if token and token != settings.api_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid API token",
-            )
-        return True
-
-    # For non-local requests, token is required
-    if not token:
+    # Token is configured: require it for ALL requests (no local bypass)
+    # This prevents attacks when API is behind a reverse proxy that
+    # spoofs or forwards X-Forwarded-For headers
+    if not api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="API token required. Provide via X-API-Key header or api_key query param.",
+            detail="API token required. Provide via X-API-Key header.",
+            headers={"WWW-Authenticate": "X-API-Key"},
         )
 
-    if token != settings.api_token:
+    if api_key != settings.api_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API token",
+            headers={"WWW-Authenticate": "X-API-Key"},
         )
 
     return True

@@ -186,12 +186,144 @@ class TestModels:
 
 
 class TestAuth:
-    """Tests for authentication."""
+    """Tests for authentication.
 
-    def test_local_request_without_token(self, client):
-        """Local requests should work without token."""
+    Security model:
+    - If API_TOKEN is not set, authentication is disabled (local dev)
+    - If API_TOKEN is set, ALL requests to protected endpoints require valid token
+    - No local bypass when token is configured
+    - No query param token support
+
+    Note: /health endpoint is intentionally unauthenticated for monitoring.
+    Tests use /spv/build-proof which requires authentication.
+    """
+
+    # Test endpoint that requires auth (will fail with 422 if auth passes but body invalid)
+    PROTECTED_ENDPOINT = "/spv/build-proof"
+    VALID_REQUEST_BODY = {
+        "txid": "abc123",
+        "output_index": 0,
+        "checkpoint_height": 2500000,
+        "target_height": 2500006,
+        "borrower": "0x1234567890123456789012345678901234567890"
+    }
+
+    def test_health_endpoint_no_auth_required(self, client):
+        """Health check should work without token (for monitoring)."""
         response = client.get("/health")
         assert response.status_code == 200
+
+    def test_protected_endpoint_no_token_no_auth(self, client):
+        """When API_TOKEN is not set, protected endpoints allow all."""
+        # Without token configured, auth passes but request may fail for other reasons
+        response = client.post(self.PROTECTED_ENDPOINT, json=self.VALID_REQUEST_BODY)
+        # Should NOT be 401 (auth passed, but might be 503 if Bitcoin RPC not available)
+        assert response.status_code != 401
+
+    def test_token_required_when_configured(self):
+        """When API_TOKEN is set, requests without token should fail with 401."""
+        from hashcredit_api.main import app
+        from hashcredit_api.config import Settings, get_settings
+
+        def get_settings_with_token() -> Settings:
+            return Settings(api_token="test-secret-token")
+
+        app.dependency_overrides[get_settings] = get_settings_with_token
+
+        try:
+            with TestClient(app) as test_client:
+                response = test_client.post(self.PROTECTED_ENDPOINT, json=self.VALID_REQUEST_BODY)
+                assert response.status_code == 401
+                assert "API token required" in response.json()["detail"]
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_valid_token_accepted(self):
+        """Valid token via X-API-Key header should pass auth."""
+        from hashcredit_api.main import app
+        from hashcredit_api.config import Settings, get_settings
+
+        def get_settings_with_token() -> Settings:
+            return Settings(api_token="test-secret-token")
+
+        app.dependency_overrides[get_settings] = get_settings_with_token
+
+        try:
+            with TestClient(app) as test_client:
+                response = test_client.post(
+                    self.PROTECTED_ENDPOINT,
+                    json=self.VALID_REQUEST_BODY,
+                    headers={"X-API-Key": "test-secret-token"}
+                )
+                # Should NOT be 401 (auth passed)
+                # May be 503 if Bitcoin RPC not available
+                assert response.status_code != 401
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_invalid_token_rejected(self):
+        """Invalid token should be rejected with 401."""
+        from hashcredit_api.main import app
+        from hashcredit_api.config import Settings, get_settings
+
+        def get_settings_with_token() -> Settings:
+            return Settings(api_token="test-secret-token")
+
+        app.dependency_overrides[get_settings] = get_settings_with_token
+
+        try:
+            with TestClient(app) as test_client:
+                response = test_client.post(
+                    self.PROTECTED_ENDPOINT,
+                    json=self.VALID_REQUEST_BODY,
+                    headers={"X-API-Key": "wrong-token"}
+                )
+                assert response.status_code == 401
+                assert "Invalid API token" in response.json()["detail"]
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_no_local_bypass_when_token_configured(self):
+        """Even local requests require token when API_TOKEN is set.
+
+        This prevents attacks when API is behind a reverse proxy.
+        """
+        from hashcredit_api.main import app
+        from hashcredit_api.config import Settings, get_settings
+
+        def get_settings_with_token() -> Settings:
+            return Settings(api_token="test-secret-token")
+
+        app.dependency_overrides[get_settings] = get_settings_with_token
+
+        try:
+            with TestClient(app) as test_client:
+                # TestClient simulates local request but should still require token
+                response = test_client.post(self.PROTECTED_ENDPOINT, json=self.VALID_REQUEST_BODY)
+                assert response.status_code == 401
+        finally:
+            app.dependency_overrides.clear()
+
+    def test_query_param_token_not_supported(self):
+        """Query param token should NOT work (security: log/referrer leakage)."""
+        from hashcredit_api.main import app
+        from hashcredit_api.config import Settings, get_settings
+
+        def get_settings_with_token() -> Settings:
+            return Settings(api_token="test-secret-token")
+
+        app.dependency_overrides[get_settings] = get_settings_with_token
+
+        try:
+            with TestClient(app) as test_client:
+                # Token via query param should NOT work
+                response = test_client.post(
+                    f"{self.PROTECTED_ENDPOINT}?api_key=test-secret-token",
+                    json=self.VALID_REQUEST_BODY
+                )
+                assert response.status_code == 401
+        finally:
+            app.dependency_overrides.clear()
 
 
 if __name__ == "__main__":

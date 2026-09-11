@@ -23,14 +23,22 @@ class Settings(BaseSettings):
     )
 
     # API Server
-    host: str = Field(default="127.0.0.1", description="API host (127.0.0.1 for local only)")
+    # WARNING: If using host="0.0.0.0" (externally accessible), you MUST:
+    # 1. Set API_TOKEN to a secure random value
+    # 2. Use a firewall or reverse proxy with access control
+    host: str = Field(
+        default="127.0.0.1",
+        description="API host (127.0.0.1 for local only, 0.0.0.0 for external - REQUIRES API_TOKEN)"
+    )
     port: int = Field(default=8000, description="API port")
     debug: bool = Field(default=False, description="Enable debug mode")
 
     # Authentication
+    # SECURITY: When API_TOKEN is set, ALL requests require the token via X-API-Key header.
+    # There is no local bypass - this prevents proxy bypass attacks.
     api_token: Optional[str] = Field(
         default=None,
-        description="API token for authentication (optional, recommended for non-local use)"
+        description="API token for authentication (REQUIRED for non-local/production use)"
     )
     allowed_origins: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],

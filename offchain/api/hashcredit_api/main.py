@@ -20,7 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .address import decode_btc_address
 from .auth import verify_api_token
-from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d, BlockHeader
+from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d
+from .proof import BlockHeader
 from .config import Settings, get_settings
 from .evm import EVMClient
 from .models import (
