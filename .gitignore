@@ -77,7 +77,6 @@ docs/hackathon/addresses.json
 # Local-only guides (do not commit)
 docs/guides/
 DEPLOY.md
-DEMO.md
 ENVIRON.md
 
 # Local-only deploy keys (do not commit)
