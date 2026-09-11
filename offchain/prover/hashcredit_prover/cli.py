@@ -577,8 +577,12 @@ def run_relayer(
     addresses_file: str = typer.Argument(
         ..., help="JSON file with watched addresses [{btc_address, borrower}, ...]"
     ),
-    db_path: str = typer.Option(
-        "relayer.db", "--db", "-d", help="SQLite database path"
+    database_url: Optional[str] = typer.Option(
+        None,
+        "--database-url",
+        "-d",
+        envvar="DATABASE_URL",
+        help="Database URL (sqlite:///path or postgresql://...). Railway sets DATABASE_URL automatically.",
     ),
     hash_credit_manager: Optional[str] = typer.Option(
         None,
@@ -631,7 +635,6 @@ def run_relayer(
             --checkpoint-manager 0xDEF456...
     """
     import json
-    from pathlib import Path
     from .watcher import WatchedAddress
     from .relayer import SPVRelayer, RelayerConfig
 
@@ -666,6 +669,9 @@ def run_relayer(
 
         typer.echo(f"Loaded {len(watched_addresses)} watched addresses")
 
+        # Determine database URL
+        db_url = database_url or os.getenv("DATABASE_URL", "sqlite:///./spv_relayer.db")
+
         # Create config
         config = RelayerConfig(
             bitcoin_rpc=BitcoinRPCConfig(
@@ -681,13 +687,20 @@ def run_relayer(
             hash_credit_manager=hash_credit_manager,
             checkpoint_manager=checkpoint_manager,
             watched_addresses=watched_addresses,
-            db_path=Path(db_path),
+            database_url=db_url,
             required_confirmations=confirmations,
             poll_interval_seconds=poll_interval,
         )
 
         # Create and run relayer
         relayer = SPVRelayer(config)
+
+        # Mask password in database URL for display
+        display_db_url = db_url
+        if "@" in db_url and "://" in db_url:
+            # Mask password: postgresql://user:pass@host -> postgresql://user:***@host
+            import re
+            display_db_url = re.sub(r"://([^:]+):([^@]+)@", r"://\1:***@", db_url)
 
         typer.echo(f"\nStarting SPV relayer...")
         typer.echo(f"  Bitcoin RPC:     {config.bitcoin_rpc.url}")
@@ -696,7 +709,7 @@ def run_relayer(
         typer.echo(f"  Checkpoint Mgr:  {checkpoint_manager}")
         typer.echo(f"  Confirmations:   {confirmations}")
         typer.echo(f"  Poll interval:   {poll_interval}s")
-        typer.echo(f"  Database:        {db_path}")
+        typer.echo(f"  Database:        {display_db_url}")
         typer.echo("")
 
         if run_once:

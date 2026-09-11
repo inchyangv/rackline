@@ -7,7 +7,6 @@ and submits them to HashCreditManager when confirmations are met.
 
 import asyncio
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List, Optional
 import structlog
 
@@ -34,8 +33,8 @@ class RelayerConfig:
     # Watched addresses
     watched_addresses: List[WatchedAddress]
 
-    # Database
-    db_path: Path
+    # Database URL (sqlite:///path or postgresql://...)
+    database_url: str = "sqlite:///./spv_relayer.db"
 
     # Operational params
     required_confirmations: int = 6
@@ -61,7 +60,7 @@ class SPVRelayer:
         self.config = config
         self.btc_rpc = BitcoinRPC(config.bitcoin_rpc)
         self.evm_client = EVMClient(config.evm)
-        self.store = PayoutStore(config.db_path)
+        self.store = PayoutStore(config.database_url)
         self.watcher = AddressWatcher(
             self.btc_rpc, config.watched_addresses, self.store
         )

@@ -888,7 +888,7 @@
 
 ### T2.18 Railway 배포 준비(서비스 분리, 환경변수, 마이그레이션, 헬스체크)
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: Railway에서 오프체인 컴포넌트를 **API 서비스 + Worker(relayer/prover)** 로 배포 가능하게 구성한다.
 - 작업:
     - 서비스 설계(권장):
@@ -910,7 +910,16 @@
         - API `/health` 확인
         - worker가 실제로 DB에 기록/중복 방지하며 submit하는지 로그로 확인
 - 완료 조건:
-    - Railway에서 “API + Worker + Postgres” 조합으로 재현 가능한 배포 절차가 문서화된다.
+    - Railway에서 "API + Worker + Postgres" 조합으로 재현 가능한 배포 절차가 문서화된다.
+- 완료 요약:
+    - Add PORT env var support to API config (Railway standard via pydantic validation_alias)
+    - Add HOST alias for external binding configuration (0.0.0.0)
+    - Change prover CLI --db to --database-url with DATABASE_URL env var support
+    - Update RelayerConfig.db_path to database_url for consistency with PostgreSQL support
+    - Add Procfile for API service (`python -m hashcredit_api.main`)
+    - Add Procfile for prover worker service (`hashcredit-prover run-relayer`)
+    - Create comprehensive docs/guides/RAILWAY.md with architecture, deployment steps, env vars reference, security checklist
+    - All 186 Solidity tests passing, 61 prover tests passing, 17 API tests passing
 
 ---
 

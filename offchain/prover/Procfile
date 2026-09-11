@@ -1,0 +1,4 @@
+# Worker process for SPV relayer
+# Requires: ADDRESSES_FILE env var pointing to watched addresses JSON
+# Or mount addresses.json in the deployment
+worker: python -m hashcredit_prover.cli run-relayer ${ADDRESSES_FILE:-addresses.json}

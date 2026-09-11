@@ -28,9 +28,15 @@ class Settings(BaseSettings):
     # 2. Use a firewall or reverse proxy with access control
     host: str = Field(
         default="127.0.0.1",
-        description="API host (127.0.0.1 for local only, 0.0.0.0 for external - REQUIRES API_TOKEN)"
+        description="API host (127.0.0.1 for local only, 0.0.0.0 for external - REQUIRES API_TOKEN)",
+        alias="HOST",
     )
-    port: int = Field(default=8000, description="API port")
+    # Railway injects PORT env var; we support both PORT and API_PORT
+    port: int = Field(
+        default=8000,
+        description="API port (Railway sets PORT automatically)",
+        validation_alias="PORT",
+    )
     debug: bool = Field(default=False, description="Enable debug mode")
 
     # Authentication
