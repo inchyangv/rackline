@@ -1,14 +1,14 @@
 # HashCredit — TICKET.md
-> 규칙: 가장 위의 미완료 티켓부터 순서대로 처리한다.  
-> 각 티켓은 (1) 코드 변경 (2) 테스트 (3) 문서/티켓 업데이트까지 포함해야 Done이다.
+> Rule: Process incomplete tickets in order, starting from the top.
+> Each ticket must include (1) code changes, (2) testing, and (3) document/ticket updates to be Done.
 
 ---
 
-## 상태 표기
+## Status notation
 - [ ] TODO
 - [~] IN PROGRESS
 - [x] DONE
-- [!] BLOCKED (사유 기재)
+- [!] BLOCKED (state reason)
 
 ---
 
@@ -17,248 +17,248 @@
 ### T0.1 Repository Skeleton + Tooling
 - Priority: P0
 - Status: [x] DONE
-- 목적: 레포 기본 구조, 빌드/테스트/포맷 환경을 만든다.
-- 작업:
-    - Foundry 초기화, 기본 CI 스크립트(로컬 기준) 작성
-    - solidity formatter / lint(선택) 설정
-    - `/offchain/relayer` 파이썬 패키지 스켈레톤
-    - `.env.example` 작성
-- 산출물:
-    - `foundry.toml`, `remappings.txt` (필요 시)
-    - `Makefile` 또는 `justfile` (선택)
-    - 폴더 구조 확정
-- 완료 조건:
-    - `forge test`가 빈 테스트라도 통과
-    - 파이썬 패키지가 실행 진입점(`python -m ...`)을 가진다
+- Purpose: Create a basic repo structure and build/test/format environment.
+- work:
+- Initialize Foundry, create basic CI script (local basis)
+- solidity formatter / lint (optional) settings
+- `/offchain/relayer` Python package skeleton
+- Write `.env.example`
+- Output:
+- `foundry.toml`, `remappings.txt` (if necessary)
+- `Makefile` or `justfile` (optional)
+- Folder structure confirmed
+- Completion conditions:
+- `forge test` passes even if it is an empty test
+- The Python package has an execution entry point (`python -m ...`)
 
 ---
 
 ### T0.2 Define Interfaces & Data Types (Core ABI Fixation)
 - Priority: P0
 - Status: [x] DONE
-- 목적: Verifier Adapter, Manager/Vault의 외부 인터페이스를 먼저 고정한다(향후 교체 최소화).
-- 작업:
-    - `IVerifierAdapter` 인터페이스 정의
-    - 공통 `PayoutEvidence` struct 정의(또는 반환값 세트)
-    - 이벤트 목록 정의
-    - 에러 타입 정의(custom errors)
-- 완료 조건:
-    - 인터페이스가 문서화되고, 이후 티켓에서 변경 최소화 원칙 적용
+- Purpose: First fix the external interface of the Verifier Adapter and Manager/Vault (minimize future replacement).
+- work:
+- `IVerifierAdapter` interface definition
+- Common `PayoutEvidence` struct definition (or set of return values)
+- Define event list
+- Error type definition (custom errors)
+- Completion conditions:
+- The interface is documented and the principle of minimizing changes is applied in subsequent tickets.
 
 ---
 
 ### T0.3 LendingVault (Single Stablecoin) — Minimal Viable Vault
 - Priority: P0
 - Status: [x] DONE
-- 목적: 스테이블코인 유동성을 받아 borrow/repay/interest를 처리한다.
-- 스코프:
-    - 단일 ERC20 stablecoin (mock로 시작)
-    - 이자 모델: 고정 APR 또는 간단 utilization 기반 중 하나 선택
-    - 예치/인출(대출 유동성 공급) 기능 포함
-- 작업:
-    - `deposit/withdraw` (LP shares 모델은 단순화 가능)
-    - `borrow/repay`는 `HashCreditManager`만 호출 가능(onlyManager)
-    - 이자 누적: block.timestamp 기반 단순 방식
-- 테스트:
+- Purpose: Receive stablecoin liquidity and process borrow/repay/interest.
+- Scope:
+- Single ERC20 stablecoin (started as a mock)
+- Interest model: Choose between fixed APR or simple utilization-based
+- Includes deposit/withdrawal (loan liquidity supply) function
+- work:
+- `deposit/withdraw` (LP shares model can be simplified)
+- `borrow/repay` can only call `HashCreditManager` (onlyManager)
+- Interest accumulation: simple method based on block.timestamp
+- test:
     - deposit/withdraw
-    - borrow 시 vault balance 감소
-    - repay 시 증가 + debt 감소
-- 완료 조건:
-    - `HashCreditManager` 연동 가능한 ABI 제공
-    - 최소 단위 테스트 통과
+- Vault balance decreases when borrowing
+- Increase upon repayment + decrease in debt
+- Completion conditions:
+- Provides ABI that can be linked to `HashCreditManager`
+- Pass minimum unit tests
 
 ---
 
 ### T0.4 HashCreditManager — Borrower Registry + Credit Line Core
 - Priority: P0
 - Status: [x] DONE
-- 목적: Borrower 등록, 상태 관리, payout 반영, creditLimit 산출을 구현한다.
-- 작업:
-    - borrower 등록(`registerBorrower`)
-    - borrower 상태(Frozen 등)
-    - `submitPayout(payload)`가 verifier를 호출하고 payout을 기록
+- Purpose: Implement borrower registration, status management, payout reflection, and creditLimit calculation.
+- work:
+- Borrower registration (`registerBorrower`)
+- Borrower status (Frozen, etc.)
+- `submitPayout(payload)` calls the verifier and records the payout
     - replay protection(txid/vout)
-    - creditLimit 업데이트 로직(단순 버전)
-    - borrow/repay 라우팅(vault 호출)
-- 테스트:
-    - 등록 성공/중복 방지
-    - replay 방지
-    - payout 1회 반영 시 limit 증가
-    - limit 초과 borrow revert
-- 완료 조건:
-    - MVP 데모 플로우(등록→payout→limit→borrow/repay) 온체인 완성
+- creditLimit update logic (simple version)
+- borrow/repay routing (call vault)
+- test:
+- Registration success/duplicate prevention
+- Prevent replay
+- Limit increases when payout is reflected once
+- Borrow revert exceeding limit
+- Completion conditions:
+- MVP demo flow (registration→payout→limit→borrow/repay) on-chain completion
 
 ---
 
 ### T0.5 RelayerSigVerifier — EIP-712 Signature Verification
 - Priority: P0
 - Status: [x] DONE
-- 목적: 오프체인 relayer가 서명한 payout payload를 온체인에서 검증한다.
-- 작업:
-    - EIP-712 domain/struct 정의
-    - authorized relayer signer address 관리(setter는 owner/role)
-    - payload: borrowerId, txid, vout, amountSats, blockHeight, nonce, deadline, chainId 등
-    - nonce 정책(옵션) + txid/vout replay와 병행
-- 테스트:
-    - 올바른 서명 통과
-    - signer 불일치 revert
-    - deadline 초과 revert
-    - 동일 payload 재제출 revert(또는 txid/vout 기준)
-- 완료 조건:
-    - `HashCreditManager.submitPayout()`에서 완전 동작
+- Purpose: Verify the payout payload signed by the off-chain relayer on-chain.
+- work:
+- EIP-712 domain/struct definition
+- Authorized relayer signer address management (setter is owner/role)
+- payload: borrowerId, txid, vout, amountSats, blockHeight, nonce, deadline, chainId, etc.
+- Nonce policy (optional) + parallel with txid/vout replay
+- test:
+- Pass correct signature
+- signer mismatch revert
+- deadline exceeded revert
+- Resubmit same payload revert (or based on txid/vout)
+- Completion conditions:
+- Fully functional in `HashCreditManager.submitPayout()`
 
 ---
 
 ### T0.6 RiskConfig + Admin Controls (Minimal)
 - Priority: P0
 - Status: [x] DONE
-- 목적: 하드코딩을 제거하고 리스크 파라미터를 교체 가능하게 만든다.
-- 파라미터:
-    - confirmationsRequired (MVP에서는 relayer가 준수, 온체인에서는 로그로만)
+- Purpose: Eliminate hard coding and make risk parameters replaceable.
+- Parameters:
+- confirmationsRequired (Relayer compliance in MVP, log only in on-chain)
     - advanceRateBps
     - windowSeconds(or payoutCount window)
     - newBorrowerCap
-    - globalCap (선택)
-- 작업:
-    - owner/role 기반 set 함수
-    - 이벤트 발행
-- 완료 조건:
-    - 파라미터 변경이 즉시 반영되고 테스트로 검증
+- globalCap (optional)
+- work:
+- owner/role based set function
+- Event publication
+- Completion conditions:
+- Parameter changes are reflected immediately and verified through testing
 
 ---
 
 ### T0.7 PoolRegistry Hook (MVP-Ready)
 - Priority: P0
 - Status: [x] DONE
-- 목적: “풀 출처 검증”을 1차에 완벽 구현 못하더라도, 코드 구조에 훅을 박아둔다.
-- 작업:
-    - `PoolRegistry` 컨트랙트(allowlist 기반)
-    - `HashCreditManager`에서 `isEligiblePayoutSource(...)` 같은 훅 호출 가능 구조
-    - MVP에서는 `true` 반환 또는 관리자 allowlist만 적용
-- 완료 조건:
-    - production에서 provenance 강화 시 ABI/스토리지 변경 최소화
+- Purpose: Even if “full source verification” cannot be fully implemented the first time, it will leave a hook in the code structure.
+- work:
+- `PoolRegistry` contract (allowlist based)
+- Hook callable structure such as `isEligiblePayoutSource(...)` in `HashCreditManager`
+- In MVP, only `true` is returned or administrator allowlist is applied.
+- Completion conditions:
+- Minimize ABI/storage changes when strengthening provenance in production
 
 ---
 
 ### T0.8 Offchain Relayer (Python) — Watch + Sign + Submit
 - Priority: P0
 - Status: [x] DONE
-- 목적: Bitcoin payout을 감지하고 EVM에 제출한다(해커톤 데모 핵심).
-- 작업:
-    - 데이터 소스 선택:
+- Purpose: Detect Bitcoin payout and submit to EVM (core of hackathon demo).
+- work:
+- Select data source:
         - (A) Bitcoin Core RPC
-        - (B) mempool/esplora API (해커톤 간편)
-    - 감시 로직:
-        - 특정 payout address 목록을 감시
-        - txid/vout/amount/blockHeight 획득
-        - confirmations 체크(가능하면)
-    - EIP-712 서명 생성
-    - EVM tx 제출(web3.py/ethers-rs 등)
-    - 로컬 DB(최소 sqlite)로 dedupe
-- 완료 조건:
-    - 실제(또는 테스트넷) tx 1건으로 demo가 돌아간다
+- (B) mempool/esplora API (simple hackathon)
+- Supervision logic:
+- Monitor a list of specific payout addresses
+- Obtain txid/vout/amount/blockHeight
+- Check confirmations (if possible)
+- Generate EIP-712 signature
+- EVM tx submission (web3.py/ethers-rs, etc.)
+- Dedupe to local DB (at least sqlite)
+- Completion conditions:
+- The demo runs with one real (or testnet) tx.
 
 ---
 
 ### T0.9 End-to-End Demo Script + README (Hackathon Submission Ready)
 - Priority: P0
 - Status: [x] DONE
-- 목적: 심사위원이 5분 내 이해 가능한 실행 절차를 제공한다.
-- 작업:
-    - `docs/guides/DEMO.md` 작성
-    - 실행 순서(배포 → borrower 등록 → relayer 실행 → payout 감지 → borrow/repay)
-    - 스크린샷/로그 예시(선택)
-- 완료 조건:
-    - 신규 환경에서 문서만 보고 재현 가능(최소한 개발자 기준)
+- Purpose: To provide execution procedures that judges can understand within 5 minutes.
+- work:
+- Created `docs/guides/DEMO.md`
+- Execution order (distribution → borrower registration → relayer execution → payout detection → borrow/repay)
+- Screenshot/log example (optional)
+- Completion conditions:
+- Reproducible in a new environment by just looking at the documentation (at least for developers)
 
 ---
 
-## P1 — Production Track: Bitcoin SPV (Checkpoint 기반)
+## P1 — Production Track: Bitcoin SPV (Checkpoint based)
 
 ### T1.1 SPV Design Finalization (ADR)
 - Priority: P1
 - Status: [x] DONE
-- 목적: Bitcoin SPV를 어떤 안전/가스/운영 가정으로 구현할지 ADR로 고정한다.
-- 포함:
-    - checkpoint trust model(멀티시그/attestor set)
-    - 허용 범위(리타겟 경계 거부, header chain 길이 제한)
-    - 지원 scriptPubKey 타입(P2WPKH 우선)
-- 완료 조건:
-    - `docs/adr/0001-btc-spv.md` 작성 및 승인
+- Purpose: Fix with ADR what safety/gas/operational assumptions Bitcoin SPV will be implemented with.
+- include:
+- checkpoint trust model (multisig/attestor set)
+- Allowed range (retarget boundary rejection, header chain length limit)
+- Support scriptPubKey type (P2WPKH priority)
+- Completion conditions:
+- Created and approved `docs/adr/0001-btc-spv.md`
 
 ---
 
 ### T1.2 CheckpointManager Contract
 - Priority: P1
 - Status: [x] DONE
-- 목적: checkpoint header를 온체인에 등록/관리한다.
-- 작업:
-    - 멀티시그/owner 권한으로 checkpoint set
-    - checkpoint 변경 이벤트
-    - height monotonic 증가 강제
-- 테스트:
-    - 권한 없는 set revert
-    - height 감소 revert
-- 완료 조건:
-    - `BtcSpvVerifier`가 checkpoint를 참조 가능
+- Purpose: Register/manage checkpoint header on-chain.
+- work:
+- Checkpoint set with multisig/owner privileges
+- checkpoint change event
+- Force height monotonic increase
+- test:
+- set revert without permission
+- height decrease revert
+- Completion conditions:
+- `BtcSpvVerifier` can refer to checkpoint
 
 ---
 
-### T1.3 BtcSpvVerifier — Header PoW + Merkle Inclusion + Output Parse (MVP 수준)
+### T1.3 BtcSpvVerifier — Header PoW + Merkle Inclusion + Output Parse (MVP level)
 - Priority: P1
 - Status: [x] DONE
-- 목적: rawTx가 특정 블록에 포함되었고, vout이 borrower payout key와 일치함을 온체인에서 검증한다.
-- 작업:
-    - sha256d(header) <= target(bits) 검증(프리컴파일 sha256 사용)
-    - prevHash 체인 연결 검증
+- Purpose: Verify on-chain that rawTx is included in a specific block and that vout matches the borrower payout key.
+- work:
+- Verify sha256d(header) <= target(bits) (use precompiled sha256)
+- prevHash chain connection verification
     - txid = sha256d(rawTx)
-    - merkle branch로 merkleRoot 도달 검증(Bitcoin 규칙)
-    - rawTx vout parsing(최소 P2WPKH)
-- 테스트:
-    - 고정된 test vector(실데이터)로 verify 성공/실패
-- 완료 조건:
-    - `HashCreditManager`가 verifier를 교체해도 동작
+- Verification of merkleRoot reach with merkle branch (Bitcoin rules)
+- rawTx vout parsing (minimum P2WPKH)
+- test:
+- Verification success/failure with fixed test vector (real data)
+- Completion conditions:
+- `HashCreditManager` works even if the verifier is replaced.
 
 ---
 
 ### T1.4 Proof Builder/Prover (Python)
 - Priority: P1
 - Status: [x] DONE
-- 목적: 제출에 필요한 header chain + merkle branch + rawTx를 구성한다.
-- 작업:
-    - data source: Bitcoin Core RPC 권장(txindex 필요 가능)
-    - 증명 payload 생성
-    - 제출 tx 생성 및 전송
-- 완료 조건:
-    - 지정 txid로 proof 생성 → on-chain verify 성공
+- Purpose: Construct header chain + merkle branch + rawTx required for submission.
+- work:
+- data source: Bitcoin Core RPC recommended (txindex may be required)
+- Creation of proof payload
+- Generate and send submission tx
+- Completion conditions:
+- Proof generation with specified txid → on-chain verification successful
 
 ---
 
-### T1.5 Provenance 강화(선택): Pool Cluster Registry + Heuristic Rules
+### T1.5 Provenance Enhancement (Optional): Pool Cluster Registry + Heuristic Rules
 - Priority: P1
 - Status: [x] DONE
-- 목적: self-transfer 조작 가능성을 낮춘다.
-- 작업:
-    - 풀 payout 클러스터 allowlist (운영 시작)
-    - payout 패턴 룰(간단):
-        - 최소 payout count 충족 전 cap 고정
-        - 단발성 대형 입금은 부분 반영
-- 완료 조건:
-    - 공격 시나리오(자기자금 순환)에서 한도 상승이 제한됨을 테스트/문서로 제시
+- Purpose: Reduce the possibility of self-transfer manipulation.
+- work:
+- Pool payout cluster allowlist (start of operation)
+- Payout pattern rules (simple):
+- Cap is fixed before minimum payout count is met
+- One-time large deposits are partially reflected
+- Completion conditions:
+- Testing/documentation suggests that limit increases are limited in attack scenarios (circulation of own funds)
 
 ---
 
-### T1.6 Creditcoin Testnet SPV 배포 스크립트 + Wiring
+### T1.6 Creditcoin Testnet SPV Deployment Script + Wiring
 - Priority: P1
 - Status: [x] DONE
-- 목적: Creditcoin testnet(chainId=102031)에서 SPV 스택을 **재현 가능하게 배포**하고, Manager가 SPV verifier를 쓰도록 연결한다.
-- 작업:
-    - `CheckpointManager` + `BtcSpvVerifier` 포함한 배포 스크립트 추가(예: `script/DeploySpv.s.sol`)
-    - 배포 후 `HashCreditManager.setVerifier(BtcSpvVerifier)` 호출(또는 처음부터 SPV verifier로 Manager 배포)
-    - 콘솔에 주소 요약 출력 + `.env`에 넣을 키 목록 정리(문서/로그)
-- 완료 조건:
-    - Creditcoin testnet에서 스크립트 1회 실행으로 SPV 관련 컨트랙트 주소를 얻고, Manager verifier가 SPV로 설정된다.
-- 완료 요약:
+- Purpose: **Reproducibly deploy** the SPV stack on Creditcoin testnet (chainId=102031) and connect the Manager to use the SPV verifier.
+- work:
+- Add deployment script including `CheckpointManager` + `BtcSpvVerifier` (e.g. `script/DeploySpv.s.sol`)
+- Call `HashCreditManager.setVerifier(BtcSpvVerifier)` after deployment (or deploy Manager as SPV verifier from the beginning)
+- Output address summary to console + organize list of keys to put in `.env` (document/log)
+- Completion conditions:
+- By executing the script once on the Creditcoin testnet, the SPV-related contract address is obtained, and the Manager verifier is set to SPV.
+- Completion summary:
     - Created `script/DeploySpv.s.sol` - full SPV mode deployment script
     - Deploys: MockUSDC → CheckpointManager → BtcSpvVerifier → RiskConfig → PoolRegistry → LendingVault → HashCreditManager
     - Manager is deployed with BtcSpvVerifier as verifier (not RelayerSigVerifier)
@@ -267,19 +267,19 @@
 
 ---
 
-### T1.7 Checkpoint 등록 툴링 (Bitcoin Core RPC → CheckpointManager)
+### T1.7 Checkpoint registration tooling (Bitcoin Core RPC → CheckpointManager)
 - Priority: P1
 - Status: [x] DONE
-- 목적: **Bitcoin testnet** Bitcoin Core RPC에서 블록 헤더/메타를 읽어서 `CheckpointManager.setCheckpoint()`를 **실수 없이** 실행한다.
-- 작업:
-    - `hashcredit-prover`에 `set-checkpoint` 커맨드 추가(또는 별도 스크립트)
-    - 입력: `height` (또는 `--height`), EVM `RPC_URL`, `PRIVATE_KEY`, `CHECKPOINT_MANAGER` 주소, Bitcoin RPC 접속정보
-        - 기본값(권장): `BITCOIN_RPC_URL=http://127.0.0.1:18332` (Bitcoin Core `-testnet` RPC)
-    - `blockHash`는 **헤더 bytes로 sha256d 계산한 내부 endian(bytes32)** 을 사용(엔디안 혼동 방지)
-    - `timestamp`, `chainWork`를 Bitcoin Core 결과에서 안전하게 파싱
-- 완료 조건:
-    - 지정 height로 checkpoint 등록 트랜잭션이 성공하고, `latestCheckpointHeight()`가 갱신된다.
-- 완료 요약:
+- Purpose: **Bitcoin testnet** Read block header/meta from Bitcoin Core RPC and execute `CheckpointManager.setCheckpoint()` **without mistakes**.
+- work:
+- Add `set-checkpoint` command to `hashcredit-prover` (or separate script)
+- Input: `height` (or `--height`), EVM `RPC_URL`, `PRIVATE_KEY`, `CHECKPOINT_MANAGER` address, Bitcoin RPC connection information
+- Default (recommended): `BITCOIN_RPC_URL=http://127.0.0.1:18332` (Bitcoin Core `-testnet` RPC)
+- `blockHash` uses **internal endian(bytes32)** calculated by sha256d from header bytes (to prevent endian confusion)
+- Securely parse `timestamp` and `chainWork` from Bitcoin Core results
+- Completion conditions:
+- The checkpoint registration transaction with the specified height is successful, and `latestCheckpointHeight()` is updated.
+- Completion summary:
     - Created `hashcredit_prover/evm.py` with EVMClient for contract interactions
     - Added `set-checkpoint` command to CLI
     - Fetches block header from Bitcoin RPC, computes internal hash, and calls setCheckpoint()
@@ -288,17 +288,17 @@
 
 ---
 
-### T1.8 Borrower BTC Address → pubkeyHash 등록 툴링 (BtcSpvVerifier)
+### T1.8 Borrower BTC Address → pubkeyHash registration tooling (BtcSpvVerifier)
 - Priority: P1
 - Status: [x] DONE
-- 목적: borrower의 **Bitcoin testnet** 주소(P2WPKH bech32 `tb1...` / P2PKH base58 `m...`/`n...`)를 받아 **20-byte pubkey hash**를 추출하고 `BtcSpvVerifier.setBorrowerPubkeyHash()`를 실행한다.
-- 작업:
-    - 주소 디코더 구현(bech32 v0 + base58check 최소 구현; 외부 무거운 라이브러리 의존 최소화)
-    - `hashcredit-prover set-borrower-pubkey-hash --borrower 0x.. --btc-address ...` 커맨드 추가
-    - 성공 후 `getBorrowerPubkeyHash(borrower)`로 검증
-- 완료 조건:
-    - 실제 BTC 주소 1개로 pubkey hash가 올바르게 등록되고, 이후 SPV proof가 해당 주소로만 통과한다.
-- 완료 요약:
+- Purpose: Receive the borrower's **Bitcoin testnet** address (P2WPKH bech32 `tb1...` / P2PKH base58 `m...`/`n...`), extract the **20-byte pubkey hash**, and run `BtcSpvVerifier.setBorrowerPubkeyHash()`.
+- work:
+- Address decoder implementation (bech32 v0 + base58check minimal implementation; minimizes dependency on external heavy libraries)
+- Add `hashcredit-prover set-borrower-pubkey-hash --borrower 0x.. --btc-address ...` command
+- After success, verify with `getBorrowerPubkeyHash(borrower)`
+- Completion conditions:
+- The pubkey hash is correctly registered with one actual BTC address, and then the SPV proof passes only to that address.
+- Completion summary:
     - Created `hashcredit_prover/address.py` with bech32 and base58check decoders
     - Supports P2WPKH (tb1q.../bc1q...) and P2PKH (m.../n.../1...) addresses
     - Added `set-borrower-pubkey-hash` CLI command
@@ -308,22 +308,22 @@
 
 ---
 
-### T1.9 SPV Proof 생성 + EVM 제출 커맨드 (txid 단발)
+### T1.9 SPV Proof creation + EVM submission command (txid single shot)
 - Priority: P1
 - Status: [x] DONE
-- 목적: 복잡한 "watcher/relayer" 전에, **Bitcoin testnet txid 한 건을 입력하면** proof를 만들고 `HashCreditManager.submitPayout()`까지 끝내는 단발 플로우를 제공한다.
-- 작업:
-    - `hashcredit-prover submit-proof` 커맨드 추가
-    - 입력:
-        - Bitcoin: `txid`(display), `outputIndex`, `targetHeight`, `checkpointHeight`(또는 자동 선택)
+- Purpose: Before complex "watcher/relayer", provide a one-shot flow that creates a proof by entering one **Bitcoin testnet txid** and completes with `HashCreditManager.submitPayout()`.
+- work:
+- Added `hashcredit-prover submit-proof` command
+- Input:
+- Bitcoin: `txid`(display), `outputIndex`, `targetHeight`, `checkpointHeight` (or auto-select)
         - EVM: `RPC_URL`(Creditcoin), `CHAIN_ID=102031`, `PRIVATE_KEY`, `HASH_CREDIT_MANAGER`
         - borrower EVM address
-    - 내부:
-        - ProofBuilder로 `abi.encode(SpvProof)` 생성
-        - web3.py로 `HashCreditManager.submitPayout(bytes)` 전송 + receipt 확인
-- 완료 조건:
-    - "txid 1건" 입력으로 on-chain payout 반영 트랜잭션이 성공한다.
-- 완료 요약:
+- interior:
+- Generate `abi.encode(SpvProof)` with ProofBuilder
+- Send `HashCreditManager.submitPayout(bytes)` to web3.py + confirm receipt
+- Completion conditions:
+- By entering “1 txid”, the on-chain payout reflection transaction is successful.
+- Completion summary:
     - Added `submit-proof` CLI command to hashcredit-prover
     - Uses existing ProofBuilder to generate SPV proof
     - Calls HashCreditManager.submitPayout(bytes) via EVMClient
@@ -332,19 +332,19 @@
 
 ---
 
-### T1.10 SPV Relayer(감시/자동 제출) + dedupe/confirmations
+### T1.10 SPV Relayer (monitoring/automatic submission) + dedupe/confirmations
 - Priority: P1
 - Status: [x] DONE
-- 목적: 운영 가능한 최소 relayer를 만들어 **Bitcoin testnet 주소 감시 → confirmations 충족 → proof 생성 → submit → dedupe**까지 자동화한다.
-- 작업:
-    - Bitcoin Core RPC 기반 주소 감시(최소: txid 리스트/블록 스캔 전략 중 하나)
-    - checkpoint 선택 로직:
-        - header chain 길이 제약(≤144) 만족하도록 `checkpointHeight` 자동 선택
-    - sqlite dedupe(기존 relayer DB 재사용 가능)
-    - 실패 케이스(재시도/로그/원인 노출) 정리
-- 완료 조건:
-    - 한 주소를 지정하면 payout 트랜잭션을 자동으로 찾아 submit하고, 중복 제출이 방지된다.
-- 완료 요약:
+- Purpose: Create the minimum relayer that can be operated and automate **Bitcoin testnet address monitoring → confirmations satisfaction → proof creation → submission → dedupe**.
+- work:
+- Bitcoin Core RPC-based address monitoring (at least: one of the txid list/block scan strategies)
+- Checkpoint selection logic:
+- Automatic selection of `checkpointHeight` to satisfy header chain length constraints (≤144)
+- sqlite dedupe (can reuse existing relayer DB)
+- Organizing failure cases (retry/log/cause exposure)
+- Completion conditions:
+- If you specify one address, payout transactions are automatically found and submitted, and duplicate submissions are prevented.
+- Completion summary:
     - Created `watcher.py` with AddressWatcher and PayoutStore (SQLite dedupe)
     - Created `relayer.py` with SPVRelayer class for automatic proof submission
     - Added `run-relayer` CLI command with JSON addresses file input
@@ -354,18 +354,18 @@
 
 ---
 
-### T1.11 결정적(offline) SPV fixtures + Manager E2E 테스트 + 문서
+### T1.11 deterministic (offline) SPV fixtures + Manager E2E tests + documentation
 - Priority: P1
 - Status: [x] DONE
-- 목적: 네트워크 없이도 검증 가능한 형태로 **Bitcoin testnet 기반 SPV proof 검증/제출의 회귀 테스트**를 만들고, Creditcoin testnet 기준 운영 문서를 완성한다.
-- 작업:
-    - `test/fixtures/`에 실제 메인넷/테스트넷 tx 기반(또는 최소한 고정 데이터 기반) proof 구성요소 저장
-    - `BtcSpvVerifier.verifyPayout()` 성공/실패 테스트 추가(머클/헤더체인/출력 불일치 등)
-    - `HashCreditManager.submitPayout()`까지 이어지는 E2E 테스트 추가(creditLimit 증가 + replay 방지)
-    - `docs/guides/LOCAL.md`에 Creditcoin testnet SPV 모드 실행/디버깅 섹션 추가
-- 완료 조건:
-    - `forge test`로 SPV 경로의 핵심 검증이 안정적으로 재현되고, 문서만 보고 testnet에서 end-to-end 실행 가능하다.
-- 완료 요약:
+- Purpose: Create a **regression test of Bitcoin testnet-based SPV proof verification/submission** in a form that can be verified without a network, and complete the Creditcoin testnet standard operation document.
+- work:
+- Store actual mainnet/testnet tx-based (or at least fixed data-based) proof components in `test/fixtures/`
+- Added `BtcSpvVerifier.verifyPayout()` success/failure test (merkle/header chain/output mismatch, etc.)
+- Added E2E test leading to `HashCreditManager.submitPayout()` (increase creditLimit + prevent replay)
+- Added Creditcoin testnet SPV mode execution/debugging section to `docs/guides/LOCAL.md`.
+- Completion conditions:
+- With `forge test`, the core verification of the SPV path can be stably reproduced, and it can be executed end-to-end on the testnet just by looking at the document.
+- Completion summary:
     - Created `test/SpvE2E.t.sol` with 8 E2E tests for SPV verification flow
     - Tests: deployment, borrower registration, checkpoint registration, error cases
     - Uses synthetic but structurally valid Bitcoin data for deterministic testing
@@ -375,66 +375,66 @@
 
 ---
 
-### T1.12 Frontend 스캐폴딩 (Vite + React) + 컨트랙트 조회 대시보드
+### T1.12 Frontend Scaffolding (Vite + React) + Contract Inquiry Dashboard
 - Priority: P1
 - Status: [x] DONE
-- 목적: 인턴/심사위원이 “지금 상태가 어떤지”를 바로 볼 수 있는 **웹 대시보드**를 만든다(일단 읽기 위주).
-- 작업:
-    - `apps/web` 생성(Vite + React + TS)
-    - 환경변수 템플릿: `apps/web/.env.example` (`VITE_RPC_URL`, `VITE_CHAIN_ID=102031`, `VITE_HASH_CREDIT_MANAGER`, `VITE_BTC_SPV_VERIFIER`, `VITE_CHECKPOINT_MANAGER` 등)
-    - 화면:
-        - 연결 상태(지갑 연결 여부 / chainId / 현재 계정)
-        - Manager 정보: `owner`, `verifier`, `stablecoin`, `getAvailableCredit(borrower)`, `getBorrowerInfo(borrower)` 조회
-        - Checkpoint 정보: `latestCheckpointHeight`, `getCheckpoint(height)` 조회(읽기)
-    - 배포/실행 명령 문서화(`npm/pnpm install`, `dev`, `build`)
-- 완료 조건:
-    - 브라우저에서 RPC read-only로 Manager/Checkpoint 상태를 조회할 수 있다(지갑 없이도).
-- 완료 요약:
-    - `apps/web` Vite + React + TS 스캐폴딩 추가
-    - `apps/web/.env.example`로 Creditcoin testnet RPC/주소 설정 지원
-    - Manager/Borrower/Checkpoint/SPV verifier read-only 대시보드 구현
-    - `apps/web`에서 `npm run lint`, `npm run build` 통과 확인
+- Purpose: Create a **web dashboard** where interns/judges can immediately see “what the current status is” (focus on reading for now).
+- work:
+- Create `apps/web` (Vite + React + TS)
+- Environment variable template: `apps/web/.env.example` (`VITE_RPC_URL`, `VITE_CHAIN_ID=102031`, `VITE_HASH_CREDIT_MANAGER`, `VITE_BTC_SPV_VERIFIER`, `VITE_CHECKPOINT_MANAGER`, etc.)
+- Screen:
+- Connection status (wallet connected / chainId / current account)
+- Manager information: `owner`, `verifier`, `stablecoin`, `getAvailableCredit(borrower)`, `getBorrowerInfo(borrower)` lookup
+- Checkpoint information: `latestCheckpointHeight`, `getCheckpoint(height)` query (read)
+- Documentation of deployment/execution commands (`npm/pnpm install`, `dev`, `build`)
+- Completion conditions:
+- You can check the Manager/Checkpoint status through RPC read-only in the browser (even without a wallet).
+- Completion summary:
+- Added `apps/web` Vite + React + TS scaffolding
+- Supports Creditcoin testnet RPC/address setting with `apps/web/.env.example`
+- Manager/Borrower/Checkpoint/SPV verifier read-only dashboard implementation
+- Confirm passing `npm run lint` and `npm run build` in `apps/web`
 
 ---
 
-### T1.13 Frontend 쓰기 플로우 (Submit Payout Proof / Borrow / Repay)
+### T1.13 Frontend Write Flow (Submit Payout Proof / Borrow / Repay)
 - Priority: P1
 - Status: [x] DONE
-- 목적: SPV E2E에서 필요한 “쓰기”를 UI로도 수행할 수 있게 한다(운영 편의).
-- 작업:
-    - 지갑 연결(MetaMask 등) + Creditcoin testnet 네트워크 안내(또는 자동 추가)
+- Purpose: To enable “writing” required in SPV E2E to be performed through the UI (operational convenience).
+- work:
+- Wallet connection (MetaMask, etc.) + Creditcoin testnet network guidance (or automatic addition)
     - `submitPayout(bytes)`:
-        - 사용자가 `hashcredit-prover`가 뽑아준 proof hex(`0x...`)를 붙여넣고 제출
-        - tx hash/receipt/에러 메시지 표시
+- The user pastes the proof hex (`0x...`) selected by `hashcredit-prover` and submits it.
+- tx hash/receipt/error message display
     - `borrow(uint256)`:
-        - amount 입력(6 decimals 가이드 포함) 후 borrow tx 전송
+- Enter amount (including 6 decimals guide) and send borrow tx
     - `repay(uint256)`:
-        - repay 전에 `stablecoin.approve(manager, amount)` 버튼 제공(필요 시)
-        - repay tx 전송
-- 완료 조건:
-    - UI에서 proof 제출 1회 성공 + borrower borrow/repay(approve 포함)가 실행된다.
-- 완료 요약:
-    - 지갑 연결 + `wallet_switchEthereumChain`/`wallet_addEthereumChain` 기반 체인 전환 버튼 추가
-    - UI에서 `submitPayout(bytes)`/`borrow(uint256)`/`approve(spender,amount)`/`repay(uint256)` 전송 가능
-    - 관리자용 버튼 추가: `registerBorrower`, `setVerifier`, `setBorrowerPubkeyHash`
-    - 트랜잭션 상태(pending/confirmed/error) 표시 패널 추가
+- Provide `stablecoin.approve(manager, amount)` button before repayment (if necessary)
+- send repay tx
+- Completion conditions:
+- Proof submission is successful once in the UI + borrower borrow/repay (including approve) is executed.
+- Completion summary:
+- Wallet connection + Add chain switch button based on `wallet_switchEthereumChain`/`wallet_addEthereumChain`
+- `submitPayout(bytes)`/`borrow(uint256)`/`approve(spender,amount)`/`repay(uint256)` can be sent from the UI
+- Added buttons for administrator: `registerBorrower`, `setVerifier`, `setBorrowerPubkeyHash`
+- Added transaction status (pending/confirmed/error) display panel
 
 ---
 
-### T1.14 (선택) Frontend ↔ Prover/Bitcoin Core 브리지 API
+### T1.14 (Optional) Frontend ↔ Prover/Bitcoin Core Bridge API
 - Priority: P2
 - Status: [x] DONE
-- 목적: 브라우저가 Bitcoin Core RPC에 직접 붙을 수 없으므로, **로컬/서버에서 prover를 실행**해주는 얇은 API를 제공한다(완전 자동화 옵션).
-- 작업:
-    - `apps/api`(또는 `offchain/api`)에 최소 HTTP API:
+- Purpose: Since browsers cannot attach directly to Bitcoin Core RPC, we provide a thin API that **runs the probe locally/on a server** (fully automated option).
+- work:
+- Minimum HTTP API in `apps/api` (or `offchain/api`):
         - `POST /spv/build-proof` (txid/outputIndex/targetHeight/borrower → proof hex)
         - `POST /checkpoint/set` (height → checkpoint tx)
-    - 인증/보안:
-        - 로컬 전용(기본 `127.0.0.1` 바인딩) + 간단 토큰/allowlist
-    - `apps/web`에서 API를 호출해 proof 생성/체크포인트 등록을 UI에서 원클릭으로 수행(선택)
-- 완료 조건:
-    - (로컬 기준) UI에서 txid만 넣으면 proof 생성+제출까지 한 번에 가능하다(옵션).
-- 완료 요약:
+- Authentication/Security:
+- Local only (default `127.0.0.1` binding) + simple token/allowlist
+- Call API from `apps/web` to create proof/register checkpoint with one click on UI (optional)
+- Completion conditions:
+- (Local standard) You can create and submit proof at once by simply entering the txid in the UI (optional).
+- Completion summary:
     - Created `offchain/api` with FastAPI-based HTTP server
     - Endpoints: `POST /spv/build-proof`, `POST /spv/submit`, `POST /checkpoint/set`, `POST /borrower/set-pubkey-hash`, `GET /health`
     - Local-only binding (127.0.0.1) with optional token authentication via X-API-Key header
@@ -449,14 +449,14 @@
 ### T2.1 Gas Profiling + Limits
 - Priority: P2
 - Status: [x] DONE
-- 목적: proof 제출 비용, 루프 길이(merkle branch/hdr chain) 상한을 설정한다.
-- 작업:
+- Purpose: Set upper limits on proof submission cost and loop length (merkle branch/hdr chain).
+- work:
     - branch length max
     - header chain max
-    - revert reason 명확화
-- 완료 조건:
-    - 비용/상한 문서화
-- 완료 요약:
+- Clarification of revert reason
+- Completion conditions:
+- Documentation of costs/caps
+- Completion summary:
     - Limits already defined in BtcSpvVerifier: MAX_HEADER_CHAIN=144, MAX_MERKLE_DEPTH=20, MAX_TX_SIZE=4096, MIN_CONFIRMATIONS=6
     - Created `test/GasProfile.t.sol` with 23 gas profiling tests
     - Created `docs/gas-limits.md` documenting all gas costs and limits
@@ -467,13 +467,13 @@
 ### T2.2 Audit Checklist + Threat Model Doc
 - Priority: P2
 - Status: [x] DONE
-- 목적: 심사위원/VC/외주 인수인계를 위한 보안 문서를 만든다.
-- 산출물:
+- Purpose: Create security documents for reviewer/VC/outsourcing handover.
+- Output:
     - `docs/threat-model.md`
     - `docs/audit-checklist.md`
-- 완료 조건:
-    - 주요 위협(oracle compromise, replay, reorg, self-transfer, key loss) 대응이 정리됨
-- 완료 요약:
+- Completion conditions:
+- Responses to major threats (oracle compromise, replay, reorg, self-transfer, key loss) have been organized.
+- Completion summary:
     - Created `docs/threat-model.md` covering 8 threat categories with mitigations
     - Created `docs/audit-checklist.md` with 15 sections for comprehensive code review
     - Documented oracle compromise, replay, reorg, self-transfer, key loss threats and defenses
@@ -481,190 +481,190 @@
 
 ---
 
-### T2.3 (Critical) SPV Difficulty(bits) 검증 + Retarget Boundary 차단
+### T2.3 (Critical) SPV Difficulty(bits) verification + Retarget Boundary blocking
 - Priority: P0
 - Status: [x] DONE
-- 목적: `BtcSpvVerifier`가 **임의로 낮춘 bits(쉬운 난이도)** 를 받아들이는 취약점을 제거해, 가짜 헤더 체인/가짜 payout으로 한도 무제한 상승이 불가능하도록 한다.
-- 배경:
-    - 현재 `contracts/BtcSpvVerifier.sol`의 `_verifyHeaderChain()`은 `header.bits`가 "해당 height에서 기대되는 값"인지 검증하지 않는다(주석만 있음).
-    - 이 상태에선 공격자가 `bits`를 쉽게 만들고 짧은 시간에 헤더를 "채굴"해 SPV를 위조할 수 있다.
-- 작업:
-    - 체크포인트에 **난이도 앵커**(예: `bits` 또는 `header` bytes)를 저장하도록 `CheckpointManager`/`ICheckpointManager` 확장
-        - 옵션 A: `Checkpoint { ... uint32 bits; }`
-        - 옵션 B: `Checkpoint`에 `bytes header` 저장 + `blockHash == sha256d(header)` 검증
-    - `_verifyHeaderChain()`에서 아래를 강제:
-        - retarget boundary crossing 금지: `(checkpointHeight / 2016) == (targetHeight / 2016)` (메인넷 기준)
-        - 체인 전체 `header.bits == checkpointBits` (동일 난이도 epoch 가정)
-    - (테스트넷/리그테스트 지원 시) testnet special difficulty rule 사용 여부를 명시하고, 지원하지 않으면 명확히 revert 사유/문서화
-    - `offchain/prover`의 `set-checkpoint`/API도 새 필드에 맞게 업데이트(비트/헤더 추출)
-    - ADR/문서 업데이트: `docs/adr/0001-btc-spv.md`에 실제 구현 제약/지원 네트워크를 명시
-- 테스트:
-    - "bits 낮춤" 공격 케이스: 올바른 prevHash 링크 + 쉬운 bits로 만든 헤더 체인을 제출하면 **반드시 revert**
-    - retarget boundary crossing 케이스: boundary를 넘는 proof는 **반드시 revert**
-    - 정상 케이스: 올바른 bits/epoch 내에서 헤더 체인 검증 성공(가능하면 fixture 기반)
-- 완료 조건:
-    - `BtcSpvVerifier`가 **checkpoint 난이도와 일치하지 않는 bits** 를 가진 헤더 체인을 거부한다.
-    - 위 테스트가 `forge test`에 포함되어 회귀를 막는다.
-- 완료 요약:
-    - ICheckpointManager.Checkpoint struct에 `uint32 bits` 필드 추가
-    - CheckpointManager.setCheckpoint()에 bits 파라미터 추가 및 검증
-    - BtcSpvVerifier._verifyHeaderChain()에서 bits 검증 및 retarget boundary crossing 검증 추가
-    - 새로운 에러 타입: `DifficultyMismatch(expected, actual)`, `RetargetBoundaryCrossing(checkpointHeight, targetHeight)`
-    - offchain prover/API에서 bits 추출 및 제출 지원
-    - 테스트: test_verifyPayout_revertsOnDifficultyMismatch, test_verifyPayout_revertsOnRetargetBoundaryCrossing
-    - ADR 0001 문서 업데이트
+- Purpose: Eliminate the vulnerability of `BtcSpvVerifier` accepting **arbitrarily lowered bits (easy difficulty)**, making it impossible to increase the limit unlimitedly with fake header chain/fake payout.
+- Background:
+- Currently, `_verifyHeaderChain()` in `contracts/BtcSpvVerifier.sol` does not verify that `header.bits` is “the expected value for the height” (only comments).
+- In this state, an attacker can easily create `bits` and “mine” the header in a short period of time to forge the SPV.
+- work:
+- Extends `CheckpointManager`/`ICheckpointManager` to store **difficulty anchors** (e.g. `bits` or `header` bytes) on checkpoints.
+- Option A: `Checkpoint { ... uint32 bits; }`
+- Option B: Store `bytes header` in `Checkpoint` + Verify `blockHash == sha256d(header)`
+- Force the following in `_verifyHeaderChain()`:
+- Prohibit retarget boundary crossing: `(checkpointHeight / 2016) == (targetHeight / 2016)` (based on mainnet)
+- Chain-wide `header.bits == checkpointBits` (assuming the same difficulty epoch)
+- (When applying for testnet/league testing) Specify whether to use the testnet special difficulty rule, and if not supported, clearly state/document the reason for revert.
+- `set-checkpoint`/API of `offchain/prover` also updated to match new fields (bit/header extraction)
+- ADR/Document update: Specify actual implementation constraints/supported networks in `docs/adr/0001-btc-spv.md`
+- test:
+- "lower bits" attack case: **must revert** if you submit a header chain with the correct prevHash link + easy bits
+- retarget boundary crossing case: proof that crosses the boundary **must be reverted**
+- Normal case: Header chain verification successful within the correct bits/epoch (preferably fixture-based)
+- Completion conditions:
+- `BtcSpvVerifier` rejects header chains with **bits** that do not match the checkpoint difficulty.
+- The above test is included in `forge test` to prevent regression.
+- Completion summary:
+- Add `uint32 bits` field to ICheckpointManager.Checkpoint struct.
+- Add and verify bits parameter to CheckpointManager.setCheckpoint()
+- Added bits verification and retarget boundary crossing verification in BtcSpvVerifier._verifyHeaderChain()
+- New error types: `DifficultyMismatch(expected, actual)`, `RetargetBoundaryCrossing(checkpointHeight, targetHeight)`
+- Support for extracting and submitting bits from offchain prover/API
+- Tests: test_verifyPayout_revertsOnDifficultyMismatch, test_verifyPayout_revertsOnRetargetBoundaryCrossing
+- Updated ADR 0001 document
 
 ---
 
-### T2.4 (Critical) SPV Confirmations 정의/검증 방식 수정
+### T2.4 (Critical) SPV Confirmations definition/verification method modification
 - Priority: P0
 - Status: [x] DONE
-- 목적: `MIN_CONFIRMATIONS`가 “checkpoint↔txBlock 거리”가 아니라 **tx 포함 블록이 tip 대비 몇 블록 깊이인지** 를 의미하도록 proof 구조/검증을 바로잡는다.
-- 배경:
-    - 현재 `contracts/BtcSpvVerifier.sol`은 `headers.length >= MIN_CONFIRMATIONS`만 확인하는데, 이는 일반적인 confirmations 의미와 다르다.
-- 작업:
-    - proof 포맷 재정의(권장안):
-        - `headers`를 `checkpoint+1 → tip`까지 제공
-        - `txBlockIndex`(= headers 내 tx가 포함된 블록 인덱스) 필드 추가
-        - confirmations 검증: `headers.length - 1 - txBlockIndex >= MIN_CONFIRMATIONS - 1`
-        - merkle proof 검증 시 `headers[txBlockIndex]`의 `merkleRoot` 사용
-    - 기존 `offchain/prover`의 proof builder/CLI/API를 새 포맷에 맞춰 수정
-    - `PayoutEvidence.blockHeight`가 “tx 포함 블록 height”로 정확히 산출되도록 정리
-- 테스트:
-    - confirmations 부족 케이스: tip 체인 내에서 txBlockIndex가 tip에 너무 가까우면 revert
-    - 정상 케이스: MIN_CONFIRMATIONS 충족 시 verify 성공
-    - 문서/예제: `docs/guides/LOCAL.md`(또는 관련 가이드)에 proof 입력값 의미 갱신
-- 완료 조건:
-    - "confirmations"가 일반적인 정의로 동작하고, 테스트로 보장된다.
-- 완료 요약:
-    - SpvProof struct에 `txBlockIndex` 필드 추가 (uint32)
-    - Confirmations 계산: `headers.length - txBlockIndex >= MIN_CONFIRMATIONS`
-    - Merkle proof는 `headers[txBlockIndex]`의 merkleRoot로 검증
-    - `PayoutEvidence.blockHeight`가 tx 포함 블록 height로 정확히 계산
-    - 새 에러 타입: `TxBlockIndexOutOfRange(txBlockIndex, headersLength)`
-    - `_verifyHeaderChainFull()` 함수 추가하여 모든 헤더 파싱/반환
-    - offchain prover의 `build_proof()`에 `tip_height` 파라미터 추가 (기본: target+5)
-    - 테스트: txBlockIndex 범위 초과, confirmations 부족, confirmations 계산 검증
-    - `docs/guides/LOCAL.md`에 SPV Proof Format 문서 추가
+- Purpose: Correct the proof structure/verification so that `MIN_CONFIRMATIONS` does not mean “checkpoint↔txBlock distance” but **how many blocks deep the block containing tx is compared to the tip**.
+- Background:
+- Currently `contracts/BtcSpvVerifier.sol` only checks `headers.length >= MIN_CONFIRMATIONS`, which is different from the normal meaning of confirmations.
+- work:
+- Redefine proof format (recommended):
+- Provides `headers` from `checkpoint+1 → tip`
+- Added `txBlockIndex` (= block index containing tx in headers) field
+- Verify confirmations: `headers.length - 1 - txBlockIndex >= MIN_CONFIRMATIONS - 1`
+- Use `merkleRoot` of `headers[txBlockIndex]` when verifying merkle proof.
+- Modify the existing `offchain/prover` proof builder/CLI/API to fit the new format.
+- Organized so that `PayoutEvidence.blockHeight` is accurately calculated as “block height including tx”
+- test:
+- Case of lack of confirmations: revert if txBlockIndex is too close to tip in tip chain
+- Normal case: Verification succeeds when MIN_CONFIRMATIONS is met.
+- Documentation/example: Update proof input value meaning in `docs/guides/LOCAL.md` (or related guide)
+- Completion conditions:
+- "confirmations" act as a general definition and are guaranteed by testing.
+- Completion summary:
+- Add `txBlockIndex` field to SpvProof struct (uint32)
+- Confirmations calculation: `headers.length - txBlockIndex >= MIN_CONFIRMATIONS`
+- Merkle proof is verified with merkleRoot of `headers[txBlockIndex]`
+- `PayoutEvidence.blockHeight` is calculated accurately as block height including tx
+- New error type: `TxBlockIndexOutOfRange(txBlockIndex, headersLength)`
+- Added `_verifyHeaderChainFull()` function to parse/return all headers
+- Add `tip_height` parameter to `build_proof()` of offchain prover (default: target+5)
+- Test: txBlockIndex out of range, insufficient confirmations, verify confirmations calculation
+- Add SPV Proof Format document to `docs/guides/LOCAL.md`
 
 ---
 
-### T2.5 (Critical) Verifier 직접 호출로 인한 Griefing/DoS 방지
+### T2.5 (Critical) Prevention of Griefing/DoS due to direct Verifier call
 - Priority: P0
 - Status: [x] DONE
-- 목적: 제3자가 `RelayerSigVerifier.verifyPayout()`/`BtcSpvVerifier.verifyPayout()`을 **직접 호출**하여 `_processedPayouts`를 선점해 `HashCreditManager.submitPayout()`을 영구적으로 막는 DoS를 제거한다.
-- 작업(택1 또는 조합):
-    - 옵션 A(권장): verifier에서 `_processedPayouts`/replay 체크 제거 → replay는 `HashCreditManager.processedPayouts` 단일 레이어로 통일
-    - 옵션 B: verifier에 `manager`를 저장하고 `onlyManager`로 `verifyPayout()` 제한(+ manager 변경/이벤트)
-    - 옵션 C: verifier는 replay를 “검증 실패”로 보지 않고 evidence 반환(단, manager가 최종 replay 방지)
-    - `contracts/interfaces/IVerifierAdapter.sol` 설계 정리(verify가 stateful이어야 하는지 재검토)
-- 테스트:
-    - 공격 시나리오 재현: attacker가 verifier를 먼저 호출해도, 이후 `HashCreditManager.submitPayout()`이 정상 처리되는지
-    - replay는 manager에서만 막히는지(동일 txid/vout 2회 제출 revert)
-- 완료 조건:
-    - verifier 직접 호출로 payout 처리가 막히지 않는다.
-    - replay 방지가 단일 레이어(또는 의도된 레이어)에서만 일관되게 동작한다.
-- 완료 요약:
-    - 옵션 A 구현: verifier에서 `_processedPayouts` 제거, replay는 Manager 단일 레이어로 통일
-    - BtcSpvVerifier: `_processedPayouts` 매핑/체크/마킹 제거, `isPayoutProcessed()` 항상 false 반환
-    - RelayerSigVerifier: 동일하게 stateless로 수정
-    - MockVerifier: 테스트용 mock도 stateless로 수정
-    - 테스트 추가: `test_griefingPrevention_verifierDirectCall()`, `test_replayProtectionOnlyInManager()`
-    - 기존 테스트 수정: verifier replay 테스트를 stateless 동작으로 업데이트
+- Purpose: Eliminate DoS where a third party permanently blocks `HashCreditManager.submitPayout()` by preempting `_processedPayouts` by **directly calling** `RelayerSigVerifier.verifyPayout()`/`BtcSpvVerifier.verifyPayout()`.
+- Task (select 1 or combination):
+- Option A (recommended): Remove `_processedPayouts`/replay check from verifier → Unify replay into `HashCreditManager.processedPayouts` single layer
+- Option B: store `manager` in verifier and limit `verifyPayout()` to `onlyManager` (+ manager changes/events)
+- Option C: The verifier does not consider the replay as a “verification failure” and returns evidence (however, the manager prevents the final replay)
+- `contracts/interfaces/IVerifierAdapter.sol` design cleanup (reconsider whether verify should be stateful)
+- test:
+- Reproducing the attack scenario: Even if the attacker calls the verifier first, is `HashCreditManager.submitPayout()` processed normally?
+- Is replay only blocked by the manager (submit the same txid/vout twice and revert)?
+- Completion conditions:
+- Payout processing is not blocked by calling the verifier directly.
+- Replay prevention works consistently only on a single layer (or intended layer).
+- Completion summary:
+- Implement Option A: Remove `_processedPayouts` from verifier, unify replay into a single layer of Manager.
+- BtcSpvVerifier: Remove `_processedPayouts` mapping/checking/marking, `isPayoutProcessed()` always returns false
+- RelayerSigVerifier: Same as modified to stateless
+- MockVerifier: Test mocks are also modified to be stateless.
+- Added tests: `test_griefingPrevention_verifierDirectCall()`, `test_replayProtectionOnlyInManager()`
+- Modification of existing test: update verifier replay test to stateless behavior
 
 ---
 
-### T2.6 (High) LendingVault 이자 누적(totalAssets) 버그 수정 + Share Dilution 방지
+### T2.6 (High) LendingVault interest accumulation (totalAssets) bug fix + Share Dilution prevention
 - Priority: P1
 - Status: [x] DONE
-- 목적: `LendingVault`에서 `_accrueInterest()`로 누적한 `accumulatedInterest`가 `totalAssets()`에 반영되지 않아, 중간 호출(예: deposit/withdraw/borrow/repay) 시 **share 가격이 왜곡/희석**되는 문제를 해결한다.
-- 작업:
+- Purpose: Solve the problem that the `accumulatedInterest` accumulated with `_accrueInterest()` in `LendingVault` is not reflected in `totalAssets()`, and the **share price is distorted/diluted** during intermediate calls (e.g. deposit/withdraw/borrow/repay).
+- work:
     - `contracts/LendingVault.sol`:
-        - `totalAssets()`에 `accumulatedInterest`를 포함(또는 누적 변수 제거 후 항상 정확히 계산되는 구조로 리팩터링)
-        - `PRECISION` 등 미사용 상수/변수 정리
-        - (선택) `repayFunds`의 `actualRepay` 네이밍/주석을 “principal vs interest”로 명확화
-- 테스트:
-    - “이자 발생 후 추가 deposit” 시 신규 depositor가 이자를 공짜로 가져가지 못함(share dilution 방지) 테스트 추가
-    - “이자 발생 후 withdraw” 시 기대값과 일치하는지 테스트 보강
-- 완료 조건:
-    - 이자 누적이 어떤 호출 순서에서도 `totalAssets()/convertToShares/convertToAssets`에 일관되게 반영된다.
-- 완료 요약:
-    - `totalAssets()` 수정: `balanceOf + totalBorrowed + accumulatedInterest + _pendingInterest()`
-    - `repayFunds()` 수정: 이자 부분이 들어오면 `accumulatedInterest` 차감 (중복 계산 방지)
-    - Share dilution 방지 테스트 추가: `test_shareDilutionPrevention_depositAfterInterestAccrual()`
-    - `accumulatedInterest` 반영 테스트: `test_accumulatedInterestIncludedInTotalAssets()`
-    - 이자 차감 테스트: `test_interestDeductionOnRepay()`, `test_partialInterestRepay()`
+- Include `accumulatedInterest` in `totalAssets()` (or remove accumulated variables and refactor them to a structure that is always calculated correctly)
+- Cleaning up unused constants/variables such as `PRECISION`
+- (Optional) Clarify naming/comment of `actualRepay` in `repayFunds` as “principal vs interest”
+- test:
+- Added test to prevent new depositor from taking interest for free (preventing share dilution) when making “additional deposit after interest accrual”
+- Reinforced testing to see if it matches the expected value when “withdrawing after accruing interest”
+- Completion conditions:
+- Interest accumulation is consistently reflected in `totalAssets()/convertToShares/convertToAssets` in any calling order.
+- Completion summary:
+- Modify `totalAssets()`: `balanceOf + totalBorrowed + accumulatedInterest + _pendingInterest()`
+- `repayFunds()` modification: `accumulatedInterest` is deducted when the interest portion comes in (prevent double calculation)
+- Add Share dilution prevention test: `test_shareDilutionPrevention_depositAfterInterestAccrual()`
+- `accumulatedInterest` reflection test: `test_accumulatedInterestIncludedInTotalAssets()`
+- Interest deduction tests: `test_interestDeductionOnRepay()`, `test_partialInterestRepay()`
 
 ---
 
-### T2.7 (High) Manager/Vault 이자 모델 정합성(부채 이자 반영) 구현
+### T2.7 (High) Manager/Vault interest model consistency (debt interest reflection) implementation
 - Priority: P1
 - Status: [x] DONE
-- 목적: 현재 `HashCreditManager.currentDebt`는 이자를 반영하지 않아 borrower가 이자를 상환할 수 없고, `LendingVault`의 이자 모델과 불일치한다. borrower debt에 이자를 반영해 vault에 이자 수익이 실제로 귀속되도록 한다.
-- 작업:
-    - 설계 선택:
-        - (A) Manager에서 이자 지표(borrowIndex)로 `currentDebt`를 시간에 따라 증가시키고 repay가 이자→원금 순으로 상환
-        - (B) Vault가 “이자 포함 debt”를 추적하고 manager는 원금만 추적(단, borrower 상환 UX/정확한 debt 산출 필요)
-    - `HashCreditManager.repay()`가 “원금+이자” 상환을 지원하도록 수정(현 cap 로직 재검토)
-    - UI/오프체인: borrower가 현재 debt(이자 포함)를 조회/상환할 수 있게 endpoint/뷰 추가
-- 테스트:
-    - borrow → 시간 경과 → repay 시 debt가 이자 포함으로 증가하고, repay 후 vault balance/totalBorrowed(또는 accounting)가 기대대로 변화
-    - 상환액이 이자 미만/이자+원금/초과 등 엣지 케이스
-- 완료 조건:
-    - borrower가 이자를 실제로 상환 가능하고, LP 수익이 회계상/실제 토큰 흐름 모두 일치한다.
-- 완료 요약:
-    - `IHashCreditManager.BorrowerInfo`에 `lastDebtUpdateTimestamp` 필드 추가
-    - `IHashCreditManager`에 `getCurrentDebt(address)`, `getAccruedInterest(address)` 함수 추가
-    - `HashCreditManager._calculateAccruedInterest()` 구현: Vault의 borrowAPR()을 조회하여 시간 기반 이자 계산
-    - `borrow()` 수정: 기존 accrued interest를 principal에 합산 후 새 borrow 추가
-    - `repay()` 수정: 이자 우선 상환, 남은 금액으로 원금 상환, Vault에 전체 금액 전달
-    - `getAvailableCredit()` 수정: 이자 포함한 총 debt 기준으로 available credit 계산
-    - 7개 테스트 추가: interest accrual, repay interest first, repay capped, compound interest, available credit with interest, vault receives interest
+- Purpose: Currently, `HashCreditManager.currentDebt` does not reflect interest, so the borrower cannot repay the interest, and it is inconsistent with the interest model of `LendingVault`. Interest is reflected in the borrower debt so that the interest income actually accrues to the vault.
+- work:
+- Design selection:
+- (A) In the Manager, `currentDebt` is increased over time as an interest index (borrowIndex), and repayment is made in the order of interest → principal.
+- (B) Vault tracks “debt including interest” and manager tracks only principal (however, borrower repayment UX/accurate debt calculation is required)
+- Modified `HashCreditManager.repay()` to support “principal + interest” repayment (reexamine current cap logic)
+- UI/off-chain: Add endpoint/view so borrowers can view/repay current debt (including interest)
+- test:
+- Borrow → Time passes → When repaying, debt increases including interest, and after repaying, vault balance/totalBorrowed (or accounting) changes as expected.
+- Edge cases such as repayment amount less than interest/interest+principal/excess
+- Completion conditions:
+- The borrower can actually repay the interest, and LP profits match both accounting and actual token flows.
+- Completion summary:
+- Add `lastDebtUpdateTimestamp` field to `IHashCreditManager.BorrowerInfo`
+- Added `getCurrentDebt(address)` and `getAccruedInterest(address)` functions to `IHashCreditManager`
+- Implementation of `HashCreditManager._calculateAccruedInterest()`: Calculate time-based interest by querying Vault's borrowAPR()
+- `borrow()` modification: add existing accrued interest to principal and add new borrow
+- Modify `repay()`: Repay interest first, repay principal with remaining amount, transfer entire amount to Vault
+- Modification of `getAvailableCredit()`: Calculate available credit based on total debt including interest.
+- Added 7 tests: interest accrual, repay interest first, repay capped, compound interest, available credit with interest, vault receives interest
 
 ---
 
-### T2.8 ERC20 안전성(SafeERC20) + Approval 호환성 + Reentrancy 방어
+### T2.8 ERC20 safety (SafeERC20) + Approval compatibility + Reentrancy defense
 - Priority: P2
 - Status: [x] DONE
-- 목적: 비표준 ERC20(리턴값 false, approve=0 선행 요구 등) 및 토큰 콜백 기반 reentrancy에 대한 방어를 추가한다.
-- 작업:
-    - OpenZeppelin `SafeERC20`/`ReentrancyGuard` 도입
+- Purpose: Add defense against non-standard ERC20 (return value false, approve=0 prerequisite, etc.) and token callback-based reentrancy.
+- work:
+- OpenZeppelin `SafeERC20`/`ReentrancyGuard` introduced
     - `contracts/HashCreditManager.sol`/`contracts/LendingVault.sol`:
-        - `transfer/transferFrom/approve`를 `safeTransfer/safeTransferFrom/safeIncreaseAllowance`(또는 safeApprove 패턴)로 교체
-        - `deposit/withdraw/repay` 등 외부 토큰 호출 경로에 `nonReentrant` 적용 및 상태 업데이트 순서 재검토(특히 deposit)
-- 테스트:
-    - “false 반환 ERC20”, “approve 0 필요 ERC20” mock으로 회귀 테스트 추가
-    - reentrancy 시나리오(가능하면 ERC777 스타일 mock)에서 share/부채 불변식이 깨지지 않음을 확인
-- 완료 조건:
-    - 토큰 호환성/재진입 공격면이 줄고, 테스트로 보장된다.
-- 완료 요약:
-    - OpenZeppelin `SafeERC20` 및 `ReentrancyGuard` 도입 (lib/openzeppelin-contracts)
+- Replace `transfer/transferFrom/approve` with `safeTransfer/safeTransferFrom/safeIncreaseAllowance` (or safeApprove pattern)
+- Apply `nonReentrant` to external token call paths such as `deposit/withdraw/repay` and reexamine the status update order (especially deposit)
+- test:
+- Added regression test with mock “Return false ERC20”, “Requires approve 0 ERC20”
+- Verify that share/debt invariants are not broken in reentrancy scenarios (ERC777 style mocks if possible)
+- Completion conditions:
+- Token compatibility/re-entrancy attack surface is reduced and guaranteed through testing.
+- Completion summary:
+- OpenZeppelin `SafeERC20` and `ReentrancyGuard` introduced (lib/openzeppelin-contracts)
     - `LendingVault.sol`: `transfer` → `safeTransfer`, `transferFrom` → `safeTransferFrom`
-    - `LendingVault.sol`: `deposit`, `withdraw`, `borrowFunds`, `repayFunds`에 `nonReentrant` 적용
+- `LendingVault.sol`: Apply `nonReentrant` to `deposit`, `withdraw`, `borrowFunds`, `repayFunds`
     - `HashCreditManager.sol`: `transferFrom` → `safeTransferFrom`, `approve` → `forceApprove`
-    - `HashCreditManager.sol`: `borrow`, `repay`에 `nonReentrant` 적용
-    - Mock 토큰 추가: `MockUSDT` (approve 0 필요), `MockNoReturnERC20` (리턴값 없음), `ReentrantToken` (callback 기반)
-    - 9개 테스트 추가: USDT-style 호환성, no-return 토큰 호환성, reentrancy 방어
+- `HashCreditManager.sol`: Apply `nonReentrant` to `borrow`, `repay`
+- Add Mock tokens: `MockUSDT` (requires approve 0), `MockNoReturnERC20` (no return value), `ReentrantToken` (based on callback)
+- Added 9 tests: USDT-style compatibility, no-return token compatibility, reentrancy defense
 
 ---
 
-### T2.9 Trailing Revenue Window 실제 적용 + Min Payout 필터링
+### T2.9 Trailing Revenue Window actual application + Min Payout filtering
 - Priority: P1
 - Status: [x] DONE
-- 목적: `RiskConfig.windowSeconds`에 맞는 trailing revenue window를 실제로 적용하고, `minPayoutSats` 이하의 스팸/미세 payout이 한도에 누적되지 않도록 한다.
-- 작업:
+- Purpose: Actually apply the trailing revenue window that matches `RiskConfig.windowSeconds` and prevent spam/fine payouts below `minPayoutSats` from accumulating to the limit.
+- work:
     - `contracts/HashCreditManager.sol`:
-        - payout 이벤트를 시간 기반으로 윈도우에서 제외(pruning)하는 로직 추가(가스/스토리지 고려한 자료구조 선택)
-        - `evidence.blockTimestamp`의 유효성(미래/과거 허용 범위) 검증 정책 명시
-        - `minPayoutSats` 미만은 effectiveAmount=0 처리 또는 아예 revert/ignore 정책 결정
-    - `contracts/RiskConfig.sol`/문서:
-        - trailing window와 new borrower period가 같은 `windowSeconds`를 공유하는 현재 의미 혼선을 정리(필요 시 파라미터 분리)
-- 테스트:
-    - 윈도우 경계에서 payout이 만료되면 creditLimit이 감소/재계산되는지
-    - min payout 미만이 creditLimit에 영향 주지 않는지
-- 완료 조건:
-    - trailing window가 실제로 동작하고, 스팸 payout으로 한도 누적이 불가하다.
-- 완료 요약:
+- Add logic to exclude (pruning) payout events from the window based on time (select data structure considering gas/storage)
+- Specifies validation policy for validity (future/past tolerance range) of `evidence.blockTimestamp`
+- If less than `minPayoutSats`, effectiveAmount=0 is processed or revert/ignore policy is determined.
+- `contracts/RiskConfig.sol`/Document:
+- Clearing up current semantic confusion where trailing window and new borrower period share the same `windowSeconds` (separate parameters if necessary)
+- test:
+- Is creditLimit reduced/recalculated when payout expires at the window boundary?
+- Does less than min payout affect creditLimit?
+- Completion conditions:
+- The trailing window actually works, and limit accumulation is not possible with spam payout.
+- Completion summary:
     - Add payout history storage with MAX_PAYOUT_RECORDS=100 DoS protection
     - Implement lazy pruning of expired payouts in trailing window
     - Add minPayoutSats filtering (below-minimum payouts marked processed but don't count toward credit)
@@ -675,20 +675,20 @@
 
 ---
 
-### T2.10 txid Endianness/표준화(온체인↔오프체인 일관성)
+### T2.10 txid Endianness/Standardization (on-chain↔off-chain consistency)
 - Priority: P2
 - Status: [x] DONE
-- 목적: txid 표현(디스플레이 big-endian vs 내부 little-endian)이 컴포넌트별로 달라 verifier 교체/운영 시 혼선을 만들 수 있으므로, "프로토콜 표준 txid 바이트 순서"를 정하고 전 구간에 적용한다.
-- 작업:
-    - 표준 정의: `bytes32 txid`는 "Bitcoin 내부 바이트(sha256d 결과 그대로)"로 통일(권장)
-    - `offchain/relayer`의 `txid_to_bytes32` 동작/주석 정정 및 reverse 처리 적용
-    - `offchain/prover` proof builder도 표준에 맞춰 txid 계산/검증 로직 정리
-    - 문서/예제 업데이트(입력 txid 포맷, hex reverse 여부)
-- 테스트:
-    - 동일 tx에 대해 relayer/프로버/온체인에서 txid가 동일하게 취급됨을 단위 테스트로 확인
-- 완료 조건:
-    - txid 관련 버그/운영 혼선(중복 처리, 검증 실패)이 표준화로 제거된다.
-- 완료 요약:
+- Purpose: Since the txid expression (display big-endian vs. internal little-endian) is different for each component, which may cause confusion when replacing/operating the verifier, set the "protocol standard txid byte order" and apply it to all sections.
+- work:
+- Standard definition: `bytes32 txid` is unified as “Bitcoin internal bytes (as is sha256d result)” (recommended)
+- `txid_to_bytes32` operation/comment correction and reverse processing of `offchain/relayer` applied
+- `offchain/prover` proof builder also organizes txid calculation/verification logic to meet standards
+- Update documentation/examples (input txid format, hex reverse or not)
+- test:
+- Verify through unit tests that txid is treated the same in relayer/prober/on-chain for the same tx
+- Completion conditions:
+- txid-related bugs/operational confusion (duplicate processing, verification failure) are eliminated through standardization.
+- Completion summary:
     - Fix relayer's txid_to_bytes32() to reverse bytes (display -> internal format)
     - Add bytes32_to_txid_display() for reverse conversion (debugging)
     - Add explicit txid_display_to_internal() and txid_internal_to_display() to prover
@@ -700,21 +700,21 @@
 
 ---
 
-### T2.11 Offchain API 인증/배포 하드닝(토큰/CSRF/프록시 안전)
+### T2.11 Offchain API authentication/deployment hardening (token/CSRF/proxy safety)
 - Priority: P2
 - Status: [x] DONE
-- 목적: 로컬 API를 0.0.0.0로 노출하거나 리버스 프록시 뒤에 둘 때 `request.client.host` 기반 로컬 바이패스가 인증 우회를 만들 수 있으므로 안전한 기본값/정책으로 강화한다.
-- 작업:
+- Purpose: `request.client.host` based local bypass can create authentication bypass when exposing local API as 0.0.0.0 or behind a reverse proxy, so harden it to a safe default/policy.
+- work:
     - `offchain/api/hashcredit_api/auth.py`:
-        - `API_TOKEN`이 설정되어 있으면 **항상 토큰 필수**(로컬 바이패스 제거)
-        - query param 토큰(`?api_key=`) 지원 제거(로그/리퍼러 유출 위험)
-        - (선택) `Origin`/`Host` 기반 최소 CSRF 방어(쓰기 endpoint에 한해)
-    - 문서: `HOST=0.0.0.0` 사용 시 경고 및 권장 배포(방화벽/프록시) 명시
-- 테스트:
-    - 로컬/비로컬 요청 각각에 대해 토큰 정책이 의도대로 동작하는지 단위 테스트
-- 완료 조건:
-    - API를 잘못 노출해도 "무토큰"으로 키 사용/트랜잭션 전송이 불가하다.
-- 완료 요약:
+- **Token is always required** if `API_TOKEN` is set (removes local bypass)
+- Remove support for query param token (`?api_key=`) (risk of log/referrer leakage)
+- (Optional) Minimal CSRF defense based on `Origin`/`Host` (only for write endpoints)
+- Document: Warning and recommended deployment (firewall/proxy) specified when using `HOST=0.0.0.0`
+- test:
+- Unit test that the token policy works as intended for each local/non-local request.
+- Completion conditions:
+- Even if the API is exposed incorrectly, key use/transaction transfer is not possible with “tokenless”.
+- Completion summary:
     - Remove local bypass in auth.py: when API_TOKEN is set, ALL requests require token
     - Remove query param token support (?api_key=) to prevent log/referrer leakage
     - Add security documentation warnings for HOST=0.0.0.0 usage
@@ -724,19 +724,19 @@
 
 ---
 
-### T2.12 Offchain Watcher: BTC value → satoshis 변환에서 float 제거
+### T2.12 Offchain Watcher: Remove float from BTC value → satoshis conversion
 - Priority: P2
 - Status: [x] DONE
-- 목적: Bitcoin Core RPC의 `vout.value`를 float로 처리(`* 1e8`)하면 반올림/정밀도 문제로 amount 오차가 발생할 수 있으므로, Decimal 기반으로 satoshis를 **정확히** 계산한다.
-- 작업:
+- Purpose: If Bitcoin Core RPC's `vout.value` is processed as a float (`* 1e8`), amount errors may occur due to rounding/precision issues, so satoshis are **accurately** calculated based on Decimal.
+- work:
     - `offchain/prover/hashcredit_prover/watcher.py`:
-        - `Decimal(str(value)) * Decimal("1e8")`로 변환 후 정수화(정확성 보장)
-        - value가 문자열/정수/float 등으로 들어오는 케이스 처리
-- 테스트:
-    - 대표값(0.1, 0.00000001 등)에 대해 satoshis 변환이 정확한지 단위 테스트 추가
-- 완료 조건:
-    - amount_sats 산출이 float 정밀도에 의존하지 않는다.
-- 완료 요약:
+- Convert to `Decimal(str(value)) * Decimal("1e8")` and integerize (accuracy guaranteed)
+- Handling cases where value comes as a string/integer/float, etc.
+- test:
+- Added unit test to ensure satoshis conversion is accurate for representative values ​​(0.1, 0.00000001, etc.)
+- Completion conditions:
+- amount_sats calculation does not depend on float precision.
+- Completion summary:
     - Add btc_to_sats() function using Decimal arithmetic for exact conversion
     - Handle int, float, str, Decimal inputs with proper type handling
     - Raise ValueError for fractional satoshis (more than 8 decimal places)
@@ -745,19 +745,19 @@
 
 ---
 
-### T2.13 Security CI/검증 자동화(slither/fuzz/invariant)
+### T2.13 Security CI/verification automation (slither/fuzz/invariant)
 - Priority: P2
 - Status: [x] DONE
-- 목적: 회귀 방지를 위해 정적 분석/퍼징/불변식 테스트를 CI에 포함한다.
-- 작업:
-    - (선택) `slither`/`solhint` 도입 및 CI 워크플로우 추가
-    - Foundry fuzz/invariant 테스트 추가:
-        - vault share 불변식(totalAssets 대비 share pricing)
-        - manager replay 불변식(동일 txid/vout 중복 불가)
-        - borrow/repay 불변식(totalGlobalDebt 일관성)
-- 완료 조건:
-    - PR/로컬에서 최소 보안 체크가 자동으로 돌아가고, 실패 시 원인 파악이 가능하다.
-- 완료 요약:
+- Purpose: Include static analysis/fuzzing/invariant testing in CI to prevent regression.
+- work:
+- (Optional) Introduction of `slither`/`solhint` and addition of CI workflow
+- Added Foundry fuzz/invariant tests:
+- Vault share invariant (share pricing compared to totalAssets)
+- manager replay invariant (same txid/vout cannot be duplicated)
+- borrow/repay invariants (totalGlobalDebt consistency)
+- Completion conditions:
+- Minimum security checks run automatically in PR/local, and in case of failure, the cause can be identified.
+- Completion summary:
     - Add `test/invariant/Invariant.t.sol` with 6 invariant tests:
       - VaultInvariantTest: totalAssetsGeShares, roundingFavorsVault, ghostAccounting
       - ManagerInvariantTest: noReplayPossible, debtAccountingConsistent, borrowNeverExceedsLimit
@@ -770,20 +770,20 @@
 
 ---
 
-### T2.14 (Ops) Multisig/Timelock/Pause 등 운영 안전장치 추가
+### T2.14 (Ops) Addition of operational safety devices such as Multisig/Timelock/Pause
 - Priority: P2
 - Status: [x] DONE
-- 목적: 단일 admin 키 리스크를 줄이고(멀티시그/타임락), 사고 대응(일시정지)을 가능하게 한다.
-- 작업:
-    - 문서/스크립트:
-        - 프로덕션 배포 시 owner를 멀티시그로 설정하는 가이드/스크립트 정리
-        - 민감 파라미터 변경(Verifier/Vault/RiskConfig) 타임락 적용 방안 정리
-    - (선택) 온체인:
-        - `pause()/unpause()`를 `HashCreditManager`/`LendingVault`에 추가(쓰기 함수 가드)
-        - 2-step ownership(Ownable2Step) 패턴 도입 검토
-- 완료 조건:
-    - 운영자가 키 사고/이상 징후에 대응할 수 있는 "절차+기술적 훅"이 마련된다.
-- 완료 요약:
+- Purpose: Reduce single admin key risk (multisig/time lock) and enable incident response (pause).
+- work:
+- Document/Script:
+- Guide/script summary for setting owner to multisig when deploying to production
+- Summary of time lock application method for sensitive parameter change (Verifier/Vault/RiskConfig)
+- (Optional) On-chain:
+- Added `pause()/unpause()` to `HashCreditManager`/`LendingVault` (write function guard)
+- Review of introduction of 2-step ownership (Ownable2Step) pattern
+- Completion conditions:
+- A “procedure + technical hook” is provided for operators to respond to key accidents/anomalies.
+- Completion summary:
     - Add OpenZeppelin Pausable to HashCreditManager
     - Implement pause()/unpause() functions (onlyOwner)
     - Apply whenNotPaused modifier to submitPayout(), borrow(), repay()
@@ -798,32 +798,32 @@
 
 ---
 
-### T2.15 Offchain DB: SQLite → Postgres 포팅(공통 스키마/마이그레이션)
+### T2.15 Offchain DB: SQLite → Postgres porting (common schema/migration)
 - Priority: P1
 - Status: [x] DONE
-- 목적: Railway 배포에서 파일 기반 SQLite(`relayer.db`) 의존을 제거하고, 모든 오프체인 컴포넌트가 **Postgres(DATABASE_URL)** 를 사용하도록 포팅한다.
-- 작업:
-    - 목표 범위:
+- Purpose: Remove file-based SQLite (`relayer.db`) dependency from Railway deployments and port all off-chain components to use **Postgres(DATABASE_URL)**.
+- work:
+- Target range:
         - `offchain/relayer`(MVP relayer) dedupe DB
         - `offchain/prover`(SPV relayer/watcher) dedupe DB
-    - 공통 스키마 설계(최소):
-        - `processed_payouts`(txid,vout unique) 또는 `submitted_payouts`/`pending_payouts` 등 현재 테이블을 Postgres로 이관
-        - 멱등성 보장: `UNIQUE(txid, vout)` + upsert 패턴
-    - DB 접근 레이어 추가:
-        - `DATABASE_URL` 기반으로 엔진/커넥션 생성(Postgres URL 우선, 로컬은 sqlite 허용 가능)
-        - (권장) SQLAlchemy 2.x + `psycopg`(sync) / `asyncpg`(async) 중 하나로 통일
-    - 마이그레이션:
-        - Alembic 도입 또는 "스키마 init 커맨드" 제공(운영에서 재현 가능해야 함)
-        - Railway deploy 시 마이그레이션 실행 플로우 정의(Release Command 등)
-    - 문서 업데이트:
-        - `docs/guides/LOCAL.md`의 `DATABASE_URL=sqlite...` 섹션을 Postgres 옵션 포함으로 갱신
-- 테스트:
-    - 로컬 Postgres(예: docker compose)에서:
-        - 중복(txid,vout) 처리 시 1회만 저장/제출되는지
-        - 프로세스 재시작 후에도 dedupe가 유지되는지
-- 완료 조건:
-    - Railway Postgres를 붙였을 때 로컬 파일 없이 relayer/prover가 정상 동작한다.
-- 완료 요약:
+- Common schema design (minimum):
+- Migrate current tables to Postgres, such as `processed_payouts`(txid,vout unique) or `submitted_payouts`/`pending_payouts`
+- Guaranteed idempotence: `UNIQUE(txid, vout)` + upsert pattern
+- Add DB access layer:
+- Create engine/connection based on `DATABASE_URL` (Postgres URL first, sqlite is allowed for local)
+- (Recommended) Unify with SQLAlchemy 2.x + `psycopg`(sync) / `asyncpg`(async)
+- Migration:
+- Introduce Alembic or provide a "schema init command" (must be reproducible in operation)
+- Define migration execution flow when deploying Railway (Release Command, etc.)
+- Documentation updates:
+- Updated `DATABASE_URL=sqlite...` section in `docs/guides/LOCAL.md` to include Postgres options.
+- test:
+- On local Postgres (e.g. docker compose):
+- When processing duplicates (txid, vout), is it saved/submitted only once?
+- Is dedupe maintained even after process restart?
+- Completion conditions:
+- When Railway Postgres is attached, relayer/prover operates normally without local files.
+- Completion summary:
     - Migrate relayer PayoutDatabase to SQLAlchemy with SQLite/PostgreSQL support
     - Migrate prover PayoutStore to SQLAlchemy with SQLite/PostgreSQL support
     - Add psycopg2-binary to both relayer and prover dependencies
@@ -834,23 +834,23 @@
 
 ---
 
-### T2.16 hashcredit-relayer(Postgres) 적용 + DATABASE_URL 표준화
+### T2.16 hashcredit-relayer (Postgres) applied + DATABASE_URL standardized
 - Priority: P2
 - Status: [x] DONE
-- 목적: `offchain/relayer`가 `DATABASE_URL=postgresql://...`를 받아 Postgres로 동작하도록 한다(현재는 sqlite path만 파싱).
-- 작업:
+- Purpose: Allows `offchain/relayer` to receive `DATABASE_URL=postgresql://...` and operate as Postgres (currently only parses sqlite path).
+- work:
     - `offchain/relayer/hashcredit_relayer/config.py`:
-        - `DATABASE_URL`을 Railway Postgres URL과 호환되게 표준화(`postgresql://` / `postgres://` 지원)
+- Standardize `DATABASE_URL` to be compatible with Railway Postgres URL (`postgresql://` / `postgres://` supported)
     - `offchain/relayer/hashcredit_relayer/db.py`:
-        - sqlite3 직접 사용 제거 또는 Postgres 지원 구현
-        - 트랜잭션/격리 수준/동시성에서 UNIQUE 충돌 시 멱등 처리(upsert)
+- Remove direct use of sqlite3 or implement Postgres support
+- Idempotent processing (upsert) on UNIQUE conflicts in transaction/isolation level/concurrency
     - `offchain/relayer/hashcredit_relayer/relayer.py`:
-        - sqlite URL 파싱 로직 제거(또는 fallback만 남기기)
-- 테스트:
-    - pytest로 Postgres 연결 시 `is_processed/mark_processed/update_status`가 동작하는지
-- 완료 조건:
-    - `DATABASE_URL`만으로 SQLite ↔ Postgres를 스위칭할 수 있다(운영은 Postgres).
-- 완료 요약:
+- Remove sqlite URL parsing logic (or leave only fallback)
+- test:
+- Does `is_processed/mark_processed/update_status` work when connecting to Postgres with pytest?
+- Completion conditions:
+- You can switch SQLite ↔ Postgres with only `DATABASE_URL` (operation is Postgres).
+- Completion summary:
     - (Completed as part of T2.15)
     - Replaced sqlite3 with SQLAlchemy in db.py
     - Added parse_database_url() to handle postgres:// → postgresql:// conversion
@@ -859,23 +859,23 @@
 
 ---
 
-### T2.17 hashcredit-prover(SPV relayer) Postgres 포팅 + Watcher DB URL화
+### T2.17 hashcredit-prover(SPV relayer) Postgres porting + Watcher DB URL conversion
 - Priority: P2
 - Status: [x] DONE
-- 목적: `offchain/prover`의 `PayoutStore`/`run-relayer --db`가 파일 경로가 아니라 **DB URL**로도 동작하도록 만들어 Railway에서 운영 가능하게 한다.
-- 작업:
+- Purpose: Make `PayoutStore`/`run-relayer --db` of `offchain/prover` work with **DB URL** rather than file path, so that it can be operated on Railway.
+- work:
     - `offchain/prover/hashcredit_prover/watcher.py`:
-        - sqlite3 직접 사용 제거 또는 Postgres 지원 구현
-        - `pending_payouts/submitted_payouts`에 대한 멱등 upsert 및 인덱스 정의
+- Remove direct use of sqlite3 or implement Postgres support
+- Define idempotent upsert and index for `pending_payouts/submitted_payouts`.
     - `offchain/prover/hashcredit_prover/cli.py`:
-        - `--db`를 `--database-url`(또는 `DATABASE_URL` envvar)로 확장/변경(기존 호환 유지 여부 결정)
+- Extend/change `--db` to `--database-url` (or `DATABASE_URL` envvar) (decide whether to maintain existing compatibility)
     - `offchain/prover/hashcredit_prover/relayer.py`:
-        - store 생성/close 등 라이프사이클 정리(커넥션 누수 방지)
-- 테스트:
-    - 동일 payout이 여러 번 관측되어도 pending/submitted가 중복 생성되지 않는지
-- 완료 조건:
-    - Railway worker로 `hashcredit-prover run-relayer`를 띄워도 DB가 영속적으로 유지된다.
-- 완료 요약:
+- Organize life cycle such as store creation/close (prevent connection leak)
+- test:
+- Even if the same payout is observed multiple times, pending/submitted are not duplicated.
+- Completion conditions:
+- Even if you run `hashcredit-prover run-relayer` as a railway worker, the DB is maintained permanently.
+- Completion summary:
     - (Completed as part of T2.15)
     - Replaced sqlite3 with SQLAlchemy in watcher.py PayoutStore
     - Added parse_database_url() for URL normalization (supports file paths for backwards compat)
@@ -886,32 +886,32 @@
 
 ---
 
-### T2.18 Railway 배포 준비(서비스 분리, 환경변수, 마이그레이션, 헬스체크)
+### T2.18 Railway deployment preparation (service separation, environment variables, migration, health check)
 - Priority: P1
 - Status: [x] DONE
-- 목적: Railway에서 오프체인 컴포넌트를 **API 서비스 + Worker(relayer/prover)** 로 배포 가능하게 구성한다.
-- 작업:
-    - 서비스 설계(권장):
-        - Service A: `offchain/api` (FastAPI) — FE가 호출
-        - Service B: `offchain/prover` 또는 `offchain/relayer` worker — 주기적으로 watch/submit
-        - Railway Postgres add-on 연결
-    - 실행 커맨드/포트:
-        - `offchain/api`는 `0.0.0.0:$PORT`로 바인딩되게 설정(`PORT` env 지원)
-        - worker는 영구 실행 커맨드 정의(예: `hashcredit-prover run-relayer ...`)
-    - 마이그레이션 실행:
-        - deploy/release 단계에서 DB migrate를 1회 실행하도록 스크립트/문서화
-    - 설정/시크릿:
-        - `PRIVATE_KEY`, `BITCOIN_RPC_PASSWORD`, `API_TOKEN` 등은 Railway secrets로만 주입
-        - 컨트랙트 주소(`HASH_CREDIT_MANAGER`, `CHECKPOINT_MANAGER`, `BTC_SPV_VERIFIER`)는 환경변수로 주입
-    - 문서:
-        - `docs/guides/DEPLOY.md`에 Railway 섹션 추가(또는 `docs/guides/RAILWAY.md` 신설)
-- 테스트:
-    - Railway staging(또는 로컬 docker)에서:
-        - API `/health` 확인
-        - worker가 실제로 DB에 기록/중복 방지하며 submit하는지 로그로 확인
-- 완료 조건:
-    - Railway에서 "API + Worker + Postgres" 조합으로 재현 가능한 배포 절차가 문서화된다.
-- 완료 요약:
+- Purpose: Configure railway to distribute off-chain components as **API service + Worker (relayer/prover)**.
+- work:
+- Service design (recommended):
+- Service A: `offchain/api` (FastAPI) — called by FE
+- Service B: `offchain/prover` or `offchain/relayer` worker — periodically watch/submit
+- Railway Postgres add-on connection
+- Execute command/port:
+- Set `offchain/api` to be bound to `0.0.0.0:$PORT` (`PORT` env supported)
+- worker defines a persistent execution command (e.g. `hashcredit-prover run-relayer ...`)
+- Run migration:
+- Script/documentation to run DB migrate once during deploy/release phase
+- Settings/Secret:
+- `PRIVATE_KEY`, `BITCOIN_RPC_PASSWORD`, `API_TOKEN`, etc. are injected only as Railway secrets.
+- Contract addresses (`HASH_CREDIT_MANAGER`, `CHECKPOINT_MANAGER`, `BTC_SPV_VERIFIER`) are injected as environment variables.
+- document:
+- Add Railway section to `docs/guides/DEPLOY.md` (or create new `docs/guides/RAILWAY.md`)
+- test:
+- In Railway staging (or local docker):
+- Check API `/health`
+- Check the log to see if the worker actually records/prevents duplication and submits to the DB.
+- Completion conditions:
+- A reproducible deployment procedure is documented with the combination of "API + Worker + Postgres" in Railway.
+- Completion summary:
     - Add PORT env var support to API config (Railway standard via pydantic validation_alias)
     - Add HOST alias for external binding configuration (0.0.0.0)
     - Change prover CLI --db to --database-url with DATABASE_URL env var support
@@ -923,22 +923,22 @@
 
 ---
 
-### T2.19 Vercel FE 배포 준비(API URL/CORS/환경변수)
+### T2.19 Vercel FE deployment preparation (API URL/CORS/environment variables)
 - Priority: P2
 - Status: [x] DONE
-- 목적: FE를 Vercel에 올리고, Railway API와 안전하게 통신할 수 있도록 환경변수/CORS를 정리한다.
-- 작업:
+- Purpose: Upload FE to Vercel and organize environment variables/CORS to communicate safely with Railway API.
+- work:
     - `apps/web`:
-        - `VITE_API_URL`(Railway API base URL) 추가 및 `.env.example` 갱신
-        - (선택) proof build/submit 등 API 연동 플로우가 있으면 Vercel 환경변수에 맞춰 정리
+- Added `VITE_API_URL` (Railway API base URL) and updated `.env.example`
+- (Optional) If there is an API-linked flow such as proof build/submit, organize it according to Vercel environment variables.
     - `offchain/api`:
-        - `ALLOWED_ORIGINS`에 Vercel 도메인을 넣는 가이드 추가
-        - (보안 티켓 T2.11과 연계) 토큰/인증 정책을 배포 기본값으로 강화
-    - 문서:
-        - Vercel 환경변수 목록/설정 방법을 `docs/guides/DEPLOY.md`에 추가
-- 완료 조건:
-    - Vercel FE ↔ Railway API 호출이 CORS 에러 없이 동작하고, 운영 시크릿이 FE로 노출되지 않는다.
-- 완료 요약:
+- Added guide to inserting Vercel domain into `ALLOWED_ORIGINS`
+- (in conjunction with security ticket T2.11) harden token/authentication policy to deployment defaults
+- document:
+- Vercel environment variable list/setting method added to `docs/guides/DEPLOY.md`
+- Completion conditions:
+- The Vercel FE ↔ Railway API call operates without CORS errors, and the operating secret is not exposed to FE.
+- Completion summary:
     - Add VITE_API_URL env var to apps/web/.env.example for optional API integration
     - Add comprehensive Vercel deployment section to docs/guides/DEPLOY.md
     - Document CORS configuration for Railway API ↔ Vercel FE integration

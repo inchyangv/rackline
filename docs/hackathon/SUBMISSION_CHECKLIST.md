@@ -1,73 +1,73 @@
-# BUIDL CTC Hackathon 2026 - 제출 체크리스트
+# BUIDL CTC Hackathon 2026 - Submission Checklist
 
-이 폴더는 BUIDL CTC Hackathon (Creditcoin / Credit Labs) 제출 폼을 빠르게 채우기 위한 체크리스트입니다.
+This folder contains a checklist to quickly fill out the BUIDL CTC Hackathon (Creditcoin / Credit Labs) submission form.
 
-일정(EST):
-- 제출 마감: 2026-03-07 23:59
-- 결과 발표: 2026-03-21
+Schedule (EST):
+- Submission deadline: 2026-03-07 23:59
+- Results Announcement: 2026-03-21
 
-## 1) 참가 자격(자가 확인)
+## 1) Participation qualifications (self-confirmation)
 
-- [ ] 팀원 전원: 전과 없음
-- [ ] 팀원 전원: 진행 중인 형사 사건 없음
-- [ ] 팀원 전원: 제재 대상 국가 거주자 아님
-- [ ] 팀원 전원: 제재 대상 개인 아님
-- [ ] 팀원 전원: 거주 국가 법률상 참가 가능
+- [ ] All team members: No criminal records
+- [ ] All team members: No criminal cases pending.
+- [ ] All team members: Not residents of sanctioned countries
+- [ ] All team members: Not individuals subject to sanctions
+- [ ] All team members: Participation is permitted under the laws of the country of residence.
 
-## 2) 프로젝트 정보(필수)
+## 2) Project information (required)
 
-`docs/hackathon/SUBMISSION_VALUES.md`에 먼저 정리한 뒤 제출 폼에 그대로 붙여 넣습니다.
+First organize it in `docs/hackathon/SUBMISSION_VALUES.md` and then paste it into the submission form.
 
-- [ ] 프로젝트 이름
-- [ ] 프로젝트 로고 URL (PNG/SVG/AI) (선택)
-- [ ] 분야 (DeFi / RWA / DePIN / Gaming 등)
-- [ ] 프로젝트 설명
-- [ ] GitHub 레포 URL (README 포함)
-- [ ] 덱/화이트페이퍼 PDF URL
-- [ ] 프로토타입 데모 영상 URL
+- [ ] Project name
+- [ ] Project logo URL (PNG/SVG/AI) (optional)
+- [ ] Fields (DeFi / RWA / DePIN / Gaming, etc.)
+- [ ] Project description
+- [ ] GitHub repo URL (including README)
+- [ ] Deck/White Paper PDF URL
+- [ ] Prototype demo video URL
 
-## 3) 팀 정보(팀원별 필수)
+## 3) Team information (required for each team member)
 
-`docs/hackathon/TEAM_INFO.template.md`를 사용합니다.
+Use `docs/hackathon/TEAM_INFO.template.md`.
 
-팀원별:
-- [ ] 이름(First & Last Name)
-- [ ] 이메일
-- [ ] Telegram ID (선택)
-- [ ] X/Twitter (선택)
-- [ ] LinkedIn (선택)
-- [ ] 이력서 PDF URL (선택)
-- [ ] 짧은 소개(Bio)
-- [ ] 팀 내 역할(Role)
-- [ ] 거주 국가(Country of Residence)
-- [ ] 국적(Country of Citizenship)
+By team member:
+- [ ] Name (First & Last Name)
+- [ ] email
+- [ ] Telegram ID (optional)
+- [ ]
+- [ ] LinkedIn (optional)
+- [ ] Resume PDF URL (optional)
+- [ ] Short introduction (Bio)
+- [ ] Role within the team
+- [ ] Country of Residence
+- [ ] Country of Citizenship
 
-추가:
-- [ ] 팀 규모(최소 1명)
+addition:
+- [ ] Team size (minimum 1 person)
 
-## 4) 프로젝트 요구사항(필수)
+## 4) Project requirements (required)
 
-- [ ] 해커톤 기간 내 신규 작업/개발임을 설명 가능
-- [ ] 테스트넷 배포 완료
-- [ ] 제3자 IP 침해 없음
+- [ ] Can explain that this is new work/development during the hackathon period
+- [ ] Testnet deployment completed
+- [ ] No third party IP infringement
 
-참고:
-- 이 레포 `README.md`에는 `"Built for CTC Hackathon 2024"` 문구가 있습니다. 2026 규정이 “해커톤 기간 내 생성”을 엄격히 요구한다면, 기존 작업의 연장 가능 여부를 주최 측에 확인하거나 2026 기간에 수행한 변경 범위를 명확히 정리하세요.
+reference:
+- This repo `README.md` has the phrase `"Built for CTC Hackathon 2024"`. If the 2026 regulations strictly require “creation within the hackathon period,” check with the organizer whether existing work can be extended or clearly outline the scope of changes made during the 2026 period.
 
-## 5) 약관(동의 필요)
+## 5) Terms and Conditions (Agreement required)
 
-- [ ] 제출 정보는 정확하며 사실임
-- [ ] 제출한 코드/콘텐츠/자료에 대한 사용 권한을 보유함
+- [ ] The information submitted is accurate and true.
+- [ ] We have the right to use the submitted code/content/material
 
-## 6) 레포에서 이미 준비된 것
+## 6) Already prepared in the repo
 
-- [ ] `README.md` 존재
-- [ ] 배포 가이드 존재: `DEPLOY.md`
-- [ ] `.env` 템플릿 존재: `.env.example`
+- [ ] `README.md` exists
+- [ ] Deployment guide exists: `DEPLOY.md`
+- [ ] `.env` template exists: `.env.example`
 
-## 7) 팀이 직접 준비해야 하는 것(필수)
+## 7) What the team must prepare on their own (required)
 
-- [ ] 덱/화이트페이퍼 PDF 공개 URL
-- [ ] 데모 영상 공개 URL
-- [ ] 로고 공개 URL (선택)
-- [ ] 제출 폼에 요구되는 팀원 프로필/링크 정보
+- [ ] Deck/White Paper PDF public URL
+- [ ] Demo video public URL
+- [ ] Logo public URL (optional)
+- [ ] Team member profile/link information required in the submission form

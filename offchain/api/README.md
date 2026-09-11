@@ -1,82 +1,82 @@
 # HashCredit API (`offchain/api`)
 
-FastAPI 기반의 HTTP API로, 프론트엔드가 **Bitcoin RPC / SPV proof 생성 / 온체인 트랜잭션 전송(운영키)** 를 쉽게 호출할 수 있게 하는 브리지입니다.
+It is a FastAPI-based HTTP API that allows the front-end to easily call **Bitcoin RPC / SPV proof generation / on-chain transaction transmission (operation key)**.
 
-## 하는 일
+## What I do
 
-- SPV proof 생성: `POST /spv/build-proof`
-- 체크포인트 등록(온체인): `POST /checkpoint/set`
-- borrower BTC 주소(pubkeyHash) 등록(온체인): `POST /borrower/set-pubkey-hash`
-- borrower 등록(온체인): `POST /manager/register-borrower`
-- proof 제출(온체인): `POST /spv/submit`
-- (메인넷 권장) borrower 소유권 증명 기반 등록: `POST /claim/start`, `POST /claim/complete`
-- 헬스체크: `GET /health`
+- SPV proof creation: `POST /spv/build-proof`
+- Checkpoint registration (on-chain): `POST /checkpoint/set`
+- Register borrower BTC address (pubkeyHash) (on-chain): `POST /borrower/set-pubkey-hash`
+- Borrower registration (on-chain): `POST /manager/register-borrower`
+- Proof submission (on-chain): `POST /spv/submit`
+- (Mainnet recommended) Registration based on borrower ownership proof: `POST /claim/start`, `POST /claim/complete`
+- Health check: `GET /health`
 
-## 설치
+## installation
 
 ```bash
 cd offchain/api
 pip install -e .
 ```
 
-개발용:
+For development purposes:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-## 환경 변수
+## Environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-중요 포인트:
+Important points:
 
-- `API_TOKEN`을 설정하면 **온체인 트랜잭션을 전송하는 엔드포인트**가 `X-API-Key` 헤더를 요구합니다.
-  - claim 엔드포인트까지 토큰을 강제하려면 `CLAIM_REQUIRE_API_TOKEN=true`를 사용하세요.
-- 메인넷급 매핑을 쓰려면 `BORROWER_MAPPING_MODE=claim`로 전환하고 `CLAIM_SECRET`을 설정합니다.
-- `ALLOWED_ORIGINS`는 **JSON 배열 문자열**입니다.
-  - 예: `["https://hashcredit.studioliq.com","http://localhost:5173"]`
-- Bitcoin RPC가 public endpoint(무인증)인 경우 `BITCOIN_RPC_USER/PASSWORD`는 비워도 됩니다.
+- Setting `API_TOKEN` will cause **endpoints sending on-chain transactions** to require the `X-API-Key` header.
+- Use `CLAIM_REQUIRE_API_TOKEN=true` to force a token to the claim endpoint.
+- To use mainnet-level mapping, switch to `BORROWER_MAPPING_MODE=claim` and set `CLAIM_SECRET`.
+- `ALLOWED_ORIGINS` is a **JSON array string**.
+- Example: `["https://hashcredit.studioliq.com","http://localhost:5173"]`
+- If Bitcoin RPC is a public endpoint (unauthenticated), `BITCOIN_RPC_USER/PASSWORD` can be left blank.
 
-## 실행
+## execution
 
 ```bash
 hashcredit-api
 ```
 
-또는:
+or:
 
 ```bash
 uvicorn hashcredit_api.main:app --host 127.0.0.1 --port 8000
 ```
 
-API 문서:
+API documentation:
 
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## 인증
+## certification
 
-1. `.env`에 `API_TOKEN` 설정(권장: 항상 설정)
-2. 모든 요청에 `X-API-Key: <API_TOKEN>` 추가
+1. Set `API_TOKEN` in `.env` (recommended: always set)
+2. Add `X-API-Key: <API_TOKEN>` to all requests
 
-예:
-
-```bash
-curl -H "X-API-Key: <API_TOKEN>" http://localhost:8000/health
-```
-
-## 엔드포인트
-
-### 1) 헬스체크
+yes:
 
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" http://localhost:8000/health
 ```
 
-### 2) 체크포인트 등록(온체인)
+## Endpoint
+
+### 1) Health check
+
+```bash
+curl -H "X-API-Key: <API_TOKEN>" http://localhost:8000/health
+```
+
+### 2) Checkpoint registration (on-chain)
 
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
@@ -85,7 +85,7 @@ curl -H "X-API-Key: <API_TOKEN>" \
   -d '{"height": 4842343, "dry_run": false}'
 ```
 
-### 3) borrower BTC 주소(pubkeyHash) 등록(온체인)
+### 3) Register borrower BTC address (pubkeyHash) (on-chain)
 
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
@@ -94,10 +94,10 @@ curl -H "X-API-Key: <API_TOKEN>" \
   -d '{"borrower":"0x...","btc_address":"tb1q...","dry_run": false}'
 ```
 
-### 4) borrower 등록(온체인, Manager)
+### 4) Borrower registration (on-chain, Manager)
 
-이 엔드포인트는 `btcPayoutKeyHash = keccak256(utf8(btc_address))`를 계산한 뒤,
-`HashCreditManager.registerBorrower(borrower, btcPayoutKeyHash)`를 호출합니다.
+This endpoint calculates `btcPayoutKeyHash = keccak256(utf8(btc_address))`,
+Call `HashCreditManager.registerBorrower(borrower, btcPayoutKeyHash)`.
 
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
@@ -106,7 +106,7 @@ curl -H "X-API-Key: <API_TOKEN>" \
   -d '{"borrower":"0x...","btc_address":"tb1q...","dry_run": false}'
 ```
 
-### 5) SPV proof 생성
+### 5) SPV proof generation
 
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
@@ -121,7 +121,7 @@ curl -H "X-API-Key: <API_TOKEN>" \
   }'
 ```
 
-### 6) proof 제출(온체인)
+### 6) Proof submission (on-chain)
 
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
@@ -130,16 +130,16 @@ curl -H "X-API-Key: <API_TOKEN>" \
   -d '{"proof_hex":"0x...","dry_run": false}'
 ```
 
-### 7) (메인넷 권장) borrower claim 기반 등록
+### 7) (Mainnet recommended) Registration based on borrower claim
 
-`BORROWER_MAPPING_MODE=claim`일 때만 사용합니다.
+Only used when `BORROWER_MAPPING_MODE=claim`.
 
-이 플로우는 borrower가 아래를 제출하도록 설계되어 있습니다.
-- EVM 서명: `personal_sign`로 message 서명
-- BTC 서명: 지갑의 `signmessage` 출력(base64) 서명
-  - 현재 구현은 BIP-137 스타일을 검증하며, repo에서 지원하는 주소 타입(p2pkh/p2wpkh)에 한해 동작합니다.
+This flow is designed so that the borrower submits the following:
+- EVM signature: Sign message with `personal_sign`
+- BTC signature: `signmessage` output (base64) signature from wallet
+- The current implementation verifies BIP-137 style and operates only for address types (p2pkh/p2wpkh) supported by the repo.
 
-1) claim 시작:
+1) Start claim:
 
 ```bash
 curl -H "Content-Type: application/json" \
@@ -147,9 +147,9 @@ curl -H "Content-Type: application/json" \
   -d '{"borrower":"0x...","btc_address":"bc1q..."}'
 ```
 
-응답의 `message`를 **EVM 지갑과 BTC 지갑 둘 다**로 서명합니다.
+Sign the `message` in the response with **both your EVM wallet and your BTC wallet**.
 
-2) claim 완료(검증 + 온체인 등록):
+2) Completion of claim (verification + on-chain registration):
 
 ```bash
 curl -H "Content-Type: application/json" \
@@ -162,10 +162,10 @@ curl -H "Content-Type: application/json" \
   }'
 ```
 
-## 보안/운영 메모(중요)
+## Security/Operations Notes (Important)
 
-- 이 API는 운영키(`PRIVATE_KEY`)로 온체인 트랜잭션을 전송할 수 있으므로, 외부 노출 시 반드시:
-  - `API_TOKEN`을 강하게 설정
-  - CORS/방화벽/레이트리밋 등으로 접근을 제한
-- borrower(EVM) <-> BTC 주소 매핑은 메인넷에서 임의 매핑 공격이 가능하므로, 프로덕션에서는 `BORROWER_MAPPING_MODE=claim`를 권장합니다.
-- Claim 엔드포인트는 “유효한 서명”이 없으면 온체인 트랜잭션을 보내지 않지만, 운영 환경에서는 레이트리밋/방화벽/사용자 인증 등 추가 방어가 필요합니다.
+- This API can transmit on-chain transactions using the operating key (`PRIVATE_KEY`), so when exposed to the outside world, it must:
+- Set `API_TOKEN` strongly
+- Restrict access with CORS/firewall/rate limit, etc.
+- Borrower(EVM) <-> BTC address mapping allows arbitrary mapping attacks on the mainnet, so `BORROWER_MAPPING_MODE=claim` is recommended in production.
+- Claim endpoints will not send on-chain transactions without a “valid signature”, but in production environments additional defenses such as ratelimiting/firewall/user authentication are required.

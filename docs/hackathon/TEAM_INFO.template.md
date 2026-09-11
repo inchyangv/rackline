@@ -1,38 +1,38 @@
-# 팀 정보(템플릿)
+# Team information (template)
 
-이 파일을 `docs/hackathon/TEAM_INFO.md`로 복사한 뒤, 빈칸을 채우세요.
+Copy this file to `docs/hackathon/TEAM_INFO.md` and fill in the blank spaces.
 
-팀 규모:
+Team Size:
 - TODO
 
-## 팀원 1
+## Team Member 1
 
-이름:
+name:
 - TODO
 
-이메일:
+email:
 - TODO
 
-Telegram ID (선택):
+Telegram ID (optional):
 - TODO
 
-X/Twitter (선택):
+X/Twitter (optional):
 - TODO
 
-LinkedIn (선택):
+LinkedIn (optional):
 - TODO
 
-이력서 PDF URL (선택):
+Resume PDF URL (optional):
 - TODO
 
-짧은 소개(Bio):
+Brief Introduction (Bio):
 - TODO
 
-팀 내 역할(Role):
+Role within the team:
 - TODO
 
-거주 국가(Country of Residence):
+Country of Residence:
 - TODO
 
-국적(Country of Citizenship):
+Country of Citizenship:
 - TODO

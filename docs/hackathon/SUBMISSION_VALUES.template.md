@@ -1,58 +1,58 @@
-# 제출 값(템플릿)
+# Submission value (template)
 
-이 파일을 `docs/hackathon/SUBMISSION_VALUES.md`로 복사한 뒤, 빈칸을 채우세요.
+Copy this file to `docs/hackathon/SUBMISSION_VALUES.md` and fill in the blank spaces.
 
-## 프로젝트
+## Project
 
-프로젝트 이름:
+Project Name:
 - TODO
 
-프로젝트 로고 URL (선택):
+Project logo URL (optional):
 - TODO
 
-프로젝트 분야:
-- TODO (DeFi / RWA / DePIN / Gaming 등)
+Project areas:
+- TODO (DeFi / RWA / DePIN / Gaming, etc.)
 
-프로젝트 설명:
-- TODO (2-6문장: 문제, 해결, 왜 Creditcoin인지)
+Project Description:
+- TODO (2-6 sentences: problem, solution, why Creditcoin)
 
-GitHub 레포 URL:
+GitHub repo URL:
 - TODO
 
-덱/화이트페이퍼 PDF URL:
+Deck/Whitepaper PDF URL:
 - TODO
 
-프로토타입 데모 영상 URL:
+Prototype demo video URL:
 - TODO
 
-## 테스트넷 배포
+## Testnet deployment
 
-네트워크:
+network:
 - Creditcoin EVM testnet
 
-체인 ID:
+Chain ID:
 - 102031
 
-RPC URL (참고):
+RPC URL (reference):
 - https://rpc.cc3-testnet.creditcoin.network
 
-배포 모드:
-- SPV (고정)
+Deployment mode:
+- SPV (fixed)
 
-컨트랙트 주소:
+Contract address:
 - HashCreditManager: TODO
 - LendingVault: TODO
 - CheckpointManager (SPV): TODO
 - BtcSpvVerifier (SPV): TODO
-- (해당 없음) Verifier (MVP - RelayerSigVerifier)
+- (N/A) Verifier (MVP - RelayerSigVerifier)
 
-익스플로러 링크 (선택, 가능하면):
+Explorer link (optional, if available):
 - TODO
 
-## 데모
+## Demo
 
-데모 하이라이트 (최대 3개):
+Demo highlights (up to 3):
 - TODO
 
-데모 플로우 (1문단):
+Demo flow (1 paragraph):
 - TODO
