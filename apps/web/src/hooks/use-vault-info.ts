@@ -27,10 +27,14 @@ export function useVaultInfo(): VaultInfo {
   const [borrowAPR, setBorrowAPR] = useState<bigint | null>(null)
   const [myShares, setMyShares] = useState<bigint | null>(null)
   const [myShareValue, setMyShareValue] = useState<bigint | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const fetchVaultInfo = useCallback(async () => {
-    if (!vault) return
+    if (!vault) {
+      console.warn('[useVaultInfo] vault contract not ready')
+      setIsLoading(false)
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -63,7 +67,8 @@ export function useVaultInfo(): VaultInfo {
         setMyShares(null)
         setMyShareValue(null)
       }
-    } catch {
+    } catch (err) {
+      console.error('[useVaultInfo] fetch failed:', err)
       setTotalAssets(null)
       setTotalBorrowed(null)
       setAvailableLiquidity(null)
@@ -80,11 +85,7 @@ export function useVaultInfo(): VaultInfo {
   useEffect(() => {
     let cancelled = false
 
-    async function run() {
-      if (!vault) return
-      await fetchVaultInfo()
-    }
-    void run()
+    void fetchVaultInfo()
 
     const interval = setInterval(() => {
       if (!cancelled) void fetchVaultInfo()

@@ -131,6 +131,24 @@ class ClaimCompleteResponse(BaseModel):
 # ============================================================================
 
 
+class RegisterAndGrantRequest(BaseModel):
+    """Request for backend to register borrower + grant testnet credit."""
+
+    borrower: str = Field(..., description="Borrower EVM address (0x...)")
+    btc_address: str = Field(..., description="Borrower BTC payout address")
+
+
+class RegisterAndGrantResponse(BaseModel):
+    """Response from register-and-grant admin call."""
+
+    success: bool = Field(..., description="Whether both admin txs succeeded")
+    borrower: Optional[str] = Field(None, description="Borrower address")
+    register_tx: Optional[str] = Field(None, description="registerBorrower tx hash")
+    grant_tx: Optional[str] = Field(None, description="grantTestnetCredit tx hash")
+    credit_amount: Optional[str] = Field(None, description="Granted credit amount")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
 class ExtractSigParamsRequest(BaseModel):
     """Request to extract on-chain verification params from a BIP-137 signature."""
 

@@ -1,18 +1,20 @@
 import { useMemo } from 'react'
-import { Contract, ethers, JsonRpcProvider } from 'ethers'
+import { Contract, ethers, JsonRpcProvider, Network } from 'ethers'
 import { HashCreditManagerAbi, BtcSpvVerifierAbi, CheckpointManagerAbi, Erc20Abi, LendingVaultAbi } from '@/lib/abis'
 import { useConfigStore } from '@/stores/config-store'
 
 export function useReadonlyProvider(): JsonRpcProvider | null {
   const rpcUrl = useConfigStore((s) => s.rpcUrl)
+  const chainId = useConfigStore((s) => s.chainId)
   return useMemo(() => {
     if (!rpcUrl) return null
     try {
-      return new JsonRpcProvider(rpcUrl)
+      const network = Network.from(chainId)
+      return new JsonRpcProvider(rpcUrl, network, { staticNetwork: true })
     } catch {
       return null
     }
-  }, [rpcUrl])
+  }, [rpcUrl, chainId])
 }
 
 export function useManagerRead(): Contract | null {

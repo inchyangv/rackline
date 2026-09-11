@@ -64,7 +64,7 @@ export function AppShell() {
           ? `Pending: ${txState.label}`
           : txState.status === 'confirmed'
             ? `Confirmed: ${txState.label}`
-            : `Error: ${txState.label}`
+            : `Error: ${txState.label} — ${txState.message}`
 
   const txOverviewTone =
     txState.status === 'confirmed'

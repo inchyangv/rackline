@@ -81,6 +81,13 @@ class Settings(BaseSettings):
         description="EVM RPC URL (Creditcoin testnet)"
     )
     chain_id: int = Field(default=102031, description="EVM chain ID")
+    # Admin key (owner of HashCreditManager, used for registerBorrower/grantTestnetCredit)
+    admin_private_key: str | None = Field(
+        default=None,
+        description="Private key for the contract owner (hex, no 0x prefix ok)",
+        alias="ADMIN_PRIVATE_KEY",
+    )
+
     # Contracts (for UI hints/health metadata)
     hash_credit_manager: str | None = Field(
         default=None,

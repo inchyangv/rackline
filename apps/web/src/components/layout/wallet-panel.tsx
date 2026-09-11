@@ -32,7 +32,7 @@ export function WalletPanel() {
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
             Chain
           </span>
-          <span className="font-mono text-xs">{walletChainId ?? '—'}</span>
+          <span className="font-mono text-xs">{walletChainId ?? chainId}</span>
           {chainMismatch && (
             <Badge variant="outline" className="border-warning/40 text-warning text-[10px]">
               Expected: {chainId}

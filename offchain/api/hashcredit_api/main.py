@@ -38,6 +38,8 @@ from .models import (
     ExtractSigParamsRequest,
     ExtractSigParamsResponse,
     HealthResponse,
+    RegisterAndGrantRequest,
+    RegisterAndGrantResponse,
     SetCheckpointRequest,
     SetCheckpointResponse,
 )
@@ -510,6 +512,51 @@ async def claim_complete(
 # ============================================================================
 # On-chain BTC Signature Params Extraction
 # ============================================================================
+
+
+@app.post("/claim/register-and-grant", response_model=RegisterAndGrantResponse)
+async def register_and_grant(request: RegisterAndGrantRequest) -> RegisterAndGrantResponse:
+    """
+    Admin endpoint: register a borrower and grant testnet credit.
+
+    Uses ADMIN_PRIVATE_KEY (contract owner) to send two transactions:
+    1. registerBorrower(borrower, keccak256(btcAddress))
+    2. grantTestnetCredit(borrower, 1_000_000_000)  (= 1,000 mUSDT)
+    """
+    if _evm_client is None:
+        return RegisterAndGrantResponse(success=False, error="EVM client not initialized")
+
+    if not _evm_client.has_admin_key:
+        return RegisterAndGrantResponse(success=False, error="ADMIN_PRIVATE_KEY not configured on server")
+
+    try:
+        borrower = Web3.to_checksum_address(request.borrower.strip())
+    except Exception:
+        return RegisterAndGrantResponse(success=False, error="Invalid borrower EVM address")
+
+    btc_payout_key_hash = Web3.keccak(text=request.btc_address.strip())
+
+    try:
+        result = await _evm_client.register_and_grant(
+            borrower=borrower,
+            btc_payout_key_hash=btc_payout_key_hash,
+        )
+        logger.info(
+            "Borrower registered and credit granted",
+            borrower=borrower,
+            register_tx=result["register_tx"],
+            grant_tx=result["grant_tx"],
+        )
+        return RegisterAndGrantResponse(
+            success=True,
+            borrower=borrower,
+            register_tx=result["register_tx"],
+            grant_tx=result["grant_tx"],
+            credit_amount="1,000 mUSDT",
+        )
+    except Exception as e:
+        logger.error("register_and_grant failed", borrower=borrower, error=str(e))
+        return RegisterAndGrantResponse(success=False, borrower=borrower, error=str(e))
 
 
 @app.post("/claim/extract-sig-params", response_model=ExtractSigParamsResponse)

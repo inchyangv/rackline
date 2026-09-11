@@ -11,7 +11,7 @@ import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
 import { useApiClient } from '@/hooks/use-api-client'
 import { sendContractTx } from '@/stores/tx-store'
-import { HashCreditManagerAbi, BtcSpvVerifierAbi } from '@/lib/abis'
+import { BtcSpvVerifierAbi } from '@/lib/abis'
 import { getErrorMessage } from '@/lib/ethereum'
 import { copyToClipboard } from '@/lib/clipboard'
 import { toast } from 'sonner'
@@ -27,7 +27,6 @@ export function ClaimSection() {
   const setClaimBusy = useApiStore((s) => s.setClaimBusy)
   const borrowerAddress = useApiStore((s) => s.borrowerAddress)
   const walletAccount = useWalletStore((s) => s.walletAccount)
-  const managerAddress = useConfigStore((s) => s.managerAddress)
   const spvVerifierAddress = useConfigStore((s) => s.spvVerifierAddress)
 
   const { apiRequest } = useApiClient()
@@ -101,30 +100,29 @@ export function ClaimSection() {
         ),
       )
 
-      // Step 3: Register borrower in Manager
-      setClaimLog('Step 3/3: Registering borrower...')
-      const btcPayoutKeyHash = ethers.keccak256(ethers.toUtf8Bytes(claimBtcAddress))
-      await sendContractTx(
-        'registerBorrower',
-        managerAddress,
-        HashCreditManagerAbi,
-        (c) => c.registerBorrower(borrower, btcPayoutKeyHash),
-      )
-
-      // Step 4: Grant testnet credit (1000 USDT = 1000e6)
-      setClaimLog('Granting testnet credit...')
-      await sendContractTx(
-        'grantTestnetCredit',
-        managerAddress,
-        HashCreditManagerAbi,
-        (c) => c.grantTestnetCredit(borrower, 1_000_000_000n),
-      )
+      // Step 3: Register borrower + grant testnet credit (admin tx via backend)
+      setClaimLog('Step 3/3: Registering borrower & granting credit...')
+      const regResult = await apiRequest('/claim/register-and-grant', {
+        method: 'POST',
+        body: JSON.stringify({
+          borrower,
+          btc_address: claimBtcAddress,
+        }),
+      })
+      const regData = regResult as Record<string, unknown>
+      if (!regData.success) {
+        setClaimLog(`Error: ${regData.error}`)
+        toast.error(String(regData.error))
+        return
+      }
 
       setClaimLog(
         `Done!\n` +
         `  BTC signature verified on-chain (secp256k1 ecrecover)\n` +
         `  BTC address: ${claimBtcAddress}\n` +
-        `  Borrower registered with 1,000 mUSDT credit`
+        `  Borrower registered with ${regData.credit_amount} credit\n` +
+        `  Register tx: ${regData.register_tx}\n` +
+        `  Grant tx: ${regData.grant_tx}`
       )
       toast.success('BTC wallet linked & borrower registered!')
     } catch (e) {

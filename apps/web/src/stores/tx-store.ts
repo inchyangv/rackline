@@ -36,5 +36,6 @@ export async function sendContractTx(
     setTxState({ status: 'confirmed', label, hash: tx.hash })
   } catch (err: unknown) {
     setTxState({ status: 'error', label, message: getErrorMessage(err) })
+    throw err
   }
 }
