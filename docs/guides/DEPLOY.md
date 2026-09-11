@@ -156,3 +156,92 @@ Next steps for SPV mode (high level):
 4. Submit proofs via `hashcredit-prover` or `hashcredit-api`
 
 For a full SPV walkthrough, see `docs/guides/LOCAL.md`.
+
+---
+
+## Production Security Considerations
+
+### Pause Functionality
+
+HashCreditManager includes pause/unpause capability for emergency situations:
+
+```solidity
+// Pause: blocks submitPayout, borrow, repay
+function pause() external onlyOwner;
+
+// Unpause: resumes normal operation
+function unpause() external onlyOwner;
+```
+
+When to pause:
+- Oracle/verifier compromise suspected
+- Critical bug discovered
+- Unusual activity patterns
+- Coordinated attack in progress
+
+### Multisig Setup (Recommended for Production)
+
+Deploy with a multisig wallet as owner to prevent single-key compromise:
+
+**Using Gnosis Safe:**
+
+1. Create a Gnosis Safe on your target chain
+2. Add trusted signers (e.g., 3-of-5 threshold)
+3. Deploy contracts with Safe as owner:
+
+```bash
+# Option A: Deploy normally, then transfer ownership
+forge script script/Deploy.s.sol --rpc-url "$RPC_URL" --broadcast
+# Then call transferOwnership(safeAddress) on each contract
+
+# Option B: Modify deploy script to use Safe address directly
+# Edit script/Deploy.s.sol to set owner = SAFE_ADDRESS
+```
+
+4. All admin operations require Safe confirmation:
+   - `setVerifier`
+   - `setRiskConfig`
+   - `pause/unpause`
+   - `freezeBorrower`
+   - `transferOwnership`
+
+**Timelock (Optional):**
+
+For additional security, route multisig through a timelock:
+
+1. Deploy OpenZeppelin TimelockController
+2. Set timelock as owner of HashCreditManager
+3. Grant PROPOSER_ROLE to multisig
+4. Grant EXECUTOR_ROLE to multisig (or open execution)
+
+This adds a delay (e.g., 24-48 hours) to sensitive operations, allowing time to respond to malicious governance proposals.
+
+### Key Management Checklist
+
+**Before Mainnet:**
+
+- [ ] Owner key is a multisig (not EOA)
+- [ ] Relayer key is separate from owner key
+- [ ] Private keys stored in secure vault (not plaintext `.env`)
+- [ ] Offchain API_TOKEN is strong and rotated periodically
+- [ ] BITCOIN_RPC credentials are not exposed publicly
+
+**Incident Response:**
+
+1. **Pause immediately** if oracle compromise suspected
+2. **Freeze affected borrowers** to prevent further borrows
+3. **Do NOT unpause** until root cause identified and fixed
+4. Consider coordinated verifier replacement if needed
+
+### Contract Upgrade Path
+
+HashCreditManager is NOT upgradeable by design (simpler security model).
+
+To "upgrade":
+1. Deploy new HashCreditManager
+2. Pause old manager
+3. Migrate vault manager pointer: `vault.setManager(newManager)`
+4. Register borrowers on new manager
+5. Borrowers repay on old manager, borrow on new
+
+This preserves debt/LP relationships while allowing contract fixes.

@@ -772,7 +772,7 @@
 
 ### T2.14 (Ops) Multisig/Timelock/Pause 등 운영 안전장치 추가
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 단일 admin 키 리스크를 줄이고(멀티시그/타임락), 사고 대응(일시정지)을 가능하게 한다.
 - 작업:
     - 문서/스크립트:
@@ -782,7 +782,19 @@
         - `pause()/unpause()`를 `HashCreditManager`/`LendingVault`에 추가(쓰기 함수 가드)
         - 2-step ownership(Ownable2Step) 패턴 도입 검토
 - 완료 조건:
-    - 운영자가 키 사고/이상 징후에 대응할 수 있는 “절차+기술적 훅”이 마련된다.
+    - 운영자가 키 사고/이상 징후에 대응할 수 있는 "절차+기술적 훅"이 마련된다.
+- 완료 요약:
+    - Add OpenZeppelin Pausable to HashCreditManager
+    - Implement pause()/unpause() functions (onlyOwner)
+    - Apply whenNotPaused modifier to submitPayout(), borrow(), repay()
+    - Update docs/guides/DEPLOY.md with:
+      - Pause functionality documentation
+      - Gnosis Safe multisig setup guide
+      - Timelock integration guidance
+      - Key management checklist
+      - Incident response procedures
+      - Contract upgrade path documentation
+    - All 186 tests passing
 
 ---
 

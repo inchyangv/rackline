@@ -9,6 +9,7 @@ import { IPoolRegistry } from "./interfaces/IPoolRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title HashCreditManager
@@ -22,7 +23,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
  * - Borrow/repay routing to LendingVault
  * - Replay protection for payouts
  */
-contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
+contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     // ============================================
@@ -164,6 +165,21 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
     }
 
     /**
+     * @notice Pause the contract (emergency)
+     * @dev Prevents submitPayout, borrow, and repay operations
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause the contract
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
      * @notice Freeze a borrower (emergency)
      * @param borrower Address to freeze
      */
@@ -222,7 +238,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
     /**
      * @inheritdoc IHashCreditManager
      */
-    function submitPayout(bytes calldata proof) external override {
+    function submitPayout(bytes calldata proof) external override whenNotPaused {
         // 1. Verify the payout via adapter
         PayoutEvidence memory evidence = IVerifierAdapter(verifier).verifyPayout(proof);
 
@@ -336,7 +352,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
     /**
      * @inheritdoc IHashCreditManager
      */
-    function borrow(uint256 amount) external override nonReentrant {
+    function borrow(uint256 amount) external override nonReentrant whenNotPaused {
         if (amount == 0) revert ZeroAmount();
 
         BorrowerInfo storage info = _borrowers[msg.sender];
@@ -371,7 +387,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
     /**
      * @inheritdoc IHashCreditManager
      */
-    function repay(uint256 amount) external override nonReentrant {
+    function repay(uint256 amount) external override nonReentrant whenNotPaused {
         if (amount == 0) revert ZeroAmount();
 
         BorrowerInfo storage info = _borrowers[msg.sender];
