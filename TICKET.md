@@ -35,7 +35,7 @@
 
 ### T0.2 Define Interfaces & Data Types (Core ABI Fixation)
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: Verifier Adapter, Manager/Vault의 외부 인터페이스를 먼저 고정한다(향후 교체 최소화).
 - 작업:
     - `IVerifierAdapter` 인터페이스 정의
