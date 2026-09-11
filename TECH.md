@@ -1,7 +1,7 @@
 # HashCredit Technical Note (SPV-First, USC-Ready)
 
 ## Why This Exists
-USC was not available yet, so we implemented the full proof + credit pipeline ourselves using the same architecture pattern we would use for USC.
+USC testnet was available, but USC mainnet was not live when we built this flow, so we implemented the full proof + credit pipeline ourselves using the same architecture pattern we would use for USC.
 
 Result:
 - It works now on Creditcoin testnet.
@@ -81,8 +81,8 @@ So USC integration is mostly an adapter + wiring task, not a protocol rewrite.
 - Route both through `IVerifierAdapter`-compatible interfaces.
 
 ## Practical Claim
-“USC wasn’t live yet, so we implemented the same architecture ourselves.
-It already runs now, and USC can be attached by plugging settlement/token adapters rather than rebuilding the proof system.”
+"USC mainnet wasn't live when we built this, so we implemented the same architecture ourselves.
+It already runs now, and USC can be attached by wiring settlement/token layers rather than rebuilding the proof system."
 
 ## Current Live Capabilities
 - SPV proof generation from real Bitcoin testnet data.
