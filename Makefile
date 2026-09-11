@@ -62,6 +62,13 @@ relayer-test:
 	cd offchain/relayer && pytest
 
 # ============================================
+# Live SPV Demo
+# ============================================
+
+demo-live-spv:
+	bash script/demo_live_spv.sh
+
+# ============================================
 # Development Helpers
 # ============================================
 
@@ -80,3 +87,4 @@ help:
 	@echo "  make relayer-install- Install Python relayer"
 	@echo "  make relayer-run    - Run the relayer"
 	@echo "  make anvil          - Start local Anvil node"
+	@echo "  make demo-live-spv  - One-click SPV live demo pipeline"

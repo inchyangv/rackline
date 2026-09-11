@@ -499,39 +499,112 @@ function App() {
     )
   }
 
+  const availableCreditDisplay =
+    availableCredit === null ? '—' : `${ethers.formatUnits(availableCredit, stablecoinDecimals)} cUSD`
+  const stablecoinBalanceDisplay =
+    stablecoinBalance === null ? '—' : `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} cUSD`
+  const txOverview =
+    txState.status === 'idle'
+      ? 'No tx yet'
+      : txState.status === 'signing'
+        ? `Signing ${txState.label}`
+        : txState.status === 'pending'
+          ? `Pending ${txState.label}`
+          : txState.status === 'confirmed'
+            ? `Confirmed ${txState.label}`
+            : `Error ${txState.label}`
+  const txOverviewTone =
+    txState.status === 'confirmed' ? 'ok' : txState.status === 'error' ? 'err' : txState.status === 'pending' ? 'warn' : ''
+
   return (
     <div className="layout">
-      <header className="header">
-        <div className="brand">
-          <div className="brand-title">HashCredit Dashboard</div>
-          <div className="brand-subtitle">Creditcoin testnet (SPV path)</div>
-        </div>
-
-        <div className="wallet">
-          <div className="wallet-meta">
-            <div className="wallet-line">
-              <span className="label">Wallet</span>
-              <span className="mono">{walletAccount ? shortAddr(walletAccount) : 'Not connected'}</span>
+      <div className="chrome">
+        <header className="header">
+          <div className="brand">
+            <div className="brand-mark" aria-hidden="true">
+              <span>K</span>
             </div>
-            <div className="wallet-line">
-              <span className="label">Chain</span>
-              <span className="mono">{walletChainId ?? '—'}</span>
-              {walletChainId !== null && walletChainId !== chainId ? (
-                <span className="pill warn">expected {chainId}</span>
-              ) : null}
+            <div className="brand-copy">
+              <div className="brand-title">HashCredit.stream</div>
+              <div className="brand-subtitle">Creditcoin testnet SPV operations dashboard</div>
             </div>
+            <nav className="brand-nav" aria-label="Sections">
+              <button type="button" className="nav-pill active">
+                Overview
+              </button>
+              <button type="button" className="nav-pill">
+                Credit
+              </button>
+              <button type="button" className="nav-pill">
+                Proofs
+              </button>
+              <button type="button" className="nav-pill">
+                Admin
+              </button>
+            </nav>
           </div>
 
-          <div className="wallet-actions">
-            <button className="btn" onClick={connectWallet} disabled={!hasInjectedWallet}>
-              {hasInjectedWallet ? 'Connect wallet' : 'No wallet'}
-            </button>
-            <button className="btn secondary" onClick={() => void ensureWalletChain(chainId)} disabled={!hasInjectedWallet}>
-              Switch to {chainId}
-            </button>
+          <div className="wallet">
+            <div className="wallet-meta">
+              <div className="wallet-line">
+                <span className="label">Wallet</span>
+                <span className="mono">{walletAccount ? shortAddr(walletAccount) : 'Not connected'}</span>
+              </div>
+              <div className="wallet-line">
+                <span className="label">Chain</span>
+                <span className="mono">{walletChainId ?? '—'}</span>
+                {walletChainId !== null && walletChainId !== chainId ? (
+                  <span className="pill warn">expected {chainId}</span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="wallet-actions">
+              <button className="btn" onClick={connectWallet} disabled={!hasInjectedWallet}>
+                {hasInjectedWallet ? 'Connect wallet' : 'No wallet'}
+              </button>
+              <button className="btn secondary" onClick={() => void ensureWalletChain(chainId)} disabled={!hasInjectedWallet}>
+                Switch to {chainId}
+              </button>
+            </div>
           </div>
+        </header>
+
+        <div className="search-strip">
+          <input
+            className="quick-input"
+            value={borrowerAddress}
+            onChange={(e) => setBorrowerAddress(e.target.value)}
+            placeholder="Borrower address / wallet / payout target"
+          />
+          <button className="btn ghost" onClick={() => setBorrowerAddress(walletAccount)} disabled={!walletAccount}>
+            Use connected wallet
+          </button>
         </div>
-      </header>
+
+        <section className="metrics">
+          <article className="metric-card">
+            <div className="metric-k">Network</div>
+            <div className="metric-v">Chain {chainId}</div>
+            <div className="metric-h">Creditcoin testnet</div>
+          </article>
+          <article className="metric-card">
+            <div className="metric-k">Borrower Credit</div>
+            <div className="metric-v">{availableCreditDisplay}</div>
+            <div className="metric-h">Decimals {stablecoinDecimals}</div>
+          </article>
+          <article className="metric-card">
+            <div className="metric-k">Stablecoin Balance</div>
+            <div className="metric-v">{stablecoinBalanceDisplay}</div>
+            <div className="metric-h">Borrower wallet view</div>
+          </article>
+          <article className="metric-card">
+            <div className="metric-k">Transaction Status</div>
+            <div className={`metric-v metric-v-small ${txOverviewTone}`}>{txOverview}</div>
+            <div className="metric-h">Live signer feedback</div>
+          </article>
+        </section>
+      </div>
 
       <main className="grid">
         <section className="card">

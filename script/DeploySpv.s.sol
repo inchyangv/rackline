@@ -9,7 +9,7 @@ import { CheckpointManager } from "../contracts/CheckpointManager.sol";
 import { RiskConfig } from "../contracts/RiskConfig.sol";
 import { IRiskConfig } from "../contracts/interfaces/IRiskConfig.sol";
 import { PoolRegistry } from "../contracts/PoolRegistry.sol";
-import { MockERC20 } from "../contracts/mocks/MockERC20.sol";
+import { TestnetMintableERC20 } from "../contracts/TestnetMintableERC20.sol";
 
 /**
  * @title DeploySpv
@@ -25,7 +25,7 @@ import { MockERC20 } from "../contracts/mocks/MockERC20.sol";
  *
  * Environment Variables:
  *   PRIVATE_KEY         - Deployer private key (required)
- *   STABLECOIN_ADDRESS  - Existing stablecoin address (optional, deploys MockUSDC if not set)
+ *   STABLECOIN_ADDRESS  - Existing stablecoin address (optional, deploys test token if not set)
  *   INITIAL_LIQUIDITY   - Initial liquidity in stablecoin smallest unit (optional, default 1M)
  */
 contract DeploySpv is Script {
@@ -39,7 +39,7 @@ contract DeploySpv is Script {
     uint32 constant WINDOW_SECONDS = 30 days;
     uint128 constant NEW_BORROWER_CAP = 10_000_000000; // $10,000 (6 decimals)
     uint64 constant MIN_PAYOUT_SATS = 10000; // 0.0001 BTC
-    uint256 constant DEFAULT_INITIAL_LIQUIDITY = 1_000_000_000000; // 1M USDC (6 decimals)
+    uint256 constant DEFAULT_INITIAL_LIQUIDITY = 1_000_000_000000; // 1M (6 decimals)
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -57,12 +57,12 @@ contract DeploySpv is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Deploy or use existing stablecoin
-        MockERC20 usdc;
+        TestnetMintableERC20 stablecoin;
         if (stablecoinAddr == address(0)) {
-            usdc = new MockERC20("USD Coin", "USDC", 6);
-            console.log("[1/7] MockUSDC deployed:", address(usdc));
+            stablecoin = new TestnetMintableERC20("HashCredit USD", "hcUSD", 6, deployer);
+            console.log("[1/7] Testnet token deployed:", address(stablecoin));
         } else {
-            usdc = MockERC20(stablecoinAddr);
+            stablecoin = TestnetMintableERC20(stablecoinAddr);
             console.log("[1/7] Using existing stablecoin:", stablecoinAddr);
         }
 
@@ -96,7 +96,7 @@ contract DeploySpv is Script {
         console.log("[5/7] PoolRegistry deployed:", address(poolRegistry));
 
         // 6. Deploy LendingVault
-        LendingVault vault = new LendingVault(address(usdc), FIXED_APR_BPS);
+        LendingVault vault = new LendingVault(address(stablecoin), FIXED_APR_BPS);
         console.log("[6/7] LendingVault deployed:", address(vault));
 
         // 7. Deploy HashCreditManager with SPV verifier
@@ -105,7 +105,7 @@ contract DeploySpv is Script {
             address(vault),
             address(riskConfig),
             address(poolRegistry),
-            address(usdc)
+            address(stablecoin)
         );
         console.log("[7/7] HashCreditManager deployed:", address(manager));
 
@@ -114,12 +114,15 @@ contract DeploySpv is Script {
         console.log("");
         console.log("Vault manager configured");
 
-        // Mint initial liquidity if using mock USDC
+        // Mint initial liquidity if deploying test token
         if (stablecoinAddr == address(0) && initialLiquidity > 0) {
-            usdc.mint(deployer, initialLiquidity);
-            usdc.approve(address(vault), initialLiquidity);
+            stablecoin.mint(deployer, initialLiquidity);
+            stablecoin.approve(address(vault), initialLiquidity);
             vault.deposit(initialLiquidity);
-            console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "USDC");
+            console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "hcUSD");
+        } else {
+            console.log("Initial liquidity mint skipped (external stablecoin)");
+            console.log("Deposit manually into LendingVault if needed.");
         }
 
         vm.stopBroadcast();
@@ -131,7 +134,7 @@ contract DeploySpv is Script {
         console.log("========================================");
         console.log("");
         console.log("Contract Addresses:");
-        console.log("  Stablecoin (USDC):   ", address(usdc));
+        console.log("  Stablecoin:          ", address(stablecoin));
         console.log("  CheckpointManager:   ", address(checkpointManager));
         console.log("  BtcSpvVerifier:      ", address(spvVerifier));
         console.log("  RiskConfig:          ", address(riskConfig));

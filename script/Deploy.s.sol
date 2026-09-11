@@ -8,7 +8,7 @@ import { RelayerSigVerifier } from "../contracts/RelayerSigVerifier.sol";
 import { RiskConfig } from "../contracts/RiskConfig.sol";
 import { IRiskConfig } from "../contracts/interfaces/IRiskConfig.sol";
 import { PoolRegistry } from "../contracts/PoolRegistry.sol";
-import { MockERC20 } from "../contracts/mocks/MockERC20.sol";
+import { TestnetMintableERC20 } from "../contracts/TestnetMintableERC20.sol";
 
 /**
  * @title Deploy
@@ -29,17 +29,26 @@ contract Deploy is Script {
     uint32 constant WINDOW_SECONDS = 30 days;
     uint128 constant NEW_BORROWER_CAP = 10_000_000000; // $10,000 (6 decimals)
     uint64 constant MIN_PAYOUT_SATS = 10000; // 0.0001 BTC
+    uint256 constant DEFAULT_INITIAL_LIQUIDITY = 1_000_000_000000; // 1M (6 decimals)
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         address relayerSigner = vm.envOr("RELAYER_SIGNER", vm.addr(deployerPrivateKey));
+        address stablecoinAddr = vm.envOr("STABLECOIN_ADDRESS", address(0));
+        uint256 initialLiquidity = vm.envOr("INITIAL_LIQUIDITY", DEFAULT_INITIAL_LIQUIDITY);
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. Deploy Mock USDC (for testing, use real USDC on mainnet)
-        MockERC20 usdc = new MockERC20("USD Coin", "USDC", 6);
-        console.log("MockUSDC deployed at:", address(usdc));
+        // 1. Deploy testnet token or use existing stablecoin
+        TestnetMintableERC20 stablecoin;
+        if (stablecoinAddr == address(0)) {
+            stablecoin = new TestnetMintableERC20("HashCredit USD", "hcUSD", 6, deployer);
+            console.log("TestnetMintableERC20 deployed at:", address(stablecoin));
+        } else {
+            stablecoin = TestnetMintableERC20(stablecoinAddr);
+            console.log("Using existing stablecoin:", stablecoinAddr);
+        }
 
         // 2. Deploy RelayerSigVerifier
         RelayerSigVerifier verifier = new RelayerSigVerifier(relayerSigner);
@@ -68,7 +77,7 @@ contract Deploy is Script {
         console.log("PoolRegistry deployed at:", address(poolRegistry));
 
         // 5. Deploy LendingVault
-        LendingVault vault = new LendingVault(address(usdc), FIXED_APR_BPS);
+        LendingVault vault = new LendingVault(address(stablecoin), FIXED_APR_BPS);
         console.log("LendingVault deployed at:", address(vault));
 
         // 6. Deploy HashCreditManager
@@ -77,7 +86,7 @@ contract Deploy is Script {
             address(vault),
             address(riskConfig),
             address(poolRegistry),
-            address(usdc)
+            address(stablecoin)
         );
         console.log("HashCreditManager deployed at:", address(manager));
 
@@ -85,24 +94,28 @@ contract Deploy is Script {
         vault.setManager(address(manager));
         console.log("Vault manager set to:", address(manager));
 
-        // 8. Mint initial USDC liquidity (for testing)
-        uint256 initialLiquidity = 1_000_000_000000; // 1M USDC
-        usdc.mint(deployer, initialLiquidity);
-        usdc.approve(address(vault), initialLiquidity);
-        vault.deposit(initialLiquidity);
-        console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "USDC");
+        // 8. Initial liquidity bootstrap
+        if (stablecoinAddr == address(0) && initialLiquidity > 0) {
+            stablecoin.mint(deployer, initialLiquidity);
+            stablecoin.approve(address(vault), initialLiquidity);
+            vault.deposit(initialLiquidity);
+            console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "hcUSD");
+        } else {
+            console.log("Initial liquidity mint skipped (external stablecoin)");
+            console.log("Deposit manually into LendingVault if needed.");
+        }
 
         vm.stopBroadcast();
 
         // Print summary
         console.log("\n=== Deployment Summary ===");
-        console.log("MockUSDC:          ", address(usdc));
+        console.log("Stablecoin:        ", address(stablecoin));
         console.log("RelayerSigVerifier:", address(verifier));
         console.log("RiskConfig:        ", address(riskConfig));
         console.log("PoolRegistry:      ", address(poolRegistry));
         console.log("LendingVault:      ", address(vault));
         console.log("HashCreditManager: ", address(manager));
         console.log("\nRelayer Signer:    ", relayerSigner);
-        console.log("Initial Liquidity: ", initialLiquidity / 1e6, "USDC");
+        console.log("Initial Liquidity: ", initialLiquidity / 1e6, "token units (6 decimals)");
     }
 }
