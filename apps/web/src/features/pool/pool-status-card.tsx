@@ -1,17 +1,22 @@
 import { ethers } from 'ethers'
+import { ExternalLink } from 'lucide-react'
 import { SectionCard } from '@/components/shared/section-card'
 import { KeyValueList } from '@/components/shared/key-value-list'
 import { KeyValueRow } from '@/components/shared/key-value-row'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useConfigStore } from '@/stores/config-store'
+import { shortAddr } from '@/lib/format'
 import type { VaultInfo } from '@/hooks/use-vault-info'
 
 const DECIMALS = 6
+const EXPLORER_BASE = 'https://creditcoin-testnet.blockscout.com'
 
 type Props = {
   vault: VaultInfo
 }
 
 export function PoolStatusCard({ vault }: Props) {
+  const vaultAddress = useConfigStore((s) => s.vaultAddress)
   const { totalAssets, totalBorrowed, availableLiquidity, utilizationRate, borrowAPR, isLoading } =
     vault
 
@@ -27,9 +32,30 @@ export function PoolStatusCard({ vault }: Props) {
     return `${(Number(val) / 100).toFixed(2)}%`
   }
 
+  const explorerUrl = vaultAddress
+    ? `${EXPLORER_BASE}/address/${vaultAddress}`
+    : null
+
   return (
     <SectionCard title="Pool Status" description="Current lending pool metrics">
       <KeyValueList>
+        <KeyValueRow
+          label="Vault Contract"
+          value={
+            vaultAddress && explorerUrl ? (
+              <a
+                href={explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                {shortAddr(vaultAddress)}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ) : '—'
+          }
+          mono
+        />
         <KeyValueRow label="Total Pool Assets" value={fmtAmount(totalAssets)} mono />
         <KeyValueRow label="Total Borrowed" value={fmtAmount(totalBorrowed)} mono />
         <KeyValueRow label="Available Liquidity" value={fmtAmount(availableLiquidity)} mono />
