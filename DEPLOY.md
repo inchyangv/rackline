@@ -126,7 +126,7 @@ Railway API 서비스 Variables에 아래를 **그대로** 설정합니다.
 
 보안:
 - `API_TOKEN=<강한 랜덤 토큰>`
-- `ALLOWED_ORIGINS=["https://<Vercel 도메인>","http://localhost:5173"]`
+- `ALLOWED_ORIGINS=["https://hashcredit.studioliq.com","http://localhost:5173"]`
 
 EVM:
 - `EVM_RPC_URL=https://rpc.cc3-testnet.creditcoin.network`
@@ -149,7 +149,7 @@ Bitcoin Core RPC:
 
 검증:
 ```bash
-curl -H "X-API-Key: <API_TOKEN>" https://<railway-api-domain>/health
+curl -H "X-API-Key: <API_TOKEN>" https://api-hashcredit.studioliq.com/health
 ```
 
 응답에서 아래가 만족되어야 정상입니다:
@@ -239,7 +239,7 @@ API 호출:
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
   -H "Content-Type: application/json" \
-  -X POST https://<railway-api-domain>/checkpoint/set \
+  -X POST https://api-hashcredit.studioliq.com/checkpoint/set \
   -d '{"height": <CHECKPOINT_HEIGHT>, "dry_run": false}'
 ```
 
@@ -255,7 +255,7 @@ API 호출:
 ```bash
 curl -H "X-API-Key: <API_TOKEN>" \
   -H "Content-Type: application/json" \
-  -X POST https://<railway-api-domain>/borrower/set-pubkey-hash \
+  -X POST https://api-hashcredit.studioliq.com/borrower/set-pubkey-hash \
   -d '{"borrower":"0x...","btc_address":"tb1q...","dry_run": false}'
 ```
 
