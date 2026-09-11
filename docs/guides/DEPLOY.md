@@ -245,3 +245,128 @@ To "upgrade":
 5. Borrowers repay on old manager, borrow on new
 
 This preserves debt/LP relationships while allowing contract fixes.
+
+---
+
+## Frontend Deployment (Vercel)
+
+The HashCredit frontend (`apps/web`) is a Vite + React application designed for Vercel deployment.
+
+### Prerequisites
+
+- Vercel account (https://vercel.com)
+- Deployed contracts (addresses for environment variables)
+- (Optional) Railway API deployment for proof building automation
+
+### Step 1: Import Project
+
+1. Go to https://vercel.com/new
+2. Import your GitHub repository
+3. Set root directory to `apps/web`
+4. Framework Preset: Vite
+
+### Step 2: Environment Variables
+
+Add these in Vercel project settings (Settings → Environment Variables):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_RPC_URL` | Yes | EVM RPC URL (public, read-only) |
+| `VITE_CHAIN_ID` | Yes | EVM chain ID (e.g., `102031`) |
+| `VITE_HASH_CREDIT_MANAGER` | Yes | Manager contract address |
+| `VITE_CHECKPOINT_MANAGER` | Yes | Checkpoint contract address |
+| `VITE_BTC_SPV_VERIFIER` | Yes | SPV verifier contract address |
+| `VITE_API_URL` | Optional | HashCredit API URL for proof automation |
+
+Example values for Creditcoin testnet:
+```
+VITE_RPC_URL=https://rpc.cc3-testnet.creditcoin.network
+VITE_CHAIN_ID=102031
+VITE_HASH_CREDIT_MANAGER=0x...
+VITE_CHECKPOINT_MANAGER=0x...
+VITE_BTC_SPV_VERIFIER=0x...
+VITE_API_URL=https://your-api.railway.app
+```
+
+### Step 3: Build Settings
+
+Vercel auto-detects Vite. Verify:
+
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Install Command**: `npm install`
+
+### Step 4: Deploy
+
+Click "Deploy" and wait for build completion.
+
+### Connecting Frontend to Railway API
+
+If using the HashCredit API (Railway) for proof building:
+
+1. **Get Railway API URL** from Railway dashboard
+2. **Add to Vercel** as `VITE_API_URL`
+3. **Configure CORS on Railway API**:
+
+In Railway API environment variables:
+```bash
+ALLOWED_ORIGINS=["https://your-app.vercel.app","https://your-custom-domain.com"]
+```
+
+4. **Add API Token** (if required):
+   - The frontend can store the API token in browser localStorage
+   - Or implement a backend proxy to avoid exposing tokens
+
+### Security Notes
+
+- **Never expose private keys** in frontend environment variables
+- `VITE_*` variables are bundled into the frontend and visible to users
+- Only use public RPC URLs (no authentication) for `VITE_RPC_URL`
+- API tokens should be stored securely (not in Vercel env vars)
+- Transaction signing happens in user's wallet (MetaMask), not on server
+
+### Custom Domain
+
+1. Go to Vercel project → Settings → Domains
+2. Add your custom domain
+3. Configure DNS as instructed
+4. Update `ALLOWED_ORIGINS` on Railway API to include the new domain
+
+---
+
+## Full Stack Deployment Checklist
+
+For a complete HashCredit deployment:
+
+1. **Contracts** (Foundry)
+   - [ ] Deploy to target chain (testnet/mainnet)
+   - [ ] Verify contracts on explorer (optional)
+   - [ ] Record all contract addresses
+
+2. **Offchain Services** (Railway)
+   - [ ] Deploy API service
+   - [ ] Deploy worker service
+   - [ ] Configure PostgreSQL
+   - [ ] Set environment variables
+   - [ ] Verify `/health` endpoint
+
+3. **Frontend** (Vercel)
+   - [ ] Deploy to Vercel
+   - [ ] Configure environment variables
+   - [ ] Configure CORS on API
+   - [ ] Test wallet connection
+   - [ ] Test contract interactions
+
+4. **Operational**
+   - [ ] Register initial checkpoint
+   - [ ] Set up monitoring/alerts
+   - [ ] Document runbook for incidents
+   - [ ] Test pause/unpause flow
+
+---
+
+## Related Docs
+
+- [RAILWAY.md](./RAILWAY.md) - Railway deployment details
+- [LOCAL.md](./LOCAL.md) - Local development setup
+- [../threat-model.md](../threat-model.md) - Security considerations

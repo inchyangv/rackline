@@ -925,7 +925,7 @@
 
 ### T2.19 Vercel FE 배포 준비(API URL/CORS/환경변수)
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: FE를 Vercel에 올리고, Railway API와 안전하게 통신할 수 있도록 환경변수/CORS를 정리한다.
 - 작업:
     - `apps/web`:
@@ -938,3 +938,10 @@
         - Vercel 환경변수 목록/설정 방법을 `docs/guides/DEPLOY.md`에 추가
 - 완료 조건:
     - Vercel FE ↔ Railway API 호출이 CORS 에러 없이 동작하고, 운영 시크릿이 FE로 노출되지 않는다.
+- 완료 요약:
+    - Add VITE_API_URL env var to apps/web/.env.example for optional API integration
+    - Add comprehensive Vercel deployment section to docs/guides/DEPLOY.md
+    - Document CORS configuration for Railway API ↔ Vercel FE integration
+    - Add security notes: no private keys in VITE_* vars, token handling guidance
+    - Add Full Stack Deployment Checklist covering contracts, Railway, and Vercel
+    - Frontend build verified successfully (vite build → dist/)
