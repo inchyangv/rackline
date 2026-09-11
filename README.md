@@ -103,6 +103,18 @@ forge test --gas-report
 forge fmt
 ```
 
+## Frontend Dashboard (optional)
+
+`apps/web` contains a small web dashboard for reading state and sending transactions (borrow/repay/submitPayout).
+
+```bash
+cd apps/web
+cp .env.example .env
+# Fill VITE_* contract addresses in apps/web/.env
+npm install
+npm run dev
+```
+
 ## Documentation
 
 - [DEMO.md](./DEMO.md) - Step-by-step demo walkthrough
