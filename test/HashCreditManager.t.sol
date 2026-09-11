@@ -655,6 +655,65 @@ contract HashCreditManagerTest is Test {
     }
 
     // ============================================
+    // Auto-Grant Credit Tests (T1.1)
+    // ============================================
+
+    function test_setAutoGrantCredit() public {
+        manager.setAutoGrantCredit(1_000_000_000); // 1000 mUSDT
+        assertEq(manager.autoGrantCreditAmount(), 1_000_000_000);
+    }
+
+    function test_setAutoGrantCredit_revert_notOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(IHashCreditManager.Unauthorized.selector);
+        manager.setAutoGrantCredit(1_000_000_000);
+    }
+
+    function test_registerBorrower_autoGrantCredit() public {
+        manager.setAutoGrantCredit(1_000_000_000); // 1000 mUSDT
+
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(uint8(info.status), uint8(IHashCreditManager.BorrowerStatus.Active));
+        assertEq(info.creditLimit, 1_000_000_000, "Credit should be auto-granted");
+    }
+
+    function test_registerBorrower_noAutoGrantWhenZero() public {
+        // autoGrantCreditAmount defaults to 0
+        assertEq(manager.autoGrantCreditAmount(), 0);
+
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.creditLimit, 0, "No auto-grant when amount is 0");
+    }
+
+    function test_registerBorrower_autoGrantAndBorrow() public {
+        manager.setAutoGrantCredit(1_000_000_000); // 1000 mUSDT
+
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Alice should be able to borrow immediately
+        vm.prank(alice);
+        manager.borrow(500_000_000); // 500 mUSDT
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.currentDebt, 500_000_000);
+    }
+
+    function test_grantTestnetCredit_overridesAutoGrant() public {
+        manager.setAutoGrantCredit(1_000_000_000); // 1000 mUSDT
+
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+        assertEq(manager.getBorrowerInfo(alice).creditLimit, 1_000_000_000);
+
+        // Manual override with different amount
+        manager.grantTestnetCredit(alice, 5_000_000_000); // 5000 mUSDT
+        assertEq(manager.getBorrowerInfo(alice).creditLimit, 5_000_000_000);
+    }
+
+    // ============================================
     // Helper Functions
     // ============================================
 

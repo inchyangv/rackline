@@ -96,6 +96,9 @@ interface IHashCreditManager {
         address indexed borrower, bytes32 indexed txid, uint32 vout, uint64 amountSats, uint64 minRequired
     );
 
+    /// @notice Emitted when auto-grant credit amount is updated
+    event AutoGrantCreditUpdated(uint128 amount);
+
     // ============================================
     // Errors
     // ============================================

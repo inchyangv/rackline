@@ -110,6 +110,10 @@ contract DeploySpv is Script {
         console.log("");
         console.log("Vault manager configured");
 
+        // Auto-grant 1000 mUSDT credit on borrower registration (testnet)
+        manager.setAutoGrantCredit(1_000_000_000); // 1000 mUSDT (6 decimals)
+        console.log("Auto-grant credit set: 1000 mUSDT");
+
         // Mint initial liquidity if deploying test token
         if (stablecoinAddr == address(0) && initialLiquidity > 0) {
             stablecoin.mint(deployer, initialLiquidity);

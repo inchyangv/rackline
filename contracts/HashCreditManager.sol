@@ -79,6 +79,9 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
     /// @notice Total global debt
     uint256 public totalGlobalDebt;
 
+    /// @notice Auto-grant credit amount for new borrowers (testnet convenience)
+    uint128 public autoGrantCreditAmount;
+
     // ============================================
     // Constructor
     // ============================================
@@ -198,6 +201,15 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
     }
 
     /**
+     * @notice Set auto-grant credit amount for new borrowers
+     * @param amount Credit amount in stablecoin decimals (e.g. 1000e6 = 1000 mUSDT), 0 to disable
+     */
+    function setAutoGrantCredit(uint128 amount) external onlyOwner {
+        autoGrantCreditAmount = amount;
+        emit AutoGrantCreditUpdated(amount);
+    }
+
+    /**
      * @notice Unfreeze a borrower
      * @param borrower Address to unfreeze
      */
@@ -220,12 +232,14 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
         if (borrower == address(0)) revert InvalidAddress();
         if (_borrowers[borrower].status != BorrowerStatus.None) revert BorrowerAlreadyRegistered();
 
+        uint128 initialCredit = autoGrantCreditAmount;
+
         _borrowers[borrower] = BorrowerInfo({
             status: BorrowerStatus.Active,
             btcPayoutKeyHash: btcPayoutKeyHash,
             totalRevenueSats: 0,
             trailingRevenueSats: 0,
-            creditLimit: 0,
+            creditLimit: initialCredit,
             currentDebt: 0,
             lastPayoutTimestamp: 0,
             registeredAt: uint64(block.timestamp),
