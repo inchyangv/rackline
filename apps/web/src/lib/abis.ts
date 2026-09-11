@@ -107,6 +107,20 @@ export const HashCreditManagerAbi = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    inputs: [{ internalType: 'address', name: 'borrower', type: 'address' }],
+    name: 'getCurrentDebt',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: 'borrower', type: 'address' }],
+    name: 'getAccruedInterest',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
 
 export const BtcSpvVerifierAbi = [

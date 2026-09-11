@@ -29,7 +29,7 @@ export function BorrowerCard() {
   const walletAccount = useWalletStore((s) => s.walletAccount)
   const managerAddress = useConfigStore((s) => s.managerAddress)
   const { stablecoin } = useManagerReads()
-  const { availableCredit, borrowerInfo, stablecoinDecimals, stablecoinBalance, isLoading } =
+  const { availableCredit, borrowerInfo, stablecoinDecimals, stablecoinBalance, currentDebt, accruedInterest, isLoading } =
     useBorrowerInfo(borrowerAddress, stablecoin)
   const { borrowAPR } = useVaultInfo()
 
@@ -38,6 +38,11 @@ export function BorrowerCard() {
   const creditLimit = typeof borrowerInfo?.creditLimit === 'bigint' ? borrowerInfo.creditLimit : 0n
   const isBorrowDisabled = !borrowerInfo || borrowerStatus === 0 || creditLimit === 0n
   const aprDisplay = borrowAPR !== null ? `${(Number(borrowAPR) / 100).toFixed(2)}%` : '—'
+
+  // BTC connection status
+  const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
+  const btcPayoutKeyHash = typeof borrowerInfo?.btcPayoutKeyHash === 'string' ? borrowerInfo.btcPayoutKeyHash : ZERO_BYTES32
+  const isBtcLinked = btcPayoutKeyHash !== ZERO_BYTES32
 
   async function doBorrow() {
     const amount = ethers.parseUnits(borrowAmount || '0', stablecoinDecimals)
@@ -104,10 +109,51 @@ export function BorrowerCard() {
             mono
           />
           <KeyValueRow
-            label="Loan Details"
-            value={borrowerInfo ? JSON.stringify(borrowerInfo, null, 2) : '—'}
+            label="BTC Wallet"
+            value={
+              isLoading ? (
+                <Skeleton className="h-4 w-24" />
+              ) : !borrowerInfo ? (
+                '—'
+              ) : isBtcLinked ? (
+                <span className="text-emerald-400">Linked</span>
+              ) : (
+                <span className="text-amber-400">Not linked</span>
+              )
+            }
+          />
+          <KeyValueRow
+            label="Borrow APR"
+            value={
+              isLoading ? <Skeleton className="h-4 w-20" /> : aprDisplay
+            }
             mono
-            pre
+          />
+          <KeyValueRow
+            label="Accrued Interest"
+            value={
+              isLoading ? (
+                <Skeleton className="h-4 w-32" />
+              ) : accruedInterest === null ? (
+                '—'
+              ) : (
+                `${ethers.formatUnits(accruedInterest, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+              )
+            }
+            mono
+          />
+          <KeyValueRow
+            label="Total Repayment"
+            value={
+              isLoading ? (
+                <Skeleton className="h-4 w-32" />
+              ) : currentDebt === null ? (
+                '—'
+              ) : (
+                `${ethers.formatUnits(currentDebt, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+              )
+            }
+            mono
           />
         </KeyValueList>
 
