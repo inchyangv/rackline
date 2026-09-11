@@ -59,7 +59,7 @@ contract DeploySpv is Script {
         // 1. Deploy or use existing stablecoin
         TestnetMintableERC20 stablecoin;
         if (stablecoinAddr == address(0)) {
-            stablecoin = new TestnetMintableERC20("HashCredit USD", "hcUSD", 6, deployer);
+            stablecoin = new TestnetMintableERC20("Mock USDT", "mUSDT", 6, deployer);
             console.log("[1/7] Testnet token deployed:", address(stablecoin));
         } else {
             stablecoin = TestnetMintableERC20(stablecoinAddr);
@@ -115,7 +115,7 @@ contract DeploySpv is Script {
             stablecoin.mint(deployer, initialLiquidity);
             stablecoin.approve(address(vault), initialLiquidity);
             vault.deposit(initialLiquidity);
-            console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "hcUSD");
+            console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "mUSDT");
         } else {
             console.log("Initial liquidity mint skipped (external stablecoin)");
             console.log("Deposit manually into LendingVault if needed.");
