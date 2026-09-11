@@ -110,7 +110,7 @@ export function ClaimSection() {
         `Done!\n` +
         `  BTC signature verified on-chain (secp256k1 ecrecover)\n` +
         `  BTC address: ${claimBtcAddress}\n` +
-        `  Borrower registered with 1,000 cUSD credit`
+        `  Borrower registered with 1,000 mUSDT credit`
       )
       toast.success('BTC wallet linked & borrower registered!')
     } catch (e) {
@@ -178,7 +178,7 @@ export function ClaimSection() {
             <Label className="text-xs font-semibold">Verify On-chain & Register</Label>
           </div>
           <p className="text-xs text-muted-foreground">
-            BTC signature is verified on-chain using secp256k1 ecrecover. Borrower gets 1,000 cUSD testnet credit.
+            BTC signature is verified on-chain using secp256k1 ecrecover. Borrower gets 1,000 mUSDT testnet credit.
           </p>
           <Button
             size="sm"

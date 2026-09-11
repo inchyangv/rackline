@@ -18,6 +18,7 @@ import { OperationsTab } from '@/features/operations/operations-tab'
 import { ProofTab } from '@/features/proof/proof-tab'
 import { PoolTab } from '@/features/pool/pool-tab'
 import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
+import { STABLECOIN_SYMBOL } from '@/lib/constants'
 
 export function AppShell() {
   const [tab, setTab] = useState<TabId>(() => {
@@ -50,11 +51,11 @@ export function AppShell() {
   const availableCreditDisplay =
     availableCredit === null
       ? '—'
-      : `${ethers.formatUnits(availableCredit, stablecoinDecimals)} cUSD`
+      : `${ethers.formatUnits(availableCredit, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
   const stablecoinBalanceDisplay =
     stablecoinBalance === null
       ? '—'
-      : `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} cUSD`
+      : `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
 
   const txOverview =
     txState.status === 'idle'

@@ -14,6 +14,7 @@ import { useBorrowerInfo } from '@/hooks/use-borrower-info'
 import { useVaultInfo } from '@/hooks/use-vault-info'
 import { sendContractTx } from '@/stores/tx-store'
 import { HashCreditManagerAbi, Erc20Abi } from '@/lib/abis'
+import { STABLECOIN_SYMBOL } from '@/lib/constants'
 import { toast } from 'sonner'
 
 export function BorrowerCard() {
@@ -84,7 +85,7 @@ export function BorrowerCard() {
               ) : availableCredit === null ? (
                 '—'
               ) : (
-                `${ethers.formatUnits(availableCredit, stablecoinDecimals)} cUSD`
+                `${ethers.formatUnits(availableCredit, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
               )
             }
             mono
@@ -97,7 +98,7 @@ export function BorrowerCard() {
               ) : stablecoinBalance === null ? (
                 '—'
               ) : (
-                `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} cUSD`
+                `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
               )
             }
             mono
