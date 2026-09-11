@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
 import { SectionCard } from '@/components/shared/section-card'
 import { KeyValueList } from '@/components/shared/key-value-list'
@@ -6,6 +6,7 @@ import { KeyValueRow } from '@/components/shared/key-value-row'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { useApiStore } from '@/stores/api-store'
 import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
@@ -15,7 +16,9 @@ import { HashCreditManagerAbi, BtcSpvVerifierAbi } from '@/lib/abis'
 import { isHexBytes } from '@/lib/format'
 import { toast } from 'sonner'
 
-export function AdminTab() {
+export function AdminSection() {
+  const [open, setOpen] = useState(false)
+
   const adminBorrower = useApiStore((s) => s.adminBorrower)
   const setAdminBorrower = useApiStore((s) => s.setAdminBorrower)
   const adminBtcAddr = useApiStore((s) => s.adminBtcAddr)
@@ -34,7 +37,6 @@ export function AdminTab() {
 
   const { spvBorrowerOnchainPubkeyHash } = useSpvReads(spvBorrower)
 
-  // Convenience: compute keccak256(btcAddressString)
   useEffect(() => {
     if (!adminBtcAddr) return
     try {
@@ -84,53 +86,63 @@ export function AdminTab() {
   }
 
   return (
-    <>
-      <SectionCard title="Admin (Manager, Wallet)" description="Only owner succeeds. Check revert reason in Tx status.">
-        <div className="space-y-3">
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">registerBorrower: borrower</Label>
-            <Input value={adminBorrower} onChange={(e) => setAdminBorrower(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">BTC address (string → keccak)</Label>
-            <Input value={adminBtcAddr} onChange={(e) => setAdminBtcAddr(e.target.value)} placeholder="tb1..." className="mt-1 font-mono text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">btcPayoutKeyHash (bytes32)</Label>
-            <Input value={adminBtcKeyHash} onChange={(e) => setAdminBtcKeyHash(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => void registerBorrower()} disabled={!walletAccount}>
-            registerBorrower
-          </Button>
+    <Collapsible open={open} onOpenChange={setOpen} className="col-span-full">
+      <CollapsibleTrigger asChild>
+        <button className="flex w-full items-center gap-2 rounded-xl border border-border/40 bg-gradient-to-br from-card/80 to-card/60 px-4 py-3 text-sm font-semibold text-foreground/90 hover:bg-card/90 transition-colors">
+          <span className="transition-transform" style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+          Admin (Owner-only)
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3">
+          <SectionCard title="Admin (Manager, Wallet)" description="Only owner succeeds. Check revert reason in Tx status.">
+            <div className="space-y-3">
+              <div>
+                <Label className="text-[10px] uppercase tracking-widest">registerBorrower: borrower</Label>
+                <Input value={adminBorrower} onChange={(e) => setAdminBorrower(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-widest">BTC address (string → keccak)</Label>
+                <Input value={adminBtcAddr} onChange={(e) => setAdminBtcAddr(e.target.value)} placeholder="tb1..." className="mt-1 font-mono text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-widest">btcPayoutKeyHash (bytes32)</Label>
+                <Input value={adminBtcKeyHash} onChange={(e) => setAdminBtcKeyHash(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => void registerBorrower()} disabled={!walletAccount}>
+                registerBorrower
+              </Button>
 
-          <div className="pt-2">
-            <Label className="text-[10px] uppercase tracking-widest">setVerifier: newVerifier</Label>
-            <Input value={adminNewVerifier} onChange={(e) => setAdminNewVerifier(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => void setVerifier()} disabled={!walletAccount}>
-            setVerifier
-          </Button>
-        </div>
-      </SectionCard>
+              <div className="pt-2">
+                <Label className="text-[10px] uppercase tracking-widest">setVerifier: newVerifier</Label>
+                <Input value={adminNewVerifier} onChange={(e) => setAdminNewVerifier(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => void setVerifier()} disabled={!walletAccount}>
+                setVerifier
+              </Button>
+            </div>
+          </SectionCard>
 
-      <SectionCard title="Admin (SPV Verifier, Wallet)" description="setBorrowerPubkeyHash is required for the SPV path.">
-        <div className="space-y-3">
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">borrower</Label>
-            <Input value={spvBorrower} onChange={(e) => setSpvBorrower(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">pubkeyHash (bytes20)</Label>
-            <Input value={spvPubkeyHash} onChange={(e) => setSpvPubkeyHash(e.target.value)} placeholder="0x + 40 hex" className="mt-1 font-mono text-xs" />
-          </div>
-          <KeyValueList>
-            <KeyValueRow label="on-chain pubkeyHash" value={spvBorrowerOnchainPubkeyHash || '—'} mono />
-          </KeyValueList>
-          <Button variant="secondary" size="sm" onClick={() => void setBorrowerPubkeyHash()} disabled={!walletAccount}>
-            setBorrowerPubkeyHash
-          </Button>
+          <SectionCard title="Admin (SPV Verifier, Wallet)" description="setBorrowerPubkeyHash is required for the SPV path.">
+            <div className="space-y-3">
+              <div>
+                <Label className="text-[10px] uppercase tracking-widest">borrower</Label>
+                <Input value={spvBorrower} onChange={(e) => setSpvBorrower(e.target.value)} placeholder="0x..." className="mt-1 font-mono text-xs" />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-widest">pubkeyHash (bytes20)</Label>
+                <Input value={spvPubkeyHash} onChange={(e) => setSpvPubkeyHash(e.target.value)} placeholder="0x + 40 hex" className="mt-1 font-mono text-xs" />
+              </div>
+              <KeyValueList>
+                <KeyValueRow label="on-chain pubkeyHash" value={spvBorrowerOnchainPubkeyHash || '—'} mono />
+              </KeyValueList>
+              <Button variant="secondary" size="sm" onClick={() => void setBorrowerPubkeyHash()} disabled={!walletAccount}>
+                setBorrowerPubkeyHash
+              </Button>
+            </div>
+          </SectionCard>
         </div>
-      </SectionCard>
-    </>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

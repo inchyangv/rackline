@@ -4,8 +4,6 @@ import { KeyValueRow } from '@/components/shared/key-value-row'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Separator } from '@/components/ui/separator'
 import { useApiStore } from '@/stores/api-store'
 import { useApiClient } from '@/hooks/use-api-client'
 import { useConfigStore } from '@/stores/config-store'
@@ -14,10 +12,6 @@ import { CheckpointManagerAbi } from '@/lib/abis'
 import { toast } from 'sonner'
 
 export function OperationsTab() {
-  const apiUrl = useApiStore((s) => s.apiUrl)
-  const setApiUrl = useApiStore((s) => s.setApiUrl)
-  const apiDryRun = useApiStore((s) => s.apiDryRun)
-  const setApiDryRun = useApiStore((s) => s.setApiDryRun)
   const apiBusy = useApiStore((s) => s.apiBusy)
   const apiLog = useApiStore((s) => s.apiLog)
   const apiCheckpointHeight = useApiStore((s) => s.apiCheckpointHeight)
@@ -52,10 +46,6 @@ export function OperationsTab() {
         throw new Error('Invalid /checkpoint/build response payload')
       }
 
-      if (apiDryRun) {
-        return { build: built, wallet: 'skipped (dry_run=true)' }
-      }
-
       const chainWorkHex = payload.chain_work.startsWith('0x')
         ? payload.chain_work
         : `0x${payload.chain_work}`
@@ -74,26 +64,6 @@ export function OperationsTab() {
       full
     >
       <div className="space-y-4">
-        <div className="space-y-2">
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">API URL</Label>
-            <Input
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="https://api-hashcredit...."
-              className="mt-1 font-mono text-xs"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id="dry-run" checked={apiDryRun} onCheckedChange={(v) => setApiDryRun(v === true)} />
-            <Label htmlFor="dry-run" className="text-xs text-muted-foreground cursor-pointer">
-              dry_run (skip wallet tx)
-            </Label>
-          </div>
-        </div>
-
-        <Separator />
-
         <div className="space-y-2">
           <div>
             <Label className="text-[10px] uppercase tracking-widest">Checkpoint height</Label>

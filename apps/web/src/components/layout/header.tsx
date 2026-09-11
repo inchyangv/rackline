@@ -10,8 +10,6 @@ const tabs: { id: TabId; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'ops', label: 'Operations' },
   { id: 'proof', label: 'Proof/Submit' },
-  { id: 'admin', label: 'Admin' },
-  { id: 'config', label: 'Settings' },
 ]
 
 export function Header({ tab, onTabChange }: Props) {

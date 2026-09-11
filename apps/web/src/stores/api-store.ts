@@ -1,14 +1,8 @@
 import { create } from 'zustand'
-import { env } from '@/lib/env'
-import { getLocalStorageString, removeLocalStorageKey, setLocalStorageString } from '@/lib/storage'
-
-removeLocalStorageKey('hashcredit_api_token')
 
 type ApiState = {
-  apiUrl: string
   apiBusy: boolean
   apiLog: string
-  apiDryRun: boolean
   apiCheckpointHeight: string
   apiTxid: string
   apiVout: string
@@ -25,10 +19,8 @@ type ApiState = {
   borrowAmount: string
   repayAmount: string
   approveAmount: string
-  setApiUrl: (v: string) => void
   setApiBusy: (v: boolean) => void
   setApiLog: (v: string) => void
-  setApiDryRun: (v: boolean) => void
   setApiCheckpointHeight: (v: string) => void
   setApiTxid: (v: string) => void
   setApiVout: (v: string) => void
@@ -45,14 +37,11 @@ type ApiState = {
   setBorrowAmount: (v: string) => void
   setRepayAmount: (v: string) => void
   setApproveAmount: (v: string) => void
-  applyAsBorrower: (address: string) => void
 }
 
 export const useApiStore = create<ApiState>((set) => ({
-  apiUrl: getLocalStorageString('hashcredit_api_url', env.apiUrl),
   apiBusy: false,
   apiLog: '',
-  apiDryRun: false,
   apiCheckpointHeight: '',
   apiTxid: '',
   apiVout: '0',
@@ -69,13 +58,8 @@ export const useApiStore = create<ApiState>((set) => ({
   borrowAmount: '1000',
   repayAmount: '1000',
   approveAmount: '1000',
-  setApiUrl: (v) => {
-    setLocalStorageString('hashcredit_api_url', v)
-    set({ apiUrl: v })
-  },
   setApiBusy: (v) => set({ apiBusy: v }),
   setApiLog: (v) => set({ apiLog: v }),
-  setApiDryRun: (v) => set({ apiDryRun: v }),
   setApiCheckpointHeight: (v) => set({ apiCheckpointHeight: v }),
   setApiTxid: (v) => set({ apiTxid: v }),
   setApiVout: (v) => set({ apiVout: v }),
@@ -92,10 +76,4 @@ export const useApiStore = create<ApiState>((set) => ({
   setBorrowAmount: (v) => set({ borrowAmount: v }),
   setRepayAmount: (v) => set({ repayAmount: v }),
   setApproveAmount: (v) => set({ approveAmount: v }),
-  applyAsBorrower: (address) =>
-    set({
-      borrowerAddress: address,
-      adminBorrower: address,
-      spvBorrower: address,
-    }),
 }))

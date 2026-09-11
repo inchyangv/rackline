@@ -1,17 +1,17 @@
 import { useCallback } from 'react'
+import { env } from '@/lib/env'
 import { normalizeBaseUrl } from '@/lib/explorer'
 import { getErrorMessage } from '@/lib/ethereum'
 import { useApiStore } from '@/stores/api-store'
 
 export function useApiClient() {
-  const apiUrl = useApiStore((s) => s.apiUrl)
   const setApiBusy = useApiStore((s) => s.setApiBusy)
   const setApiLog = useApiStore((s) => s.setApiLog)
 
   const apiRequest = useCallback(
     async (path: string, init?: RequestInit): Promise<unknown> => {
-      const base = normalizeBaseUrl(apiUrl)
-      if (!base) throw new Error('API URL is empty. (VITE_API_URL or input value)')
+      const base = normalizeBaseUrl(env.apiUrl)
+      if (!base) throw new Error('API URL is empty. Set VITE_API_URL in .env')
 
       const headers = new Headers(init?.headers)
       if (!headers.has('content-type')) headers.set('content-type', 'application/json')
@@ -33,7 +33,7 @@ export function useApiClient() {
       }
       return json
     },
-    [apiUrl],
+    [],
   )
 
   const apiRun = useCallback(

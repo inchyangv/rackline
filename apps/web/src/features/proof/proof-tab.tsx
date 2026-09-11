@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { useApiStore } from '@/stores/api-store'
 import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
@@ -17,8 +16,6 @@ import { isHexBytes } from '@/lib/format'
 import { toast } from 'sonner'
 
 export function ProofTab() {
-  const apiUrl = useApiStore((s) => s.apiUrl)
-  const setApiUrl = useApiStore((s) => s.setApiUrl)
   const apiBusy = useApiStore((s) => s.apiBusy)
   const apiLog = useApiStore((s) => s.apiLog)
   const apiTxid = useApiStore((s) => s.apiTxid)
@@ -80,15 +77,6 @@ export function ProofTab() {
     <>
       <SectionCard title="Proof Build (API)" description="Build proof from API, then submit with wallet." full>
         <div className="space-y-3">
-          <div>
-            <div>
-              <Label className="text-[10px] uppercase tracking-widest">API URL</Label>
-              <Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api-hashcredit...." className="mt-1 font-mono text-xs" />
-            </div>
-          </div>
-
-          <Separator />
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <Label className="text-[10px] uppercase tracking-widest">txid</Label>

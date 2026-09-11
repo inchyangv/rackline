@@ -17,14 +17,12 @@ import { useBorrowerInfo } from '@/hooks/use-borrower-info'
 import { DashboardTab } from '@/features/dashboard/dashboard-tab'
 import { OperationsTab } from '@/features/operations/operations-tab'
 import { ProofTab } from '@/features/proof/proof-tab'
-import { AdminTab } from '@/features/admin/admin-tab'
-import { SettingsTab } from '@/features/settings/settings-tab'
 import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
 
 export function AppShell() {
   const [tab, setTab] = useState<TabId>(() => {
     const v = getLocalStorageString('hashcredit_tab', 'dashboard')
-    return v === 'dashboard' || v === 'ops' || v === 'proof' || v === 'admin' || v === 'config'
+    return v === 'dashboard' || v === 'ops' || v === 'proof'
       ? v
       : 'dashboard'
   })
@@ -140,8 +138,6 @@ export function AppShell() {
         {tab === 'dashboard' && <DashboardTab />}
         {tab === 'ops' && <OperationsTab />}
         {tab === 'proof' && <ProofTab />}
-        {tab === 'admin' && <AdminTab />}
-        {tab === 'config' && <SettingsTab />}
 
         {/* Tx Status always visible */}
         <div className="col-span-full">
