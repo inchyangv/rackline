@@ -190,7 +190,7 @@
 
 ### T1.2 CheckpointManager Contract
 - Priority: P1
-- Status: [ ]
+- Status: [x] DONE
 - 목적: checkpoint header를 온체인에 등록/관리한다.
 - 작업:
     - 멀티시그/owner 권한으로 checkpoint set
