@@ -197,7 +197,8 @@ contract HashCreditManager is IHashCreditManager {
             creditLimit: 0,
             currentDebt: 0,
             lastPayoutTimestamp: 0,
-            registeredAt: uint64(block.timestamp)
+            registeredAt: uint64(block.timestamp),
+            payoutCount: 0
         });
 
         emit BorrowerRegistered(borrower, btcPayoutKeyHash, uint64(block.timestamp));
@@ -238,12 +239,21 @@ contract HashCreditManager is IHashCreditManager {
         // 6. Mark payout as processed
         processedPayouts[payoutKey] = true;
 
-        // 7. Update borrower revenue
-        info.totalRevenueSats += evidence.amountSats;
-        info.trailingRevenueSats += evidence.amountSats;
+        // 7. Update payout count
+        info.payoutCount++;
+
+        // 8. Apply provenance heuristics to get effective amount
+        uint64 effectiveAmount = IRiskConfig(riskConfig).applyPayoutHeuristics(
+            evidence.amountSats,
+            info.payoutCount
+        );
+
+        // 9. Update borrower revenue with effective amount
+        info.totalRevenueSats += effectiveAmount;
+        info.trailingRevenueSats += effectiveAmount;
         info.lastPayoutTimestamp = evidence.blockTimestamp;
 
-        // 8. Recalculate credit limit
+        // 10. Recalculate credit limit
         uint128 newCreditLimit = _calculateCreditLimit(info.trailingRevenueSats);
 
         // Apply new borrower cap if applicable
@@ -261,7 +271,7 @@ contract HashCreditManager is IHashCreditManager {
             evidence.borrower,
             evidence.txid,
             evidence.vout,
-            evidence.amountSats,
+            effectiveAmount, // Emit effective amount, not original
             evidence.blockHeight,
             newCreditLimit
         );

@@ -27,6 +27,12 @@ interface IRiskConfig {
         uint64 minPayoutSats;
         /// @notice BTC/USD price for credit calculation (8 decimals, e.g., 50000_00000000 = $50,000)
         uint64 btcPriceUsd;
+        /// @notice Minimum payout count before full credit limit applies (0 = disabled)
+        uint32 minPayoutCountForFullCredit;
+        /// @notice Threshold above which a payout is considered "large" (satoshis, 0 = disabled)
+        uint64 largePayoutThresholdSats;
+        /// @notice Discount rate for large payouts in basis points (e.g., 5000 = 50% counted)
+        uint32 largePayoutDiscountBps;
     }
 
     // ============================================
@@ -41,7 +47,10 @@ interface IRiskConfig {
         uint128 newBorrowerCap,
         uint128 globalCap,
         uint64 minPayoutSats,
-        uint64 btcPriceUsd
+        uint64 btcPriceUsd,
+        uint32 minPayoutCountForFullCredit,
+        uint64 largePayoutThresholdSats,
+        uint32 largePayoutDiscountBps
     );
 
     /// @notice Emitted when BTC price is updated
@@ -98,4 +107,18 @@ interface IRiskConfig {
     function globalCap() external view returns (uint128);
     function minPayoutSats() external view returns (uint64);
     function btcPriceUsd() external view returns (uint64);
+    function minPayoutCountForFullCredit() external view returns (uint32);
+    function largePayoutThresholdSats() external view returns (uint64);
+    function largePayoutDiscountBps() external view returns (uint32);
+
+    /**
+     * @notice Apply provenance heuristics to a payout amount
+     * @param amountSats Original payout amount in satoshis
+     * @param payoutCount Current payout count for the borrower
+     * @return effectiveAmount Amount after applying heuristics
+     */
+    function applyPayoutHeuristics(
+        uint64 amountSats,
+        uint32 payoutCount
+    ) external view returns (uint64 effectiveAmount);
 }

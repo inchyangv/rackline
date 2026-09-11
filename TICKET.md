@@ -236,7 +236,7 @@
 
 ### T1.5 Provenance 강화(선택): Pool Cluster Registry + Heuristic Rules
 - Priority: P1
-- Status: [ ]
+- Status: [x] DONE
 - 목적: self-transfer 조작 가능성을 낮춘다.
 - 작업:
     - 풀 payout 클러스터 allowlist (운영 시작)

@@ -55,7 +55,10 @@ contract RiskConfig is IRiskConfig {
             params.newBorrowerCap,
             params.globalCap,
             params.minPayoutSats,
-            params.btcPriceUsd
+            params.btcPriceUsd,
+            params.minPayoutCountForFullCredit,
+            params.largePayoutThresholdSats,
+            params.largePayoutDiscountBps
         );
     }
 
@@ -158,6 +161,61 @@ contract RiskConfig is IRiskConfig {
         return _params.btcPriceUsd;
     }
 
+    /**
+     * @inheritdoc IRiskConfig
+     */
+    function minPayoutCountForFullCredit() external view override returns (uint32) {
+        return _params.minPayoutCountForFullCredit;
+    }
+
+    /**
+     * @inheritdoc IRiskConfig
+     */
+    function largePayoutThresholdSats() external view override returns (uint64) {
+        return _params.largePayoutThresholdSats;
+    }
+
+    /**
+     * @inheritdoc IRiskConfig
+     */
+    function largePayoutDiscountBps() external view override returns (uint32) {
+        return _params.largePayoutDiscountBps;
+    }
+
+    /**
+     * @inheritdoc IRiskConfig
+     */
+    function applyPayoutHeuristics(
+        uint64 amountSats,
+        uint32 payoutCount
+    ) external view override returns (uint64 effectiveAmount) {
+        effectiveAmount = amountSats;
+
+        // Apply large payout discount if configured
+        if (
+            _params.largePayoutThresholdSats > 0 &&
+            amountSats > _params.largePayoutThresholdSats
+        ) {
+            // Apply discount: effectiveAmount = amount * discountBps / 10000
+            effectiveAmount = uint64(
+                (uint256(amountSats) * _params.largePayoutDiscountBps) / 10_000
+            );
+        }
+
+        // If borrower hasn't met minimum payout count, cap the effective amount
+        // This prevents single large deposit attacks for new borrowers
+        if (
+            _params.minPayoutCountForFullCredit > 0 &&
+            payoutCount < _params.minPayoutCountForFullCredit
+        ) {
+            // Progressive cap: allow (payoutCount / minCount) * 100% of the amount
+            // For simplicity, cap at minPayoutSats for first few payouts
+            if (effectiveAmount > _params.minPayoutSats) {
+                effectiveAmount = _params.minPayoutSats;
+            }
+        }
+    }
+
     // ============================================
     // Internal Functions
     // ============================================
@@ -166,5 +224,6 @@ contract RiskConfig is IRiskConfig {
         if (params.advanceRateBps > 10_000) revert AdvanceRateTooHigh();
         if (params.btcPriceUsd == 0) revert InvalidParameter();
         if (params.windowSeconds == 0) revert InvalidParameter();
+        if (params.largePayoutDiscountBps > 10_000) revert InvalidParameter();
     }
 }

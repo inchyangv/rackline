@@ -54,7 +54,10 @@ contract HashCreditManagerTest is Test {
             newBorrowerCap: NEW_BORROWER_CAP,
             globalCap: 0, // No global cap
             minPayoutSats: MIN_PAYOUT_SATS,
-            btcPriceUsd: BTC_PRICE_USD
+            btcPriceUsd: BTC_PRICE_USD,
+            minPayoutCountForFullCredit: 0, // Disabled for tests
+            largePayoutThresholdSats: 0, // Disabled for tests
+            largePayoutDiscountBps: 10_000 // 100% (no discount)
         });
         riskConfig = new RiskConfig(params);
 

@@ -53,7 +53,10 @@ contract Deploy is Script {
             newBorrowerCap: NEW_BORROWER_CAP,
             globalCap: 0, // No global cap initially
             minPayoutSats: MIN_PAYOUT_SATS,
-            btcPriceUsd: BTC_PRICE_USD
+            btcPriceUsd: BTC_PRICE_USD,
+            minPayoutCountForFullCredit: 3, // Require 3 payouts before full credit
+            largePayoutThresholdSats: 10_000_000, // 0.1 BTC threshold for large payouts
+            largePayoutDiscountBps: 5000 // Large payouts count at 50%
         });
         RiskConfig riskConfig = new RiskConfig(riskParams);
         console.log("RiskConfig deployed at:", address(riskConfig));

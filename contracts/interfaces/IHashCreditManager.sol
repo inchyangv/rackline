@@ -42,6 +42,8 @@ interface IHashCreditManager {
         uint64 lastPayoutTimestamp;
         /// @notice Registration timestamp
         uint64 registeredAt;
+        /// @notice Total number of payouts received (for provenance heuristics)
+        uint32 payoutCount;
     }
 
     // ============================================
