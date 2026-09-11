@@ -223,7 +223,7 @@
 
 ### T1.4 Proof Builder/Prover (Python)
 - Priority: P1
-- Status: [ ]
+- Status: [x] DONE
 - 목적: 제출에 필요한 header chain + merkle branch + rawTx를 구성한다.
 - 작업:
     - data source: Bitcoin Core RPC 권장(txindex 필요 가능)
