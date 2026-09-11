@@ -23,7 +23,13 @@ Bitcoin payout (tx) → SPV proof → On-chain credit limit → Borrow / Repay s
 
 Bitcoin miners earn recurring revenue but face persistent working capital needs — hardware, electricity, facility costs. Existing on-chain lending requires locking collateral, which doesn't model a miner's actual revenue stream. Off-chain credit underwriting is opaque and impossible to verify on-chain.
 
+The root issue: **hashrate — a miner's core productive asset — is invisible on-chain.** There is no trustless way to verify it without relying on a centralized intermediary.
+
 ## Solution
+
+The insight: **you can't prove hashrate directly — it's a physical rate. But you can prove its output.**
+
+Every pool payout is a Bitcoin transaction proportional to contributed hash power. That transaction is committed to by Bitcoin's proof-of-work and verifiable by anyone with block headers. Payout history *is* the hashrate record. SPV verification turns that record into trustless on-chain evidence — no oracle, no bridge, no trusted third party.
 
 HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit layer:
 
@@ -144,10 +150,16 @@ See [`docs/threat-model.md`](docs/threat-model.md) and [`docs/audit-checklist.md
 
 ## USC Readiness
 
-USC (Universal Smart Contract) mainnet was not live during development. The architecture is designed for drop-in integration:
+HashCredit and USC share the same architectural principle:
 
-- `IVerifierAdapter` decouples proof verification from credit logic
-- `LendingVault` accepts any ERC20 token address
+> **Prove a real-world economic event cryptographically → authorize on-chain financial operations.**
+
+USC does this for off-chain credit and trade events. HashCredit does it for Bitcoin mining payouts. The proof mechanism differs; the pattern is identical.
+
+USC mainnet was not live during development. Rather than wait, we implemented the same architecture ourselves using BTC SPV as the proof source — so the protocol works now and can attach to USC later without redesigning the core proof-credit separation.
+
+- `IVerifierAdapter` is the seam: new proof sources plug in without touching credit logic
+- `LendingVault` accepts any ERC20 token address — swap in USC with zero code changes
 - USC integration is an **adapter + wiring task**, not a protocol rewrite
 
 Integration paths: swap vault asset to USC token, add USC-specific settlement adapter, or run multi-verifier mode alongside BTC SPV.
