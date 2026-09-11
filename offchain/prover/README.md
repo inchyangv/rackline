@@ -181,6 +181,37 @@ hashcredit-prover set-borrower-pubkey-hash \
     --private-key $PRIVATE_KEY
 ```
 
+### Run the SPV relayer
+
+Automatically watch Bitcoin addresses and submit proofs:
+
+```bash
+hashcredit-prover run-relayer addresses.json \
+    --manager $HASH_CREDIT_MANAGER \
+    --checkpoint-manager $CHECKPOINT_MANAGER
+```
+
+The addresses file should be a JSON array:
+```json
+[
+    {"btc_address": "tb1q...", "borrower": "0x1234...", "enabled": true},
+    {"btc_address": "tb1q...", "borrower": "0x5678...", "enabled": true}
+]
+```
+
+Options:
+- `--confirmations`: Required confirmations (default: 6)
+- `--poll-interval`: Poll interval in seconds (default: 60)
+- `--db`: SQLite database path for dedupe (default: relayer.db)
+- `--once`: Run once and exit (for testing)
+
+The relayer will:
+1. Scan new blocks for transactions to watched addresses
+2. Wait for required confirmations
+3. Automatically select a suitable checkpoint
+4. Build SPV proof and submit to HashCreditManager
+5. Track submitted payouts in SQLite to prevent double-submission
+
 ## Requirements
 
 - Python 3.11+
@@ -215,5 +246,7 @@ hashcredit_prover/
 ├── rpc.py           # Bitcoin RPC client
 ├── evm.py           # EVM/Creditcoin contract interactions
 ├── proof_builder.py # Main proof generation logic
+├── watcher.py       # Bitcoin address monitoring
+├── relayer.py       # SPV relayer (auto proof submission)
 └── cli.py           # Command-line interface
 ```

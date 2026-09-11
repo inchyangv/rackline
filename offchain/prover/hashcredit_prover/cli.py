@@ -565,5 +565,146 @@ def submit_proof(
     asyncio.run(_submit_proof())
 
 
+@app.command()
+def run_relayer(
+    addresses_file: str = typer.Argument(
+        ..., help="JSON file with watched addresses [{btc_address, borrower}, ...]"
+    ),
+    db_path: str = typer.Option(
+        "relayer.db", "--db", "-d", help="SQLite database path"
+    ),
+    hash_credit_manager: Optional[str] = typer.Option(
+        None,
+        "--manager",
+        "-m",
+        envvar="HASH_CREDIT_MANAGER",
+        help="HashCreditManager contract address",
+    ),
+    checkpoint_manager: Optional[str] = typer.Option(
+        None,
+        "--checkpoint-manager",
+        envvar="CHECKPOINT_MANAGER",
+        help="CheckpointManager contract address",
+    ),
+    rpc_url: Optional[str] = typer.Option(
+        None, "--rpc-url", "-r", envvar="BITCOIN_RPC_URL", help="Bitcoin RPC URL"
+    ),
+    rpc_user: Optional[str] = typer.Option(
+        None, "--rpc-user", "-u", envvar="BITCOIN_RPC_USER", help="Bitcoin RPC user"
+    ),
+    rpc_password: Optional[str] = typer.Option(
+        None, "--rpc-password", "-p", envvar="BITCOIN_RPC_PASSWORD", help="Bitcoin RPC password"
+    ),
+    evm_rpc_url: Optional[str] = typer.Option(
+        None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
+    ),
+    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    private_key: Optional[str] = typer.Option(
+        None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
+    ),
+    confirmations: int = typer.Option(6, "--confirmations", help="Required confirmations"),
+    poll_interval: int = typer.Option(60, "--poll-interval", help="Poll interval in seconds"),
+    run_once: bool = typer.Option(False, "--once", help="Run once and exit"),
+) -> None:
+    """
+    Run the SPV relayer to watch Bitcoin addresses and submit proofs.
+
+    Watches Bitcoin addresses for incoming transactions, waits for
+    confirmations, builds SPV proofs, and submits them to HashCreditManager.
+
+    The addresses file should be a JSON array:
+    [
+        {"btc_address": "tb1q...", "borrower": "0x1234..."},
+        ...
+    ]
+
+    Example:
+        hashcredit-prover run-relayer addresses.json \\
+            --manager 0xABC123... \\
+            --checkpoint-manager 0xDEF456...
+    """
+    import json
+    from pathlib import Path
+    from .watcher import WatchedAddress
+    from .relayer import SPVRelayer, RelayerConfig
+
+    async def _run_relayer() -> None:
+        # Validate required params
+        if not hash_credit_manager:
+            typer.echo("Error: --manager or HASH_CREDIT_MANAGER env var required", err=True)
+            raise typer.Exit(1)
+        if not checkpoint_manager:
+            typer.echo("Error: --checkpoint-manager or CHECKPOINT_MANAGER env var required", err=True)
+            raise typer.Exit(1)
+        if not private_key:
+            typer.echo("Error: --private-key or PRIVATE_KEY env var required", err=True)
+            raise typer.Exit(1)
+
+        # Load watched addresses
+        try:
+            with open(addresses_file) as f:
+                addresses_data = json.load(f)
+        except Exception as e:
+            typer.echo(f"Error loading addresses file: {e}", err=True)
+            raise typer.Exit(1)
+
+        watched_addresses = [
+            WatchedAddress(
+                btc_address=a["btc_address"],
+                borrower=a["borrower"],
+                enabled=a.get("enabled", True),
+            )
+            for a in addresses_data
+        ]
+
+        typer.echo(f"Loaded {len(watched_addresses)} watched addresses")
+
+        # Create config
+        config = RelayerConfig(
+            bitcoin_rpc=BitcoinRPCConfig(
+                url=rpc_url or os.getenv("BITCOIN_RPC_URL", "http://localhost:18332"),
+                user=rpc_user or os.getenv("BITCOIN_RPC_USER", ""),
+                password=rpc_password or os.getenv("BITCOIN_RPC_PASSWORD", ""),
+            ),
+            evm=EVMConfig(
+                rpc_url=evm_rpc_url or os.getenv("EVM_RPC_URL", "http://localhost:8545"),
+                chain_id=chain_id,
+                private_key=private_key,
+            ),
+            hash_credit_manager=hash_credit_manager,
+            checkpoint_manager=checkpoint_manager,
+            watched_addresses=watched_addresses,
+            db_path=Path(db_path),
+            required_confirmations=confirmations,
+            poll_interval_seconds=poll_interval,
+        )
+
+        # Create and run relayer
+        relayer = SPVRelayer(config)
+
+        typer.echo(f"\nStarting SPV relayer...")
+        typer.echo(f"  Bitcoin RPC:     {config.bitcoin_rpc.url}")
+        typer.echo(f"  EVM RPC:         {config.evm.rpc_url}")
+        typer.echo(f"  Manager:         {hash_credit_manager}")
+        typer.echo(f"  Checkpoint Mgr:  {checkpoint_manager}")
+        typer.echo(f"  Confirmations:   {confirmations}")
+        typer.echo(f"  Poll interval:   {poll_interval}s")
+        typer.echo(f"  Database:        {db_path}")
+        typer.echo("")
+
+        if run_once:
+            await relayer.run_once()
+            typer.echo("Completed single run")
+        else:
+            typer.echo("Press Ctrl+C to stop")
+            try:
+                await relayer.run()
+            except KeyboardInterrupt:
+                relayer.stop()
+                typer.echo("\nRelayer stopped")
+
+    asyncio.run(_run_relayer())
+
+
 if __name__ == "__main__":
     main()

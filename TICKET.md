@@ -334,7 +334,7 @@
 
 ### T1.10 SPV Relayer(감시/자동 제출) + dedupe/confirmations
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 운영 가능한 최소 relayer를 만들어 **Bitcoin testnet 주소 감시 → confirmations 충족 → proof 생성 → submit → dedupe**까지 자동화한다.
 - 작업:
     - Bitcoin Core RPC 기반 주소 감시(최소: txid 리스트/블록 스캔 전략 중 하나)
@@ -344,6 +344,13 @@
     - 실패 케이스(재시도/로그/원인 노출) 정리
 - 완료 조건:
     - 한 주소를 지정하면 payout 트랜잭션을 자동으로 찾아 submit하고, 중복 제출이 방지된다.
+- 완료 요약:
+    - Created `watcher.py` with AddressWatcher and PayoutStore (SQLite dedupe)
+    - Created `relayer.py` with SPVRelayer class for automatic proof submission
+    - Added `run-relayer` CLI command with JSON addresses file input
+    - Auto checkpoint selection within max_header_chain constraint
+    - Configurable confirmations, poll interval
+    - Updated README.md with relayer documentation
 
 ---
 
