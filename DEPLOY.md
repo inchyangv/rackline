@@ -43,8 +43,8 @@ SPV 모드는 **Bitcoin Core RPC가 필수**입니다.
 
 필수:
 - `BITCOIN_RPC_URL` (보통 testnet: `http://<host>:18332`)
-- `BITCOIN_RPC_USER`
-- `BITCOIN_RPC_PASSWORD`
+- `BITCOIN_RPC_USER` (엔드포인트가 인증을 요구하면 설정)
+- `BITCOIN_RPC_PASSWORD` (엔드포인트가 인증을 요구하면 설정)
 
 필수 조건:
 - `txindex=1` (임의 txid 조회 필요)
@@ -55,6 +55,11 @@ Bitcoin Core 쪽 체크 항목(운영자가 준비):
 - 인증이 설정되어 있는가
 - testnet인지(mainnet이면 주소/체크포인트/txid 전부 달라짐)
 - `txindex=1`로 동기화/리인덱스가 끝났는가
+
+퍼블릭 RPC 사용(해커톤용, 책임 하에):
+- 예: `https://bitcoin-testnet-rpc.publicnode.com`
+- 장점: Bitcoin Core를 직접 운영하지 않아도 됨
+- 주의: 서비스 제공자의 정책(레이트리밋/가용성)에 따라 Worker가 불안정해질 수 있음
 
 ### D. Railway에서 사용할 EVM 서명키 1개 (필수)
 
@@ -302,4 +307,3 @@ Secrets 금지(전부 공개값):
 
 참고:
 - `docs/hackathon/SUBMISSION_VALUES.md` / `docs/hackathon/TEAM_INFO.md`는 git에 올라가지 않습니다.
-

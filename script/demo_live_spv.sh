@@ -34,11 +34,20 @@ json_rpc_call() {
   local params_json="$2"
   local response
 
-  response="$(curl -sS \
-    --user "${BITCOIN_RPC_USER}:${BITCOIN_RPC_PASSWORD}" \
-    -H 'content-type: application/json' \
-    --data-binary "{\"jsonrpc\":\"1.0\",\"id\":\"hashcredit-demo\",\"method\":\"${method}\",\"params\":${params_json}}" \
-    "${BITCOIN_RPC_URL}")"
+  # Some public Bitcoin RPC endpoints do not require auth.
+  # Only send basic auth if both user and password are provided.
+  if [[ -n "${BITCOIN_RPC_USER:-}" && -n "${BITCOIN_RPC_PASSWORD:-}" ]]; then
+    response="$(curl -sS \
+      --user "${BITCOIN_RPC_USER}:${BITCOIN_RPC_PASSWORD}" \
+      -H 'content-type: application/json' \
+      --data-binary "{\"jsonrpc\":\"1.0\",\"id\":\"hashcredit-demo\",\"method\":\"${method}\",\"params\":${params_json}}" \
+      "${BITCOIN_RPC_URL}")"
+  else
+    response="$(curl -sS \
+      -H 'content-type: application/json' \
+      --data-binary "{\"jsonrpc\":\"1.0\",\"id\":\"hashcredit-demo\",\"method\":\"${method}\",\"params\":${params_json}}" \
+      "${BITCOIN_RPC_URL}")"
+  fi
 
   if [[ "$(jq -r '.error != null' <<<"$response")" == "true" ]]; then
     echo "error: bitcoin rpc ${method} failed: $(jq -c '.error' <<<"$response")" >&2
@@ -73,8 +82,6 @@ require_var EVM_RPC_URL
 require_var CHAIN_ID
 require_var PRIVATE_KEY
 require_var BITCOIN_RPC_URL
-require_var BITCOIN_RPC_USER
-require_var BITCOIN_RPC_PASSWORD
 require_var BORROWER_EVM
 require_var BORROWER_BTC_ADDRESS
 require_var BTC_TXID
