@@ -57,7 +57,8 @@ contract Deploy is Script {
             btcPriceUsd: BTC_PRICE_USD,
             minPayoutCountForFullCredit: 3, // Require 3 payouts before full credit
             largePayoutThresholdSats: 10_000_000, // 0.1 BTC threshold for large payouts
-            largePayoutDiscountBps: 5000 // Large payouts count at 50%
+            largePayoutDiscountBps: 5000, // Large payouts count at 50%
+            newBorrowerPeriodSeconds: WINDOW_SECONDS // Use same as trailing window
         });
         RiskConfig riskConfig = new RiskConfig(riskParams);
         console.log("RiskConfig deployed at:", address(riskConfig));

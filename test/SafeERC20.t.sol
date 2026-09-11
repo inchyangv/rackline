@@ -266,7 +266,8 @@ contract SafeERC20Test is Test {
             btcPriceUsd: 50_000_00000000,
             minPayoutCountForFullCredit: 0,
             largePayoutThresholdSats: 0,
-            largePayoutDiscountBps: 10_000
+            largePayoutDiscountBps: 10_000,
+            newBorrowerPeriodSeconds: 30 days
         });
         riskConfig = new RiskConfig(params);
         poolRegistry = new PoolRegistry(true);
@@ -312,7 +313,8 @@ contract SafeERC20Test is Test {
             btcPriceUsd: 50_000_00000000,
             minPayoutCountForFullCredit: 0,
             largePayoutThresholdSats: 0,
-            largePayoutDiscountBps: 10_000
+            largePayoutDiscountBps: 10_000,
+            newBorrowerPeriodSeconds: 30 days
         });
         riskConfig = new RiskConfig(params);
         poolRegistry = new PoolRegistry(true);

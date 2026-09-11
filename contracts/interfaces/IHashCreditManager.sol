@@ -32,7 +32,7 @@ interface IHashCreditManager {
         bytes32 btcPayoutKeyHash;
         /// @notice Total lifetime revenue in satoshis
         uint128 totalRevenueSats;
-        /// @notice Current trailing window revenue in satoshis
+        /// @notice Current trailing window revenue in satoshis (dynamically recalculated)
         uint128 trailingRevenueSats;
         /// @notice Current credit limit in stablecoin (6 decimals)
         uint128 creditLimit;
@@ -46,6 +46,14 @@ interface IHashCreditManager {
         uint32 payoutCount;
         /// @notice Last timestamp when debt was updated (for interest calculation)
         uint64 lastDebtUpdateTimestamp;
+    }
+
+    /// @notice Record of a payout for trailing window calculation
+    struct PayoutRecord {
+        /// @notice Timestamp when the payout was recorded
+        uint64 timestamp;
+        /// @notice Effective amount in satoshis (after heuristics applied)
+        uint64 effectiveAmountSats;
     }
 
     // ============================================
@@ -95,6 +103,22 @@ interface IHashCreditManager {
 
     /// @notice Emitted when the vault is changed
     event VaultUpdated(address indexed oldVault, address indexed newVault);
+
+    /// @notice Emitted when payouts are pruned from trailing window
+    event PayoutWindowPruned(
+        address indexed borrower,
+        uint256 prunedCount,
+        uint128 newTrailingRevenue
+    );
+
+    /// @notice Emitted when a payout is skipped due to being below minimum
+    event PayoutBelowMinimum(
+        address indexed borrower,
+        bytes32 indexed txid,
+        uint32 vout,
+        uint64 amountSats,
+        uint64 minRequired
+    );
 
     // ============================================
     // Errors

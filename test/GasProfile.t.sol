@@ -75,7 +75,8 @@ contract GasProfileTest is Test {
             btcPriceUsd: 50000_00000000, // $50,000
             minPayoutCountForFullCredit: 3,
             largePayoutThresholdSats: 100_00000000, // 100 BTC
-            largePayoutDiscountBps: 5000 // 50%
+            largePayoutDiscountBps: 5000, // 50%
+            newBorrowerPeriodSeconds: 30 days
         });
         riskConfig = new RiskConfig(riskParams);
 

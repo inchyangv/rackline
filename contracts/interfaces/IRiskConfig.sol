@@ -23,7 +23,7 @@ interface IRiskConfig {
         uint128 newBorrowerCap;
         /// @notice Global protocol cap on total borrows (0 = no cap)
         uint128 globalCap;
-        /// @notice Minimum payout amount to count (in satoshis)
+        /// @notice Minimum payout amount to count (in satoshis, payouts below this are ignored)
         uint64 minPayoutSats;
         /// @notice BTC/USD price for credit calculation (8 decimals, e.g., 50000_00000000 = $50,000)
         uint64 btcPriceUsd;
@@ -33,6 +33,8 @@ interface IRiskConfig {
         uint64 largePayoutThresholdSats;
         /// @notice Discount rate for large payouts in basis points (e.g., 5000 = 50% counted)
         uint32 largePayoutDiscountBps;
+        /// @notice New borrower period in seconds (separate from trailing window)
+        uint32 newBorrowerPeriodSeconds;
     }
 
     // ============================================
@@ -50,7 +52,8 @@ interface IRiskConfig {
         uint64 btcPriceUsd,
         uint32 minPayoutCountForFullCredit,
         uint64 largePayoutThresholdSats,
-        uint32 largePayoutDiscountBps
+        uint32 largePayoutDiscountBps,
+        uint32 newBorrowerPeriodSeconds
     );
 
     /// @notice Emitted when BTC price is updated
@@ -110,6 +113,7 @@ interface IRiskConfig {
     function minPayoutCountForFullCredit() external view returns (uint32);
     function largePayoutThresholdSats() external view returns (uint64);
     function largePayoutDiscountBps() external view returns (uint32);
+    function newBorrowerPeriodSeconds() external view returns (uint32);
 
     /**
      * @notice Apply provenance heuristics to a payout amount

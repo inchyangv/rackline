@@ -76,7 +76,8 @@ contract SpvE2ETest is Test {
             btcPriceUsd: 50_000_00000000, // $50,000
             minPayoutCountForFullCredit: 3,
             largePayoutThresholdSats: 10_000_000,
-            largePayoutDiscountBps: 5000
+            largePayoutDiscountBps: 5000,
+            newBorrowerPeriodSeconds: 30 days
         });
         riskConfig = new RiskConfig(params);
 

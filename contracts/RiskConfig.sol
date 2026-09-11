@@ -58,7 +58,8 @@ contract RiskConfig is IRiskConfig {
             params.btcPriceUsd,
             params.minPayoutCountForFullCredit,
             params.largePayoutThresholdSats,
-            params.largePayoutDiscountBps
+            params.largePayoutDiscountBps,
+            params.newBorrowerPeriodSeconds
         );
     }
 
@@ -180,6 +181,13 @@ contract RiskConfig is IRiskConfig {
      */
     function largePayoutDiscountBps() external view override returns (uint32) {
         return _params.largePayoutDiscountBps;
+    }
+
+    /**
+     * @inheritdoc IRiskConfig
+     */
+    function newBorrowerPeriodSeconds() external view override returns (uint32) {
+        return _params.newBorrowerPeriodSeconds;
     }
 
     /**

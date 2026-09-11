@@ -41,6 +41,9 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
     /// @notice Basis points denominator
     uint256 private constant BPS = 10_000;
 
+    /// @notice Maximum payout records per borrower (DoS protection)
+    uint256 private constant MAX_PAYOUT_RECORDS = 100;
+
     // ============================================
     // State Variables
     // ============================================
@@ -68,6 +71,9 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
 
     /// @notice Mapping of processed payouts (keccak256(txid, vout) => processed)
     mapping(bytes32 => bool) public processedPayouts;
+
+    /// @notice Mapping of borrower address to their payout history (for trailing window)
+    mapping(address => PayoutRecord[]) private _payoutHistory;
 
     /// @notice Total global debt
     uint256 public totalGlobalDebt;
@@ -232,7 +238,35 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
         // 4. Semantic validation
         if (evidence.amountSats == 0) revert ZeroAmount();
 
-        // 5. Check pool registry eligibility (if configured)
+        // 5. Get risk params for min payout check
+        IRiskConfig.RiskParams memory params = IRiskConfig(riskConfig).getRiskParams();
+
+        // 6. Check minimum payout threshold
+        if (params.minPayoutSats > 0 && evidence.amountSats < params.minPayoutSats) {
+            // Mark as processed to prevent replay, but don't count toward credit
+            processedPayouts[payoutKey] = true;
+
+            emit PayoutBelowMinimum(
+                evidence.borrower,
+                evidence.txid,
+                evidence.vout,
+                evidence.amountSats,
+                params.minPayoutSats
+            );
+
+            // Still emit PayoutRecorded with effectiveAmount=0 for transparency
+            emit PayoutRecorded(
+                evidence.borrower,
+                evidence.txid,
+                evidence.vout,
+                0, // effectiveAmount is 0
+                evidence.blockHeight,
+                info.creditLimit // unchanged
+            );
+            return;
+        }
+
+        // 7. Check pool registry eligibility (if configured)
         if (poolRegistry != address(0)) {
             // For MVP, we use txid as source identifier
             // Production would use input UTXO analysis
@@ -241,29 +275,42 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
             }
         }
 
-        // 6. Mark payout as processed
+        // 8. Mark payout as processed
         processedPayouts[payoutKey] = true;
 
-        // 7. Update payout count
+        // 9. Update payout count
         info.payoutCount++;
 
-        // 8. Apply provenance heuristics to get effective amount
+        // 10. Apply provenance heuristics to get effective amount
         uint64 effectiveAmount = IRiskConfig(riskConfig).applyPayoutHeuristics(
             evidence.amountSats,
             info.payoutCount
         );
 
-        // 9. Update borrower revenue with effective amount
+        // 11. Update total revenue (lifetime, never decreases)
         info.totalRevenueSats += effectiveAmount;
-        info.trailingRevenueSats += effectiveAmount;
         info.lastPayoutTimestamp = evidence.blockTimestamp;
 
-        // 10. Recalculate credit limit
-        uint128 newCreditLimit = _calculateCreditLimit(info.trailingRevenueSats);
+        // 12. Add to payout history for trailing window
+        _addPayoutRecord(evidence.borrower, uint64(block.timestamp), effectiveAmount);
 
-        // Apply new borrower cap if applicable
-        IRiskConfig.RiskParams memory params = IRiskConfig(riskConfig).getRiskParams();
-        if (info.registeredAt + params.windowSeconds > block.timestamp) {
+        // 13. Prune expired payouts and recalculate trailing revenue
+        uint128 newTrailingRevenue = _pruneAndCalculateTrailingRevenue(
+            evidence.borrower,
+            params.windowSeconds
+        );
+        info.trailingRevenueSats = newTrailingRevenue;
+
+        // 14. Recalculate credit limit based on trailing revenue
+        uint128 newCreditLimit = _calculateCreditLimit(newTrailingRevenue);
+
+        // 15. Apply new borrower cap if applicable
+        // Use newBorrowerPeriodSeconds if set, otherwise fall back to windowSeconds for backwards compatibility
+        uint32 newBorrowerPeriod = params.newBorrowerPeriodSeconds > 0
+            ? params.newBorrowerPeriodSeconds
+            : params.windowSeconds;
+
+        if (info.registeredAt + newBorrowerPeriod > block.timestamp) {
             // Still in "new borrower" period
             if (newCreditLimit > params.newBorrowerCap) {
                 newCreditLimit = params.newBorrowerCap;
@@ -391,6 +438,26 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
     }
 
     /**
+     * @notice Get the number of payout records in trailing window for a borrower
+     * @param borrower Address to check
+     * @return count Number of payout records
+     */
+    function getPayoutHistoryCount(address borrower) external view returns (uint256) {
+        return _payoutHistory[borrower].length;
+    }
+
+    /**
+     * @notice Get a payout record at a specific index
+     * @param borrower Address to check
+     * @param index Index in the payout history array
+     * @return record The payout record
+     */
+    function getPayoutRecord(address borrower, uint256 index) external view returns (PayoutRecord memory) {
+        require(index < _payoutHistory[borrower].length, "Index out of bounds");
+        return _payoutHistory[borrower][index];
+    }
+
+    /**
      * @notice Get available credit for a borrower
      * @param borrower Address to check
      * @return Available credit (creditLimit - currentDebt including interest)
@@ -445,6 +512,101 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
         // interest = principal * rate * time / year
         // rate is in basis points, so divide by BPS
         return (uint256(info.currentDebt) * aprBps * timeElapsed) / (SECONDS_PER_YEAR * BPS);
+    }
+
+    /**
+     * @notice Add a payout record to borrower's history
+     * @param borrower Borrower address
+     * @param timestamp Payout timestamp
+     * @param effectiveAmountSats Effective amount in satoshis
+     */
+    function _addPayoutRecord(
+        address borrower,
+        uint64 timestamp,
+        uint64 effectiveAmountSats
+    ) internal {
+        PayoutRecord[] storage history = _payoutHistory[borrower];
+
+        // If at max capacity, remove oldest record to make room
+        if (history.length >= MAX_PAYOUT_RECORDS) {
+            // Shift all elements left by 1 (remove oldest)
+            for (uint256 i = 0; i < history.length - 1; i++) {
+                history[i] = history[i + 1];
+            }
+            history.pop();
+        }
+
+        history.push(PayoutRecord({
+            timestamp: timestamp,
+            effectiveAmountSats: effectiveAmountSats
+        }));
+    }
+
+    /**
+     * @notice Prune expired payouts and calculate current trailing revenue
+     * @param borrower Borrower address
+     * @param windowSeconds Trailing window duration in seconds
+     * @return trailingRevenue Sum of non-expired payout amounts
+     */
+    function _pruneAndCalculateTrailingRevenue(
+        address borrower,
+        uint32 windowSeconds
+    ) internal returns (uint128 trailingRevenue) {
+        PayoutRecord[] storage history = _payoutHistory[borrower];
+
+        if (history.length == 0) {
+            return 0;
+        }
+
+        // Safe subtraction: if block.timestamp < windowSeconds, cutoffTime is 0 (keep all)
+        uint64 cutoffTime = block.timestamp > windowSeconds
+            ? uint64(block.timestamp - windowSeconds)
+            : 0;
+        uint256 prunedCount = 0;
+
+        // Find the first non-expired record
+        uint256 firstValid = 0;
+        for (uint256 i = 0; i < history.length; i++) {
+            if (history[i].timestamp >= cutoffTime) {
+                firstValid = i;
+                break;
+            }
+            prunedCount++;
+            // If we reach the end without finding valid records
+            if (i == history.length - 1) {
+                firstValid = history.length; // All expired
+            }
+        }
+
+        // If there are records to prune
+        if (prunedCount > 0 && firstValid < history.length) {
+            // Shift valid records to the front
+            uint256 newLength = history.length - prunedCount;
+            for (uint256 i = 0; i < newLength; i++) {
+                history[i] = history[firstValid + i];
+            }
+            // Remove the extra slots at the end
+            for (uint256 i = 0; i < prunedCount; i++) {
+                history.pop();
+            }
+
+            emit PayoutWindowPruned(borrower, prunedCount, 0); // Will update after calculation
+        } else if (prunedCount > 0 && firstValid == history.length) {
+            // All records expired
+            uint256 lengthBefore = history.length;
+            delete _payoutHistory[borrower];
+
+            emit PayoutWindowPruned(borrower, lengthBefore, 0);
+            return 0;
+        }
+
+        // Calculate trailing revenue from remaining records
+        trailingRevenue = 0;
+        for (uint256 i = 0; i < history.length; i++) {
+            trailingRevenue += history[i].effectiveAmountSats;
+        }
+
+        return trailingRevenue;
     }
 
     /**

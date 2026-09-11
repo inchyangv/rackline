@@ -57,7 +57,8 @@ contract HashCreditManagerTest is Test {
             btcPriceUsd: BTC_PRICE_USD,
             minPayoutCountForFullCredit: 0, // Disabled for tests
             largePayoutThresholdSats: 0, // Disabled for tests
-            largePayoutDiscountBps: 10_000 // 100% (no discount)
+            largePayoutDiscountBps: 10_000, // 100% (no discount)
+            newBorrowerPeriodSeconds: WINDOW_SECONDS // Same as window for backwards compat
         });
         riskConfig = new RiskConfig(params);
 
@@ -676,5 +677,287 @@ contract HashCreditManagerTest is Test {
 
         bytes memory proof = verifier.encodeEvidence(evidence);
         manager.submitPayout(proof);
+    }
+
+    // ============================================
+    // Trailing Window Tests (T2.9)
+    // ============================================
+
+    function test_trailingWindow_payoutExpires() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit first payout at t=0
+        PayoutEvidence memory evidence1 = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: 10_00000000, // 10 BTC
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence1));
+
+        IHashCreditManager.BorrowerInfo memory info1 = manager.getBorrowerInfo(alice);
+        assertEq(info1.trailingRevenueSats, 10_00000000);
+        assertEq(manager.getPayoutHistoryCount(alice), 1);
+
+        // Advance time past the trailing window
+        vm.warp(block.timestamp + WINDOW_SECONDS + 1);
+
+        // Submit second payout - should trigger pruning of first payout
+        PayoutEvidence memory evidence2 = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(2)),
+            vout: 0,
+            amountSats: 5_00000000, // 5 BTC
+            blockHeight: 800001,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence2));
+
+        IHashCreditManager.BorrowerInfo memory info2 = manager.getBorrowerInfo(alice);
+        // Only the second payout should be in trailing window now
+        assertEq(info2.trailingRevenueSats, 5_00000000, "First payout should have expired");
+        assertEq(manager.getPayoutHistoryCount(alice), 1, "Old payout should be pruned");
+
+        // Total revenue should include both (lifetime)
+        assertEq(info2.totalRevenueSats, 15_00000000, "Total revenue should include all payouts");
+    }
+
+    function test_trailingWindow_creditLimitDecreasesAfterExpiry() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Advance time past new borrower period first
+        vm.warp(block.timestamp + WINDOW_SECONDS + 1);
+
+        // Submit payout
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: 10_00000000, // 10 BTC
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence));
+
+        IHashCreditManager.BorrowerInfo memory info1 = manager.getBorrowerInfo(alice);
+        // Credit limit = 10 BTC * $50,000 * 50% = $250,000 = 250000_000000
+        assertEq(info1.creditLimit, 250_000_000000);
+
+        // Advance time past window again
+        vm.warp(block.timestamp + WINDOW_SECONDS + 1);
+
+        // Submit small payout to trigger recalculation
+        PayoutEvidence memory evidence2 = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(2)),
+            vout: 0,
+            amountSats: MIN_PAYOUT_SATS, // Minimum payout
+            blockHeight: 800001,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence2));
+
+        IHashCreditManager.BorrowerInfo memory info2 = manager.getBorrowerInfo(alice);
+        // Credit limit should be much lower now (based only on MIN_PAYOUT_SATS)
+        assertLt(info2.creditLimit, info1.creditLimit, "Credit limit should decrease after payout expires");
+    }
+
+    function test_trailingWindow_multiplePayoutsExpireAtOnce() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit 3 payouts on the same day
+        for (uint256 i = 1; i <= 3; i++) {
+            PayoutEvidence memory evidence = PayoutEvidence({
+                borrower: alice,
+                txid: bytes32(i),
+                vout: 0,
+                amountSats: 1_00000000, // 1 BTC each
+                blockHeight: 800000,
+                blockTimestamp: uint32(block.timestamp)
+            });
+            manager.submitPayout(verifier.encodeEvidence(evidence));
+        }
+
+        assertEq(manager.getPayoutHistoryCount(alice), 3);
+
+        IHashCreditManager.BorrowerInfo memory info1 = manager.getBorrowerInfo(alice);
+        assertEq(info1.trailingRevenueSats, 3_00000000);
+
+        // Advance time past window
+        vm.warp(block.timestamp + WINDOW_SECONDS + 1);
+
+        // Submit one more payout
+        PayoutEvidence memory newEvidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(4)),
+            vout: 0,
+            amountSats: 1_00000000,
+            blockHeight: 800001,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(newEvidence));
+
+        // All old payouts should be pruned
+        assertEq(manager.getPayoutHistoryCount(alice), 1, "All old payouts should be pruned");
+
+        IHashCreditManager.BorrowerInfo memory info2 = manager.getBorrowerInfo(alice);
+        assertEq(info2.trailingRevenueSats, 1_00000000, "Only new payout in trailing");
+        assertEq(info2.totalRevenueSats, 4_00000000, "Total includes all payouts");
+    }
+
+    // ============================================
+    // Min Payout Filtering Tests (T2.9)
+    // ============================================
+
+    function test_minPayoutFilter_belowMinimumIgnored() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit payout below minimum
+        uint64 belowMinAmount = MIN_PAYOUT_SATS - 1; // 9999 sats
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: belowMinAmount,
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence));
+
+        // Check payout was processed (replay protection)
+        assertTrue(manager.isPayoutProcessed(bytes32(uint256(1)), 0), "Payout should be marked processed");
+
+        // But credit should not increase
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.trailingRevenueSats, 0, "Below-min payout should not count");
+        assertEq(info.totalRevenueSats, 0, "Total revenue should be 0");
+        assertEq(info.creditLimit, 0, "Credit limit should be 0");
+        assertEq(manager.getPayoutHistoryCount(alice), 0, "No payout record added");
+    }
+
+    function test_minPayoutFilter_atMinimumCountsCorrectly() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit payout at exactly minimum
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: MIN_PAYOUT_SATS, // Exactly 10000 sats
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence));
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.trailingRevenueSats, MIN_PAYOUT_SATS, "At-min payout should count");
+        assertGt(info.creditLimit, 0, "Should have some credit");
+        assertEq(manager.getPayoutHistoryCount(alice), 1, "Payout record should be added");
+    }
+
+    function test_minPayoutFilter_replayStillBlocked() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit payout below minimum
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: MIN_PAYOUT_SATS - 1,
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        bytes memory proof = verifier.encodeEvidence(evidence);
+        manager.submitPayout(proof);
+
+        // Try to submit again with same proof - should fail with replay error
+        vm.expectRevert(IHashCreditManager.PayoutAlreadyProcessed.selector);
+        manager.submitPayout(proof);
+    }
+
+    function test_minPayoutFilter_zeroMinAllowsAll() public {
+        // Create new RiskConfig with minPayoutSats = 0
+        IRiskConfig.RiskParams memory newParams = IRiskConfig.RiskParams({
+            confirmationsRequired: 6,
+            advanceRateBps: ADVANCE_RATE_BPS,
+            windowSeconds: WINDOW_SECONDS,
+            newBorrowerCap: NEW_BORROWER_CAP,
+            globalCap: 0,
+            minPayoutSats: 0, // No minimum
+            btcPriceUsd: BTC_PRICE_USD,
+            minPayoutCountForFullCredit: 0,
+            largePayoutThresholdSats: 0,
+            largePayoutDiscountBps: 10_000,
+            newBorrowerPeriodSeconds: WINDOW_SECONDS
+        });
+        RiskConfig newRiskConfig = new RiskConfig(newParams);
+        manager.setRiskConfig(address(newRiskConfig));
+
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit tiny payout
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: 1, // Just 1 satoshi
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(evidence));
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.trailingRevenueSats, 1, "1 sat payout should count when min is 0");
+    }
+
+    // ============================================
+    // Max Payout Records (DoS Protection) Tests
+    // ============================================
+
+    function test_maxPayoutRecords_oldestRemovedWhenFull() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        // Submit MAX_PAYOUT_RECORDS payouts (100)
+        for (uint256 i = 1; i <= 100; i++) {
+            PayoutEvidence memory evidence = PayoutEvidence({
+                borrower: alice,
+                txid: bytes32(i),
+                vout: 0,
+                amountSats: MIN_PAYOUT_SATS,
+                blockHeight: 800000,
+                blockTimestamp: uint32(block.timestamp)
+            });
+            manager.submitPayout(verifier.encodeEvidence(evidence));
+        }
+
+        assertEq(manager.getPayoutHistoryCount(alice), 100);
+
+        // Get the first record's amount
+        IHashCreditManager.PayoutRecord memory firstRecord = manager.getPayoutRecord(alice, 0);
+        uint64 expectedAmount = firstRecord.effectiveAmountSats;
+
+        // Submit one more - should evict the oldest
+        PayoutEvidence memory newEvidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(101)),
+            vout: 0,
+            amountSats: MIN_PAYOUT_SATS * 2, // Different amount to distinguish
+            blockHeight: 800001,
+            blockTimestamp: uint32(block.timestamp)
+        });
+        manager.submitPayout(verifier.encodeEvidence(newEvidence));
+
+        // Still at max
+        assertEq(manager.getPayoutHistoryCount(alice), 100, "Should still be at max");
+
+        // First record should now be the second original one
+        IHashCreditManager.PayoutRecord memory newFirst = manager.getPayoutRecord(alice, 0);
+        assertEq(newFirst.effectiveAmountSats, expectedAmount, "First record should be shifted");
+
+        // Last record should be the new one
+        IHashCreditManager.PayoutRecord memory lastRecord = manager.getPayoutRecord(alice, 99);
+        assertEq(lastRecord.effectiveAmountSats, MIN_PAYOUT_SATS * 2, "Last should be new payout");
     }
 }

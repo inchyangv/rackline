@@ -85,7 +85,8 @@ contract DeploySpv is Script {
             btcPriceUsd: BTC_PRICE_USD,
             minPayoutCountForFullCredit: 3,
             largePayoutThresholdSats: 10_000_000, // 0.1 BTC
-            largePayoutDiscountBps: 5000 // 50%
+            largePayoutDiscountBps: 5000, // 50%
+            newBorrowerPeriodSeconds: WINDOW_SECONDS
         });
         RiskConfig riskConfig = new RiskConfig(riskParams);
         console.log("[4/7] RiskConfig deployed:", address(riskConfig));
