@@ -1,0 +1,22 @@
+PROJECT.md
+PROMPT.md
+TICKET.md
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# WebStorm / JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
