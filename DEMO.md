@@ -13,9 +13,10 @@ This document is a local-only guide to showing your “best”** at a hackathon 
 
 ## 1. Demo setup (recommended 4 minute flow)
 1) **Dashboard (Inquiry)**: Creditcoin testnet contract status/borrower status is visible in real time
-2) **One-click operation (API)**: Checkpoint registration → Borrower pubkeyHash registration → Borrower registration → Proof creation/submission
-3) **Proof/Submission**: proofHex is automatically filled, and the submission result/tx status is displayed.
-4) **Borrower Action (Wallet)**: Sign Borrow / Repay transactions directly and show “User Action”
+2) **Admin (Wallet)**: setBorrowerPubkeyHash → registerBorrower (owner wallet signs)
+3) **Operations (Wallet + API)**: Build checkpoint via API → setCheckpoint via wallet
+4) **Proof/Submit**: Build proof via API → submitPayout via wallet
+5) **Borrower Action (Wallet)**: Sign Borrow / Repay transactions directly and show “User Action”
 
 ## 2. Preparation before demo (required)
 ### A. Deployment/Domain
@@ -96,51 +97,38 @@ Below is a good “click as you explain” sequence.
 Comment example
 - "This screen reads and displays the on-chain status directly, and automation for operation is attached to the API."
 
-### 4.2 Demonstrate “One-Click Automation” with Operations (API) (1-2 minutes)
-Tab: `Operations (API)`
+### 4.2 Register borrower on-chain (Admin tab, ~30 seconds)
+Tab: `Admin`
 
-#### A) Check API connection
-1) `API URL`: `https://api-hashcredit.studioliq.com`
-2) `API Token`: `API_TOKEN` value entered in Railway
-3) Click ‘Health Check’ → Confirm OK
+> **Must be connected with the owner wallet** (DEPLOYER account). Non-owner wallets will revert.
 
-#### B) Checkpoint registration
-1) Enter `checkpoint height`
-- Principle: Choose a reasonable value near or below `target_height` to use in your proof.
-2) Click ‘Checkpoint Registration (API)’
+#### A) setBorrowerPubkeyHash (SPV Verifier)
+1) Enter `borrower` EVM address (e.g. `0x...`)
+2) Enter `pubkeyHash` (bytes20, `0x` + 40 hex chars) — the HASH160 of the borrower’s BTC pubkey
+3) Click `setBorrowerPubkeyHash` → confirm in MetaMask
 
-#### C) Register Borrower pubkeyHash
-1) `Borrower (EVM)`
-- It is recommended to match the borrower input value at the top of the FE.
-2) `Borrower BTC Address`: `tb1...`
-3) Click ‘pubkeyHash registration (API)’
-
-#### D) Register Borrower (Manager.registerBorrower)
-1) Same EVM address as `registerBorrower: borrower`
-2) Click `registerBorrower(API)`
+#### B) registerBorrower (Manager)
+1) Enter `registerBorrower: borrower` — same EVM address as above
+2) Enter `BTC address` (e.g. `tb1...`) — `btcPayoutKeyHash` is auto-computed via keccak256
+3) Click `registerBorrower` → confirm in MetaMask
 
 Comment example
-- "For SPV verification, the BTC payout key hash corresponding to the borrower is required, and these values ​​are registered on-chain."
+- “For SPV verification, the BTC payout key hash corresponding to the borrower is required, and these values are registered on-chain.”
 
-#### E) Proof creation/submission (one click)
-1) `txid`: Bitcoin testnet txid (display format)
-2) `vout`: output index
-3) `checkpoint_height`: Checkpoint height registered above
-4) `target_height`: Header height the proof should reach
-5) Click ‘One Click (Create + Submit)’
+### 4.3 Build and set checkpoint (Operations tab, ~30 seconds)
+Tab: `Operations`
 
-result
-- The build/submit result JSON is output in `API results` below.
-- If successful, the on-chain transaction may be displayed in the FE's `Tx status` (depending on service implementation)
-- `proofHex` in the `Proof/Submission` tab is automatically filled
+1) `API URL`: `https://api-hashcredit.studioliq.com`
+2) Enter `Checkpoint height` — choose a value near or below the block height of the BTC transaction
+3) (Optional) Check `dry_run` to skip the wallet tx and just see the API build result
+4) Click `Build + setCheckpoint (Wallet)` → API builds the checkpoint payload → MetaMask signs the on-chain transaction
+5) Result JSON is shown in `API Result` below
 
-In case of failure (order to revive the demo)
-- Click ‘Create proof (API)’ first to check the build results
-- After checking `dry_run`, click `proof submission (API)` to show the “submission flow” itself.
-- If it still fails, quickly show only `health check`, `checkpoint registration`, `pubkeyHash registration`, and `registerBorrower` and move on to the next part.
+Comment example
+- “The API fetches the Bitcoin block header, and the wallet submits it on-chain as a checkpoint.”
 
-### 4.3 Show “proof data” on proof/submission screen (30 seconds)
-Tab: `Certify/Submit`
+### 4.4 Show “proof data” on proof/submission screen (30 seconds)
+Tab: `Proof/Submit`
 
 - Show whether `proofHex` is auto-filled
 - If necessary, click `submitPayout (wallet)` to demonstrate “submit to user wallet”
@@ -149,7 +137,7 @@ caution
 - `submitPayout (wallet)` is signed by the currently connected wallet.
 - Since revert is possible depending on permissions/conditions, API submission is recommended as the main method for live demos.
 
-### 4.4 Show “product feel” through borrower actions (Borrow/Repay) (1 minute)
+### 4.5 Show “product feel” through borrower actions (Borrow/Repay) (1 minute)
 Tab: `Dashboard`
 
 1) In `Borrow`, example: Enter `1000` → Click `Loan`
