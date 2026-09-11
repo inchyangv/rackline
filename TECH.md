@@ -215,7 +215,7 @@ Everything below runs today on Creditcoin EVM testnet (chainId `102031`):
 | `RiskConfig` — advance rate, trailing window, payout thresholds | Live |
 | Off-chain prover worker — auto-detects payouts, builds + submits proofs | Live |
 | Off-chain API — checkpoint ops, borrower mapping, SPV proof builder, BTC sig param extraction | Live |
-| Frontend — dashboard, pool, checkpoint, proof | Live |
+| Frontend — dashboard, pool (user-facing; checkpoint/proof are operator functions via off-chain worker) | Live |
 
 USC integration is an **adapter + wiring task**. The proof system, credit engine, and vault do not need to change.
 

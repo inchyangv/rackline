@@ -48,10 +48,10 @@ HashCredit addresses this by turning verified Bitcoin payouts into deterministic
 
 ### 4.3 Frontend
 
-- `Dashboard`: read state, borrow/repay
-- `Operations`: build checkpoint payload via API, submit `setCheckpoint` via wallet
-- `Proof`: build proof via API, submit `submitPayout` via wallet
-- `Claim`: BTC wallet linking via on-chain signature verification + borrower registration + testnet credit grant
+- `Dashboard`: BTC wallet linking (on-chain sig verification + borrower registration + testnet credit grant), credit overview, borrow/repay
+- `Pool`: LP deposit/withdraw, vault metrics, share management
+
+Checkpoint registration and SPV proof submission are operator functions handled by the off-chain prover worker — not exposed in the user-facing UI.
 
 ## 5. Protocol Flows
 

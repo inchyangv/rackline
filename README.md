@@ -67,7 +67,7 @@ LP perspective: USDT depositors earn fixed APR (currently 8%) — backed by SPV-
                         ┌──────────────────────┐              │
                         │  Frontend (Vercel)    │              │
                         │  React 19 + ethers.js ├──────────────┘
-                        │  Dashboard / Checkpoint / Proof       │
+                        │  Dashboard / Pool                     │
                         └──────────────────────┘
 ```
 
@@ -101,7 +101,7 @@ Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierA
 | State | Zustand 5 |
 | Chain | ethers.js v6 |
 
-Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet link via on-chain sig verification) · **Pool** (LP deposit/withdraw, vault metrics, share management) · **Checkpoint** (register Bitcoin block header checkpoint) · **Proof** (build SPV proof + submit payout)
+Tabs: **Dashboard** (credit overview, borrow/repay, BTC wallet link via on-chain sig verification) · **Pool** (LP deposit/withdraw, vault metrics, share management). Checkpoint registration and SPV proof submission are operator functions handled by the off-chain prover worker, not exposed in the user-facing UI.
 
 ---
 
@@ -266,7 +266,7 @@ offchain/
   api/                 FastAPI — proof/checkpoint payload builders, claim verification (no tx submit)
   prover/              Background SPV worker — auto-detect, prove, submit
 apps/
-  web/                 React 19 frontend — dashboard, checkpoint, proof
+  web/                 React 19 frontend — dashboard, pool (user-facing)
 docs/
   adr/                 Architecture Decision Records
   specs/               Protocol specifications
