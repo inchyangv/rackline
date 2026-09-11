@@ -9,13 +9,58 @@ import asyncio
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 import structlog
 
 from .rpc import BitcoinRPC, BitcoinRPCConfig
 
 logger = structlog.get_logger()
+
+# Constants for BTC to satoshis conversion
+SATS_PER_BTC = Decimal("100000000")
+
+
+def btc_to_sats(value: Union[int, float, str, Decimal]) -> int:
+    """
+    Convert BTC value to satoshis with exact precision.
+
+    Uses Decimal arithmetic to avoid float precision issues.
+    Bitcoin Core RPC may return value as float (e.g., 0.1) but
+    float(0.1) * 1e8 = 9999999.999999998, not 10000000.
+
+    Args:
+        value: BTC amount as int, float, str, or Decimal
+
+    Returns:
+        Exact satoshi amount as integer
+
+    Examples:
+        >>> btc_to_sats(0.1)
+        10000000
+        >>> btc_to_sats(0.00000001)
+        1
+        >>> btc_to_sats("0.12345678")
+        12345678
+    """
+    # Convert to string first to preserve precision from float
+    # Then convert to Decimal for exact arithmetic
+    if isinstance(value, Decimal):
+        dec_value = value
+    elif isinstance(value, str):
+        dec_value = Decimal(value)
+    else:
+        # int or float: convert via string to avoid float representation issues
+        dec_value = Decimal(str(value))
+
+    sats = dec_value * SATS_PER_BTC
+
+    # Ensure exact integer (no fractional satoshis)
+    if sats != sats.to_integral_value():
+        raise ValueError(f"BTC value {value} results in fractional satoshis: {sats}")
+
+    return int(sats)
 
 
 @dataclass
@@ -290,7 +335,7 @@ class AddressWatcher:
                     continue
 
                 watched = pubkey_hash_to_addr[pubkey_hash]
-                amount_sats = int(vout_data["value"] * 1e8)
+                amount_sats = btc_to_sats(vout_data["value"])
 
                 payout = PendingPayout(
                     txid=txid,

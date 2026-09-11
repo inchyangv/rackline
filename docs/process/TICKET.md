@@ -726,7 +726,7 @@
 
 ### T2.12 Offchain Watcher: BTC value → satoshis 변환에서 float 제거
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: Bitcoin Core RPC의 `vout.value`를 float로 처리(`* 1e8`)하면 반올림/정밀도 문제로 amount 오차가 발생할 수 있으므로, Decimal 기반으로 satoshis를 **정확히** 계산한다.
 - 작업:
     - `offchain/prover/hashcredit_prover/watcher.py`:
@@ -736,6 +736,12 @@
     - 대표값(0.1, 0.00000001 등)에 대해 satoshis 변환이 정확한지 단위 테스트 추가
 - 완료 조건:
     - amount_sats 산출이 float 정밀도에 의존하지 않는다.
+- 완료 요약:
+    - Add btc_to_sats() function using Decimal arithmetic for exact conversion
+    - Handle int, float, str, Decimal inputs with proper type handling
+    - Raise ValueError for fractional satoshis (more than 8 decimal places)
+    - Replace `int(value * 1e8)` with btc_to_sats() in AddressWatcher.scan_block()
+    - 17 unit tests covering precision edge cases (0.1, 0.2, 0.3 BTC), type handling, and float vs Decimal comparison
 
 ---
 
