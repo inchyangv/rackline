@@ -19,5 +19,6 @@ RUN pip install --no-cache-dir -e .
 
 EXPOSE 8000
 
-CMD ["python", "-m", "hashcredit_api.main"]
-
+# Use ENTRYPOINT so accidental platform-level start command overrides
+# (e.g. `npm start`) are treated as extra args and do not break API startup.
+ENTRYPOINT ["python", "-m", "hashcredit_api.main"]

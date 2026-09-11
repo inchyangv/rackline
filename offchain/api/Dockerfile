@@ -16,4 +16,5 @@ RUN pip install --no-cache-dir -e .
 EXPOSE 8000
 
 # Railway sets PORT; set HOST=0.0.0.0 in service variables.
-CMD ["python", "-m", "hashcredit_api.main"]
+# Keep API startup resilient even if the platform start command is misconfigured.
+ENTRYPOINT ["python", "-m", "hashcredit_api.main"]

@@ -1,11 +1,6 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
-watchPatterns = [
-  "hashcredit_api/**",
-  "pyproject.toml",
-  "Dockerfile",
-]
 
 [deploy]
 startCommand = "python -m hashcredit_api.main"

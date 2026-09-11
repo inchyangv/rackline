@@ -127,7 +127,7 @@ function parseDemoWallets(raw: string): DemoWallet[] {
     return v
       .filter((x) => isRecord(x))
       .map((x) => ({
-        name: typeof x.name === 'string' ? x.name : '데모 지갑',
+        name: typeof x.name === 'string' ? x.name : 'Demo Wallet',
         address: typeof x.address === 'string' ? x.address : '',
         privateKey: typeof x.privateKey === 'string' ? x.privateKey : '',
         createdAt: typeof x.createdAt === 'number' ? x.createdAt : Date.now(),
@@ -246,7 +246,7 @@ function App() {
   async function connectWallet(): Promise<void> {
     const ethereum = getEthereum()
     if (!ethereum) {
-      setTxState({ status: 'error', label: 'wallet', message: '브라우저 지갑을 찾지 못했습니다. (MetaMask 등)' })
+      setTxState({ status: 'error', label: 'wallet', message: 'Browser wallet not found. (e.g. MetaMask)' })
       return
     }
 
@@ -302,17 +302,17 @@ function App() {
     action: (contract: Contract) => Promise<ContractTransactionResponse>,
   ): Promise<void> {
     if (!ethers.isAddress(address)) {
-      setTxState({ status: 'error', label, message: '컨트랙트 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label, message: 'Invalid contract address.' })
       return
     }
 
     setTxState({ status: 'signing', label })
     try {
       const ok = await ensureWalletChain(chainId)
-      if (!ok) throw new Error(`네트워크 전환에 실패했습니다. (chainId=${chainId})`)
+      if (!ok) throw new Error(`Failed to switch network. (chainId=${chainId})`)
 
       const ethereum = getEthereum()
-      if (!ethereum) throw new Error('브라우저 지갑을 찾지 못했습니다.')
+      if (!ethereum) throw new Error('Browser wallet not found.')
 
       const provider = new BrowserProvider(ethereum)
       const signer = await provider.getSigner()
@@ -532,7 +532,7 @@ function App() {
     for (let i = 0; i < n; i++) {
       const w = Wallet.createRandom()
       next.push({
-        name: `데모 지갑 #${demoWallets.length + i + 1}`,
+        name: `Demo Wallet #${demoWallets.length + i + 1}`,
         address: w.address,
         privateKey: w.privateKey,
         createdAt: now,
@@ -553,7 +553,7 @@ function App() {
 
   async function apiRequest(path: string, init?: RequestInit): Promise<unknown> {
     const base = normalizeBaseUrl(apiUrl)
-    if (!base) throw new Error('API URL이 비어 있습니다. (VITE_API_URL 또는 입력값)')
+    if (!base) throw new Error('API URL is empty. (VITE_API_URL or input value)')
 
     const headers = new Headers(init?.headers)
     if (!headers.has('content-type')) headers.set('content-type', 'application/json')
@@ -594,7 +594,7 @@ function App() {
   async function apiSetCheckpoint(): Promise<void> {
     const height = Number(apiCheckpointHeight)
     if (!Number.isFinite(height) || height <= 0) {
-      setApiLog('POST /checkpoint/set\nERROR: height가 올바르지 않습니다.')
+      setApiLog('POST /checkpoint/set\nERROR: invalid height.')
       return
     }
     await apiRun('POST /checkpoint/set', async () =>
@@ -607,11 +607,11 @@ function App() {
 
   async function apiSetBorrowerPubkeyHash(): Promise<void> {
     if (!ethers.isAddress(spvBorrower)) {
-      setApiLog('POST /borrower/set-pubkey-hash\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      setApiLog('POST /borrower/set-pubkey-hash\nERROR: invalid borrower EVM address.')
       return
     }
     if (!adminBtcAddr) {
-      setApiLog('POST /borrower/set-pubkey-hash\nERROR: BTC 주소가 비어 있습니다.')
+      setApiLog('POST /borrower/set-pubkey-hash\nERROR: BTC address is empty.')
       return
     }
     await apiRun('POST /borrower/set-pubkey-hash', async () =>
@@ -624,11 +624,11 @@ function App() {
 
   async function apiRegisterBorrower(): Promise<void> {
     if (!ethers.isAddress(adminBorrower)) {
-      setApiLog('POST /manager/register-borrower\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      setApiLog('POST /manager/register-borrower\nERROR: invalid borrower EVM address.')
       return
     }
     if (!adminBtcAddr) {
-      setApiLog('POST /manager/register-borrower\nERROR: BTC 주소가 비어 있습니다.')
+      setApiLog('POST /manager/register-borrower\nERROR: BTC address is empty.')
       return
     }
     await apiRun('POST /manager/register-borrower', async () => {
@@ -649,23 +649,23 @@ function App() {
     const checkpointHeight = Number(apiProofCheckpointHeight)
     const targetHeight = Number(apiTargetHeight)
     if (!apiTxid) {
-      setApiLog('POST /spv/build-proof\nERROR: txid가 비어 있습니다.')
+      setApiLog('POST /spv/build-proof\nERROR: txid is empty.')
       return
     }
     if (!Number.isFinite(outputIndex) || outputIndex < 0) {
-      setApiLog('POST /spv/build-proof\nERROR: vout이 올바르지 않습니다.')
+      setApiLog('POST /spv/build-proof\nERROR: invalid vout.')
       return
     }
     if (!Number.isFinite(checkpointHeight) || checkpointHeight <= 0) {
-      setApiLog('POST /spv/build-proof\nERROR: checkpoint_height가 올바르지 않습니다.')
+      setApiLog('POST /spv/build-proof\nERROR: invalid checkpoint_height.')
       return
     }
     if (!Number.isFinite(targetHeight) || targetHeight <= 0) {
-      setApiLog('POST /spv/build-proof\nERROR: target_height가 올바르지 않습니다.')
+      setApiLog('POST /spv/build-proof\nERROR: invalid target_height.')
       return
     }
     if (!ethers.isAddress(spvBorrower)) {
-      setApiLog('POST /spv/build-proof\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      setApiLog('POST /spv/build-proof\nERROR: invalid borrower EVM address.')
       return
     }
 
@@ -689,7 +689,7 @@ function App() {
 
   async function apiSubmitProof(): Promise<void> {
     if (!proofHex || !isHexBytes(proofHex) || proofHex === '0x') {
-      setApiLog('POST /spv/submit\nERROR: proof_hex가 올바르지 않습니다.')
+      setApiLog('POST /spv/submit\nERROR: invalid proof_hex.')
       return
     }
     await apiRun('POST /spv/submit', async () =>
@@ -705,19 +705,19 @@ function App() {
     const checkpointHeight = Number(apiProofCheckpointHeight)
     const targetHeight = Number(apiTargetHeight)
     if (!apiTxid || !Number.isFinite(outputIndex) || outputIndex < 0) {
-      setApiLog('원클릭\nERROR: txid/vout 입력이 필요합니다.')
+      setApiLog('One-click\nERROR: txid/vout input is required.')
       return
     }
     if (!Number.isFinite(checkpointHeight) || checkpointHeight <= 0 || !Number.isFinite(targetHeight) || targetHeight <= 0) {
-      setApiLog('원클릭\nERROR: checkpoint_height/target_height 입력이 필요합니다.')
+      setApiLog('One-click\nERROR: checkpoint_height/target_height input is required.')
       return
     }
     if (!ethers.isAddress(spvBorrower)) {
-      setApiLog('원클릭\nERROR: borrower EVM 주소가 올바르지 않습니다.')
+      setApiLog('One-click\nERROR: invalid borrower EVM address.')
       return
     }
 
-    await apiRun('원클릭: build-proof -> submit', async () => {
+    await apiRun('One-click: build-proof -> submit', async () => {
       const built = await apiRequest('/spv/build-proof', {
         method: 'POST',
         body: JSON.stringify({
@@ -743,11 +743,11 @@ function App() {
 
   async function submitProof(): Promise<void> {
     if (!ethers.isAddress(managerAddress)) {
-      setTxState({ status: 'error', label: 'submitPayout', message: 'Manager 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'submitPayout', message: 'Invalid Manager address.' })
       return
     }
     if (!proofHex || !isHexBytes(proofHex) || proofHex === '0x') {
-      setTxState({ status: 'error', label: 'submitPayout', message: 'proofHex가 올바르지 않습니다. (0x...)' })
+      setTxState({ status: 'error', label: 'submitPayout', message: 'Invalid proofHex. (0x...)' })
       return
     }
     await sendContractTx('submitPayout', managerAddress, HashCreditManagerAbi, (c) => c.submitPayout(proofHex))
@@ -755,7 +755,7 @@ function App() {
 
   async function doBorrow(): Promise<void> {
     if (!ethers.isAddress(managerAddress)) {
-      setTxState({ status: 'error', label: 'borrow', message: 'Manager 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'borrow', message: 'Invalid Manager address.' })
       return
     }
     const amount = ethers.parseUnits(borrowAmount || '0', stablecoinDecimals)
@@ -764,7 +764,7 @@ function App() {
 
   async function approveStablecoin(): Promise<void> {
     if (!ethers.isAddress(managerStablecoin) || !ethers.isAddress(managerAddress)) {
-      setTxState({ status: 'error', label: 'approve', message: 'Stablecoin 또는 Manager 주소가 비어 있거나 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'approve', message: 'Stablecoin or Manager address is empty or invalid.' })
       return
     }
     const amount = ethers.parseUnits(approveAmount || '0', stablecoinDecimals)
@@ -773,7 +773,7 @@ function App() {
 
   async function doRepay(): Promise<void> {
     if (!ethers.isAddress(managerAddress)) {
-      setTxState({ status: 'error', label: 'repay', message: 'Manager 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'repay', message: 'Invalid Manager address.' })
       return
     }
     const amount = ethers.parseUnits(repayAmount || '0', stablecoinDecimals)
@@ -782,15 +782,15 @@ function App() {
 
   async function registerBorrower(): Promise<void> {
     if (!ethers.isAddress(managerAddress)) {
-      setTxState({ status: 'error', label: 'registerBorrower', message: 'Manager 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'registerBorrower', message: 'Invalid Manager address.' })
       return
     }
     if (!ethers.isAddress(adminBorrower)) {
-      setTxState({ status: 'error', label: 'registerBorrower', message: 'Borrower(EVM) 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'registerBorrower', message: 'Invalid Borrower (EVM) address.' })
       return
     }
     if (!adminBtcKeyHash || !isHexBytes(adminBtcKeyHash) || adminBtcKeyHash.length !== 66) {
-      setTxState({ status: 'error', label: 'registerBorrower', message: 'btcPayoutKeyHash가 올바르지 않습니다. (bytes32)' })
+      setTxState({ status: 'error', label: 'registerBorrower', message: 'Invalid btcPayoutKeyHash. (bytes32)' })
       return
     }
 
@@ -801,7 +801,7 @@ function App() {
 
   async function setVerifier(): Promise<void> {
     if (!ethers.isAddress(managerAddress) || !ethers.isAddress(adminNewVerifier)) {
-      setTxState({ status: 'error', label: 'setVerifier', message: 'Manager 또는 Verifier 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'setVerifier', message: 'Invalid Manager or Verifier address.' })
       return
     }
 
@@ -810,15 +810,15 @@ function App() {
 
   async function setBorrowerPubkeyHash(): Promise<void> {
     if (!ethers.isAddress(spvVerifierAddress)) {
-      setTxState({ status: 'error', label: 'setBorrowerPubkeyHash', message: 'SPV Verifier 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'setBorrowerPubkeyHash', message: 'Invalid SPV Verifier address.' })
       return
     }
     if (!ethers.isAddress(spvBorrower)) {
-      setTxState({ status: 'error', label: 'setBorrowerPubkeyHash', message: 'Borrower(EVM) 주소가 올바르지 않습니다.' })
+      setTxState({ status: 'error', label: 'setBorrowerPubkeyHash', message: 'Invalid Borrower (EVM) address.' })
       return
     }
     if (!spvPubkeyHash || !isHexBytes(spvPubkeyHash) || spvPubkeyHash.length !== 42) {
-      setTxState({ status: 'error', label: 'setBorrowerPubkeyHash', message: 'pubkeyHash는 bytes20이어야 합니다. (0x + 40 hex)' })
+      setTxState({ status: 'error', label: 'setBorrowerPubkeyHash', message: 'pubkeyHash must be bytes20. (0x + 40 hex)' })
       return
     }
 
@@ -833,14 +833,14 @@ function App() {
     stablecoinBalance === null ? '—' : `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} cUSD`
   const txOverview =
     txState.status === 'idle'
-      ? '아직 트랜잭션 없음'
+      ? 'No transactions yet'
       : txState.status === 'signing'
-        ? `서명 대기: ${txState.label}`
+        ? `Signature pending: ${txState.label}`
         : txState.status === 'pending'
-          ? `전송됨(대기): ${txState.label}`
+          ? `Sent (pending): ${txState.label}`
           : txState.status === 'confirmed'
-            ? `확정됨: ${txState.label}`
-            : `오류: ${txState.label}`
+            ? `Confirmed: ${txState.label}`
+            : `Error: ${txState.label}`
   const txOverviewTone =
     txState.status === 'confirmed' ? 'ok' : txState.status === 'error' ? 'err' : txState.status === 'pending' ? 'warn' : ''
 
@@ -854,23 +854,23 @@ function App() {
             </div>
             <div className="brand-copy">
               <div className="brand-title">HashCredit</div>
-              <div className="brand-subtitle">Creditcoin 테스트넷 SPV 데모 대시보드</div>
+              <div className="brand-subtitle">Creditcoin Testnet SPV Demo Dashboard</div>
             </div>
             <nav className="brand-nav" aria-label="Sections">
               <button type="button" className={`nav-pill ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
-                대시보드
+                Dashboard
               </button>
               <button type="button" className={`nav-pill ${tab === 'ops' ? 'active' : ''}`} onClick={() => setTab('ops')}>
-                운영(API)
+                Operations (API)
               </button>
               <button type="button" className={`nav-pill ${tab === 'proof' ? 'active' : ''}`} onClick={() => setTab('proof')}>
-                증명/제출
+                Proof/Submit
               </button>
               <button type="button" className={`nav-pill ${tab === 'admin' ? 'active' : ''}`} onClick={() => setTab('admin')}>
-                관리자
+                Admin
               </button>
               <button type="button" className={`nav-pill ${tab === 'config' ? 'active' : ''}`} onClick={() => setTab('config')}>
-                설정
+                Settings
               </button>
             </nav>
           </div>
@@ -878,24 +878,24 @@ function App() {
           <div className="wallet">
             <div className="wallet-meta">
               <div className="wallet-line">
-                <span className="label">지갑</span>
-                <span className="mono">{walletAccount ? shortAddr(walletAccount) : '미연결'}</span>
+                <span className="label">Wallet</span>
+                <span className="mono">{walletAccount ? shortAddr(walletAccount) : 'Disconnected'}</span>
               </div>
               <div className="wallet-line">
-                <span className="label">체인</span>
+                <span className="label">Chain</span>
                 <span className="mono">{walletChainId ?? '—'}</span>
                 {walletChainId !== null && walletChainId !== chainId ? (
-                  <span className="pill warn">예상: {chainId}</span>
+                  <span className="pill warn">Expected: {chainId}</span>
                 ) : null}
               </div>
             </div>
 
             <div className="wallet-actions">
               <button className="btn" onClick={connectWallet} disabled={!hasInjectedWallet}>
-                {hasInjectedWallet ? '지갑 연결' : '지갑 없음'}
+                {hasInjectedWallet ? 'Connect Wallet' : 'No Wallet'}
               </button>
               <button className="btn secondary" onClick={() => void ensureWalletChain(chainId)} disabled={!hasInjectedWallet}>
-                체인 전환({chainId})
+                Switch Chain ({chainId})
               </button>
             </div>
           </div>
@@ -906,33 +906,33 @@ function App() {
             className="quick-input"
             value={borrowerAddress}
             onChange={(e) => setBorrowerAddress(e.target.value)}
-            placeholder="차입자 주소(EVM) / 지갑 / payout 대상"
+            placeholder="Borrower address (EVM) / wallet / payout target"
           />
           <button className="btn ghost" onClick={() => setBorrowerAddress(walletAccount)} disabled={!walletAccount}>
-            연결 지갑 사용
+            Use Connected Wallet
           </button>
         </div>
 
         <section className="metrics">
           <article className="metric-card">
-            <div className="metric-k">네트워크</div>
+            <div className="metric-k">Network</div>
             <div className="metric-v">Chain {chainId}</div>
-            <div className="metric-h">Creditcoin 테스트넷</div>
+            <div className="metric-h">Creditcoin Testnet</div>
           </article>
           <article className="metric-card">
-            <div className="metric-k">가용 크레딧</div>
+            <div className="metric-k">Available Credit</div>
             <div className="metric-v">{availableCreditDisplay}</div>
             <div className="metric-h">decimals: {stablecoinDecimals}</div>
           </article>
           <article className="metric-card">
-            <div className="metric-k">스테이블코인 잔고</div>
+            <div className="metric-k">Stablecoin Balance</div>
             <div className="metric-v">{stablecoinBalanceDisplay}</div>
-            <div className="metric-h">차입자 기준 조회</div>
+            <div className="metric-h">Borrower-based view</div>
           </article>
           <article className="metric-card">
-            <div className="metric-k">트랜잭션 상태</div>
+            <div className="metric-k">Transaction Status</div>
             <div className={`metric-v metric-v-small ${txOverviewTone}`}>{txOverview}</div>
-            <div className="metric-h">지갑 서명 상태</div>
+            <div className="metric-h">Wallet Signature Status</div>
           </article>
         </section>
       </div>
@@ -941,10 +941,10 @@ function App() {
         {tab === 'dashboard' ? (
           <>
             <section className="card">
-              <h2>차입자</h2>
+              <h2>Borrower</h2>
               <div className="form">
                 <label>
-                  <div className="label">차입자 주소(EVM)</div>
+                  <div className="label">Borrower address (EVM)</div>
                   <input value={borrowerAddress} onChange={(e) => setBorrowerAddress(e.target.value)} placeholder="0x..." />
                 </label>
               </div>
@@ -972,39 +972,39 @@ function App() {
 
               <div className="split">
                 <div className="action">
-                  <div className="label">Borrow (대출 실행)</div>
+                  <div className="label">Borrow (Execute Loan)</div>
                   <div className="inline">
-                    <input value={borrowAmount} onChange={(e) => setBorrowAmount(e.target.value)} placeholder="예: 1000" />
+                    <input value={borrowAmount} onChange={(e) => setBorrowAmount(e.target.value)} placeholder="e.g. 1000" />
                     <button className="btn" onClick={() => void doBorrow()} disabled={!walletAccount}>
-                      대출
+                      Borrow
                     </button>
                   </div>
                 </div>
                 <div className="action">
-                  <div className="label">Approve (스테이블코인 승인)</div>
+                  <div className="label">Approve (Stablecoin Allowance)</div>
                   <div className="inline">
-                    <input value={approveAmount} onChange={(e) => setApproveAmount(e.target.value)} placeholder="예: 1000000" />
+                    <input value={approveAmount} onChange={(e) => setApproveAmount(e.target.value)} placeholder="e.g. 1000000" />
                     <button className="btn secondary" onClick={() => void approveStablecoin()} disabled={!walletAccount}>
-                      승인
+                      Approve
                     </button>
                   </div>
                 </div>
                 <div className="action">
-                  <div className="label">Repay (상환)</div>
+                  <div className="label">Repay</div>
                   <div className="inline">
-                    <input value={repayAmount} onChange={(e) => setRepayAmount(e.target.value)} placeholder="예: 100" />
+                    <input value={repayAmount} onChange={(e) => setRepayAmount(e.target.value)} placeholder="e.g. 100" />
                     <button className="btn" onClick={() => void doRepay()} disabled={!walletAccount}>
-                      상환
+                      Repay
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="hint">금액 입력은 사람이 보는 단위로 입력합니다. (예: `1000` = 1000 USDC)</div>
+              <div className="hint">Enter amounts in human-readable units. (e.g. `1000` = 1000 USDC)</div>
             </section>
 
             <section className="card">
-              <h2>매니저(조회)</h2>
+              <h2>Manager (Read)</h2>
               <div className="kv">
                 <div className="row">
                   <div className="k">owner</div>
@@ -1024,13 +1024,13 @@ function App() {
                 </div>
               </div>
               <div className="hint">
-                운영 흐름: `CheckpointManager`에 체크포인트 등록 → `BtcSpvVerifier`에 borrower `pubkeyHash` 등록 → `registerBorrower` →
-                proof 생성/제출.
+                Operational flow: set checkpoint on `CheckpointManager`, set borrower `pubkeyHash` on `BtcSpvVerifier`,
+                call `registerBorrower`, then build/submit proof.
               </div>
             </section>
 
             <section className="card">
-              <h2>체크포인트(조회)</h2>
+              <h2>Checkpoint (Read)</h2>
               <div className="kv">
                 <div className="row">
                   <div className="k">latestCheckpointHeight</div>
@@ -1044,7 +1044,7 @@ function App() {
             </section>
 
             <section className="card">
-              <h2>SPV Verifier(조회)</h2>
+              <h2>SPV Verifier (Read)</h2>
               <div className="kv">
                 <div className="row">
                   <div className="k">owner</div>
@@ -1062,21 +1062,22 @@ function App() {
             </section>
 
             <section className="card full">
-              <h2>데모 지갑(생성)</h2>
+              <h2>Demo Wallets (Generate)</h2>
               <div className="hint">
-                데모 전용입니다. 여기서 생성한 개인키는 브라우저 로컬스토리지에 저장됩니다. 절대 메인넷/실자산에 사용하지 마세요.
+                Demo-only. Private keys generated here are stored in browser local storage. Never use on mainnet or with real
+                assets.
               </div>
               <div className="actions">
                 <button className="btn secondary" onClick={() => createDemoWallet(1)}>
-                  지갑 1개 생성
+                  Generate 1 Wallet
                 </button>
                 <button className="btn" onClick={() => createDemoWallet(3)}>
-                  지갑 3개 생성
+                  Generate 3 Wallets
                 </button>
               </div>
 
               {demoWallets.length === 0 ? (
-                <div className="hint">아직 생성된 데모 지갑이 없습니다.</div>
+                <div className="hint">No demo wallets generated yet.</div>
               ) : (
                 <div className="list" aria-label="demo wallets">
                   {demoWallets.map((w) => (
@@ -1088,22 +1089,22 @@ function App() {
                         </div>
                         <div className="mini-actions">
                           <button className="btn tiny secondary" onClick={() => applyAsBorrower(w.address)}>
-                            borrower로 적용
+                            Set as borrower
                           </button>
                           <button className="btn tiny ghost" onClick={() => void copyToClipboard(w.address)}>
-                            주소 복사
+                            Copy address
                           </button>
                           <button className="btn tiny ghost" onClick={() => void copyToClipboard(w.privateKey)}>
-                            개인키 복사
+                            Copy private key
                           </button>
                           <button className="btn tiny" onClick={() => removeDemoWallet(w.address)}>
-                            삭제
+                            Delete
                           </button>
                         </div>
                       </div>
                       <div className="sep" />
                       <div className="hint">
-                        생성 시각: {new Date(w.createdAt).toLocaleString()} | 개인키: <span className="mono">{shortAddr(w.privateKey)}</span>
+                        Created at: {new Date(w.createdAt).toLocaleString()} | Private key: <span className="mono">{shortAddr(w.privateKey)}</span>
                       </div>
                     </div>
                   ))}
@@ -1115,10 +1116,10 @@ function App() {
 
         {tab === 'ops' ? (
           <section className="card full">
-            <h2>SPV 데모 자동화(API)</h2>
+            <h2>SPV Demo Automation (API)</h2>
             <div className="hint">
-              Railway에 배포한 `hashcredit-api`를 호출해서, SPV 체크포인트/borrower 등록/증명 생성/제출을 버튼으로 수행합니다. (데모 목적:
-              브라우저에 API 토큰을 입력하므로, 데모 후 토큰을 반드시 교체하세요.)
+              Calls the Railway-deployed `hashcredit-api` to run SPV checkpointing, borrower registration, and proof
+              build/submit from buttons. (Demo purpose: API token is entered in browser, so rotate it after demos.)
             </div>
 
             <div className="form">
@@ -1127,7 +1128,7 @@ function App() {
                 <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api-hashcredit...." />
               </label>
               <label>
-                <div className="label">API 토큰 (X-API-Key)</div>
+                <div className="label">API Token (X-API-Key)</div>
                 <input value={apiToken} onChange={(e) => setApiToken(e.target.value)} placeholder="(demo token)" type="password" />
               </label>
               <label className="checkRow">
@@ -1136,35 +1137,35 @@ function App() {
               </label>
               <div className="actions">
                 <button className="btn secondary" onClick={() => void apiHealth()} disabled={apiBusy}>
-                  헬스체크
+                  Health Check
                 </button>
               </div>
             </div>
 
             <div className="form">
               <label>
-                <div className="label">체크포인트 높이(height)</div>
-                <input value={apiCheckpointHeight} onChange={(e) => setApiCheckpointHeight(e.target.value)} placeholder="예: 4842343" />
+                <div className="label">Checkpoint height</div>
+                <input value={apiCheckpointHeight} onChange={(e) => setApiCheckpointHeight(e.target.value)} placeholder="e.g. 4842343" />
               </label>
               <div className="actions">
                 <button className="btn secondary" onClick={() => void apiSetCheckpoint()} disabled={apiBusy}>
-                  체크포인트 등록(API)
+                  Set checkpoint (API)
                 </button>
               </div>
             </div>
 
             <div className="form">
               <label>
-                <div className="label">차입자 (EVM)</div>
+                <div className="label">Borrower (EVM)</div>
                 <input value={spvBorrower} onChange={(e) => setSpvBorrower(e.target.value)} placeholder="0x..." />
               </label>
               <label>
-                <div className="label">Borrower BTC 주소</div>
+                <div className="label">Borrower BTC Address</div>
                 <input value={adminBtcAddr} onChange={(e) => setAdminBtcAddr(e.target.value)} placeholder="tb1..." />
               </label>
               <div className="actions">
                 <button className="btn secondary" onClick={() => void apiSetBorrowerPubkeyHash()} disabled={apiBusy}>
-                  pubkeyHash 등록(API)
+                  Set pubkeyHash (API)
                 </button>
               </div>
             </div>
@@ -1179,13 +1180,13 @@ function App() {
                   registerBorrower(API)
                 </button>
               </div>
-              <div className="hint">BTC 주소 문자열 keccak은 API에서 계산합니다. (응답의 btc_payout_key_hash로 아래 input도 자동 채움)</div>
+              <div className="hint">API computes keccak of BTC address string. (`btc_payout_key_hash` in response auto-fills below input)</div>
             </div>
 
             <div className="form">
               <label>
                 <div className="label">txid</div>
-                <input value={apiTxid} onChange={(e) => setApiTxid(e.target.value.trim())} placeholder="예: e4c6..." />
+                <input value={apiTxid} onChange={(e) => setApiTxid(e.target.value.trim())} placeholder="e.g. e4c6..." />
               </label>
               <label>
                 <div className="label">vout</div>
@@ -1196,29 +1197,29 @@ function App() {
                 <input
                   value={apiProofCheckpointHeight}
                   onChange={(e) => setApiProofCheckpointHeight(e.target.value)}
-                  placeholder="예: 4842333"
+                  placeholder="e.g. 4842333"
                 />
               </label>
               <label>
                 <div className="label">target_height</div>
-                <input value={apiTargetHeight} onChange={(e) => setApiTargetHeight(e.target.value)} placeholder="예: 4842343" />
+                <input value={apiTargetHeight} onChange={(e) => setApiTargetHeight(e.target.value)} placeholder="e.g. 4842343" />
               </label>
               <div className="actions">
                 <button className="btn secondary" onClick={() => void apiBuildProof()} disabled={apiBusy}>
-                  proof 생성(API) → proofHex 채우기
+                  Build proof (API) to fill proofHex
                 </button>
                 <button className="btn secondary" onClick={() => void apiSubmitProof()} disabled={apiBusy}>
-                  proof 제출(API)
+                  Submit proof (API)
                 </button>
                 <button className="btn" onClick={() => void apiBuildAndSubmit()} disabled={apiBusy}>
-                  원클릭(생성+제출)
+                  One-click (build + submit)
                 </button>
               </div>
             </div>
 
             <div className="kv">
               <div className="row">
-                <div className="k">API 결과</div>
+                <div className="k">API Result</div>
                 <div className="v mono pre">{apiLog || '—'}</div>
               </div>
             </div>
@@ -1228,9 +1229,10 @@ function App() {
         {tab === 'proof' ? (
           <>
             <section className="card full">
-              <h2>증명 생성/제출(API)</h2>
+              <h2>Proof Build/Submit (API)</h2>
               <div className="hint">
-                Proof 생성/제출은 Railway의 API를 통해 수행합니다. (API URL/TOKEN이 비어 있으면 먼저 운영(API) 탭에서 설정하세요.)
+                Proof build/submit is executed through the Railway API. (If API URL/TOKEN is empty, configure it first in the
+                Operations (API) tab.)
               </div>
               <div className="form">
                 <label>
@@ -1238,14 +1240,14 @@ function App() {
                   <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api-hashcredit...." />
                 </label>
                 <label>
-                  <div className="label">API 토큰 (X-API-Key)</div>
+                  <div className="label">API Token (X-API-Key)</div>
                   <input value={apiToken} onChange={(e) => setApiToken(e.target.value)} placeholder="(demo token)" type="password" />
                 </label>
               </div>
               <div className="form">
                 <label>
                   <div className="label">txid</div>
-                  <input value={apiTxid} onChange={(e) => setApiTxid(e.target.value.trim())} placeholder="예: e4c6..." />
+                  <input value={apiTxid} onChange={(e) => setApiTxid(e.target.value.trim())} placeholder="e.g. e4c6..." />
                 </label>
                 <label>
                   <div className="label">vout</div>
@@ -1256,36 +1258,36 @@ function App() {
                   <input
                     value={apiProofCheckpointHeight}
                     onChange={(e) => setApiProofCheckpointHeight(e.target.value)}
-                    placeholder="예: 4842333"
+                    placeholder="e.g. 4842333"
                   />
                 </label>
                 <label>
                   <div className="label">target_height</div>
-                  <input value={apiTargetHeight} onChange={(e) => setApiTargetHeight(e.target.value)} placeholder="예: 4842343" />
+                  <input value={apiTargetHeight} onChange={(e) => setApiTargetHeight(e.target.value)} placeholder="e.g. 4842343" />
                 </label>
                 <div className="actions">
                   <button className="btn secondary" onClick={() => void apiBuildProof()} disabled={apiBusy}>
-                    proof 생성(API) → proofHex 채우기
+                    Build proof (API) to fill proofHex
                   </button>
                   <button className="btn secondary" onClick={() => void apiSubmitProof()} disabled={apiBusy}>
-                    proof 제출(API)
+                    Submit proof (API)
                   </button>
                   <button className="btn" onClick={() => void apiBuildAndSubmit()} disabled={apiBusy}>
-                    원클릭(생성+제출)
+                    One-click (build + submit)
                   </button>
                 </div>
               </div>
               <div className="kv">
                 <div className="row">
-                  <div className="k">API 결과</div>
+                  <div className="k">API Result</div>
                   <div className="v mono pre">{apiLog || '—'}</div>
                 </div>
               </div>
             </section>
 
             <section className="card full">
-              <h2>submitPayout (지갑)</h2>
-              <div className="hint">API에서 proof를 만들었으면 위 버튼이 `proofHex`를 자동으로 채웁니다.</div>
+              <h2>submitPayout (Wallet)</h2>
+              <div className="hint">If proof is built via API, buttons above auto-fill `proofHex`.</div>
               <textarea value={proofHex} onChange={(e) => setProofHex(e.target.value.trim())} placeholder="0x..." rows={6} />
               <div className="actions">
                 <button className="btn" onClick={() => void submitProof()} disabled={!walletAccount}>
@@ -1299,8 +1301,8 @@ function App() {
         {tab === 'admin' ? (
           <>
             <section className="card">
-              <h2>관리자(Manager, 지갑)</h2>
-              <div className="hint">owner만 성공합니다. 실패 시 revert 이유를 Tx 상태에서 확인하세요.</div>
+              <h2>Admin (Manager, Wallet)</h2>
+              <div className="hint">Only owner succeeds. If it fails, check revert reason in Tx status.</div>
               <div className="form">
                 <label>
                   <div className="label">registerBorrower: borrower</div>
@@ -1335,8 +1337,8 @@ function App() {
             </section>
 
             <section className="card">
-              <h2>관리자(SPV Verifier, 지갑)</h2>
-              <div className="hint">`setBorrowerPubkeyHash`는 SPV 경로에서 필수입니다.</div>
+              <h2>Admin (SPV Verifier, Wallet)</h2>
+              <div className="hint">`setBorrowerPubkeyHash` is required for the SPV path.</div>
               <div className="form">
                 <label>
                   <div className="label">borrower</div>
@@ -1364,14 +1366,14 @@ function App() {
 
         {tab === 'config' ? (
           <section className="card full">
-            <h2>설정</h2>
+            <h2>Settings</h2>
             <div className="form">
               <label>
-                <div className="label">RPC URL (조회용)</div>
+                <div className="label">RPC URL (read-only)</div>
                 <input value={rpcUrl} onChange={(e) => setRpcUrl(e.target.value)} placeholder="https://..." />
               </label>
               <label>
-                <div className="label">체인 ID</div>
+                <div className="label">Chain ID</div>
                 <input
                   value={String(chainId)}
                   onChange={(e) => setChainId(Number(e.target.value))}
@@ -1396,27 +1398,27 @@ function App() {
                 />
               </label>
             </div>
-            <div className="hint">`apps/web/.env.example`를 복사해서 `apps/web/.env`를 만들면 기본값을 쉽게 넣을 수 있어요.</div>
+            <div className="hint">Copy `apps/web/.env.example` to `apps/web/.env` to set defaults quickly.</div>
           </section>
         ) : null}
 
         <section className="card full">
-          <h2>Tx 상태</h2>
+          <h2>Tx Status</h2>
           {txState.status === 'idle' ? (
-            <div className="hint">아직 전송한 트랜잭션이 없습니다.</div>
+            <div className="hint">No transactions have been sent yet.</div>
           ) : txState.status === 'signing' ? (
-            <div className="pill">서명 중: {txState.label}</div>
+            <div className="pill">Signing: {txState.label}</div>
           ) : txState.status === 'pending' ? (
             <div className="pill warn">
-              대기 중: {txState.label} <span className="mono">{txState.hash}</span>
+              Pending: {txState.label} <span className="mono">{txState.hash}</span>
             </div>
           ) : txState.status === 'confirmed' ? (
             <div className="pill ok">
-              확정됨: {txState.label} <span className="mono">{txState.hash}</span>
+              Confirmed: {txState.label} <span className="mono">{txState.hash}</span>
             </div>
           ) : (
             <div className="pill err">
-              오류: {txState.label} — {txState.message}
+              Error: {txState.label} — {txState.message}
             </div>
           )}
         </section>
@@ -1424,8 +1426,8 @@ function App() {
 
       <footer className="footer">
         <div className="hint">
-          이 UI는 “얇은 운영 대시보드”입니다. SPV proof 생성/체크포인트 등록 자동화는 prover/브리지 API 티켓(T1.7~T1.14)에서
-          진행합니다.
+          This UI is a "thin operations dashboard". SPV proof generation and checkpoint-registration automation are handled in
+          prover/bridge API tickets (T1.7-T1.14).
         </div>
       </footer>
     </div>
