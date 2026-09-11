@@ -270,12 +270,17 @@
 
 ### T2.2 Audit Checklist + Threat Model Doc
 - Priority: P2
-- Status: [ ]
+- Status: [x] DONE
 - 목적: 심사위원/VC/외주 인수인계를 위한 보안 문서를 만든다.
 - 산출물:
     - `docs/threat-model.md`
     - `docs/audit-checklist.md`
 - 완료 조건:
     - 주요 위협(oracle compromise, replay, reorg, self-transfer, key loss) 대응이 정리됨
+- 완료 요약:
+    - Created `docs/threat-model.md` covering 8 threat categories with mitigations
+    - Created `docs/audit-checklist.md` with 15 sections for comprehensive code review
+    - Documented oracle compromise, replay, reorg, self-transfer, key loss threats and defenses
+    - Includes trust boundaries diagram, defense-in-depth layers, incident response guidance
 
 ---
