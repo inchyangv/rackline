@@ -1,8 +1,8 @@
 # HashCredit (Creditcoin SPV) demo scenario
 
-This document is a local-only guide to showing your “best”** at a hackathon **demo day.
+Demo day guide for the hackathon. All on-chain transactions use **wallet signing** (no server-side private keys).
 
-- Distribution type: **Contract is separate**, FE is Vercel, the rest (API + SPV worker + DB) is Railway
+- Distribution type: **Contract is separate**, FE is Vercel, API is Railway
 - Chain: **Creditcoin EVM Testnet (chainId=102031)**
 - Bitcoin: **testnet**
 - FE domain: `https://hashcredit.studioliq.com`
@@ -86,16 +86,16 @@ Recommended
 Below is a good “click as you explain” sequence.
 
 ### 4.1 Show status on dashboard (30 seconds)
-1) FE top right ‘Connect wallet’
-2) Click the ‘Chain Switch (102031)’ button
-3) In the top card
-- Network: `Chain 102031`
-- Available Credit/Balance
-- Transaction status (real-time)
-4) Check whether the `Manager (Inquiry)`, `Checkpoint (Inquiry)`, and `SPV Verifier (Inquiry)` cards appear normally.
+1) FE top right — click `Connect` button
+2) Click the `Chain 102031` button to switch networks
+3) In the top metrics bar, verify:
+   - Network: `Chain 102031`
+   - Available Credit / Stablecoin Balance
+   - Transaction status (real-time)
+4) Scroll down and check the `Manager (Read)`, `Checkpoint (Read)`, and `SPV Verifier (Read)` cards appear with on-chain data.
 
 Comment example
-- "This screen reads and displays the on-chain status directly, and automation for operation is attached to the API."
+- "This screen reads and displays the on-chain status directly. All transactions are signed by the user’s wallet."
 
 ### 4.2 Register borrower on-chain (Admin tab, ~30 seconds)
 Tab: `Admin`
@@ -151,10 +151,11 @@ Note
 ### 4.5 Show “product feel” through borrower actions (Borrow/Repay) (1 minute)
 Tab: `Dashboard`
 
-1) In `Borrow`, example: Enter `1000` → Click `Loan`
-2) ‘Approve (stablecoin approval)’ only when necessary (approval before redemption/depending on token structure)
-3) In `Repay`, example: Enter `100` → Click `Repayment`
-4) Show that the top card ‘transaction status’ changes to ‘waiting for signature → sent → confirmed’
+1) Switch to borrower wallet in MetaMask (if not already connected)
+2) In `Borrow`, example: Enter `1000` → Click `Borrow`
+3) If needed, enter amount in `Approve` → Click `Approve` (stablecoin allowance for repayment)
+4) In `Repay`, example: Enter `100` → Click `Repay`
+5) Show that `Tx Status` at the bottom changes through the confirmation flow
 
 Comment example
 - "Once the proof is submitted, actual financial action is connected on-chain based on the data."
