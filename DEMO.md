@@ -127,15 +127,26 @@ Tab: `Operations`
 Comment example
 - “The API fetches the Bitcoin block header, and the wallet submits it on-chain as a checkpoint.”
 
-### 4.4 Show “proof data” on proof/submission screen (30 seconds)
+### 4.4 Build SPV proof and submit payout (Proof/Submit tab, ~1 minute)
 Tab: `Proof/Submit`
 
-- Show whether `proofHex` is auto-filled
-- If necessary, click `submitPayout (wallet)` to demonstrate “submit to user wallet”
+#### Step 1: Build proof (API)
+1) `API URL`: confirm it matches `https://api-hashcredit.studioliq.com`
+2) Enter `txid` — the Bitcoin testnet txid (display format, not reversed)
+3) Enter `vout` — the output index (usually `0`)
+4) Enter `checkpoint_height` — the checkpoint height registered in step 4.3
+5) Enter `target_height` — a block height ≥ the tx confirmation height
+6) Click `Build proof (API)` → result JSON shown in `API Result`
+7) On success, `proofHex` is **auto-filled** in the section below
 
-caution
-- `submitPayout (wallet)` is signed by the currently connected wallet.
-- Since revert is possible depending on permissions/conditions, API submission is recommended as the main method for live demos.
+#### Step 2: submitPayout (Wallet)
+1) Verify `proofHex` is filled (starts with `0x`)
+2) Click `submitPayout` → confirm in MetaMask
+3) Check `Tx Status` pill at the bottom for confirmation
+
+Note
+- `submitPayout` is signed by the currently connected wallet.
+- The connected wallet must have been registered as borrower in step 4.2, or the call will revert.
 
 ### 4.5 Show “product feel” through borrower actions (Borrow/Repay) (1 minute)
 Tab: `Dashboard`
