@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from .rpc import BitcoinRPC, BitcoinRPCConfig
 from .proof_builder import ProofBuilder
+from .evm import EVMClient, EVMConfig
 
 app = typer.Typer(
     name="hashcredit-prover",
@@ -162,6 +163,134 @@ def verify_local(
         typer.echo("\nProof verified successfully!")
 
     asyncio.run(_verify())
+
+
+@app.command()
+def set_checkpoint(
+    height: int = typer.Argument(..., help="Bitcoin block height to checkpoint"),
+    checkpoint_manager: Optional[str] = typer.Option(
+        None,
+        "--checkpoint-manager",
+        "-c",
+        envvar="CHECKPOINT_MANAGER",
+        help="CheckpointManager contract address",
+    ),
+    rpc_url: Optional[str] = typer.Option(
+        None, "--rpc-url", "-r", envvar="BITCOIN_RPC_URL", help="Bitcoin RPC URL"
+    ),
+    rpc_user: Optional[str] = typer.Option(
+        None, "--rpc-user", "-u", envvar="BITCOIN_RPC_USER", help="Bitcoin RPC user"
+    ),
+    rpc_password: Optional[str] = typer.Option(
+        None, "--rpc-password", "-p", envvar="BITCOIN_RPC_PASSWORD", help="Bitcoin RPC password"
+    ),
+    evm_rpc_url: Optional[str] = typer.Option(
+        None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
+    ),
+    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    private_key: Optional[str] = typer.Option(
+        None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print data without sending transaction"),
+) -> None:
+    """
+    Register a Bitcoin block checkpoint on CheckpointManager.
+
+    Fetches block header info from Bitcoin RPC and submits to EVM contract.
+
+    Example:
+        hashcredit-prover set-checkpoint 800000 \\
+            --checkpoint-manager 0x1234...
+    """
+
+    async def _set_checkpoint() -> None:
+        from .bitcoin import sha256d
+
+        # Validate required params
+        if not checkpoint_manager:
+            typer.echo("Error: --checkpoint-manager or CHECKPOINT_MANAGER env var required", err=True)
+            raise typer.Exit(1)
+        if not private_key and not dry_run:
+            typer.echo("Error: --private-key or PRIVATE_KEY env var required", err=True)
+            raise typer.Exit(1)
+
+        # Setup Bitcoin RPC
+        btc_config = BitcoinRPCConfig(
+            url=rpc_url or os.getenv("BITCOIN_RPC_URL", "http://localhost:18332"),
+            user=rpc_user or os.getenv("BITCOIN_RPC_USER", ""),
+            password=rpc_password or os.getenv("BITCOIN_RPC_PASSWORD", ""),
+        )
+        btc_rpc = BitcoinRPC(btc_config)
+
+        typer.echo(f"Fetching block info for height {height}...")
+
+        try:
+            # Get block hash and header info
+            block_hash_hex = await btc_rpc.get_block_hash(height)
+            header_info = await btc_rpc.get_block_header(block_hash_hex, verbose=True)
+            header_hex = await btc_rpc.get_block_header_hex(block_hash_hex)
+
+            # Parse header to get internal block hash
+            header_bytes = bytes.fromhex(header_hex)
+            internal_block_hash = sha256d(header_bytes)
+
+            # Extract fields
+            timestamp = header_info["time"]
+            chain_work_hex = header_info.get("chainwork", "0")
+            chain_work = int(chain_work_hex, 16)
+
+            typer.echo(f"\nBlock Info:")
+            typer.echo(f"  Height:     {height}")
+            typer.echo(f"  Hash (RPC): {block_hash_hex}")
+            typer.echo(f"  Hash (int): 0x{internal_block_hash.hex()}")
+            typer.echo(f"  Timestamp:  {timestamp}")
+            typer.echo(f"  ChainWork:  {chain_work_hex}")
+
+            if dry_run:
+                typer.echo("\n[Dry run - not sending transaction]")
+                typer.echo(f"\nContract call:")
+                typer.echo(f"  setCheckpoint(")
+                typer.echo(f"    height: {height},")
+                typer.echo(f"    blockHash: 0x{internal_block_hash.hex()},")
+                typer.echo(f"    chainWork: {chain_work},")
+                typer.echo(f"    timestamp: {timestamp}")
+                typer.echo(f"  )")
+                return
+
+            # Setup EVM client
+            evm_config = EVMConfig(
+                rpc_url=evm_rpc_url or os.getenv("EVM_RPC_URL", "http://localhost:8545"),
+                chain_id=chain_id,
+                private_key=private_key or "",
+            )
+            evm_client = EVMClient(evm_config)
+
+            typer.echo(f"\nSending transaction from {evm_client.address}...")
+
+            # Send transaction
+            receipt = await evm_client.set_checkpoint(
+                contract_address=checkpoint_manager,
+                height=height,
+                block_hash=internal_block_hash,
+                chain_work=chain_work,
+                timestamp=timestamp,
+            )
+
+            typer.echo(f"\nTransaction successful!")
+            typer.echo(f"  TX Hash: {receipt['transactionHash'].hex()}")
+            typer.echo(f"  Block:   {receipt['blockNumber']}")
+            typer.echo(f"  Gas:     {receipt['gasUsed']}")
+
+            # Verify
+            new_height = await evm_client.get_latest_checkpoint_height(checkpoint_manager)
+            typer.echo(f"\nVerification:")
+            typer.echo(f"  latestCheckpointHeight() = {new_height}")
+
+        except Exception as e:
+            typer.echo(f"Error: {e}", err=True)
+            raise typer.Exit(1)
+
+    asyncio.run(_set_checkpoint())
 
 
 if __name__ == "__main__":

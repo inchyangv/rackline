@@ -269,7 +269,7 @@
 
 ### T1.7 Checkpoint 등록 툴링 (Bitcoin Core RPC → CheckpointManager)
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: **Bitcoin testnet** Bitcoin Core RPC에서 블록 헤더/메타를 읽어서 `CheckpointManager.setCheckpoint()`를 **실수 없이** 실행한다.
 - 작업:
     - `hashcredit-prover`에 `set-checkpoint` 커맨드 추가(또는 별도 스크립트)
@@ -279,6 +279,12 @@
     - `timestamp`, `chainWork`를 Bitcoin Core 결과에서 안전하게 파싱
 - 완료 조건:
     - 지정 height로 checkpoint 등록 트랜잭션이 성공하고, `latestCheckpointHeight()`가 갱신된다.
+- 완료 요약:
+    - Created `hashcredit_prover/evm.py` with EVMClient for contract interactions
+    - Added `set-checkpoint` command to CLI
+    - Fetches block header from Bitcoin RPC, computes internal hash, and calls setCheckpoint()
+    - Supports --dry-run mode for testing without sending transactions
+    - Updated README.md with command documentation
 
 ---
 
