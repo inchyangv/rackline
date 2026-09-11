@@ -15,6 +15,10 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: {
+      // UI component files export style variant constants (cva) by design.
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
+    },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
