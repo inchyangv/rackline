@@ -49,7 +49,7 @@
 
 ### T0.3 LendingVault (Single Stablecoin) — Minimal Viable Vault
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: 스테이블코인 유동성을 받아 borrow/repay/interest를 처리한다.
 - 스코프:
     - 단일 ERC20 stablecoin (mock로 시작)
