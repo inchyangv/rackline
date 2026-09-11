@@ -91,3 +91,5 @@ SCRIPT.md
 
 # Pitch deck (local only)
 DECK.md
+make_deck.py
+*.pptx

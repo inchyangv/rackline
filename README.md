@@ -31,12 +31,16 @@ The insight: **you can't prove hashrate directly — it's a physical rate. But y
 
 Every pool payout is a Bitcoin transaction proportional to contributed hash power. That transaction is committed to by Bitcoin's proof-of-work and verifiable by anyone with block headers. Payout history *is* the hashrate record. SPV verification turns that record into trustless on-chain evidence — no oracle, no bridge, no trusted third party.
 
-HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit layer:
+HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit layer through **mining pools as institutional counterparties**:
 
-1. **Prove** — Generate an SPV proof of a real Bitcoin payout transaction
-2. **Verify** — On-chain verifier checks checkpoint anchor, header chain PoW, Merkle inclusion, and output script
-3. **Credit** — Protocol records the payout (replay-protected) and updates the miner's trailing-window credit limit
-4. **Borrow** — Miner borrows stablecoins against their verified revenue; repays on their own schedule
+1. **Register** — Mining pool agrees to withhold repayment % from miner payouts (원천징수)
+2. **Prove** — Generate an SPV proof of a real Bitcoin payout transaction
+3. **Verify** — On-chain verifier checks checkpoint anchor, header chain PoW, Merkle inclusion, and output script
+4. **Credit** — Protocol records the payout (replay-protected) and updates the miner's trailing-window credit limit
+5. **Borrow** — Miner borrows USDT against their verified revenue
+6. **Auto-Repay** — Pool withholds X% of each subsequent payout; on default, pool redirects miner's hashrate
+
+LP perspective: USDT depositors earn 10% APR — 2-3× standard DeFi rates (Aave USDT ~3-4%, Curve stables ~5-7%) — backed by SPV-proven mining revenue and pool-level enforcement.
 
 ---
 
@@ -148,21 +152,21 @@ See [`docs/threat-model.md`](docs/threat-model.md) and [`docs/audit-checklist.md
 
 ---
 
-## USC Readiness
+## USC (Universal Smart Contract) Readiness
 
-HashCredit and USC share the same architectural principle:
+HashCredit and Creditcoin's USC share the same architectural principle:
 
 > **Prove a real-world economic event cryptographically → authorize on-chain financial operations.**
 
-USC does this for off-chain credit and trade events. HashCredit does it for Bitcoin mining payouts. The proof mechanism differs; the pattern is identical.
+USC (Universal Smart Contract) does this for off-chain credit and trade events. HashCredit does it for Bitcoin mining payouts. The proof mechanism differs; the pattern is identical.
 
 USC mainnet was not live during development. Rather than wait, we implemented the same architecture ourselves using BTC SPV as the proof source — so the protocol works now and can attach to USC later without redesigning the core proof-credit separation.
 
 - `IVerifierAdapter` is the seam: new proof sources plug in without touching credit logic
-- `LendingVault` accepts any ERC20 token address — swap in USC with zero code changes
+- `LendingVault` accepts any ERC20 token address — swap the stablecoin with zero code changes
 - USC integration is an **adapter + wiring task**, not a protocol rewrite
 
-Integration paths: swap vault asset to USC token, add USC-specific settlement adapter, or run multi-verifier mode alongside BTC SPV.
+Integration paths: swap vault asset to USC stablecoin, add USC-specific settlement adapter, or run multi-verifier mode alongside BTC SPV.
 
 ---
 
