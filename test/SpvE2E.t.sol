@@ -283,7 +283,8 @@ contract SpvE2ETest is Test {
             CHECKPOINT_HEIGHT,
             checkpointHash,
             0, // chainWork
-            1690000000 // timestamp
+            1690000000, // timestamp
+            0x1d00ffff // bits (genesis difficulty for testing)
         );
 
         assertEq(checkpointManager.latestCheckpointHeight(), CHECKPOINT_HEIGHT);
@@ -294,7 +295,7 @@ contract SpvE2ETest is Test {
         bytes32 checkpointHash = keccak256("checkpoint");
 
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
 
         // Build proof with only 5 headers (insufficient confirmations)
         bytes[] memory headers = new bytes[](5);
@@ -355,7 +356,7 @@ contract SpvE2ETest is Test {
         // Setup checkpoint
         bytes32 checkpointHash = keccak256("checkpoint");
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
 
         bytes[] memory headers = new bytes[](6);
         for (uint i = 0; i < 6; i++) {
@@ -382,7 +383,7 @@ contract SpvE2ETest is Test {
         // Setup checkpoint
         bytes32 checkpointHash = keccak256("checkpoint");
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
 
         // Build headers that link to checkpoint
         bytes[] memory headers = new bytes[](6);
@@ -424,7 +425,7 @@ contract SpvE2ETest is Test {
         // Setup checkpoint
         bytes32 checkpointHash = keccak256("checkpoint");
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
 
         // Register a different borrower in verifier but not in manager
         address newBorrower = makeAddr("newBorrower");

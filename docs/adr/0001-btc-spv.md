@@ -28,6 +28,7 @@ We use a **multisig-controlled checkpoint system**:
   - `blockHeight`: The block height
   - `chainWork`: Cumulative chain work up to this point (optional, for fork resistance)
   - `timestamp`: Block timestamp
+  - `bits`: Difficulty target in compact format (anchors expected difficulty for the epoch)
 
 **Checkpoint frequency**: Every ~2000 blocks (approximately 2 weeks), ensuring we stay within a single difficulty period.
 
@@ -62,6 +63,13 @@ Rationale:
 - If a payout falls near a retarget boundary, wait for a new checkpoint in the next period.
 
 This simplifies implementation significantly while maintaining security.
+
+**Implementation (T2.3):**
+- Checkpoint struct includes `bits` field to anchor expected difficulty for the epoch.
+- `BtcSpvVerifier._verifyHeaderChain()` validates:
+  1. `(checkpointHeight / 2016) == (targetHeight / 2016)` - no retarget boundary crossing
+  2. Each header's `bits` must match the checkpoint's `bits` exactly
+- Errors: `RetargetBoundaryCrossing(checkpointHeight, targetHeight)`, `DifficultyMismatch(expected, actual)`
 
 ### 4. Transaction Inclusion Proof (Merkle)
 
@@ -160,7 +168,7 @@ Bitcoin uses a **double-SHA256 Merkle tree**. The proof consists of:
 
 ```
 CheckpointManager
-├── setCheckpoint(height, hash, chainWork, timestamp) [multisig only]
+├── setCheckpoint(height, hash, chainWork, timestamp, bits) [multisig only]
 ├── getCheckpoint(height) → Checkpoint
 └── isValidCheckpoint(height, hash) → bool
 

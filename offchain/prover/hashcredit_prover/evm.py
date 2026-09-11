@@ -27,6 +27,7 @@ CHECKPOINT_MANAGER_ABI = [
             {"name": "blockHash", "type": "bytes32"},
             {"name": "chainWork", "type": "uint256"},
             {"name": "timestamp", "type": "uint32"},
+            {"name": "bits", "type": "uint32"},
         ],
         "name": "setCheckpoint",
         "outputs": [],
@@ -50,6 +51,7 @@ CHECKPOINT_MANAGER_ABI = [
                     {"name": "height", "type": "uint32"},
                     {"name": "chainWork", "type": "uint256"},
                     {"name": "timestamp", "type": "uint32"},
+                    {"name": "bits", "type": "uint32"},
                 ],
                 "name": "",
                 "type": "tuple",
@@ -209,6 +211,7 @@ class EVMClient:
         block_hash: bytes,
         chain_work: int,
         timestamp: int,
+        bits: int,
     ) -> TxReceipt:
         """
         Call CheckpointManager.setCheckpoint().
@@ -219,11 +222,12 @@ class EVMClient:
             block_hash: 32-byte block hash (internal byte order)
             chain_work: Cumulative chain work
             timestamp: Block timestamp
+            bits: Difficulty target in compact format
         """
         contract = self.get_checkpoint_manager(contract_address)
         data = contract.encodeABI(
             fn_name="setCheckpoint",
-            args=[height, block_hash, chain_work, timestamp],
+            args=[height, block_hash, chain_work, timestamp, bits],
         )
         return await self.send_transaction(contract_address, bytes.fromhex(data[2:]))
 
@@ -241,6 +245,7 @@ class EVMClient:
             "height": result[1],
             "chainWork": result[2],
             "timestamp": result[3],
+            "bits": result[4],
         }
 
     async def set_borrower_pubkey_hash(

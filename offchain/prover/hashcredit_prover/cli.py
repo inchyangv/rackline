@@ -204,7 +204,7 @@ def set_checkpoint(
     """
 
     async def _set_checkpoint() -> None:
-        from .bitcoin import sha256d
+        from .bitcoin import sha256d, BlockHeader
 
         # Validate required params
         if not checkpoint_manager:
@@ -230,9 +230,13 @@ def set_checkpoint(
             header_info = await btc_rpc.get_block_header(block_hash_hex, verbose=True)
             header_hex = await btc_rpc.get_block_header_hex(block_hash_hex)
 
-            # Parse header to get internal block hash
+            # Parse header to get internal block hash and bits
             header_bytes = bytes.fromhex(header_hex)
             internal_block_hash = sha256d(header_bytes)
+
+            # Parse header to extract bits
+            header = BlockHeader.from_bytes(header_bytes)
+            bits = header.bits
 
             # Extract fields
             timestamp = header_info["time"]
@@ -245,6 +249,7 @@ def set_checkpoint(
             typer.echo(f"  Hash (int): 0x{internal_block_hash.hex()}")
             typer.echo(f"  Timestamp:  {timestamp}")
             typer.echo(f"  ChainWork:  {chain_work_hex}")
+            typer.echo(f"  Bits:       0x{bits:08x}")
 
             if dry_run:
                 typer.echo("\n[Dry run - not sending transaction]")
@@ -253,7 +258,8 @@ def set_checkpoint(
                 typer.echo(f"    height: {height},")
                 typer.echo(f"    blockHash: 0x{internal_block_hash.hex()},")
                 typer.echo(f"    chainWork: {chain_work},")
-                typer.echo(f"    timestamp: {timestamp}")
+                typer.echo(f"    timestamp: {timestamp},")
+                typer.echo(f"    bits: {bits}")
                 typer.echo(f"  )")
                 return
 
@@ -274,6 +280,7 @@ def set_checkpoint(
                 block_hash=internal_block_hash,
                 chain_work=chain_work,
                 timestamp=timestamp,
+                bits=bits,
             )
 
             typer.echo(f"\nTransaction successful!")

@@ -19,6 +19,7 @@ CHECKPOINT_MANAGER_ABI = [
             {"name": "blockHash", "type": "bytes32"},
             {"name": "chainWork", "type": "uint256"},
             {"name": "timestamp", "type": "uint32"},
+            {"name": "bits", "type": "uint32"},
         ],
         "name": "setCheckpoint",
         "outputs": [],
@@ -156,12 +157,13 @@ class EVMClient:
         block_hash: bytes,
         chain_work: int,
         timestamp: int,
+        bits: int,
     ) -> TxReceipt:
         """Call CheckpointManager.setCheckpoint()."""
         contract = self.get_checkpoint_manager()
         data = contract.encodeABI(
             fn_name="setCheckpoint",
-            args=[height, block_hash, chain_work, timestamp],
+            args=[height, block_hash, chain_work, timestamp, bits],
         )
         return await self.send_transaction(
             self.settings.checkpoint_manager or "",

@@ -48,6 +48,7 @@ contract GasProfileTest is Test {
     bytes32 constant CHECKPOINT_HASH = 0x00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054;
     uint32 constant CHECKPOINT_HEIGHT = 800000;
     uint32 constant CHECKPOINT_TIMESTAMP = 1690000000;
+    uint32 constant CHECKPOINT_BITS = 0x17053894; // Block 800000 difficulty
     bytes20 constant BORROWER_PUBKEY_HASH = bytes20(hex"1234567890abcdef1234567890abcdef12345678");
 
     function setUp() public {
@@ -96,7 +97,7 @@ contract GasProfileTest is Test {
 
         // Configure
         vault.setManager(address(manager));
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, CHECKPOINT_HASH, 0, CHECKPOINT_TIMESTAMP);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, CHECKPOINT_HASH, 0, CHECKPOINT_TIMESTAMP, CHECKPOINT_BITS);
         spvVerifier.setBorrowerPubkeyHash(borrower, BORROWER_PUBKEY_HASH);
         manager.registerBorrower(borrower, bytes32(BORROWER_PUBKEY_HASH));
 
@@ -362,7 +363,8 @@ contract GasProfileTest is Test {
             CHECKPOINT_HEIGHT + 2016,
             keccak256("new_block"),
             1000000,
-            CHECKPOINT_TIMESTAMP + 2016 * 600
+            CHECKPOINT_TIMESTAMP + 2016 * 600,
+            CHECKPOINT_BITS
         );
         uint256 gasUsed = gasBefore - gasleft();
         console2.log("setCheckpoint: %d gas", gasUsed);

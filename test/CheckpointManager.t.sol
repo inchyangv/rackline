@@ -15,12 +15,14 @@ contract CheckpointManagerTest is Test {
     uint32 constant BLOCK_HEIGHT_800000 = 800000;
     uint256 constant CHAIN_WORK_800000 = 0x000000000000000000000000000000000000000053c6f31f13e6e3f1b5a0bfff;
     uint32 constant TIMESTAMP_800000 = 1690000000;
+    uint32 constant BITS_800000 = 0x17053894; // Block 800000 difficulty
 
     // Another sample block (800100)
     bytes32 constant BLOCK_HASH_800100 = 0x00000000000000000001a2b3c4d5e6f7890abcdef1234567890abcdef1234567;
     uint32 constant BLOCK_HEIGHT_800100 = 800100;
     uint256 constant CHAIN_WORK_800100 = 0x000000000000000000000000000000000000000053c7f31f13e6e3f1b5a0bfff;
     uint32 constant TIMESTAMP_800100 = 1690060000;
+    uint32 constant BITS_800100 = 0x17053894; // Same epoch, same bits
 
     function setUp() public {
         owner = makeAddr("owner");
@@ -38,7 +40,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         ICheckpointManager.Checkpoint memory cp = manager.getCheckpoint(BLOCK_HEIGHT_800000);
@@ -46,6 +49,7 @@ contract CheckpointManagerTest is Test {
         assertEq(cp.blockHash, BLOCK_HASH_800000);
         assertEq(cp.chainWork, CHAIN_WORK_800000);
         assertEq(cp.timestamp, TIMESTAMP_800000);
+        assertEq(cp.bits, BITS_800000);
     }
 
     function test_setCheckpoint_emitsEvent() public {
@@ -54,7 +58,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         vm.prank(owner);
@@ -62,7 +67,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
     }
 
@@ -73,7 +79,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
     }
 
@@ -84,7 +91,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         // Try to set checkpoint with same height
@@ -100,7 +108,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800100, // different hash
             CHAIN_WORK_800100,
-            TIMESTAMP_800100
+            TIMESTAMP_800100,
+            BITS_800100
         );
     }
 
@@ -111,7 +120,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800100,
             BLOCK_HASH_800100,
             CHAIN_WORK_800100,
-            TIMESTAMP_800100
+            TIMESTAMP_800100,
+            BITS_800100
         );
 
         // Try to set checkpoint with lower height
@@ -127,7 +137,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
     }
 
@@ -138,7 +149,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             bytes32(0),
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
     }
 
@@ -149,6 +161,19 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
+            0,
+            BITS_800000
+        );
+    }
+
+    function test_setCheckpoint_revertsIfZeroBits() public {
+        vm.prank(owner);
+        vm.expectRevert(CheckpointManager.InvalidBits.selector);
+        manager.setCheckpoint(
+            BLOCK_HEIGHT_800000,
+            BLOCK_HASH_800000,
+            CHAIN_WORK_800000,
+            TIMESTAMP_800000,
             0
         );
     }
@@ -171,7 +196,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         bool valid = manager.isValidCheckpoint(BLOCK_HEIGHT_800000, BLOCK_HASH_800000);
@@ -184,7 +210,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         bool valid = manager.isValidCheckpoint(BLOCK_HEIGHT_800000, BLOCK_HASH_800100);
@@ -208,7 +235,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         assertEq(manager.latestCheckpointHeight(), BLOCK_HEIGHT_800000);
@@ -218,7 +246,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800100,
             BLOCK_HASH_800100,
             CHAIN_WORK_800100,
-            TIMESTAMP_800100
+            TIMESTAMP_800100,
+            BITS_800100
         );
 
         assertEq(manager.latestCheckpointHeight(), BLOCK_HEIGHT_800100);
@@ -237,7 +266,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         vm.prank(owner);
@@ -245,7 +275,8 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800100,
             BLOCK_HASH_800100,
             CHAIN_WORK_800100,
-            TIMESTAMP_800100
+            TIMESTAMP_800100,
+            BITS_800100
         );
 
         ICheckpointManager.Checkpoint memory cp = manager.latestCheckpoint();
@@ -263,14 +294,16 @@ contract CheckpointManagerTest is Test {
             BLOCK_HEIGHT_800000,
             BLOCK_HASH_800000,
             CHAIN_WORK_800000,
-            TIMESTAMP_800000
+            TIMESTAMP_800000,
+            BITS_800000
         );
 
         manager.setCheckpoint(
             BLOCK_HEIGHT_800100,
             BLOCK_HASH_800100,
             CHAIN_WORK_800100,
-            TIMESTAMP_800100
+            TIMESTAMP_800100,
+            BITS_800100
         );
 
         vm.stopPrank();

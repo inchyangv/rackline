@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .address import decode_btc_address
 from .auth import verify_api_token
-from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d
+from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d, BlockHeader
 from .config import Settings, get_settings
 from .evm import EVMClient
 from .models import (
@@ -311,9 +311,13 @@ async def set_checkpoint(
         header_info = await _bitcoin_rpc.get_block_header(block_hash_hex, verbose=True)
         header_hex = await _bitcoin_rpc.get_block_header_hex(block_hash_hex)
 
-        # Calculate internal block hash
+        # Calculate internal block hash and parse bits
         header_bytes = bytes.fromhex(header_hex)
         internal_block_hash = sha256d(header_bytes)
+
+        # Parse header to extract bits
+        header = BlockHeader.from_bytes(header_bytes)
+        bits = header.bits
 
         # Extract fields
         timestamp = header_info["time"]
@@ -325,6 +329,7 @@ async def set_checkpoint(
                 "Dry run: would set checkpoint",
                 height=request.height,
                 block_hash=internal_block_hash.hex(),
+                bits=f"0x{bits:08x}",
             )
             return SetCheckpointResponse(
                 success=True,
@@ -332,6 +337,7 @@ async def set_checkpoint(
                 block_hash=f"0x{internal_block_hash.hex()}",
                 timestamp=timestamp,
                 chain_work=chain_work_hex,
+                bits=bits,
                 dry_run=True,
             )
 
@@ -341,6 +347,7 @@ async def set_checkpoint(
             block_hash=internal_block_hash,
             chain_work=chain_work,
             timestamp=timestamp,
+            bits=bits,
         )
 
         logger.info(
@@ -355,6 +362,7 @@ async def set_checkpoint(
             block_hash=f"0x{internal_block_hash.hex()}",
             timestamp=timestamp,
             chain_work=chain_work_hex,
+            bits=bits,
             tx_hash=receipt["transactionHash"].hex(),
             gas_used=receipt["gasUsed"],
             dry_run=False,

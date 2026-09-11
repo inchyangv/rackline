@@ -14,12 +14,14 @@ interface ICheckpointManager {
      * @param height The block height
      * @param chainWork Cumulative chain work (optional, for fork resistance)
      * @param timestamp Block timestamp (seconds since epoch)
+     * @param bits Difficulty target in compact format (for difficulty validation)
      */
     struct Checkpoint {
         bytes32 blockHash;
         uint32 height;
         uint256 chainWork;
         uint32 timestamp;
+        uint32 bits;
     }
 
     /**
@@ -28,12 +30,14 @@ interface ICheckpointManager {
      * @param blockHash The checkpoint block hash
      * @param chainWork Cumulative chain work
      * @param timestamp Block timestamp
+     * @param bits Difficulty target in compact format
      */
     event CheckpointSet(
         uint32 indexed height,
         bytes32 indexed blockHash,
         uint256 chainWork,
-        uint32 timestamp
+        uint32 timestamp,
+        uint32 bits
     );
 
     /**
@@ -42,6 +46,7 @@ interface ICheckpointManager {
      * @param blockHash Block hash (32 bytes, little-endian)
      * @param chainWork Cumulative chain work
      * @param timestamp Block timestamp
+     * @param bits Difficulty target in compact format
      * @dev Only callable by authorized attestors (owner/multisig)
      *      Height must be monotonically increasing
      */
@@ -49,7 +54,8 @@ interface ICheckpointManager {
         uint32 height,
         bytes32 blockHash,
         uint256 chainWork,
-        uint32 timestamp
+        uint32 timestamp,
+        uint32 bits
     ) external;
 
     /**

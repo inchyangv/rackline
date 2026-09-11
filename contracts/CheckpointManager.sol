@@ -73,6 +73,9 @@ contract CheckpointManager is ICheckpointManager {
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 
+    /// @notice Error when bits is zero
+    error InvalidBits();
+
     /**
      * @inheritdoc ICheckpointManager
      */
@@ -80,7 +83,8 @@ contract CheckpointManager is ICheckpointManager {
         uint32 height,
         bytes32 blockHash,
         uint256 chainWork,
-        uint32 timestamp
+        uint32 timestamp,
+        uint32 bits
     ) external onlyOwner {
         // Validate inputs
         if (blockHash == bytes32(0)) {
@@ -88,6 +92,9 @@ contract CheckpointManager is ICheckpointManager {
         }
         if (timestamp == 0) {
             revert InvalidTimestamp();
+        }
+        if (bits == 0) {
+            revert InvalidBits();
         }
 
         // Enforce monotonic height increase
@@ -100,13 +107,14 @@ contract CheckpointManager is ICheckpointManager {
             blockHash: blockHash,
             height: height,
             chainWork: chainWork,
-            timestamp: timestamp
+            timestamp: timestamp,
+            bits: bits
         });
 
         // Update latest height
         _latestHeight = height;
 
-        emit CheckpointSet(height, blockHash, chainWork, timestamp);
+        emit CheckpointSet(height, blockHash, chainWork, timestamp, bits);
     }
 
     /**

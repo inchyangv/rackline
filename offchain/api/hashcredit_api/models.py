@@ -78,6 +78,7 @@ class SetCheckpointResponse(BaseModel):
     block_hash: Optional[str] = Field(None, description="Block hash (internal format)")
     timestamp: Optional[int] = Field(None, description="Block timestamp")
     chain_work: Optional[str] = Field(None, description="Cumulative chain work (hex)")
+    bits: Optional[int] = Field(None, description="Difficulty target bits (compact format)")
     tx_hash: Optional[str] = Field(None, description="Transaction hash (if not dry run)")
     gas_used: Optional[int] = Field(None, description="Gas used (if not dry run)")
     dry_run: bool = Field(False, description="Whether this was a dry run")

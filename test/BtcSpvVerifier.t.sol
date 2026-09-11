@@ -214,6 +214,7 @@ contract BtcSpvVerifierTest is Test {
     bytes32 constant CHECKPOINT_HASH = 0x00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054;
     uint32 constant CHECKPOINT_HEIGHT = 800000;
     uint32 constant CHECKPOINT_TIMESTAMP = 1690000000;
+    uint32 constant CHECKPOINT_BITS = 0x17053894; // Block 800000 difficulty
 
     // Sample borrower pubkey hash
     bytes20 constant BORROWER_PUBKEY_HASH = bytes20(hex"1234567890abcdef1234567890abcdef12345678");
@@ -235,7 +236,8 @@ contract BtcSpvVerifierTest is Test {
             CHECKPOINT_HEIGHT,
             CHECKPOINT_HASH,
             0, // chainWork
-            CHECKPOINT_TIMESTAMP
+            CHECKPOINT_TIMESTAMP,
+            CHECKPOINT_BITS
         );
 
         // Register borrower's pubkey hash
@@ -459,5 +461,106 @@ contract BtcSpvVerifierTest is Test {
         assertEq(verifier.MAX_MERKLE_DEPTH(), 20);
         assertEq(verifier.MAX_TX_SIZE(), 4096);
         assertEq(verifier.MIN_CONFIRMATIONS(), 6);
+        assertEq(verifier.RETARGET_PERIOD(), 2016);
+    }
+
+    // ============ Difficulty Validation Tests ============
+
+    function test_verifyPayout_revertsOnRetargetBoundaryCrossing() public {
+        // Set checkpoint at height that would cause boundary crossing
+        // Epoch N ends at height (N+1)*2016 - 1
+        // Checkpoint at 806399 (epoch 399), target 806405 (epoch 400) crosses boundary at 806400
+        uint32 checkpointHeight = 806399; // epoch 399: 806399 / 2016 = 399
+        uint32 targetHeight = checkpointHeight + 6; // 806405, epoch 400: 806405 / 2016 = 400
+
+        vm.prank(owner);
+        checkpointManager.setCheckpoint(
+            checkpointHeight, // Near retarget boundary
+            bytes32(uint256(0xdeadbeef)),
+            0,
+            1690000000,
+            CHECKPOINT_BITS
+        );
+
+        bytes[] memory headers = new bytes[](6);
+        for (uint i = 0; i < 6; i++) {
+            headers[i] = new bytes(80);
+        }
+
+        BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
+            checkpointHeight: checkpointHeight,
+            headers: headers,
+            rawTx: hex"01000000",
+            merkleProof: new bytes32[](0),
+            txIndex: 0,
+            outputIndex: 0,
+            borrower: borrower
+        });
+
+        bytes memory encodedProof = abi.encode(proof);
+
+        // Target height = 806399 + 6 = 806405, crosses boundary at 806400
+        // checkpoint epoch = 806399 / 2016 = 399
+        // target epoch = 806405 / 2016 = 400
+        vm.expectRevert(
+            abi.encodeWithSelector(BtcSpvVerifier.RetargetBoundaryCrossing.selector, checkpointHeight, targetHeight)
+        );
+        verifier.verifyPayout(encodedProof);
+    }
+
+    function test_verifyPayout_revertsOnDifficultyMismatch() public {
+        // This test requires constructing valid headers with wrong bits
+        // For now, we test the error exists by using a header with different bits
+        // Note: Full integration test would need valid PoW which is expensive
+
+        // Set checkpoint with specific bits
+        vm.prank(owner);
+        checkpointManager.setCheckpoint(
+            900000, // New checkpoint, same epoch
+            bytes32(uint256(0xabcdef)),
+            0,
+            1690000000,
+            0x17053894 // Expected bits
+        );
+
+        // Create headers with matching prevHash but wrong bits
+        // This is a simplified test - real test would need valid PoW
+        bytes[] memory headers = new bytes[](6);
+        for (uint i = 0; i < 6; i++) {
+            headers[i] = new bytes(80);
+            // Set prevBlockHash at offset 4 (32 bytes)
+            // For first header, it should match checkpoint hash
+            if (i == 0) {
+                // bytes32(uint256(0xabcdef)) in little-endian at offset 4
+                for (uint j = 0; j < 32; j++) {
+                    headers[i][4 + j] = bytes32(uint256(0xabcdef))[j];
+                }
+            }
+            // Set bits at offset 72 (4 bytes, little-endian)
+            // Using wrong bits: 0x1d00ffff (genesis difficulty)
+            headers[i][72] = 0xff;
+            headers[i][73] = 0xff;
+            headers[i][74] = 0x00;
+            headers[i][75] = 0x1d;
+        }
+
+        BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
+            checkpointHeight: 900000,
+            headers: headers,
+            rawTx: hex"01000000",
+            merkleProof: new bytes32[](0),
+            txIndex: 0,
+            outputIndex: 0,
+            borrower: borrower
+        });
+
+        bytes memory encodedProof = abi.encode(proof);
+
+        // Should revert with DifficultyMismatch
+        // Expected: 0x17053894, Actual: 0x1d00ffff
+        vm.expectRevert(
+            abi.encodeWithSelector(BtcSpvVerifier.DifficultyMismatch.selector, 0x17053894, 0x1d00ffff)
+        );
+        verifier.verifyPayout(encodedProof);
     }
 }

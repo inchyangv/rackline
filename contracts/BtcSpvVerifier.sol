@@ -41,6 +41,9 @@ contract BtcSpvVerifier is IVerifierAdapter {
     /// @notice Minimum confirmations required
     uint256 public constant MIN_CONFIRMATIONS = 6;
 
+    /// @notice Bitcoin mainnet difficulty retarget period (blocks)
+    uint256 public constant RETARGET_PERIOD = 2016;
+
     // ============================================
     // State Variables
     // ============================================
@@ -75,6 +78,8 @@ contract BtcSpvVerifier is IVerifierAdapter {
     error PayoutAlreadyProcessed();
     error BorrowerNotRegistered();
     error InsufficientConfirmations();
+    error DifficultyMismatch(uint32 expected, uint32 actual);
+    error RetargetBoundaryCrossing(uint32 checkpointHeight, uint32 targetHeight);
 
     // ============================================
     // Events
@@ -175,10 +180,17 @@ contract BtcSpvVerifier is IVerifierAdapter {
         ICheckpointManager.Checkpoint memory checkpoint = checkpointManager.getCheckpoint(spvProof.checkpointHeight);
         if (checkpoint.height == 0) revert InvalidCheckpoint();
 
+        // Calculate target height and verify retarget boundary
+        uint32 targetHeight = checkpoint.height + uint32(spvProof.headers.length);
+        if ((checkpoint.height / RETARGET_PERIOD) != (targetHeight / RETARGET_PERIOD)) {
+            revert RetargetBoundaryCrossing(checkpoint.height, targetHeight);
+        }
+
         // Verify header chain and get target block info
         (, BitcoinLib.BlockHeader memory targetHeader) = _verifyHeaderChain(
             checkpoint.blockHash,
             checkpoint.height,
+            checkpoint.bits,
             spvProof.headers
         );
 
@@ -230,17 +242,22 @@ contract BtcSpvVerifier is IVerifierAdapter {
     /**
      * @notice Verify header chain from checkpoint
      * @param checkpointHash Hash of checkpoint block
+     * @param checkpointHeight Height of checkpoint block (for logging/debugging)
+     * @param expectedBits Expected difficulty bits from checkpoint
      * @param headers Array of headers from checkpoint+1 to target
      * @return targetHash Hash of target block
      * @return targetHeader Parsed target block header
      */
     function _verifyHeaderChain(
         bytes32 checkpointHash,
-        uint32, /* checkpointHeight - reserved for future difficulty validation */
+        uint32 checkpointHeight,
+        uint32 expectedBits,
         bytes[] memory headers
     ) internal pure returns (bytes32 targetHash, BitcoinLib.BlockHeader memory targetHeader) {
+        // Silence unused variable warning
+        checkpointHeight;
+
         bytes32 prevHash = checkpointHash;
-        uint32 expectedBits = 0;
 
         for (uint256 i = 0; i < headers.length; i++) {
             // Parse header
@@ -251,21 +268,17 @@ contract BtcSpvVerifier is IVerifierAdapter {
                 revert InvalidHeaderChain();
             }
 
+            // Verify difficulty matches checkpoint (within same retarget period)
+            if (header.bits != expectedBits) {
+                revert DifficultyMismatch(expectedBits, header.bits);
+            }
+
             // Calculate block hash
             bytes32 blockHash = BitcoinLib.hashHeader(headers[i]);
 
             // Verify PoW
             if (!BitcoinLib.verifyPoW(blockHash, header.bits)) {
                 revert InvalidPoW();
-            }
-
-            // Check difficulty consistency (within same retarget period)
-            // For MVP, we just ensure bits don't change unexpectedly
-            if (i == 0) {
-                expectedBits = header.bits;
-            } else {
-                // Allow some flexibility for edge cases, but generally bits should match
-                // In production, we'd have stricter checks based on block height
             }
 
             // Update for next iteration
