@@ -252,7 +252,7 @@
 
 ### T2.1 Gas Profiling + Limits
 - Priority: P2
-- Status: [ ]
+- Status: [x] DONE
 - 목적: proof 제출 비용, 루프 길이(merkle branch/hdr chain) 상한을 설정한다.
 - 작업:
     - branch length max
@@ -260,6 +260,11 @@
     - revert reason 명확화
 - 완료 조건:
     - 비용/상한 문서화
+- 완료 요약:
+    - Limits already defined in BtcSpvVerifier: MAX_HEADER_CHAIN=144, MAX_MERKLE_DEPTH=20, MAX_TX_SIZE=4096, MIN_CONFIRMATIONS=6
+    - Created `test/GasProfile.t.sol` with 23 gas profiling tests
+    - Created `docs/gas-limits.md` documenting all gas costs and limits
+    - Key findings: verifyMerkleProof scales ~1,640 gas/level, submitPayout ~150K gas, worst-case SPV proof ~450K gas
 
 ---
 
