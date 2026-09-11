@@ -1,0 +1,68 @@
+version: "3.9"
+
+# Local/dev compose for HashCredit (SPV mode).
+#
+# What you get:
+# - db: Postgres (persistent volume)
+# - hashcredit-api: FastAPI service (public HTTP)
+# - hashcredit-prover: background worker (no public networking)
+#
+# Notes:
+# - This file contains NO secrets. Put them in env files (ignored by git) or export in your shell.
+# - For Railway production, prefer Railway Postgres plugin instead of running db as a service.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hashcredit-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hashcredit}
+      POSTGRES_USER: ${POSTGRES_USER:-hashcredit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hashcredit}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - hashcredit_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  hashcredit-api:
+    build:
+      context: ./offchain/api
+      dockerfile: Dockerfile
+    container_name: hashcredit-api
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      # Safe defaults committed to git (no secrets). Override by exporting env vars or editing locally.
+      - ./offchain/api/.env.compose
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      # Keep this aligned with prover. The API currently does not require DB,
+      # but it's convenient to have it available for future extensions.
+      DATABASE_URL: ${DATABASE_URL:-postgresql://hashcredit:hashcredit@db:5432/hashcredit}
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+  hashcredit-prover:
+    build:
+      context: ./offchain/prover
+      dockerfile: Dockerfile
+    container_name: hashcredit-prover
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      # Safe defaults committed to git (no secrets). Override by exporting env vars or editing locally.
+      - ./offchain/prover/.env.compose
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://hashcredit:hashcredit@db:5432/hashcredit}
+    restart: unless-stopped
+
+volumes:
+  hashcredit_pgdata:
