@@ -1,6 +1,6 @@
 export function getEnvString(key: string, fallback = ''): string {
   const value = (import.meta.env as Record<string, unknown>)[key];
-  return typeof value === 'string' && value.trim() ? value : fallback;
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
 export function getEnvNumber(key: string, fallback: number): number {
