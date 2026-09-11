@@ -7,8 +7,22 @@ This guide covers deploying HashCredit offchain components to [Railway](https://
 Railway deployment consists of three services:
 
 1. **API Service** (`offchain/api`) - FastAPI server for frontend integration
-2. **Worker Service** (`offchain/prover`) - SPV relayer that watches Bitcoin and submits proofs
-3. **PostgreSQL** - Railway managed database for deduplication
+2. **Worker Service** (`offchain/prover`) - SPV relayer that watches Bitcoin and submits proofs (**recommended**)
+3. **PostgreSQL** - Railway managed database for worker deduplication (recommended)
+
+### Choose One Worker Mode (Do Not Run Both)
+
+HashCredit supports two mutually exclusive verification modes at the contract level:
+
+- **SPV mode (production)**: `HashCreditManager.verifier` points to `BtcSpvVerifier`
+- **MVP mode (demo)**: `HashCreditManager.verifier` points to `RelayerSigVerifier`
+
+On Railway, run **exactly one** worker for a given `HashCreditManager` deployment:
+
+- If your manager uses **SPV**, run `hashcredit-prover run-relayer`
+- If your manager uses **MVP**, run `hashcredit-relayer run`
+
+Running both against the same manager wastes gas and produces noisy failures (only one proof format will be accepted).
 
 ```
 ┌─────────────────┐     ┌─────────────────┐
@@ -53,6 +67,10 @@ Railway deployment consists of three services:
 1. Click "New" → "Database" → "Add PostgreSQL"
 2. Railway automatically creates `DATABASE_URL` variable
 3. Note: The URL format is `postgres://...` (Railway converts this automatically)
+
+Why Postgres?
+- The SPV worker uses it to persist deduplication state across restarts.
+- Without it, you risk re-submitting already-processed payouts after redeploys/crashes.
 
 ---
 
@@ -99,7 +117,9 @@ BTC_SPV_VERIFIER=0x...
 
 ### 3.3 Build Configuration
 
-Railway auto-detects Python. Ensure `pyproject.toml` or `requirements.txt` exists.
+Railway auto-detects Python. Ensure `pyproject.toml` exists.
+
+This repo also includes a `Dockerfile` in `offchain/api` for more deterministic builds.
 
 Build command (if needed):
 ```bash
@@ -137,14 +157,39 @@ Expected response:
 
 ## Step 4: Deploy Worker Service
 
+### 4.0 Pick the Worker Type
+
+Use **SPV worker** unless you are intentionally running the MVP demo stack.
+
+To confirm which mode your deployed manager is using, read the on-chain `verifier()` address:
+
+```bash
+cast call $HASH_CREDIT_MANAGER "verifier()(address)" --rpc-url $EVM_RPC_URL
+```
+
 ### 4.1 Create Service
 
 1. Click "New" → "GitHub Repo" or "Empty Service"
-2. Set root directory to `offchain/prover`
+2. Set root directory based on the mode you chose:
+   - **SPV**: `offchain/prover`
+   - **MVP**: `offchain/relayer`
+
+Note: `offchain/prover` and `offchain/relayer` both include a `Dockerfile` for deterministic builds. If you use Dockerfile-based deploys, you typically don't need to set a custom build/start command in Railway.
 
 ### 4.2 Prepare Addresses File
 
-Create `addresses.json` with watched addresses:
+The SPV worker needs a JSON array of watched addresses.
+
+You can provide it via **one** of these options:
+
+1) **Environment variable** (recommended for small lists)
+   - `ADDRESSES_JSON='[{"btc_address":"tb1q...","borrower":"0x...","enabled":true}]'`
+   - or `ADDRESSES_JSON_B64=<base64 JSON>` (recommended if you hit quoting issues)
+
+2) **File** mounted into the service
+   - Set `ADDRESSES_FILE=/app/addresses.json` and mount/provide the file
+
+Example `addresses.json`:
 
 ```json
 [
@@ -159,9 +204,11 @@ Create `addresses.json` with watched addresses:
 Options:
 - **Volume mount**: Store in Railway volume
 - **Config file**: Include in repo (not recommended for sensitive data)
-- **Environment variable**: Store as base64 encoded JSON
+- **Environment variable**: Store as JSON or base64 encoded JSON
 
 ### 4.3 Configure Environment Variables
+
+#### SPV Worker (Recommended)
 
 ```bash
 # Database (shared with API via Railway reference)
@@ -181,21 +228,48 @@ PRIVATE_KEY=<your-private-key>
 HASH_CREDIT_MANAGER=0x...
 CHECKPOINT_MANAGER=0x...
 
-# Addresses file path
+# Addresses input (pick ONE)
 ADDRESSES_FILE=/app/addresses.json
+# ADDRESSES_JSON='[{"btc_address":"tb1q...","borrower":"0x...","enabled":true}]'
+# ADDRESSES_JSON_B64=<base64>
+
+# Optional tuning (you can also use RELAYER_ARGS instead)
+SPV_CONFIRMATIONS=6
+SPV_POLL_INTERVAL=60
+# SPV_RUN_ONCE=true
 ```
 
 ### 4.4 Start Command
 
+#### SPV Worker (Recommended)
+
+```bash
+sh ./start-worker.sh
+```
+
+Or (legacy) run the CLI directly:
 ```bash
 python -m hashcredit_prover.cli run-relayer ${ADDRESSES_FILE}
 ```
 
-Or with all options:
+#### MVP Worker (Demo Only)
+
+If you deployed the MVP verifier (`RelayerSigVerifier`), run the legacy relayer instead:
+
 ```bash
-python -m hashcredit_prover.cli run-relayer ${ADDRESSES_FILE} \
-  --confirmations 6 \
-  --poll-interval 60
+python -m hashcredit_relayer.cli run
+```
+
+Minimum environment (MVP relayer uses a Bitcoin API source rather than Bitcoin Core RPC):
+
+```bash
+BITCOIN_API_URL=https://mempool.space/testnet/api
+RPC_URL=https://rpc.cc3-testnet.creditcoin.network
+CHAIN_ID=102031
+PRIVATE_KEY=<evm-tx-signer-key>
+RELAYER_PRIVATE_KEY=<relayer-signing-key>
+HASH_CREDIT_MANAGER=0x...
+VERIFIER=0x...   # RelayerSigVerifier address (must match manager.verifier)
 ```
 
 ---
@@ -251,7 +325,13 @@ Expected tables:
 | `PRIVATE_KEY` | Yes | Transaction signing key |
 | `HASH_CREDIT_MANAGER` | Yes | Manager contract address |
 | `CHECKPOINT_MANAGER` | Yes | Checkpoint contract address |
-| `ADDRESSES_FILE` | Yes | Path to watched addresses JSON |
+| `ADDRESSES_FILE` | Recommended | Path to watched addresses JSON (default: `/app/addresses.json`) |
+| `ADDRESSES_JSON` | Optional | Watched addresses JSON array (string) |
+| `ADDRESSES_JSON_B64` | Optional | Base64-encoded watched addresses JSON array |
+| `SPV_CONFIRMATIONS` | Optional | Required confirmations (default: 6) |
+| `SPV_POLL_INTERVAL` | Optional | Poll interval in seconds (default: 60) |
+| `SPV_RUN_ONCE` | Optional | Run once and exit (default: false) |
+| `RELAYER_ARGS` | Optional | Extra CLI args appended to `run-relayer` |
 
 ---
 

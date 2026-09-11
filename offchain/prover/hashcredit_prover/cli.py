@@ -613,9 +613,24 @@ def run_relayer(
     private_key: Optional[str] = typer.Option(
         None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
     ),
-    confirmations: int = typer.Option(6, "--confirmations", help="Required confirmations"),
-    poll_interval: int = typer.Option(60, "--poll-interval", help="Poll interval in seconds"),
-    run_once: bool = typer.Option(False, "--once", help="Run once and exit"),
+    confirmations: int = typer.Option(
+        6,
+        "--confirmations",
+        envvar="SPV_CONFIRMATIONS",
+        help="Required confirmations",
+    ),
+    poll_interval: int = typer.Option(
+        60,
+        "--poll-interval",
+        envvar="SPV_POLL_INTERVAL",
+        help="Poll interval in seconds",
+    ),
+    run_once: bool = typer.Option(
+        False,
+        "--once",
+        envvar="SPV_RUN_ONCE",
+        help="Run once and exit",
+    ),
 ) -> None:
     """
     Run the SPV relayer to watch Bitcoin addresses and submit proofs.
