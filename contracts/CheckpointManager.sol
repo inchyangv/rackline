@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ICheckpointManager} from "./interfaces/ICheckpointManager.sol";
+import { ICheckpointManager } from "./interfaces/ICheckpointManager.sol";
 
 /**
  * @title CheckpointManager
@@ -85,7 +85,10 @@ contract CheckpointManager is ICheckpointManager {
         uint256 chainWork,
         uint32 timestamp,
         uint32 bits
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+    {
         // Validate inputs
         if (blockHash == bytes32(0)) {
             revert InvalidBlockHash();
@@ -104,11 +107,7 @@ contract CheckpointManager is ICheckpointManager {
 
         // Store checkpoint
         _checkpoints[height] = Checkpoint({
-            blockHash: blockHash,
-            height: height,
-            chainWork: chainWork,
-            timestamp: timestamp,
-            bits: bits
+            blockHash: blockHash, height: height, chainWork: chainWork, timestamp: timestamp, bits: bits
         });
 
         // Update latest height

@@ -95,7 +95,8 @@ interface IRiskConfig {
      * @notice Calculate credit limit from satoshi revenue
      * @param revenueSats Revenue in satoshis
      * @return creditLimit Credit limit in stablecoin (6 decimals)
-     * @dev creditLimit = revenueSats * btcPriceUsd * advanceRateBps / 10000 / 1e8 (sat to btc) * 1e6 (stablecoin decimals)
+     * @dev creditLimit = revenueSats * btcPriceUsd * advanceRateBps / 10000 / 1e8 (sat to btc) * 1e6 (stablecoin
+     * decimals)
      */
     function calculateCreditLimit(uint128 revenueSats) external view returns (uint128 creditLimit);
 
@@ -124,5 +125,8 @@ interface IRiskConfig {
     function applyPayoutHeuristics(
         uint64 amountSats,
         uint32 payoutCount
-    ) external view returns (uint64 effectiveAmount);
+    )
+        external
+        view
+        returns (uint64 effectiveAmount);
 }

@@ -23,9 +23,8 @@ contract RelayerSigVerifier is IVerifierAdapter {
     // ============================================
 
     /// @notice EIP-712 domain type hash
-    bytes32 public constant DOMAIN_TYPEHASH = keccak256(
-        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-    );
+    bytes32 public constant DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
     /// @notice PayoutClaim struct type hash
     bytes32 public constant PAYOUT_CLAIM_TYPEHASH = keccak256(
@@ -53,12 +52,7 @@ contract RelayerSigVerifier is IVerifierAdapter {
     event RelayerSignerUpdated(address indexed oldSigner, address indexed newSigner);
 
     /// @notice Emitted when a payout is verified
-    event PayoutVerified(
-        address indexed borrower,
-        bytes32 indexed txid,
-        uint32 vout,
-        uint64 amountSats
-    );
+    event PayoutVerified(address indexed borrower, bytes32 indexed txid, uint32 vout, uint64 amountSats);
 
     // ============================================
     // Errors
@@ -87,13 +81,7 @@ contract RelayerSigVerifier is IVerifierAdapter {
         relayerSigner = relayerSigner_;
 
         DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                DOMAIN_TYPEHASH,
-                keccak256("HashCredit"),
-                keccak256("1"),
-                block.chainid,
-                address(this)
-            )
+            abi.encode(DOMAIN_TYPEHASH, keccak256("HashCredit"), keccak256("1"), block.chainid, address(this))
         );
     }
 
@@ -164,22 +152,11 @@ contract RelayerSigVerifier is IVerifierAdapter {
 
         // Compute struct hash
         bytes32 structHash = keccak256(
-            abi.encode(
-                PAYOUT_CLAIM_TYPEHASH,
-                borrower,
-                txid,
-                vout,
-                amountSats,
-                blockHeight,
-                blockTimestamp,
-                deadline
-            )
+            abi.encode(PAYOUT_CLAIM_TYPEHASH, borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline)
         );
 
         // Compute digest
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
-        );
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
 
         // Recover signer
         address recoveredSigner = _recoverSigner(digest, signature);
@@ -222,18 +199,13 @@ contract RelayerSigVerifier is IVerifierAdapter {
         uint32 blockHeight,
         uint32 blockTimestamp,
         uint256 deadline
-    ) external view returns (bytes32) {
+    )
+        external
+        view
+        returns (bytes32)
+    {
         bytes32 structHash = keccak256(
-            abi.encode(
-                PAYOUT_CLAIM_TYPEHASH,
-                borrower,
-                txid,
-                vout,
-                amountSats,
-                blockHeight,
-                blockTimestamp,
-                deadline
-            )
+            abi.encode(PAYOUT_CLAIM_TYPEHASH, borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline)
         );
 
         return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));

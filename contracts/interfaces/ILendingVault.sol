@@ -13,36 +13,19 @@ interface ILendingVault {
     // ============================================
 
     /// @notice Emitted when liquidity is deposited
-    event Deposited(
-        address indexed depositor,
-        uint256 amount,
-        uint256 shares
-    );
+    event Deposited(address indexed depositor, uint256 amount, uint256 shares);
 
     /// @notice Emitted when liquidity is withdrawn
-    event Withdrawn(
-        address indexed depositor,
-        uint256 amount,
-        uint256 shares
-    );
+    event Withdrawn(address indexed depositor, uint256 amount, uint256 shares);
 
     /// @notice Emitted when funds are borrowed (via Manager)
-    event BorrowedFromVault(
-        address indexed borrower,
-        uint256 amount
-    );
+    event BorrowedFromVault(address indexed borrower, uint256 amount);
 
     /// @notice Emitted when debt is repaid (via Manager)
-    event RepaidToVault(
-        address indexed borrower,
-        uint256 amount
-    );
+    event RepaidToVault(address indexed borrower, uint256 amount);
 
     /// @notice Emitted when interest is accrued
-    event InterestAccrued(
-        uint256 totalInterest,
-        uint256 timestamp
-    );
+    event InterestAccrued(uint256 totalInterest, uint256 timestamp);
 
     /// @notice Emitted when manager is updated
     event ManagerUpdated(address indexed oldManager, address indexed newManager);

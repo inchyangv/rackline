@@ -144,7 +144,11 @@ library BitcoinLib {
         bytes32 merkleRoot,
         bytes32[] memory proof,
         uint256 txIndex
-    ) internal pure returns (bool) {
+    )
+        internal
+        pure
+        returns (bool)
+    {
         bytes32 current = txid;
 
         for (uint256 i = 0; i < proof.length; i++) {
@@ -171,10 +175,7 @@ library BitcoinLib {
      * @param outputIndex Which output to extract
      * @return output The parsed output
      */
-    function parseTxOutput(
-        bytes memory rawTx,
-        uint32 outputIndex
-    ) internal pure returns (TxOutput memory output) {
+    function parseTxOutput(bytes memory rawTx, uint32 outputIndex) internal pure returns (TxOutput memory output) {
         uint256 offset = 4; // Skip version (4 bytes)
 
         // Check for witness marker
@@ -191,7 +192,7 @@ library BitcoinLib {
         // Skip inputs
         for (uint256 i = 0; i < inputCount; i++) {
             offset += 32; // Previous txid
-            offset += 4;  // Previous vout
+            offset += 4; // Previous vout
 
             // Script length and script
             uint256 inputScriptLen;
@@ -237,13 +238,9 @@ library BitcoinLib {
      * @return pubkeyHash 20-byte pubkey hash
      * @return scriptType 0=P2WPKH, 1=P2PKH, 2=other
      */
-    function extractPubkeyHash(
-        bytes memory scriptPubKey
-    ) internal pure returns (bytes20 pubkeyHash, uint8 scriptType) {
+    function extractPubkeyHash(bytes memory scriptPubKey) internal pure returns (bytes20 pubkeyHash, uint8 scriptType) {
         // P2WPKH: OP_0 <20 bytes> = 0x0014{20 bytes}
-        if (scriptPubKey.length == 22 &&
-            scriptPubKey[0] == 0x00 &&
-            scriptPubKey[1] == 0x14) {
+        if (scriptPubKey.length == 22 && scriptPubKey[0] == 0x00 && scriptPubKey[1] == 0x14) {
             pubkeyHash = readBytes20(scriptPubKey, 2);
             scriptType = 0; // P2WPKH
             return (pubkeyHash, scriptType);
@@ -251,12 +248,10 @@ library BitcoinLib {
 
         // P2PKH: OP_DUP OP_HASH160 <20 bytes> OP_EQUALVERIFY OP_CHECKSIG
         // = 0x76a914{20 bytes}88ac
-        if (scriptPubKey.length == 25 &&
-            scriptPubKey[0] == 0x76 &&
-            scriptPubKey[1] == 0xa9 &&
-            scriptPubKey[2] == 0x14 &&
-            scriptPubKey[23] == 0x88 &&
-            scriptPubKey[24] == 0xac) {
+        if (
+            scriptPubKey.length == 25 && scriptPubKey[0] == 0x76 && scriptPubKey[1] == 0xa9 && scriptPubKey[2] == 0x14
+                && scriptPubKey[23] == 0x88 && scriptPubKey[24] == 0xac
+        ) {
             pubkeyHash = readBytes20(scriptPubKey, 3);
             scriptType = 1; // P2PKH
             return (pubkeyHash, scriptType);
@@ -272,24 +267,18 @@ library BitcoinLib {
      * @notice Read uint32 little-endian
      */
     function readUint32LE(bytes memory data, uint256 offset) internal pure returns (uint32) {
-        return uint32(uint8(data[offset])) |
-               (uint32(uint8(data[offset + 1])) << 8) |
-               (uint32(uint8(data[offset + 2])) << 16) |
-               (uint32(uint8(data[offset + 3])) << 24);
+        return uint32(uint8(data[offset])) | (uint32(uint8(data[offset + 1])) << 8)
+            | (uint32(uint8(data[offset + 2])) << 16) | (uint32(uint8(data[offset + 3])) << 24);
     }
 
     /**
      * @notice Read uint64 little-endian
      */
     function readUint64LE(bytes memory data, uint256 offset) internal pure returns (uint64) {
-        return uint64(uint8(data[offset])) |
-               (uint64(uint8(data[offset + 1])) << 8) |
-               (uint64(uint8(data[offset + 2])) << 16) |
-               (uint64(uint8(data[offset + 3])) << 24) |
-               (uint64(uint8(data[offset + 4])) << 32) |
-               (uint64(uint8(data[offset + 5])) << 40) |
-               (uint64(uint8(data[offset + 6])) << 48) |
-               (uint64(uint8(data[offset + 7])) << 56);
+        return uint64(uint8(data[offset])) | (uint64(uint8(data[offset + 1])) << 8)
+            | (uint64(uint8(data[offset + 2])) << 16) | (uint64(uint8(data[offset + 3])) << 24)
+            | (uint64(uint8(data[offset + 4])) << 32) | (uint64(uint8(data[offset + 5])) << 40)
+            | (uint64(uint8(data[offset + 6])) << 48) | (uint64(uint8(data[offset + 7])) << 56);
     }
 
     /**
@@ -320,16 +309,17 @@ library BitcoinLib {
     function readVarInt(
         bytes memory data,
         uint256 offset
-    ) internal pure returns (uint256 value, uint256 newOffset) {
+    )
+        internal
+        pure
+        returns (uint256 value, uint256 newOffset)
+    {
         uint8 first = uint8(data[offset]);
 
         if (first < 0xfd) {
             return (first, offset + 1);
         } else if (first == 0xfd) {
-            return (
-                uint16(uint8(data[offset + 1])) | (uint16(uint8(data[offset + 2])) << 8),
-                offset + 3
-            );
+            return (uint16(uint8(data[offset + 1])) | (uint16(uint8(data[offset + 2])) << 8), offset + 3);
         } else if (first == 0xfe) {
             return (readUint32LE(data, offset + 1), offset + 5);
         } else {

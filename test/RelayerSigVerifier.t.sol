@@ -51,37 +51,22 @@ contract RelayerSigVerifierTest is Test {
         address borrower = alice;
         bytes32 txid = bytes32(uint256(1));
         uint32 vout = 0;
-        uint64 amountSats = 1_00000000; // 1 BTC
-        uint32 blockHeight = 800000;
+        uint64 amountSats = 100_000_000; // 1 BTC
+        uint32 blockHeight = 800_000;
         uint32 blockTimestamp = uint32(block.timestamp);
         uint256 deadline = block.timestamp + 1 hours;
 
         // Get digest
-        bytes32 digest = verifier.getPayoutClaimDigest(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            blockHeight,
-            blockTimestamp,
-            deadline
-        );
+        bytes32 digest =
+            verifier.getPayoutClaimDigest(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline);
 
         // Sign with relayer key
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(RELAYER_PRIVATE_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
         // Encode proof
-        bytes memory proof = abi.encode(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            blockHeight,
-            blockTimestamp,
-            deadline,
-            signature
-        );
+        bytes memory proof =
+            abi.encode(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
 
         // Verify
         PayoutEvidence memory evidence = verifier.verifyPayout(proof);
@@ -96,14 +81,14 @@ contract RelayerSigVerifierTest is Test {
 
     function test_verifyPayout_multiplePayouts() public {
         // First payout
-        bytes memory proof1 = _createSignedProof(alice, bytes32(uint256(1)), 0, 1_00000000);
+        bytes memory proof1 = _createSignedProof(alice, bytes32(uint256(1)), 0, 100_000_000);
         verifier.verifyPayout(proof1);
 
         // Second payout (different txid)
-        bytes memory proof2 = _createSignedProof(alice, bytes32(uint256(2)), 0, 2_00000000);
+        bytes memory proof2 = _createSignedProof(alice, bytes32(uint256(2)), 0, 200_000_000);
         PayoutEvidence memory evidence2 = verifier.verifyPayout(proof2);
 
-        assertEq(evidence2.amountSats, 2_00000000);
+        assertEq(evidence2.amountSats, 200_000_000);
     }
 
     function test_verifyPayout_revert_invalidSignature() public {
@@ -112,34 +97,19 @@ contract RelayerSigVerifierTest is Test {
         address borrower = alice;
         bytes32 txid = bytes32(uint256(1));
         uint32 vout = 0;
-        uint64 amountSats = 1_00000000;
-        uint32 blockHeight = 800000;
+        uint64 amountSats = 100_000_000;
+        uint32 blockHeight = 800_000;
         uint32 blockTimestamp = uint32(block.timestamp);
         uint256 deadline = block.timestamp + 1 hours;
 
-        bytes32 digest = verifier.getPayoutClaimDigest(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            blockHeight,
-            blockTimestamp,
-            deadline
-        );
+        bytes32 digest =
+            verifier.getPayoutClaimDigest(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(wrongKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        bytes memory proof = abi.encode(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            blockHeight,
-            blockTimestamp,
-            deadline,
-            signature
-        );
+        bytes memory proof =
+            abi.encode(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
 
         vm.expectRevert(RelayerSigVerifier.InvalidSignature.selector);
         verifier.verifyPayout(proof);
@@ -147,20 +117,14 @@ contract RelayerSigVerifierTest is Test {
 
     function test_verifyPayout_revert_deadlineExpired() public {
         uint256 pastDeadline = block.timestamp - 1;
-        bytes memory proof = _createSignedProofWithDeadline(
-            alice,
-            bytes32(uint256(1)),
-            0,
-            1_00000000,
-            pastDeadline
-        );
+        bytes memory proof = _createSignedProofWithDeadline(alice, bytes32(uint256(1)), 0, 100_000_000, pastDeadline);
 
         vm.expectRevert(RelayerSigVerifier.DeadlineExpired.selector);
         verifier.verifyPayout(proof);
     }
 
     function test_verifyPayout_noReplayCheckInVerifier() public {
-        bytes memory proof = _createSignedProof(alice, bytes32(uint256(1)), 0, 1_00000000);
+        bytes memory proof = _createSignedProof(alice, bytes32(uint256(1)), 0, 100_000_000);
 
         // First verification succeeds
         verifier.verifyPayout(proof);
@@ -173,8 +137,8 @@ contract RelayerSigVerifierTest is Test {
 
     function test_verifyPayout_sameVoutDifferentTxid() public {
         // Same vout, different txids should work
-        bytes memory proof1 = _createSignedProof(alice, bytes32(uint256(1)), 0, 1_00000000);
-        bytes memory proof2 = _createSignedProof(alice, bytes32(uint256(2)), 0, 1_00000000);
+        bytes memory proof1 = _createSignedProof(alice, bytes32(uint256(1)), 0, 100_000_000);
+        bytes memory proof2 = _createSignedProof(alice, bytes32(uint256(2)), 0, 100_000_000);
 
         verifier.verifyPayout(proof1);
         verifier.verifyPayout(proof2); // Should succeed
@@ -185,7 +149,7 @@ contract RelayerSigVerifierTest is Test {
     }
 
     function test_griefingPrevention() public {
-        bytes memory proof = _createSignedProof(alice, bytes32(uint256(1)), 0, 1_00000000);
+        bytes memory proof = _createSignedProof(alice, bytes32(uint256(1)), 0, 100_000_000);
 
         // Attacker calls verifier directly
         address attacker = makeAddr("attacker");
@@ -235,7 +199,7 @@ contract RelayerSigVerifierTest is Test {
         // Verifier is stateless - always returns false
         assertFalse(verifier.isPayoutProcessed(txid, vout));
 
-        bytes memory proof = _createSignedProof(alice, txid, vout, 1_00000000);
+        bytes memory proof = _createSignedProof(alice, txid, vout, 100_000_000);
         verifier.verifyPayout(proof);
 
         // Still returns false - replay protection is in HashCreditManager
@@ -244,24 +208,12 @@ contract RelayerSigVerifierTest is Test {
 
     function test_getPayoutClaimDigest() public view {
         bytes32 digest = verifier.getPayoutClaimDigest(
-            alice,
-            bytes32(uint256(1)),
-            0,
-            1_00000000,
-            800000,
-            uint32(block.timestamp),
-            block.timestamp + 1 hours
+            alice, bytes32(uint256(1)), 0, 100_000_000, 800_000, uint32(block.timestamp), block.timestamp + 1 hours
         );
 
         // Digest should be deterministic
         bytes32 digest2 = verifier.getPayoutClaimDigest(
-            alice,
-            bytes32(uint256(1)),
-            0,
-            1_00000000,
-            800000,
-            uint32(block.timestamp),
-            block.timestamp + 1 hours
+            alice, bytes32(uint256(1)), 0, 100_000_000, 800_000, uint32(block.timestamp), block.timestamp + 1 hours
         );
 
         assertEq(digest, digest2);
@@ -276,14 +228,12 @@ contract RelayerSigVerifierTest is Test {
         bytes32 txid,
         uint32 vout,
         uint64 amountSats
-    ) internal view returns (bytes memory) {
-        return _createSignedProofWithDeadline(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            block.timestamp + 1 hours
-        );
+    )
+        internal
+        view
+        returns (bytes memory)
+    {
+        return _createSignedProofWithDeadline(borrower, txid, vout, amountSats, block.timestamp + 1 hours);
     }
 
     function _createSignedProofWithDeadline(
@@ -292,32 +242,20 @@ contract RelayerSigVerifierTest is Test {
         uint32 vout,
         uint64 amountSats,
         uint256 deadline
-    ) internal view returns (bytes memory) {
-        uint32 blockHeight = 800000;
+    )
+        internal
+        view
+        returns (bytes memory)
+    {
+        uint32 blockHeight = 800_000;
         uint32 blockTimestamp = uint32(block.timestamp);
 
-        bytes32 digest = verifier.getPayoutClaimDigest(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            blockHeight,
-            blockTimestamp,
-            deadline
-        );
+        bytes32 digest =
+            verifier.getPayoutClaimDigest(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(RELAYER_PRIVATE_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        return abi.encode(
-            borrower,
-            txid,
-            vout,
-            amountSats,
-            blockHeight,
-            blockTimestamp,
-            deadline,
-            signature
-        );
+        return abi.encode(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
     }
 }

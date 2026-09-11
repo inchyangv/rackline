@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {BtcSpvVerifier} from "../contracts/BtcSpvVerifier.sol";
-import {CheckpointManager} from "../contracts/CheckpointManager.sol";
-import {ICheckpointManager} from "../contracts/interfaces/ICheckpointManager.sol";
-import {IVerifierAdapter, PayoutEvidence} from "../contracts/interfaces/IVerifierAdapter.sol";
-import {BitcoinLib} from "../contracts/lib/BitcoinLib.sol";
+import { Test, console2 } from "forge-std/Test.sol";
+import { BtcSpvVerifier } from "../contracts/BtcSpvVerifier.sol";
+import { CheckpointManager } from "../contracts/CheckpointManager.sol";
+import { ICheckpointManager } from "../contracts/interfaces/ICheckpointManager.sol";
+import { IVerifierAdapter, PayoutEvidence } from "../contracts/interfaces/IVerifierAdapter.sol";
+import { BitcoinLib } from "../contracts/lib/BitcoinLib.sol";
 
 contract BitcoinLibTest is Test {
     using BitcoinLib for bytes;
@@ -69,12 +69,12 @@ contract BitcoinLibTest is Test {
         header[3] = 0x00;
 
         // PrevBlockHash: 32 bytes of 0xAA
-        for (uint i = 4; i < 36; i++) {
+        for (uint256 i = 4; i < 36; i++) {
             header[i] = 0xAA;
         }
 
         // MerkleRoot: 32 bytes of 0xBB
-        for (uint i = 36; i < 68; i++) {
+        for (uint256 i = 36; i < 68; i++) {
             header[i] = 0xBB;
         }
 
@@ -212,8 +212,8 @@ contract BtcSpvVerifierTest is Test {
 
     // Sample checkpoint data
     bytes32 constant CHECKPOINT_HASH = 0x00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054;
-    uint32 constant CHECKPOINT_HEIGHT = 800000;
-    uint32 constant CHECKPOINT_TIMESTAMP = 1690000000;
+    uint32 constant CHECKPOINT_HEIGHT = 800_000;
+    uint32 constant CHECKPOINT_TIMESTAMP = 1_690_000_000;
     uint32 constant CHECKPOINT_BITS = 0x17053894; // Block 800000 difficulty
 
     // Sample borrower pubkey hash
@@ -318,7 +318,7 @@ contract BtcSpvVerifierTest is Test {
 
     function test_verifyPayout_revertsIfHeaderChainTooLong() public {
         bytes[] memory headers = new bytes[](145); // > MAX_HEADER_CHAIN
-        for (uint i = 0; i < 145; i++) {
+        for (uint256 i = 0; i < 145; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -341,7 +341,7 @@ contract BtcSpvVerifierTest is Test {
 
     function test_verifyPayout_revertsIfMerkleProofTooLong() public {
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -366,7 +366,7 @@ contract BtcSpvVerifierTest is Test {
 
     function test_verifyPayout_revertsIfTxTooLarge() public {
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -391,7 +391,7 @@ contract BtcSpvVerifierTest is Test {
 
     function test_verifyPayout_revertsIfInsufficientConfirmations() public {
         bytes[] memory headers = new bytes[](5); // < MIN_CONFIRMATIONS (6)
-        for (uint i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -416,7 +416,7 @@ contract BtcSpvVerifierTest is Test {
         address unregisteredBorrower = makeAddr("unregistered");
 
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -439,12 +439,12 @@ contract BtcSpvVerifierTest is Test {
 
     function test_verifyPayout_revertsIfInvalidCheckpoint() public {
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
-            checkpointHeight: 999999, // Non-existent checkpoint
+            checkpointHeight: 999_999, // Non-existent checkpoint
             headers: headers,
             txBlockIndex: 0,
             rawTx: hex"01000000",
@@ -476,7 +476,7 @@ contract BtcSpvVerifierTest is Test {
         // Set checkpoint at height that would cause boundary crossing
         // Epoch N ends at height (N+1)*2016 - 1
         // Checkpoint at 806399 (epoch 399), target 806405 (epoch 400) crosses boundary at 806400
-        uint32 checkpointHeight = 806399; // epoch 399: 806399 / 2016 = 399
+        uint32 checkpointHeight = 806_399; // epoch 399: 806399 / 2016 = 399
         uint32 targetHeight = checkpointHeight + 6; // 806405, epoch 400: 806405 / 2016 = 400
 
         vm.prank(owner);
@@ -484,12 +484,12 @@ contract BtcSpvVerifierTest is Test {
             checkpointHeight, // Near retarget boundary
             bytes32(uint256(0xdeadbeef)),
             0,
-            1690000000,
+            1_690_000_000,
             CHECKPOINT_BITS
         );
 
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -523,23 +523,23 @@ contract BtcSpvVerifierTest is Test {
         // Set checkpoint with specific bits
         vm.prank(owner);
         checkpointManager.setCheckpoint(
-            900000, // New checkpoint, same epoch
+            900_000, // New checkpoint, same epoch
             bytes32(uint256(0xabcdef)),
             0,
-            1690000000,
+            1_690_000_000,
             0x17053894 // Expected bits
         );
 
         // Create headers with matching prevHash but wrong bits
         // This is a simplified test - real test would need valid PoW
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
             // Set prevBlockHash at offset 4 (32 bytes)
             // For first header, it should match checkpoint hash
             if (i == 0) {
                 // bytes32(uint256(0xabcdef)) in little-endian at offset 4
-                for (uint j = 0; j < 32; j++) {
+                for (uint256 j = 0; j < 32; j++) {
                     headers[i][4 + j] = bytes32(uint256(0xabcdef))[j];
                 }
             }
@@ -552,7 +552,7 @@ contract BtcSpvVerifierTest is Test {
         }
 
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
-            checkpointHeight: 900000,
+            checkpointHeight: 900_000,
             headers: headers,
             txBlockIndex: 0,
             rawTx: hex"01000000",
@@ -566,16 +566,14 @@ contract BtcSpvVerifierTest is Test {
 
         // Should revert with DifficultyMismatch
         // Expected: 0x17053894, Actual: 0x1d00ffff
-        vm.expectRevert(
-            abi.encodeWithSelector(BtcSpvVerifier.DifficultyMismatch.selector, 0x17053894, 0x1d00ffff)
-        );
+        vm.expectRevert(abi.encodeWithSelector(BtcSpvVerifier.DifficultyMismatch.selector, 0x17053894, 0x1d00ffff));
         verifier.verifyPayout(encodedProof);
     }
 
     function test_verifyPayout_revertsIfTxBlockIndexOutOfRange() public {
         // Create proof with txBlockIndex >= headers.length
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -592,9 +590,7 @@ contract BtcSpvVerifierTest is Test {
 
         bytes memory encodedProof = abi.encode(proof);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(BtcSpvVerifier.TxBlockIndexOutOfRange.selector, 6, 6)
-        );
+        vm.expectRevert(abi.encodeWithSelector(BtcSpvVerifier.TxBlockIndexOutOfRange.selector, 6, 6));
         verifier.verifyPayout(encodedProof);
     }
 
@@ -602,7 +598,7 @@ contract BtcSpvVerifierTest is Test {
         // Create proof with headers.length=6 and txBlockIndex=1
         // confirmations = 6 - 1 = 5 < MIN_CONFIRMATIONS(6)
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -631,7 +627,7 @@ contract BtcSpvVerifierTest is Test {
 
         // Test case: headers.length=7, txBlockIndex=2 should fail
         bytes[] memory headers = new bytes[](7);
-        for (uint i = 0; i < 7; i++) {
+        for (uint256 i = 0; i < 7; i++) {
             headers[i] = new bytes(80);
         }
 

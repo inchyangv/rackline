@@ -33,11 +33,7 @@ interface ICheckpointManager {
      * @param bits Difficulty target in compact format
      */
     event CheckpointSet(
-        uint32 indexed height,
-        bytes32 indexed blockHash,
-        uint256 chainWork,
-        uint32 timestamp,
-        uint32 bits
+        uint32 indexed height, bytes32 indexed blockHash, uint256 chainWork, uint32 timestamp, uint32 bits
     );
 
     /**
@@ -56,7 +52,8 @@ interface ICheckpointManager {
         uint256 chainWork,
         uint32 timestamp,
         uint32 bits
-    ) external;
+    )
+        external;
 
     /**
      * @notice Get checkpoint by height

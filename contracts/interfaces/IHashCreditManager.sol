@@ -15,10 +15,10 @@ interface IHashCreditManager {
 
     /// @notice Borrower status states
     enum BorrowerStatus {
-        None,       // Not registered
-        Active,     // Can borrow and submit payouts
-        Frozen,     // Cannot borrow, can still repay
-        Closed      // Fully closed, no operations allowed
+        None, // Not registered
+        Active, // Can borrow and submit payouts
+        Frozen, // Cannot borrow, can still repay
+        Closed // Fully closed, no operations allowed
     }
 
     // ============================================
@@ -61,18 +61,10 @@ interface IHashCreditManager {
     // ============================================
 
     /// @notice Emitted when a new borrower is registered
-    event BorrowerRegistered(
-        address indexed borrower,
-        bytes32 indexed btcPayoutKeyHash,
-        uint64 timestamp
-    );
+    event BorrowerRegistered(address indexed borrower, bytes32 indexed btcPayoutKeyHash, uint64 timestamp);
 
     /// @notice Emitted when borrower status changes
-    event BorrowerStatusChanged(
-        address indexed borrower,
-        BorrowerStatus oldStatus,
-        BorrowerStatus newStatus
-    );
+    event BorrowerStatusChanged(address indexed borrower, BorrowerStatus oldStatus, BorrowerStatus newStatus);
 
     /// @notice Emitted when a payout is recorded
     event PayoutRecorded(
@@ -85,18 +77,10 @@ interface IHashCreditManager {
     );
 
     /// @notice Emitted when a borrow occurs
-    event Borrowed(
-        address indexed borrower,
-        uint256 amount,
-        uint128 newDebt
-    );
+    event Borrowed(address indexed borrower, uint256 amount, uint128 newDebt);
 
     /// @notice Emitted when a repayment occurs
-    event Repaid(
-        address indexed borrower,
-        uint256 amount,
-        uint128 newDebt
-    );
+    event Repaid(address indexed borrower, uint256 amount, uint128 newDebt);
 
     /// @notice Emitted when the verifier adapter is changed
     event VerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
@@ -105,19 +89,11 @@ interface IHashCreditManager {
     event VaultUpdated(address indexed oldVault, address indexed newVault);
 
     /// @notice Emitted when payouts are pruned from trailing window
-    event PayoutWindowPruned(
-        address indexed borrower,
-        uint256 prunedCount,
-        uint128 newTrailingRevenue
-    );
+    event PayoutWindowPruned(address indexed borrower, uint256 prunedCount, uint128 newTrailingRevenue);
 
     /// @notice Emitted when a payout is skipped due to being below minimum
     event PayoutBelowMinimum(
-        address indexed borrower,
-        bytes32 indexed txid,
-        uint32 vout,
-        uint64 amountSats,
-        uint64 minRequired
+        address indexed borrower, bytes32 indexed txid, uint32 vout, uint64 amountSats, uint64 minRequired
     );
 
     // ============================================

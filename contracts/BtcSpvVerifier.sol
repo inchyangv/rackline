@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IVerifierAdapter, PayoutEvidence} from "./interfaces/IVerifierAdapter.sol";
-import {ICheckpointManager} from "./interfaces/ICheckpointManager.sol";
-import {BitcoinLib} from "./lib/BitcoinLib.sol";
+import { IVerifierAdapter, PayoutEvidence } from "./interfaces/IVerifierAdapter.sol";
+import { ICheckpointManager } from "./interfaces/ICheckpointManager.sol";
+import { BitcoinLib } from "./lib/BitcoinLib.sol";
 
 /**
  * @title BtcSpvVerifier
@@ -200,11 +200,8 @@ contract BtcSpvVerifier is IVerifierAdapter {
         }
 
         // Verify header chain and get all headers info
-        BitcoinLib.BlockHeader[] memory parsedHeaders = _verifyHeaderChainFull(
-            checkpoint.blockHash,
-            checkpoint.bits,
-            spvProof.headers
-        );
+        BitcoinLib.BlockHeader[] memory parsedHeaders =
+            _verifyHeaderChainFull(checkpoint.blockHash, checkpoint.bits, spvProof.headers);
 
         // Get the header where tx is included
         BitcoinLib.BlockHeader memory txBlockHeader = parsedHeaders[spvProof.txBlockIndex];
@@ -269,7 +266,11 @@ contract BtcSpvVerifier is IVerifierAdapter {
         uint32 checkpointHeight,
         uint32 expectedBits,
         bytes[] memory headers
-    ) internal pure returns (bytes32 targetHash, BitcoinLib.BlockHeader memory targetHeader) {
+    )
+        internal
+        pure
+        returns (bytes32 targetHash, BitcoinLib.BlockHeader memory targetHeader)
+    {
         // Silence unused variable warning
         checkpointHeight;
 
@@ -319,7 +320,11 @@ contract BtcSpvVerifier is IVerifierAdapter {
         bytes32 checkpointHash,
         uint32 expectedBits,
         bytes[] memory headers
-    ) internal pure returns (BitcoinLib.BlockHeader[] memory parsedHeaders) {
+    )
+        internal
+        pure
+        returns (BitcoinLib.BlockHeader[] memory parsedHeaders)
+    {
         parsedHeaders = new BitcoinLib.BlockHeader[](headers.length);
         bytes32 prevHash = checkpointHash;
 

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {BtcSpvVerifier} from "../contracts/BtcSpvVerifier.sol";
-import {CheckpointManager} from "../contracts/CheckpointManager.sol";
-import {HashCreditManager} from "../contracts/HashCreditManager.sol";
-import {LendingVault} from "../contracts/LendingVault.sol";
-import {RiskConfig} from "../contracts/RiskConfig.sol";
-import {IRiskConfig} from "../contracts/interfaces/IRiskConfig.sol";
-import {PoolRegistry} from "../contracts/PoolRegistry.sol";
-import {MockERC20} from "../contracts/mocks/MockERC20.sol";
-import {BitcoinLib} from "../contracts/lib/BitcoinLib.sol";
+import { Test } from "forge-std/Test.sol";
+import { BtcSpvVerifier } from "../contracts/BtcSpvVerifier.sol";
+import { CheckpointManager } from "../contracts/CheckpointManager.sol";
+import { HashCreditManager } from "../contracts/HashCreditManager.sol";
+import { LendingVault } from "../contracts/LendingVault.sol";
+import { RiskConfig } from "../contracts/RiskConfig.sol";
+import { IRiskConfig } from "../contracts/interfaces/IRiskConfig.sol";
+import { PoolRegistry } from "../contracts/PoolRegistry.sol";
+import { MockERC20 } from "../contracts/mocks/MockERC20.sol";
+import { BitcoinLib } from "../contracts/lib/BitcoinLib.sol";
 
 /**
  * @title SpvE2ETest
@@ -43,8 +43,8 @@ contract SpvE2ETest is Test {
     address public borrower;
 
     // Test data - synthetic but valid structure
-    uint32 constant CHECKPOINT_HEIGHT = 800000;
-    uint32 constant TARGET_HEIGHT = 800006; // 6 confirmations
+    uint32 constant CHECKPOINT_HEIGHT = 800_000;
+    uint32 constant TARGET_HEIGHT = 800_006; // 6 confirmations
     uint64 constant PAYOUT_AMOUNT = 1_000_000; // 0.01 BTC
 
     // Synthetic borrower pubkey hash (20 bytes)
@@ -70,10 +70,10 @@ contract SpvE2ETest is Test {
             confirmationsRequired: 6,
             advanceRateBps: 5000, // 50%
             windowSeconds: 30 days,
-            newBorrowerCap: 10_000_000000, // $10,000
+            newBorrowerCap: 10_000_000_000, // $10,000
             globalCap: 0,
-            minPayoutSats: 10000,
-            btcPriceUsd: 50_000_00000000, // $50,000
+            minPayoutSats: 10_000,
+            btcPriceUsd: 5_000_000_000_000, // $50,000
             minPayoutCountForFullCredit: 3,
             largePayoutThresholdSats: 10_000_000,
             largePayoutDiscountBps: 5000,
@@ -89,20 +89,16 @@ contract SpvE2ETest is Test {
 
         // Deploy HashCreditManager with SPV verifier
         manager = new HashCreditManager(
-            address(spvVerifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            address(usdc)
+            address(spvVerifier), address(vault), address(riskConfig), address(poolRegistry), address(usdc)
         );
 
         // Configure vault
         vault.setManager(address(manager));
 
         // Fund vault
-        usdc.mint(owner, 1_000_000_000000); // 1M USDC
-        usdc.approve(address(vault), 1_000_000_000000);
-        vault.deposit(1_000_000_000000);
+        usdc.mint(owner, 1_000_000_000_000); // 1M USDC
+        usdc.approve(address(vault), 1_000_000_000_000);
+        vault.deposit(1_000_000_000_000);
 
         // Register borrower pubkey hash in SPV verifier
         spvVerifier.setBorrowerPubkeyHash(borrower, BORROWER_PUBKEY_HASH);
@@ -132,7 +128,11 @@ contract SpvE2ETest is Test {
         uint32 timestamp,
         uint32 bits,
         uint32 nonce
-    ) internal pure returns (bytes memory) {
+    )
+        internal
+        pure
+        returns (bytes memory)
+    {
         bytes memory header = new bytes(80);
 
         // Version (little-endian)
@@ -142,12 +142,12 @@ contract SpvE2ETest is Test {
         header[3] = 0x20; // Version 0x20000000
 
         // PrevBlockHash (already internal byte order)
-        for (uint i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             header[4 + i] = prevHash[i];
         }
 
         // MerkleRoot (already internal byte order)
-        for (uint i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             header[36 + i] = merkleRoot[i];
         }
 
@@ -187,7 +187,7 @@ contract SpvE2ETest is Test {
         // - Locktime (4 bytes)
 
         bytes memory tx = new bytes(60);
-        uint offset = 0;
+        uint256 offset = 0;
 
         // Version: 1 (little-endian)
         tx[offset++] = 0x01;
@@ -199,7 +199,7 @@ contract SpvE2ETest is Test {
         tx[offset++] = 0x01;
 
         // Previous output hash (32 bytes of zeros for coinbase-like)
-        for (uint i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < 32; i++) {
             tx[offset++] = 0x00;
         }
 
@@ -242,7 +242,7 @@ contract SpvE2ETest is Test {
         tx[offset++] = 0x14;
 
         // Pubkey hash
-        for (uint i = 0; i < 20; i++) {
+        for (uint256 i = 0; i < 20; i++) {
             tx[offset++] = pubkeyHash[i];
         }
 
@@ -254,7 +254,7 @@ contract SpvE2ETest is Test {
 
         // Trim to actual size
         bytes memory result = new bytes(offset);
-        for (uint i = 0; i < offset; i++) {
+        for (uint256 i = 0; i < offset; i++) {
             result[i] = tx[i];
         }
 
@@ -284,7 +284,7 @@ contract SpvE2ETest is Test {
             CHECKPOINT_HEIGHT,
             checkpointHash,
             0, // chainWork
-            1690000000, // timestamp
+            1_690_000_000, // timestamp
             0x1d00ffff // bits (genesis difficulty for testing)
         );
 
@@ -296,16 +296,16 @@ contract SpvE2ETest is Test {
         bytes32 checkpointHash = keccak256("checkpoint");
 
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1_690_000_000, 0x1d00ffff);
 
         // Build proof with only 5 headers (insufficient confirmations)
         bytes[] memory headers = new bytes[](5);
         bytes32 prevHash = checkpointHash;
-        for (uint i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             headers[i] = _buildHeader(
                 prevHash,
                 keccak256(abi.encodePacked("merkle", i)),
-                uint32(1690000000 + i * 600),
+                uint32(1_690_000_000 + i * 600),
                 0x1d00ffff,
                 uint32(i)
             );
@@ -332,7 +332,7 @@ contract SpvE2ETest is Test {
     function test_verifyPayout_revertsWithInvalidCheckpoint() public {
         // Don't set checkpoint, try to verify
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -359,10 +359,10 @@ contract SpvE2ETest is Test {
         // Setup checkpoint
         bytes32 checkpointHash = keccak256("checkpoint");
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1_690_000_000, 0x1d00ffff);
 
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 
@@ -387,16 +387,16 @@ contract SpvE2ETest is Test {
         // Setup checkpoint
         bytes32 checkpointHash = keccak256("checkpoint");
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1_690_000_000, 0x1d00ffff);
 
         // Build headers that link to checkpoint
         bytes[] memory headers = new bytes[](6);
         bytes32 prevHash = checkpointHash;
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = _buildHeader(
                 prevHash,
                 keccak256(abi.encodePacked("merkle", i)),
-                uint32(1690000000 + i * 600),
+                uint32(1_690_000_000 + i * 600),
                 0x1d00ffff,
                 uint32(i)
             );
@@ -406,7 +406,8 @@ contract SpvE2ETest is Test {
         // Transaction with WRONG pubkey hash (all zeros)
         // hex: version(4) + input_count(1) + prev_txid(32) + prev_vout(4) + script_len(1) + sequence(4)
         //      + output_count(1) + value(8) + script_len(1) + script(22) + locktime(4)
-        bytes memory wrongTx = hex"010000000100000000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0140420f00000000001600140000000000000000000000000000000000000000000000";
+        bytes memory wrongTx =
+            hex"010000000100000000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0140420f00000000001600140000000000000000000000000000000000000000000000";
 
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
@@ -430,7 +431,7 @@ contract SpvE2ETest is Test {
         // Setup checkpoint
         bytes32 checkpointHash = keccak256("checkpoint");
         vm.prank(owner);
-        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1690000000, 0x1d00ffff);
+        checkpointManager.setCheckpoint(CHECKPOINT_HEIGHT, checkpointHash, 0, 1_690_000_000, 0x1d00ffff);
 
         // Register a different borrower in verifier but not in manager
         address newBorrower = makeAddr("newBorrower");
@@ -438,7 +439,7 @@ contract SpvE2ETest is Test {
         spvVerifier.setBorrowerPubkeyHash(newBorrower, bytes20(hex"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
 
         bytes[] memory headers = new bytes[](6);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             headers[i] = new bytes(80);
         }
 

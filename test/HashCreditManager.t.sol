@@ -33,11 +33,11 @@ contract HashCreditManagerTest is Test {
     bytes32 public bobBtcKeyHash = keccak256("bob_btc_address");
 
     // Test constants
-    uint64 constant BTC_PRICE_USD = 50_000_00000000; // $50,000 with 8 decimals
+    uint64 constant BTC_PRICE_USD = 5_000_000_000_000; // $50,000 with 8 decimals
     uint32 constant ADVANCE_RATE_BPS = 5000; // 50%
     uint32 constant WINDOW_SECONDS = 30 days;
-    uint128 constant NEW_BORROWER_CAP = 10_000_000000; // $10,000 with 6 decimals
-    uint64 constant MIN_PAYOUT_SATS = 10000; // 0.0001 BTC
+    uint128 constant NEW_BORROWER_CAP = 10_000_000_000; // $10,000 with 6 decimals
+    uint64 constant MIN_PAYOUT_SATS = 10_000; // 0.0001 BTC
 
     function setUp() public {
         // Deploy stablecoin
@@ -70,24 +70,20 @@ contract HashCreditManagerTest is Test {
 
         // Deploy manager
         manager = new HashCreditManager(
-            address(verifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            address(stablecoin)
+            address(verifier), address(vault), address(riskConfig), address(poolRegistry), address(stablecoin)
         );
 
         // Set manager on vault
         vault.setManager(address(manager));
 
         // Mint and deposit liquidity to vault
-        stablecoin.mint(owner, 1_000_000_000000); // 1M USDC
+        stablecoin.mint(owner, 1_000_000_000_000); // 1M USDC
         stablecoin.approve(address(vault), type(uint256).max);
-        vault.deposit(1_000_000_000000);
+        vault.deposit(1_000_000_000_000);
 
         // Mint tokens to test users for repayments
-        stablecoin.mint(alice, 100_000_000000);
-        stablecoin.mint(bob, 100_000_000000);
+        stablecoin.mint(alice, 100_000_000_000);
+        stablecoin.mint(bob, 100_000_000_000);
 
         // Approve manager for repayments
         vm.prank(alice);
@@ -150,8 +146,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 1_00000000, // 1 BTC
-            blockHeight: 800000,
+            amountSats: 100_000_000, // 1 BTC
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -159,8 +155,8 @@ contract HashCreditManagerTest is Test {
         manager.submitPayout(proof);
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
-        assertEq(info.totalRevenueSats, 1_00000000);
-        assertEq(info.trailingRevenueSats, 1_00000000);
+        assertEq(info.totalRevenueSats, 100_000_000);
+        assertEq(info.trailingRevenueSats, 100_000_000);
 
         // Credit limit = 1 BTC * $50,000 * 50% = $25,000
         // But capped at new borrower cap of $10,000
@@ -178,8 +174,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 10000000, // 0.1 BTC
-            blockHeight: 800000,
+            amountSats: 10_000_000, // 0.1 BTC
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -189,7 +185,7 @@ contract HashCreditManagerTest is Test {
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
 
         // Credit limit = 0.1 BTC * $50,000 * 50% = $2,500 = 2500_000000
-        assertEq(info.creditLimit, 2500_000000);
+        assertEq(info.creditLimit, 2_500_000_000);
     }
 
     function test_submitPayout_revert_replay() public {
@@ -199,8 +195,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 1_00000000,
-            blockHeight: 800000,
+            amountSats: 100_000_000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -218,8 +214,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 1_00000000,
-            blockHeight: 800000,
+            amountSats: 100_000_000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -237,7 +233,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(1)),
             vout: 0,
             amountSats: 0,
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -252,9 +248,9 @@ contract HashCreditManagerTest is Test {
     // ============================================
 
     function test_borrow() public {
-        _setupBorrowerWithCredit(alice, 1_00000000); // 1 BTC payout
+        _setupBorrowerWithCredit(alice, 100_000_000); // 1 BTC payout
 
-        uint256 borrowAmount = 5000_000000; // $5,000
+        uint256 borrowAmount = 5_000_000_000; // $5,000
 
         uint256 balanceBefore = stablecoin.balanceOf(alice);
 
@@ -268,28 +264,28 @@ contract HashCreditManagerTest is Test {
     }
 
     function test_borrow_revert_exceedsCreditLimit() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         // Try to borrow more than credit limit (capped at $10,000)
         vm.prank(alice);
         vm.expectRevert(IHashCreditManager.ExceedsCreditLimit.selector);
-        manager.borrow(15000_000000); // $15,000
+        manager.borrow(15_000_000_000); // $15,000
     }
 
     function test_borrow_revert_notRegistered() public {
         vm.prank(alice);
         vm.expectRevert(IHashCreditManager.BorrowerNotRegistered.selector);
-        manager.borrow(1000_000000);
+        manager.borrow(1_000_000_000);
     }
 
     function test_borrow_revert_frozen() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         manager.freezeBorrower(alice);
 
         vm.prank(alice);
         vm.expectRevert(IHashCreditManager.BorrowerNotActive.selector);
-        manager.borrow(1000_000000);
+        manager.borrow(1_000_000_000);
     }
 
     // ============================================
@@ -297,42 +293,42 @@ contract HashCreditManagerTest is Test {
     // ============================================
 
     function test_repay() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
-        uint256 repayAmount = 2000_000000; // $2,000
+        uint256 repayAmount = 2_000_000_000; // $2,000
 
         vm.prank(alice);
         manager.repay(repayAmount);
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
-        assertEq(info.currentDebt, 3000_000000); // $5,000 - $2,000
+        assertEq(info.currentDebt, 3_000_000_000); // $5,000 - $2,000
     }
 
     function test_repay_full() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         vm.prank(alice);
-        manager.repay(5000_000000);
+        manager.repay(5_000_000_000);
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
         assertEq(info.currentDebt, 0);
     }
 
     function test_repay_capped() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Try to repay more than debt
         vm.prank(alice);
-        manager.repay(10000_000000); // Repay $10,000
+        manager.repay(10_000_000_000); // Repay $10,000
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
         assertEq(info.currentDebt, 0);
@@ -361,19 +357,19 @@ contract HashCreditManagerTest is Test {
     }
 
     function test_frozenBorrower_canStillRepay() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         manager.freezeBorrower(alice);
 
         // Should still be able to repay
         vm.prank(alice);
-        manager.repay(2000_000000);
+        manager.repay(2_000_000_000);
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
-        assertEq(info.currentDebt, 3000_000000);
+        assertEq(info.currentDebt, 3_000_000_000);
     }
 
     // ============================================
@@ -397,15 +393,15 @@ contract HashCreditManagerTest is Test {
     // ============================================
 
     function test_getAvailableCredit() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         // Credit limit capped at $10,000
         assertEq(manager.getAvailableCredit(alice), NEW_BORROWER_CAP);
 
         vm.prank(alice);
-        manager.borrow(3000_000000);
+        manager.borrow(3_000_000_000);
 
-        assertEq(manager.getAvailableCredit(alice), NEW_BORROWER_CAP - 3000_000000);
+        assertEq(manager.getAvailableCredit(alice), NEW_BORROWER_CAP - 3_000_000_000);
     }
 
     function test_isPayoutProcessed() public {
@@ -420,8 +416,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: txid,
             vout: vout,
-            amountSats: 1_00000000,
-            blockHeight: 800000,
+            amountSats: 100_000_000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -443,8 +439,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 1_00000000,
-            blockHeight: 800000,
+            amountSats: 100_000_000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -475,8 +471,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 1_00000000,
-            blockHeight: 800000,
+            amountSats: 100_000_000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -498,29 +494,29 @@ contract HashCreditManagerTest is Test {
     // ============================================
 
     function test_getCurrentDebt_includesInterest() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000); // $5,000
+        manager.borrow(5_000_000_000); // $5,000
 
         // Check initial debt equals principal
-        assertEq(manager.getCurrentDebt(alice), 5000_000000);
+        assertEq(manager.getCurrentDebt(alice), 5_000_000_000);
         assertEq(manager.getAccruedInterest(alice), 0);
 
         // Advance time by 1 year (10% APR = $500 interest)
         vm.warp(block.timestamp + 365 days);
 
         // Interest = 5000 * 10% * 1 year = 500
-        uint256 expectedInterest = 500_000000;
+        uint256 expectedInterest = 500_000_000;
         assertApproxEqRel(manager.getAccruedInterest(alice), expectedInterest, 0.001e18);
-        assertApproxEqRel(manager.getCurrentDebt(alice), 5500_000000, 0.001e18);
+        assertApproxEqRel(manager.getCurrentDebt(alice), 5_500_000_000, 0.001e18);
     }
 
     function test_repay_interestFirst() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Advance time by 1 year
         vm.warp(block.timestamp + 365 days);
@@ -534,17 +530,17 @@ contract HashCreditManagerTest is Test {
 
         // Principal should remain unchanged
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
-        assertEq(info.currentDebt, 5000_000000, "Principal should not change when only paying interest");
+        assertEq(info.currentDebt, 5_000_000_000, "Principal should not change when only paying interest");
 
         // Accrued interest should reset (we paid half, timestamp updated)
         assertEq(manager.getAccruedInterest(alice), 0, "Interest should reset after repay");
     }
 
     function test_repay_interestAndPrincipal() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Advance time by 1 year
         vm.warp(block.timestamp + 365 days);
@@ -562,10 +558,10 @@ contract HashCreditManagerTest is Test {
     }
 
     function test_repay_overpayment_capped() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Advance time
         vm.warp(block.timestamp + 365 days);
@@ -575,7 +571,7 @@ contract HashCreditManagerTest is Test {
 
         // Try to repay more than total debt
         vm.prank(alice);
-        manager.repay(totalDebt + 1000_000000);
+        manager.repay(totalDebt + 1_000_000_000);
 
         // Should only transfer totalDebt amount
         assertEq(stablecoin.balanceOf(alice), balanceBefore - totalDebt, "Should only repay actual debt");
@@ -585,10 +581,10 @@ contract HashCreditManagerTest is Test {
     }
 
     function test_borrow_compoundsInterestIntoPrincipal() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Advance time by 1 year
         vm.warp(block.timestamp + 365 days);
@@ -597,11 +593,11 @@ contract HashCreditManagerTest is Test {
 
         // Borrow more - should compound interest into principal
         vm.prank(alice);
-        manager.borrow(1000_000000);
+        manager.borrow(1_000_000_000);
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
         // New principal = old principal + accrued interest + new borrow
-        uint256 expectedPrincipal = 5000_000000 + accruedInterest + 1000_000000;
+        uint256 expectedPrincipal = 5_000_000_000 + accruedInterest + 1_000_000_000;
         assertApproxEqRel(info.currentDebt, expectedPrincipal, 0.001e18);
 
         // After compounding, accrued interest should be 0
@@ -609,15 +605,15 @@ contract HashCreditManagerTest is Test {
     }
 
     function test_getAvailableCredit_considersInterest() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         uint256 initialAvailable = manager.getAvailableCredit(alice);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         uint256 afterBorrowAvailable = manager.getAvailableCredit(alice);
-        assertEq(afterBorrowAvailable, initialAvailable - 5000_000000);
+        assertEq(afterBorrowAvailable, initialAvailable - 5_000_000_000);
 
         // Advance time - interest accrues
         vm.warp(block.timestamp + 365 days);
@@ -631,10 +627,10 @@ contract HashCreditManagerTest is Test {
     }
 
     function test_vaultReceivesInterestOnRepay() public {
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Record vault balance after borrow (reduced by borrowed amount)
         uint256 vaultBalanceAfterBorrow = stablecoin.balanceOf(address(vault));
@@ -653,9 +649,9 @@ contract HashCreditManagerTest is Test {
 
         // Vault should receive principal + interest (the full repayment amount)
         uint256 received = vaultBalanceAfterRepay - vaultBalanceAfterBorrow;
-        assertApproxEqRel(received, 5000_000000 + interest, 0.001e18);
+        assertApproxEqRel(received, 5_000_000_000 + interest, 0.001e18);
         // Also verify the net gain is exactly the interest
-        assertApproxEqRel(interest, 500_000000, 0.001e18);
+        assertApproxEqRel(interest, 500_000_000, 0.001e18);
     }
 
     // ============================================
@@ -671,7 +667,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(uint160(borrower))),
             vout: 0,
             amountSats: amountSats,
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
@@ -691,14 +687,14 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 10_00000000, // 10 BTC
-            blockHeight: 800000,
+            amountSats: 1_000_000_000, // 10 BTC
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence1));
 
         IHashCreditManager.BorrowerInfo memory info1 = manager.getBorrowerInfo(alice);
-        assertEq(info1.trailingRevenueSats, 10_00000000);
+        assertEq(info1.trailingRevenueSats, 1_000_000_000);
         assertEq(manager.getPayoutHistoryCount(alice), 1);
 
         // Advance time past the trailing window
@@ -709,19 +705,19 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(2)),
             vout: 0,
-            amountSats: 5_00000000, // 5 BTC
-            blockHeight: 800001,
+            amountSats: 500_000_000, // 5 BTC
+            blockHeight: 800_001,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence2));
 
         IHashCreditManager.BorrowerInfo memory info2 = manager.getBorrowerInfo(alice);
         // Only the second payout should be in trailing window now
-        assertEq(info2.trailingRevenueSats, 5_00000000, "First payout should have expired");
+        assertEq(info2.trailingRevenueSats, 500_000_000, "First payout should have expired");
         assertEq(manager.getPayoutHistoryCount(alice), 1, "Old payout should be pruned");
 
         // Total revenue should include both (lifetime)
-        assertEq(info2.totalRevenueSats, 15_00000000, "Total revenue should include all payouts");
+        assertEq(info2.totalRevenueSats, 1_500_000_000, "Total revenue should include all payouts");
     }
 
     function test_trailingWindow_creditLimitDecreasesAfterExpiry() public {
@@ -735,15 +731,15 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(1)),
             vout: 0,
-            amountSats: 10_00000000, // 10 BTC
-            blockHeight: 800000,
+            amountSats: 1_000_000_000, // 10 BTC
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence));
 
         IHashCreditManager.BorrowerInfo memory info1 = manager.getBorrowerInfo(alice);
         // Credit limit = 10 BTC * $50,000 * 50% = $250,000 = 250000_000000
-        assertEq(info1.creditLimit, 250_000_000000);
+        assertEq(info1.creditLimit, 250_000_000_000);
 
         // Advance time past window again
         vm.warp(block.timestamp + WINDOW_SECONDS + 1);
@@ -754,7 +750,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(2)),
             vout: 0,
             amountSats: MIN_PAYOUT_SATS, // Minimum payout
-            blockHeight: 800001,
+            blockHeight: 800_001,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence2));
@@ -773,8 +769,8 @@ contract HashCreditManagerTest is Test {
                 borrower: alice,
                 txid: bytes32(i),
                 vout: 0,
-                amountSats: 1_00000000, // 1 BTC each
-                blockHeight: 800000,
+                amountSats: 100_000_000, // 1 BTC each
+                blockHeight: 800_000,
                 blockTimestamp: uint32(block.timestamp)
             });
             manager.submitPayout(verifier.encodeEvidence(evidence));
@@ -783,7 +779,7 @@ contract HashCreditManagerTest is Test {
         assertEq(manager.getPayoutHistoryCount(alice), 3);
 
         IHashCreditManager.BorrowerInfo memory info1 = manager.getBorrowerInfo(alice);
-        assertEq(info1.trailingRevenueSats, 3_00000000);
+        assertEq(info1.trailingRevenueSats, 300_000_000);
 
         // Advance time past window
         vm.warp(block.timestamp + WINDOW_SECONDS + 1);
@@ -793,8 +789,8 @@ contract HashCreditManagerTest is Test {
             borrower: alice,
             txid: bytes32(uint256(4)),
             vout: 0,
-            amountSats: 1_00000000,
-            blockHeight: 800001,
+            amountSats: 100_000_000,
+            blockHeight: 800_001,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(newEvidence));
@@ -803,8 +799,8 @@ contract HashCreditManagerTest is Test {
         assertEq(manager.getPayoutHistoryCount(alice), 1, "All old payouts should be pruned");
 
         IHashCreditManager.BorrowerInfo memory info2 = manager.getBorrowerInfo(alice);
-        assertEq(info2.trailingRevenueSats, 1_00000000, "Only new payout in trailing");
-        assertEq(info2.totalRevenueSats, 4_00000000, "Total includes all payouts");
+        assertEq(info2.trailingRevenueSats, 100_000_000, "Only new payout in trailing");
+        assertEq(info2.totalRevenueSats, 400_000_000, "Total includes all payouts");
     }
 
     // ============================================
@@ -821,7 +817,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(1)),
             vout: 0,
             amountSats: belowMinAmount,
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence));
@@ -846,7 +842,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(1)),
             vout: 0,
             amountSats: MIN_PAYOUT_SATS, // Exactly 10000 sats
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence));
@@ -866,7 +862,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(1)),
             vout: 0,
             amountSats: MIN_PAYOUT_SATS - 1,
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
         bytes memory proof = verifier.encodeEvidence(evidence);
@@ -903,7 +899,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(1)),
             vout: 0,
             amountSats: 1, // Just 1 satoshi
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(evidence));
@@ -926,7 +922,7 @@ contract HashCreditManagerTest is Test {
                 txid: bytes32(i),
                 vout: 0,
                 amountSats: MIN_PAYOUT_SATS,
-                blockHeight: 800000,
+                blockHeight: 800_000,
                 blockTimestamp: uint32(block.timestamp)
             });
             manager.submitPayout(verifier.encodeEvidence(evidence));
@@ -944,7 +940,7 @@ contract HashCreditManagerTest is Test {
             txid: bytes32(uint256(101)),
             vout: 0,
             amountSats: MIN_PAYOUT_SATS * 2, // Different amount to distinguish
-            blockHeight: 800001,
+            blockHeight: 800_001,
             blockTimestamp: uint32(block.timestamp)
         });
         manager.submitPayout(verifier.encodeEvidence(newEvidence));

@@ -471,7 +471,7 @@ contract LendingVaultTest is Test {
         vm.stopPrank();
 
         // 5,000 interest remains in accumulatedInterest
-        assertEq(vault.accumulatedInterest(), 5_000e6, "5k interest should remain");
+        assertEq(vault.accumulatedInterest(), 5000e6, "5k interest should remain");
 
         // Total borrowed should be 0
         assertEq(vault.totalBorrowed(), 0);

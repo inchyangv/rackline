@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {BtcSpvVerifier} from "../contracts/BtcSpvVerifier.sol";
-import {CheckpointManager} from "../contracts/CheckpointManager.sol";
-import {BitcoinLib} from "../contracts/lib/BitcoinLib.sol";
-import {HashCreditManager} from "../contracts/HashCreditManager.sol";
-import {LendingVault} from "../contracts/LendingVault.sol";
-import {RiskConfig} from "../contracts/RiskConfig.sol";
-import {PoolRegistry} from "../contracts/PoolRegistry.sol";
-import {RelayerSigVerifier} from "../contracts/RelayerSigVerifier.sol";
-import {MockERC20} from "../contracts/mocks/MockERC20.sol";
-import {IVerifierAdapter, PayoutEvidence} from "../contracts/interfaces/IVerifierAdapter.sol";
-import {IRiskConfig} from "../contracts/interfaces/IRiskConfig.sol";
+import { Test, console2 } from "forge-std/Test.sol";
+import { BtcSpvVerifier } from "../contracts/BtcSpvVerifier.sol";
+import { CheckpointManager } from "../contracts/CheckpointManager.sol";
+import { BitcoinLib } from "../contracts/lib/BitcoinLib.sol";
+import { HashCreditManager } from "../contracts/HashCreditManager.sol";
+import { LendingVault } from "../contracts/LendingVault.sol";
+import { RiskConfig } from "../contracts/RiskConfig.sol";
+import { PoolRegistry } from "../contracts/PoolRegistry.sol";
+import { RelayerSigVerifier } from "../contracts/RelayerSigVerifier.sol";
+import { MockERC20 } from "../contracts/mocks/MockERC20.sol";
+import { IVerifierAdapter, PayoutEvidence } from "../contracts/interfaces/IVerifierAdapter.sol";
+import { IRiskConfig } from "../contracts/interfaces/IRiskConfig.sol";
 
 /**
  * @title GasProfileTest
@@ -46,8 +46,8 @@ contract GasProfileTest is Test {
     // ============ Constants ============
 
     bytes32 constant CHECKPOINT_HASH = 0x00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054;
-    uint32 constant CHECKPOINT_HEIGHT = 800000;
-    uint32 constant CHECKPOINT_TIMESTAMP = 1690000000;
+    uint32 constant CHECKPOINT_HEIGHT = 800_000;
+    uint32 constant CHECKPOINT_TIMESTAMP = 1_690_000_000;
     uint32 constant CHECKPOINT_BITS = 0x17053894; // Block 800000 difficulty
     bytes20 constant BORROWER_PUBKEY_HASH = bytes20(hex"1234567890abcdef1234567890abcdef12345678");
 
@@ -69,12 +69,12 @@ contract GasProfileTest is Test {
             confirmationsRequired: 6,
             advanceRateBps: 5000, // 50%
             windowSeconds: 30 days,
-            newBorrowerCap: 10000e6, // $10,000
-            globalCap: 1000000e6, // $1,000,000
-            minPayoutSats: 100000, // 0.001 BTC
-            btcPriceUsd: 50000_00000000, // $50,000
+            newBorrowerCap: 10_000e6, // $10,000
+            globalCap: 1_000_000e6, // $1,000,000
+            minPayoutSats: 100_000, // 0.001 BTC
+            btcPriceUsd: 5_000_000_000_000, // $50,000
             minPayoutCountForFullCredit: 3,
-            largePayoutThresholdSats: 100_00000000, // 100 BTC
+            largePayoutThresholdSats: 10_000_000_000, // 100 BTC
             largePayoutDiscountBps: 5000, // 50%
             newBorrowerPeriodSeconds: 30 days
         });
@@ -89,11 +89,7 @@ contract GasProfileTest is Test {
         // Deploy core
         vault = new LendingVault(address(stablecoin), 1000); // 10% APR
         manager = new HashCreditManager(
-            address(relayerVerifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            address(stablecoin)
+            address(relayerVerifier), address(vault), address(riskConfig), address(poolRegistry), address(stablecoin)
         );
 
         // Configure
@@ -227,9 +223,9 @@ contract GasProfileTest is Test {
         // Prepare signed payload
         bytes32 txid = keccak256("test_tx");
         uint32 vout = 0;
-        uint64 amountSats = 100000000; // 1 BTC
-        uint32 blockHeight = 800010;
-        uint32 blockTimestamp = 1690001000;
+        uint64 amountSats = 100_000_000; // 1 BTC
+        uint32 blockHeight = 800_010;
+        uint32 blockTimestamp = 1_690_001_000;
         uint64 deadline = uint64(block.timestamp + 1 hours);
 
         bytes32 digest = relayerVerifier.getPayoutClaimDigest(
@@ -238,9 +234,8 @@ contract GasProfileTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(relayerPrivateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        bytes memory payload = abi.encode(
-            borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature
-        );
+        bytes memory payload =
+            abi.encode(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
 
         uint256 gasBefore = gasleft();
         relayerVerifier.verifyPayout(payload);
@@ -264,9 +259,9 @@ contract GasProfileTest is Test {
     function test_gas_submitPayout() public {
         bytes32 txid = keccak256("payout_tx");
         uint32 vout = 0;
-        uint64 amountSats = 100000000;
-        uint32 blockHeight = 800010;
-        uint32 blockTimestamp = 1690001000;
+        uint64 amountSats = 100_000_000;
+        uint32 blockHeight = 800_010;
+        uint32 blockTimestamp = 1_690_001_000;
         uint64 deadline = uint64(block.timestamp + 1 hours);
 
         bytes32 digest = relayerVerifier.getPayoutClaimDigest(
@@ -275,9 +270,8 @@ contract GasProfileTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(relayerPrivateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        bytes memory payload = abi.encode(
-            borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature
-        );
+        bytes memory payload =
+            abi.encode(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
 
         uint256 gasBefore = gasleft();
         manager.submitPayout(payload);
@@ -287,7 +281,7 @@ contract GasProfileTest is Test {
 
     function test_gas_borrow() public {
         // First submit payout to get credit
-        _submitPayoutForBorrower(borrower, 100000000);
+        _submitPayoutForBorrower(borrower, 100_000_000);
 
         uint256 creditLimit = manager.getBorrowerInfo(borrower).creditLimit;
         uint256 borrowAmount = creditLimit / 2;
@@ -301,7 +295,7 @@ contract GasProfileTest is Test {
 
     function test_gas_repay() public {
         // Setup: submit payout and borrow
-        _submitPayoutForBorrower(borrower, 100000000);
+        _submitPayoutForBorrower(borrower, 100_000_000);
         uint256 creditLimit = manager.getBorrowerInfo(borrower).creditLimit;
         uint256 borrowAmount = creditLimit / 2;
 
@@ -325,13 +319,13 @@ contract GasProfileTest is Test {
 
     function test_gas_vault_deposit() public {
         address depositor = makeAddr("depositor");
-        stablecoin.mint(depositor, 100000e6);
+        stablecoin.mint(depositor, 100_000e6);
 
         vm.startPrank(depositor);
-        stablecoin.approve(address(vault), 100000e6);
+        stablecoin.approve(address(vault), 100_000e6);
 
         uint256 gasBefore = gasleft();
-        vault.deposit(100000e6);
+        vault.deposit(100_000e6);
         uint256 gasUsed = gasBefore - gasleft();
         vm.stopPrank();
 
@@ -340,11 +334,11 @@ contract GasProfileTest is Test {
 
     function test_gas_vault_withdraw() public {
         address depositor = makeAddr("depositor");
-        stablecoin.mint(depositor, 100000e6);
+        stablecoin.mint(depositor, 100_000e6);
 
         vm.startPrank(depositor);
-        stablecoin.approve(address(vault), 100000e6);
-        vault.deposit(100000e6);
+        stablecoin.approve(address(vault), 100_000e6);
+        vault.deposit(100_000e6);
 
         uint256 shares = vault.sharesOf(depositor);
         uint256 gasBefore = gasleft();
@@ -363,7 +357,7 @@ contract GasProfileTest is Test {
         checkpointManager.setCheckpoint(
             CHECKPOINT_HEIGHT + 2016,
             keccak256("new_block"),
-            1000000,
+            1_000_000,
             CHECKPOINT_TIMESTAMP + 2016 * 600,
             CHECKPOINT_BITS
         );
@@ -394,9 +388,9 @@ contract GasProfileTest is Test {
         for (uint256 i = 0; i < count; i++) {
             bytes32 txid = keccak256(abi.encodePacked("batch_tx_", i));
             uint32 vout = 0;
-            uint64 amountSats = 10000000; // 0.1 BTC
-            uint32 blockHeight = 800010 + uint32(i);
-            uint32 blockTimestamp = 1690001000 + uint32(i * 600);
+            uint64 amountSats = 10_000_000; // 0.1 BTC
+            uint32 blockHeight = 800_010 + uint32(i);
+            uint32 blockTimestamp = 1_690_001_000 + uint32(i * 600);
             uint64 deadline = uint64(block.timestamp + 1 hours);
 
             bytes32 digest = relayerVerifier.getPayoutClaimDigest(
@@ -405,9 +399,8 @@ contract GasProfileTest is Test {
             (uint8 v, bytes32 r, bytes32 s) = vm.sign(relayerPrivateKey, digest);
             bytes memory signature = abi.encodePacked(r, s, v);
 
-            bytes memory payload = abi.encode(
-                borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature
-            );
+            bytes memory payload =
+                abi.encode(borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
 
             uint256 gasBefore = gasleft();
             manager.submitPayout(payload);
@@ -572,8 +565,8 @@ contract GasProfileTest is Test {
     function _submitPayoutForBorrower(address _borrower, uint64 amountSats) internal {
         bytes32 txid = keccak256(abi.encodePacked("payout_", _borrower, block.timestamp));
         uint32 vout = 0;
-        uint32 blockHeight = 800010;
-        uint32 blockTimestamp = 1690001000;
+        uint32 blockHeight = 800_010;
+        uint32 blockTimestamp = 1_690_001_000;
         uint64 deadline = uint64(block.timestamp + 1 hours);
 
         bytes32 digest = relayerVerifier.getPayoutClaimDigest(
@@ -582,9 +575,8 @@ contract GasProfileTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(relayerPrivateKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        bytes memory payload = abi.encode(
-            _borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature
-        );
+        bytes memory payload =
+            abi.encode(_borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline, signature);
 
         manager.submitPayout(payload);
     }

@@ -26,10 +26,7 @@ contract MockUSDT {
 
     function approve(address spender, uint256 amount) external returns (bool) {
         // USDT-style: require current allowance to be 0 or new amount to be 0
-        require(
-            amount == 0 || allowance[msg.sender][spender] == 0,
-            "USDT: approve from non-zero to non-zero allowance"
-        );
+        require(amount == 0 || allowance[msg.sender][spender] == 0, "USDT: approve from non-zero to non-zero allowance");
         allowance[msg.sender][spender] = amount;
         emit Approval(msg.sender, spender, amount);
         return true;

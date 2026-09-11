@@ -34,12 +34,12 @@ contract DeploySpv is Script {
     // ============================================
 
     uint256 constant FIXED_APR_BPS = 1000; // 10% APR
-    uint64 constant BTC_PRICE_USD = 50_000_00000000; // $50,000 (8 decimals)
+    uint64 constant BTC_PRICE_USD = 5_000_000_000_000; // $50,000 (8 decimals)
     uint32 constant ADVANCE_RATE_BPS = 5000; // 50%
     uint32 constant WINDOW_SECONDS = 30 days;
-    uint128 constant NEW_BORROWER_CAP = 10_000_000000; // $10,000 (6 decimals)
-    uint64 constant MIN_PAYOUT_SATS = 10000; // 0.0001 BTC
-    uint256 constant DEFAULT_INITIAL_LIQUIDITY = 1_000_000_000000; // 1M (6 decimals)
+    uint128 constant NEW_BORROWER_CAP = 10_000_000_000; // $10,000 (6 decimals)
+    uint64 constant MIN_PAYOUT_SATS = 10_000; // 0.0001 BTC
+    uint256 constant DEFAULT_INITIAL_LIQUIDITY = 1_000_000_000_000; // 1M (6 decimals)
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -101,11 +101,7 @@ contract DeploySpv is Script {
 
         // 7. Deploy HashCreditManager with SPV verifier
         HashCreditManager manager = new HashCreditManager(
-            address(spvVerifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            address(stablecoin)
+            address(spvVerifier), address(vault), address(riskConfig), address(poolRegistry), address(stablecoin)
         );
         console.log("[7/7] HashCreditManager deployed:", address(manager));
 

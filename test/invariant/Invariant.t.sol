@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test, console} from "forge-std/Test.sol";
-import {LendingVault} from "../../contracts/LendingVault.sol";
-import {HashCreditManager} from "../../contracts/HashCreditManager.sol";
-import {RiskConfig} from "../../contracts/RiskConfig.sol";
-import {IRiskConfig} from "../../contracts/interfaces/IRiskConfig.sol";
-import {PoolRegistry} from "../../contracts/PoolRegistry.sol";
-import {MockERC20} from "../../contracts/mocks/MockERC20.sol";
-import {MockVerifier} from "../../contracts/mocks/MockVerifier.sol";
-import {PayoutEvidence} from "../../contracts/interfaces/IVerifierAdapter.sol";
-import {IHashCreditManager} from "../../contracts/interfaces/IHashCreditManager.sol";
+import { Test, console } from "forge-std/Test.sol";
+import { LendingVault } from "../../contracts/LendingVault.sol";
+import { HashCreditManager } from "../../contracts/HashCreditManager.sol";
+import { RiskConfig } from "../../contracts/RiskConfig.sol";
+import { IRiskConfig } from "../../contracts/interfaces/IRiskConfig.sol";
+import { PoolRegistry } from "../../contracts/PoolRegistry.sol";
+import { MockERC20 } from "../../contracts/mocks/MockERC20.sol";
+import { MockVerifier } from "../../contracts/mocks/MockVerifier.sol";
+import { PayoutEvidence } from "../../contracts/interfaces/IVerifierAdapter.sol";
+import { IHashCreditManager } from "../../contracts/interfaces/IHashCreditManager.sol";
 
 /**
  * @title VaultHandler
@@ -103,10 +103,7 @@ contract VaultInvariantTest is Test {
 
         // Each share should be convertible to at least 1 wei
         // (accounting for initial shares if any)
-        assertTrue(
-            totalAssets >= totalShares || totalShares == 0,
-            "Total assets should cover all shares"
-        );
+        assertTrue(totalAssets >= totalShares || totalShares == 0, "Total assets should cover all shares");
     }
 
     /**
@@ -119,10 +116,7 @@ contract VaultInvariantTest is Test {
         uint256 shares = vault.convertToShares(testAmount);
         uint256 assetsBack = vault.convertToAssets(shares);
 
-        assertTrue(
-            assetsBack <= testAmount,
-            "Rounding should favor vault (no free money from round-trip)"
-        );
+        assertTrue(assetsBack <= testAmount, "Rounding should favor vault (no free money from round-trip)");
     }
 
     /**
@@ -236,7 +230,7 @@ contract ManagerInvariantTest is Test {
             newBorrowerCap: 10_000e6,
             globalCap: 0,
             minPayoutSats: 10_000,
-            btcPriceUsd: 50_000_00000000, // $50k with 8 decimals
+            btcPriceUsd: 5_000_000_000_000, // $50k with 8 decimals
             minPayoutCountForFullCredit: 0,
             largePayoutThresholdSats: 0,
             largePayoutDiscountBps: 10_000,
@@ -252,11 +246,7 @@ contract ManagerInvariantTest is Test {
 
         // Deploy manager
         manager = new HashCreditManager(
-            address(verifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            address(stablecoin)
+            address(verifier), address(vault), address(riskConfig), address(poolRegistry), address(stablecoin)
         );
 
         // Update vault manager
@@ -282,10 +272,7 @@ contract ManagerInvariantTest is Test {
         // Check all recorded txids are marked as processed
         for (uint256 i = 0; i < handler.getAllTxidsLength(); i++) {
             bytes32 payoutKey = handler.getTxidAt(i);
-            assertTrue(
-                handler.usedTxids(payoutKey),
-                "All submitted payouts should be tracked"
-            );
+            assertTrue(handler.usedTxids(payoutKey), "All submitted payouts should be tracked");
         }
     }
 

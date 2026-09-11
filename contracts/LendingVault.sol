@@ -222,9 +222,7 @@ contract LendingVault is ILendingVault, ReentrancyGuard {
         // When interest is repaid, reduce accumulatedInterest to prevent double-counting
         // (interest tokens come into balanceOf, so we reduce the "expected" interest)
         if (interestPortion > 0 && accumulatedInterest > 0) {
-            uint256 interestDeduction = interestPortion > accumulatedInterest
-                ? accumulatedInterest
-                : interestPortion;
+            uint256 interestDeduction = interestPortion > accumulatedInterest ? accumulatedInterest : interestPortion;
             accumulatedInterest -= interestDeduction;
         }
 

@@ -263,11 +263,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
             processedPayouts[payoutKey] = true;
 
             emit PayoutBelowMinimum(
-                evidence.borrower,
-                evidence.txid,
-                evidence.vout,
-                evidence.amountSats,
-                params.minPayoutSats
+                evidence.borrower, evidence.txid, evidence.vout, evidence.amountSats, params.minPayoutSats
             );
 
             // Still emit PayoutRecorded with effectiveAmount=0 for transparency
@@ -298,10 +294,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
         info.payoutCount++;
 
         // 10. Apply provenance heuristics to get effective amount
-        uint64 effectiveAmount = IRiskConfig(riskConfig).applyPayoutHeuristics(
-            evidence.amountSats,
-            info.payoutCount
-        );
+        uint64 effectiveAmount = IRiskConfig(riskConfig).applyPayoutHeuristics(evidence.amountSats, info.payoutCount);
 
         // 11. Update total revenue (lifetime, never decreases)
         info.totalRevenueSats += effectiveAmount;
@@ -311,10 +304,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
         _addPayoutRecord(evidence.borrower, uint64(block.timestamp), effectiveAmount);
 
         // 13. Prune expired payouts and recalculate trailing revenue
-        uint128 newTrailingRevenue = _pruneAndCalculateTrailingRevenue(
-            evidence.borrower,
-            params.windowSeconds
-        );
+        uint128 newTrailingRevenue = _pruneAndCalculateTrailingRevenue(evidence.borrower, params.windowSeconds);
         info.trailingRevenueSats = newTrailingRevenue;
 
         // 14. Recalculate credit limit based on trailing revenue
@@ -322,9 +312,8 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
 
         // 15. Apply new borrower cap if applicable
         // Use newBorrowerPeriodSeconds if set, otherwise fall back to windowSeconds for backwards compatibility
-        uint32 newBorrowerPeriod = params.newBorrowerPeriodSeconds > 0
-            ? params.newBorrowerPeriodSeconds
-            : params.windowSeconds;
+        uint32 newBorrowerPeriod =
+            params.newBorrowerPeriodSeconds > 0 ? params.newBorrowerPeriodSeconds : params.windowSeconds;
 
         if (info.registeredAt + newBorrowerPeriod > block.timestamp) {
             // Still in "new borrower" period
@@ -536,11 +525,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
      * @param timestamp Payout timestamp
      * @param effectiveAmountSats Effective amount in satoshis
      */
-    function _addPayoutRecord(
-        address borrower,
-        uint64 timestamp,
-        uint64 effectiveAmountSats
-    ) internal {
+    function _addPayoutRecord(address borrower, uint64 timestamp, uint64 effectiveAmountSats) internal {
         PayoutRecord[] storage history = _payoutHistory[borrower];
 
         // If at max capacity, remove oldest record to make room
@@ -552,10 +537,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
             history.pop();
         }
 
-        history.push(PayoutRecord({
-            timestamp: timestamp,
-            effectiveAmountSats: effectiveAmountSats
-        }));
+        history.push(PayoutRecord({ timestamp: timestamp, effectiveAmountSats: effectiveAmountSats }));
     }
 
     /**
@@ -567,7 +549,10 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
     function _pruneAndCalculateTrailingRevenue(
         address borrower,
         uint32 windowSeconds
-    ) internal returns (uint128 trailingRevenue) {
+    )
+        internal
+        returns (uint128 trailingRevenue)
+    {
         PayoutRecord[] storage history = _payoutHistory[borrower];
 
         if (history.length == 0) {
@@ -575,9 +560,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
         }
 
         // Safe subtraction: if block.timestamp < windowSeconds, cutoffTime is 0 (keep all)
-        uint64 cutoffTime = block.timestamp > windowSeconds
-            ? uint64(block.timestamp - windowSeconds)
-            : 0;
+        uint64 cutoffTime = block.timestamp > windowSeconds ? uint64(block.timestamp - windowSeconds) : 0;
         uint256 prunedCount = 0;
 
         // Find the first non-expired record

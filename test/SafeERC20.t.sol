@@ -57,21 +57,21 @@ contract SafeERC20Test is Test {
         _setupFullStackWithTokenNoAliceApproval(address(usdt));
 
         // Setup borrower with credit
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         // Borrow
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         // Mint more USDT for repay
-        usdt.mint(alice, 5000_000000);
+        usdt.mint(alice, 5_000_000_000);
 
         // Repay (tests forceApprove for USDT-style tokens)
         // Alice approves manager (user -> contract approval)
         vm.startPrank(alice);
-        usdt.approve(address(manager), 5000_000000);
+        usdt.approve(address(manager), 5_000_000_000);
         // Manager will use forceApprove internally when approving vault
-        manager.repay(5000_000000);
+        manager.repay(5_000_000_000);
         vm.stopPrank();
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
@@ -83,24 +83,24 @@ contract SafeERC20Test is Test {
         MockUSDT usdt = new MockUSDT();
         _setupFullStackWithTokenNoAliceApproval(address(usdt));
 
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
-        usdt.mint(alice, 10000_000000);
+        usdt.mint(alice, 10_000_000_000);
 
         // For USDT-style tokens, user needs to approve exact amounts or use forceApprove pattern
         // First repay - approve exact amount
         vm.startPrank(alice);
-        usdt.approve(address(manager), 2000_000000);
-        manager.repay(2000_000000);
+        usdt.approve(address(manager), 2_000_000_000);
+        manager.repay(2_000_000_000);
 
         // Manager's forceApprove to vault works, now test user approval
         // For second repay, allowance is 0 again after first repay consumed it
         // (because Manager only pulls what's needed)
-        usdt.approve(address(manager), 3000_000000);
-        manager.repay(3000_000000);
+        usdt.approve(address(manager), 3_000_000_000);
+        manager.repay(3_000_000_000);
         vm.stopPrank();
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
@@ -147,16 +147,16 @@ contract SafeERC20Test is Test {
         MockNoReturnERC20 nrt = new MockNoReturnERC20();
         _setupFullStackWithToken(address(nrt));
 
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
-        nrt.mint(alice, 5000_000000);
+        nrt.mint(alice, 5_000_000_000);
 
         vm.startPrank(alice);
-        nrt.approve(address(manager), 5000_000000);
-        manager.repay(5000_000000);
+        nrt.approve(address(manager), 5_000_000_000);
+        manager.repay(5_000_000_000);
         vm.stopPrank();
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
@@ -177,10 +177,7 @@ contract SafeERC20Test is Test {
         rent.mint(alice, INITIAL_BALANCE);
 
         // Setup callback to attempt reentrant deposit
-        bytes memory depositCall = abi.encodeWithSelector(
-            LendingVault.deposit.selector,
-            1000e6
-        );
+        bytes memory depositCall = abi.encodeWithSelector(LendingVault.deposit.selector, 1000e6);
         rent.setCallback(address(rentVault), depositCall);
         attacker.setAttack(depositCall, 1);
 
@@ -213,10 +210,7 @@ contract SafeERC20Test is Test {
         vm.stopPrank();
 
         // Setup callback to attempt reentrant withdraw during transfer
-        bytes memory withdrawCall = abi.encodeWithSelector(
-            LendingVault.withdraw.selector,
-            10_000e6
-        );
+        bytes memory withdrawCall = abi.encodeWithSelector(LendingVault.withdraw.selector, 10_000e6);
         rent.setCallback(address(rentVault), withdrawCall);
 
         // Withdraw should succeed, but reentrant call inside should fail
@@ -231,22 +225,19 @@ contract SafeERC20Test is Test {
         ReentrantToken rent = new ReentrantToken();
         _setupFullStackWithToken(address(rent));
 
-        _setupBorrowerWithCredit(alice, 1_00000000);
+        _setupBorrowerWithCredit(alice, 100_000_000);
 
         // Setup callback to attempt reentrant borrow
-        bytes memory borrowCall = abi.encodeWithSelector(
-            HashCreditManager.borrow.selector,
-            1000_000000
-        );
+        bytes memory borrowCall = abi.encodeWithSelector(HashCreditManager.borrow.selector, 1_000_000_000);
         rent.setCallback(address(manager), borrowCall);
 
         // Borrow should succeed, reentrant call should fail
         vm.prank(alice);
-        manager.borrow(5000_000000);
+        manager.borrow(5_000_000_000);
 
         IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
         // Should only have borrowed 5000, not 6000
-        assertEq(info.currentDebt, 5000_000000);
+        assertEq(info.currentDebt, 5_000_000_000);
     }
 
     // ============================================
@@ -260,10 +251,10 @@ contract SafeERC20Test is Test {
             confirmationsRequired: 6,
             advanceRateBps: 5000,
             windowSeconds: 30 days,
-            newBorrowerCap: 10_000_000000,
+            newBorrowerCap: 10_000_000_000,
             globalCap: 0,
-            minPayoutSats: 10000,
-            btcPriceUsd: 50_000_00000000,
+            minPayoutSats: 10_000,
+            btcPriceUsd: 5_000_000_000_000,
             minPayoutCountForFullCredit: 0,
             largePayoutThresholdSats: 0,
             largePayoutDiscountBps: 10_000,
@@ -275,11 +266,7 @@ contract SafeERC20Test is Test {
         vault = new LendingVault(token, 1000);
 
         manager = new HashCreditManager(
-            address(verifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            token
+            address(verifier), address(vault), address(riskConfig), address(poolRegistry), token
         );
 
         vault.setManager(address(manager));
@@ -307,10 +294,10 @@ contract SafeERC20Test is Test {
             confirmationsRequired: 6,
             advanceRateBps: 5000,
             windowSeconds: 30 days,
-            newBorrowerCap: 10_000_000000,
+            newBorrowerCap: 10_000_000_000,
             globalCap: 0,
-            minPayoutSats: 10000,
-            btcPriceUsd: 50_000_00000000,
+            minPayoutSats: 10_000,
+            btcPriceUsd: 5_000_000_000_000,
             minPayoutCountForFullCredit: 0,
             largePayoutThresholdSats: 0,
             largePayoutDiscountBps: 10_000,
@@ -322,11 +309,7 @@ contract SafeERC20Test is Test {
         vault = new LendingVault(token, 1000);
 
         manager = new HashCreditManager(
-            address(verifier),
-            address(vault),
-            address(riskConfig),
-            address(poolRegistry),
-            token
+            address(verifier), address(vault), address(riskConfig), address(poolRegistry), token
         );
 
         vault.setManager(address(manager));
@@ -350,7 +333,8 @@ contract SafeERC20Test is Test {
 
         // Alice approves manager
         vm.prank(alice);
-        (success,) = token.call(abi.encodeWithSignature("approve(address,uint256)", address(manager), type(uint256).max));
+        (success,) =
+            token.call(abi.encodeWithSignature("approve(address,uint256)", address(manager), type(uint256).max));
         require(success, "alice approve failed");
     }
 
@@ -363,7 +347,7 @@ contract SafeERC20Test is Test {
             txid: bytes32(uint256(uint160(borrower))),
             vout: 0,
             amountSats: amountSats,
-            blockHeight: 800000,
+            blockHeight: 800_000,
             blockTimestamp: uint32(block.timestamp)
         });
 
