@@ -139,7 +139,6 @@ export function ClaimSection() {
     <SectionCard
       title="Link BTC Wallet"
       description="Sign a message with your Bitcoin wallet, then verify the signature on-chain."
-      full
     >
       <div className="space-y-4">
         {/* Step 1: BTC Address */}
