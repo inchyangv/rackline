@@ -5,7 +5,7 @@ export type TxState =
   | { status: 'confirmed'; label: string; hash: string }
   | { status: 'error'; label: string; message: string }
 
-export type TabId = 'dashboard' | 'ops' | 'proof' | 'pool'
+export type TabId = 'dashboard' | 'pool'
 
 export type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] | Record<string, unknown> }) => Promise<unknown>

@@ -14,8 +14,6 @@ import { useApiStore } from '@/stores/api-store'
 import { useManagerReads } from '@/hooks/use-manager-reads'
 import { useBorrowerInfo } from '@/hooks/use-borrower-info'
 import { DashboardTab } from '@/features/dashboard/dashboard-tab'
-import { OperationsTab } from '@/features/operations/operations-tab'
-import { ProofTab } from '@/features/proof/proof-tab'
 import { PoolTab } from '@/features/pool/pool-tab'
 import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
 import { STABLECOIN_SYMBOL } from '@/lib/constants'
@@ -23,7 +21,7 @@ import { STABLECOIN_SYMBOL } from '@/lib/constants'
 export function AppShell() {
   const [tab, setTab] = useState<TabId>(() => {
     const v = getLocalStorageString('hashcredit_tab', 'dashboard')
-    return v === 'dashboard' || v === 'ops' || v === 'proof' || v === 'pool'
+    return v === 'dashboard' || v === 'pool'
       ? v
       : 'dashboard'
   })
@@ -130,8 +128,6 @@ export function AppShell() {
       <main className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {tab === 'dashboard' && <DashboardTab />}
         {tab === 'pool' && <PoolTab />}
-        {tab === 'ops' && <OperationsTab />}
-        {tab === 'proof' && <ProofTab />}
 
         {/* Tx Status always visible */}
         <div className="col-span-full">

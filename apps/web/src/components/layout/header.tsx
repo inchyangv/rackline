@@ -9,8 +9,6 @@ type Props = {
 const tabs: { id: TabId; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'pool', label: 'Pool' },
-  { id: 'ops', label: 'Checkpoint' },
-  { id: 'proof', label: 'Proof' },
 ]
 
 export function Header({ tab, onTabChange }: Props) {
