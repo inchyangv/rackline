@@ -7,11 +7,9 @@ import { IVerifierAdapter, PayoutEvidence } from "../interfaces/IVerifierAdapter
  * @title MockVerifier
  * @notice Mock verifier for testing HashCreditManager
  * @dev Always verifies successfully, decodes PayoutEvidence from proof bytes
+ *      Stateless - replay protection is handled by HashCreditManager
  */
 contract MockVerifier is IVerifierAdapter {
-    /// @notice Mapping of processed payouts
-    mapping(bytes32 => bool) private _processed;
-
     /// @notice Counter for test purposes
     uint256 public verifyCallCount;
 
@@ -24,18 +22,18 @@ contract MockVerifier is IVerifierAdapter {
         // Decode evidence from proof (for testing, proof is just the encoded evidence)
         evidence = abi.decode(proof, (PayoutEvidence));
 
-        // Mark as processed
-        bytes32 key = keccak256(abi.encodePacked(evidence.txid, evidence.vout));
-        _processed[key] = true;
+        // NOTE: Verifier is stateless - replay protection is in HashCreditManager
+        // This prevents griefing attacks where attacker calls verifyPayout() directly
 
         return evidence;
     }
 
     /**
      * @inheritdoc IVerifierAdapter
+     * @dev Always returns false - replay protection is in HashCreditManager
      */
-    function isPayoutProcessed(bytes32 txid, uint32 vout) external view override returns (bool) {
-        return _processed[keccak256(abi.encodePacked(txid, vout))];
+    function isPayoutProcessed(bytes32, uint32) external pure override returns (bool) {
+        return false;
     }
 
     /**

@@ -57,9 +57,6 @@ contract BtcSpvVerifier is IVerifierAdapter {
     /// @notice Mapping of borrower address to their BTC pubkey hash
     mapping(address => bytes20) public borrowerPubkeyHash;
 
-    /// @notice Mapping of processed payouts (keccak256(txid, vout) => processed)
-    mapping(bytes32 => bool) private _processedPayouts;
-
     // ============================================
     // Errors
     // ============================================
@@ -75,7 +72,6 @@ contract BtcSpvVerifier is IVerifierAdapter {
     error TxTooLarge();
     error InvalidTxOutput();
     error PubkeyHashMismatch();
-    error PayoutAlreadyProcessed();
     error BorrowerNotRegistered();
     error InsufficientConfirmations();
     error DifficultyMismatch(uint32 expected, uint32 actual);
@@ -229,12 +225,9 @@ contract BtcSpvVerifier is IVerifierAdapter {
         if (scriptType > 1) revert InvalidTxOutput(); // Only P2WPKH (0) and P2PKH (1) supported
         if (actualPubkeyHash != expectedPubkeyHash) revert PubkeyHashMismatch();
 
-        // Check replay protection
-        bytes32 payoutKey = keccak256(abi.encodePacked(txid, spvProof.outputIndex));
-        if (_processedPayouts[payoutKey]) revert PayoutAlreadyProcessed();
-
-        // Mark as processed
-        _processedPayouts[payoutKey] = true;
+        // NOTE: Replay protection is handled by HashCreditManager.processedPayouts
+        // Verifier is stateless to prevent griefing attacks where attacker calls
+        // verifyPayout() directly to block legitimate submitPayout() calls
 
         // Build evidence
         // blockHeight is the height where the tx was included, not the tip
@@ -251,9 +244,11 @@ contract BtcSpvVerifier is IVerifierAdapter {
 
     /**
      * @inheritdoc IVerifierAdapter
+     * @dev Always returns false - replay protection is handled by HashCreditManager
+     *      This verifier is stateless to prevent griefing attacks
      */
-    function isPayoutProcessed(bytes32 txid, uint32 vout) external view override returns (bool) {
-        return _processedPayouts[keccak256(abi.encodePacked(txid, vout))];
+    function isPayoutProcessed(bytes32, uint32) external pure override returns (bool) {
+        return false;
     }
 
     // ============================================

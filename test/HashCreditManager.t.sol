@@ -431,6 +431,68 @@ contract HashCreditManagerTest is Test {
     }
 
     // ============================================
+    // Griefing Prevention Tests
+    // ============================================
+
+    function test_griefingPrevention_verifierDirectCall() public {
+        // Setup: register borrower
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: 1_00000000,
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+
+        bytes memory proof = verifier.encodeEvidence(evidence);
+
+        // Attack: attacker calls verifier.verifyPayout() directly
+        address attacker = makeAddr("attacker");
+        vm.prank(attacker);
+        verifier.verifyPayout(proof);
+
+        // Verifier is stateless, so isPayoutProcessed still returns false
+        assertFalse(verifier.isPayoutProcessed(evidence.txid, evidence.vout));
+
+        // Legitimate submitPayout still works because manager handles replay protection
+        manager.submitPayout(proof);
+
+        // Now manager's processedPayouts is true
+        assertTrue(manager.isPayoutProcessed(evidence.txid, evidence.vout));
+
+        // Credit limit was updated correctly
+        assertTrue(manager.getAvailableCredit(alice) > 0);
+    }
+
+    function test_replayProtectionOnlyInManager() public {
+        manager.registerBorrower(alice, aliceBtcKeyHash);
+
+        PayoutEvidence memory evidence = PayoutEvidence({
+            borrower: alice,
+            txid: bytes32(uint256(1)),
+            vout: 0,
+            amountSats: 1_00000000,
+            blockHeight: 800000,
+            blockTimestamp: uint32(block.timestamp)
+        });
+
+        bytes memory proof = verifier.encodeEvidence(evidence);
+
+        // First submit succeeds
+        manager.submitPayout(proof);
+
+        // Second submit fails with PayoutAlreadyProcessed from manager
+        vm.expectRevert(IHashCreditManager.PayoutAlreadyProcessed.selector);
+        manager.submitPayout(proof);
+
+        // But verifier itself doesn't track - always returns false
+        assertFalse(verifier.isPayoutProcessed(evidence.txid, evidence.vout));
+    }
+
+    // ============================================
     // Helper Functions
     // ============================================
 

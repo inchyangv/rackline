@@ -551,7 +551,7 @@
 
 ### T2.5 (Critical) Verifier 직접 호출로 인한 Griefing/DoS 방지
 - Priority: P0
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 제3자가 `RelayerSigVerifier.verifyPayout()`/`BtcSpvVerifier.verifyPayout()`을 **직접 호출**하여 `_processedPayouts`를 선점해 `HashCreditManager.submitPayout()`을 영구적으로 막는 DoS를 제거한다.
 - 작업(택1 또는 조합):
     - 옵션 A(권장): verifier에서 `_processedPayouts`/replay 체크 제거 → replay는 `HashCreditManager.processedPayouts` 단일 레이어로 통일
@@ -564,6 +564,13 @@
 - 완료 조건:
     - verifier 직접 호출로 payout 처리가 막히지 않는다.
     - replay 방지가 단일 레이어(또는 의도된 레이어)에서만 일관되게 동작한다.
+- 완료 요약:
+    - 옵션 A 구현: verifier에서 `_processedPayouts` 제거, replay는 Manager 단일 레이어로 통일
+    - BtcSpvVerifier: `_processedPayouts` 매핑/체크/마킹 제거, `isPayoutProcessed()` 항상 false 반환
+    - RelayerSigVerifier: 동일하게 stateless로 수정
+    - MockVerifier: 테스트용 mock도 stateless로 수정
+    - 테스트 추가: `test_griefingPrevention_verifierDirectCall()`, `test_replayProtectionOnlyInManager()`
+    - 기존 테스트 수정: verifier replay 테스트를 stateless 동작으로 업데이트
 
 ---
 

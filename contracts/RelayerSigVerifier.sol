@@ -45,9 +45,6 @@ contract RelayerSigVerifier is IVerifierAdapter {
     /// @notice Authorized relayer signer address
     address public relayerSigner;
 
-    /// @notice Mapping of processed payouts (keccak256(txid, vout) => processed)
-    mapping(bytes32 => bool) private _processedPayouts;
-
     // ============================================
     // Events
     // ============================================
@@ -72,9 +69,6 @@ contract RelayerSigVerifier is IVerifierAdapter {
 
     /// @notice Signature deadline has passed
     error DeadlineExpired();
-
-    /// @notice Payout already processed
-    error PayoutAlreadyProcessed();
 
     /// @notice Invalid address (zero address)
     error InvalidAddress();
@@ -164,9 +158,9 @@ contract RelayerSigVerifier is IVerifierAdapter {
         // Check deadline
         if (block.timestamp > deadline) revert DeadlineExpired();
 
-        // Check replay protection
-        bytes32 payoutKey = keccak256(abi.encodePacked(txid, vout));
-        if (_processedPayouts[payoutKey]) revert PayoutAlreadyProcessed();
+        // NOTE: Replay protection is handled by HashCreditManager.processedPayouts
+        // Verifier is stateless to prevent griefing attacks where attacker calls
+        // verifyPayout() directly to block legitimate submitPayout() calls
 
         // Compute struct hash
         bytes32 structHash = keccak256(
@@ -191,9 +185,6 @@ contract RelayerSigVerifier is IVerifierAdapter {
         address recoveredSigner = _recoverSigner(digest, signature);
         if (recoveredSigner != relayerSigner) revert InvalidSignature();
 
-        // Mark as processed
-        _processedPayouts[payoutKey] = true;
-
         emit PayoutVerified(borrower, txid, vout, amountSats);
 
         return PayoutEvidence({
@@ -208,9 +199,11 @@ contract RelayerSigVerifier is IVerifierAdapter {
 
     /**
      * @inheritdoc IVerifierAdapter
+     * @dev Always returns false - replay protection is handled by HashCreditManager
+     *      This verifier is stateless to prevent griefing attacks
      */
-    function isPayoutProcessed(bytes32 txid, uint32 vout) external view override returns (bool) {
-        return _processedPayouts[keccak256(abi.encodePacked(txid, vout))];
+    function isPayoutProcessed(bytes32, uint32) external pure override returns (bool) {
+        return false;
     }
 
     // ============================================

@@ -159,14 +159,15 @@ contract RelayerSigVerifierTest is Test {
         verifier.verifyPayout(proof);
     }
 
-    function test_verifyPayout_revert_replay() public {
+    function test_verifyPayout_noReplayCheckInVerifier() public {
         bytes memory proof = _createSignedProof(alice, bytes32(uint256(1)), 0, 1_00000000);
 
         // First verification succeeds
         verifier.verifyPayout(proof);
 
-        // Second verification should fail
-        vm.expectRevert(RelayerSigVerifier.PayoutAlreadyProcessed.selector);
+        // Second verification also succeeds - verifier is stateless
+        // Replay protection is handled by HashCreditManager, not verifier
+        // This prevents griefing attacks where attacker calls verifier directly
         verifier.verifyPayout(proof);
     }
 
@@ -178,8 +179,22 @@ contract RelayerSigVerifierTest is Test {
         verifier.verifyPayout(proof1);
         verifier.verifyPayout(proof2); // Should succeed
 
-        assertTrue(verifier.isPayoutProcessed(bytes32(uint256(1)), 0));
-        assertTrue(verifier.isPayoutProcessed(bytes32(uint256(2)), 0));
+        // Verifier always returns false - it's stateless
+        assertFalse(verifier.isPayoutProcessed(bytes32(uint256(1)), 0));
+        assertFalse(verifier.isPayoutProcessed(bytes32(uint256(2)), 0));
+    }
+
+    function test_griefingPrevention() public {
+        bytes memory proof = _createSignedProof(alice, bytes32(uint256(1)), 0, 1_00000000);
+
+        // Attacker calls verifier directly
+        address attacker = makeAddr("attacker");
+        vm.prank(attacker);
+        verifier.verifyPayout(proof);
+
+        // Legitimate call still works because verifier is stateless
+        // In real scenario, HashCreditManager.submitPayout would handle replay protection
+        verifier.verifyPayout(proof);
     }
 
     // ============================================
@@ -213,16 +228,18 @@ contract RelayerSigVerifierTest is Test {
     // View Function Tests
     // ============================================
 
-    function test_isPayoutProcessed() public {
+    function test_isPayoutProcessed_alwaysFalse() public {
         bytes32 txid = bytes32(uint256(1));
         uint32 vout = 0;
 
+        // Verifier is stateless - always returns false
         assertFalse(verifier.isPayoutProcessed(txid, vout));
 
         bytes memory proof = _createSignedProof(alice, txid, vout, 1_00000000);
         verifier.verifyPayout(proof);
 
-        assertTrue(verifier.isPayoutProcessed(txid, vout));
+        // Still returns false - replay protection is in HashCreditManager
+        assertFalse(verifier.isPayoutProcessed(txid, vout));
     }
 
     function test_getPayoutClaimDigest() public view {
