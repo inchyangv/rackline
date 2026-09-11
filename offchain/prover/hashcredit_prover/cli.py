@@ -401,5 +401,169 @@ def set_borrower_pubkey_hash(
     asyncio.run(_set_pubkey_hash())
 
 
+@app.command()
+def submit_proof(
+    txid: str = typer.Argument(..., help="Bitcoin transaction ID (display format)"),
+    output_index: int = typer.Argument(..., help="Output index (vout)"),
+    borrower: str = typer.Argument(..., help="Borrower EVM address (0x...)"),
+    checkpoint_height: Optional[int] = typer.Option(
+        None, "--checkpoint", "-c", help="Checkpoint height (auto-select if not specified)"
+    ),
+    target_height: Optional[int] = typer.Option(
+        None, "--target", "-t", help="Target block height (auto-detect if not specified)"
+    ),
+    hash_credit_manager: Optional[str] = typer.Option(
+        None,
+        "--manager",
+        "-m",
+        envvar="HASH_CREDIT_MANAGER",
+        help="HashCreditManager contract address",
+    ),
+    checkpoint_manager: Optional[str] = typer.Option(
+        None,
+        "--checkpoint-manager",
+        envvar="CHECKPOINT_MANAGER",
+        help="CheckpointManager contract (for auto checkpoint selection)",
+    ),
+    rpc_url: Optional[str] = typer.Option(
+        None, "--rpc-url", "-r", envvar="BITCOIN_RPC_URL", help="Bitcoin RPC URL"
+    ),
+    rpc_user: Optional[str] = typer.Option(
+        None, "--rpc-user", "-u", envvar="BITCOIN_RPC_USER", help="Bitcoin RPC user"
+    ),
+    rpc_password: Optional[str] = typer.Option(
+        None, "--rpc-password", "-p", envvar="BITCOIN_RPC_PASSWORD", help="Bitcoin RPC password"
+    ),
+    evm_rpc_url: Optional[str] = typer.Option(
+        None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
+    ),
+    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    private_key: Optional[str] = typer.Option(
+        None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
+    ),
+    output_file: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Save proof JSON to file"
+    ),
+    hex_only: bool = typer.Option(
+        False, "--hex-only", help="Only output hex-encoded proof (no submission)"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Build proof but don't submit"),
+) -> None:
+    """
+    Build an SPV proof and submit it to HashCreditManager.
+
+    Builds a Merkle inclusion proof for a Bitcoin transaction and submits
+    it to the HashCreditManager contract via submitPayout().
+
+    Example:
+        hashcredit-prover submit-proof \\
+            abc123...txid... 0 0x1234...borrower \\
+            --checkpoint 2500000 \\
+            --target 2500006 \\
+            --manager 0xABC123...
+    """
+
+    async def _submit_proof() -> None:
+        # Validate required params
+        if not hash_credit_manager and not hex_only and not dry_run:
+            typer.echo("Error: --manager or HASH_CREDIT_MANAGER env var required", err=True)
+            raise typer.Exit(1)
+        if not private_key and not hex_only and not dry_run:
+            typer.echo("Error: --private-key or PRIVATE_KEY env var required", err=True)
+            raise typer.Exit(1)
+        if checkpoint_height is None:
+            typer.echo("Error: --checkpoint is required (auto-selection not yet implemented)", err=True)
+            raise typer.Exit(1)
+        if target_height is None:
+            typer.echo("Error: --target is required (auto-detection not yet implemented)", err=True)
+            raise typer.Exit(1)
+
+        # Setup Bitcoin RPC
+        btc_config = BitcoinRPCConfig(
+            url=rpc_url or os.getenv("BITCOIN_RPC_URL", "http://localhost:18332"),
+            user=rpc_user or os.getenv("BITCOIN_RPC_USER", ""),
+            password=rpc_password or os.getenv("BITCOIN_RPC_PASSWORD", ""),
+        )
+        btc_rpc = BitcoinRPC(btc_config)
+
+        typer.echo(f"Building SPV proof for transaction {txid}...")
+        typer.echo(f"  Output index:      {output_index}")
+        typer.echo(f"  Checkpoint height: {checkpoint_height}")
+        typer.echo(f"  Target height:     {target_height}")
+        typer.echo(f"  Borrower:          {borrower}")
+
+        try:
+            # Build proof
+            builder = ProofBuilder(btc_rpc)
+            result = await builder.build_proof(
+                txid=txid,
+                output_index=output_index,
+                checkpoint_height=checkpoint_height,
+                target_height=target_height,
+                borrower=borrower,
+            )
+
+            typer.echo(f"\nProof built successfully!")
+            typer.echo(f"  Amount:            {result.amount_sats} sats")
+            typer.echo(f"  Script type:       {result.script_type}")
+            typer.echo(f"  PubkeyHash:        0x{result.pubkey_hash.hex()}")
+            typer.echo(f"  Header chain:      {len(result.proof.headers)} blocks")
+            typer.echo(f"  Merkle depth:      {len(result.proof.merkle_proof)}")
+
+            # Encode proof
+            encoded_proof = result.proof.encode_for_contract()
+            typer.echo(f"  Encoded size:      {len(encoded_proof)} bytes")
+
+            # Save to file if requested
+            if output_file:
+                import json
+                with open(output_file, "w") as f:
+                    json.dump(result.proof.to_dict(), f, indent=2)
+                typer.echo(f"\nProof saved to {output_file}")
+
+            # Hex-only mode
+            if hex_only:
+                typer.echo(f"\nABI-encoded proof:")
+                typer.echo(f"0x{encoded_proof.hex()}")
+                return
+
+            # Dry run
+            if dry_run:
+                typer.echo("\n[Dry run - not sending transaction]")
+                typer.echo(f"\nContract call:")
+                typer.echo(f"  HashCreditManager({hash_credit_manager}).submitPayout(")
+                typer.echo(f"    proof: 0x{encoded_proof.hex()[:64]}...")
+                typer.echo(f"  )")
+                return
+
+            # Setup EVM client
+            evm_config = EVMConfig(
+                rpc_url=evm_rpc_url or os.getenv("EVM_RPC_URL", "http://localhost:8545"),
+                chain_id=chain_id,
+                private_key=private_key or "",
+            )
+            evm_client = EVMClient(evm_config)
+
+            typer.echo(f"\nSubmitting proof from {evm_client.address}...")
+
+            # Submit proof
+            receipt = await evm_client.submit_payout(
+                contract_address=hash_credit_manager,
+                proof=encoded_proof,
+            )
+
+            typer.echo(f"\nTransaction successful!")
+            typer.echo(f"  TX Hash: {receipt['transactionHash'].hex()}")
+            typer.echo(f"  Block:   {receipt['blockNumber']}")
+            typer.echo(f"  Gas:     {receipt['gasUsed']}")
+            typer.echo(f"  Status:  {'Success' if receipt['status'] == 1 else 'Failed'}")
+
+        except Exception as e:
+            typer.echo(f"Error: {e}", err=True)
+            raise typer.Exit(1)
+
+    asyncio.run(_submit_proof())
+
+
 if __name__ == "__main__":
     main()

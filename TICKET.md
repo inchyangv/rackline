@@ -310,8 +310,8 @@
 
 ### T1.9 SPV Proof 생성 + EVM 제출 커맨드 (txid 단발)
 - Priority: P1
-- Status: [ ] TODO
-- 목적: 복잡한 “watcher/relayer” 전에, **Bitcoin testnet txid 한 건을 입력하면** proof를 만들고 `HashCreditManager.submitPayout()`까지 끝내는 단발 플로우를 제공한다.
+- Status: [x] DONE
+- 목적: 복잡한 "watcher/relayer" 전에, **Bitcoin testnet txid 한 건을 입력하면** proof를 만들고 `HashCreditManager.submitPayout()`까지 끝내는 단발 플로우를 제공한다.
 - 작업:
     - `hashcredit-prover submit-proof` 커맨드 추가
     - 입력:
@@ -322,7 +322,13 @@
         - ProofBuilder로 `abi.encode(SpvProof)` 생성
         - web3.py로 `HashCreditManager.submitPayout(bytes)` 전송 + receipt 확인
 - 완료 조건:
-    - “txid 1건” 입력으로 on-chain payout 반영 트랜잭션이 성공한다.
+    - "txid 1건" 입력으로 on-chain payout 반영 트랜잭션이 성공한다.
+- 완료 요약:
+    - Added `submit-proof` CLI command to hashcredit-prover
+    - Uses existing ProofBuilder to generate SPV proof
+    - Calls HashCreditManager.submitPayout(bytes) via EVMClient
+    - Supports --dry-run and --hex-only modes for testing
+    - Updated README.md with command documentation and examples
 
 ---
 

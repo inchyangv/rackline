@@ -60,6 +60,52 @@ hashcredit-prover build-proof \
     --hex
 ```
 
+### Submit proof to HashCreditManager
+
+Build and submit an SPV proof in one command:
+
+```bash
+hashcredit-prover submit-proof \
+    <txid> <output_index> <borrower_address> \
+    --checkpoint <checkpoint_height> \
+    --target <target_height> \
+    --manager $HASH_CREDIT_MANAGER
+```
+
+Required environment variables (or CLI options):
+- `BITCOIN_RPC_URL`: Bitcoin Core RPC URL
+- `BITCOIN_RPC_USER`: RPC username
+- `BITCOIN_RPC_PASSWORD`: RPC password
+- `HASH_CREDIT_MANAGER`: Contract address (or use `--manager`)
+- `EVM_RPC_URL`: Creditcoin/EVM RPC URL
+- `PRIVATE_KEY`: Transaction signer private key
+
+Example:
+```bash
+# Dry run (build proof but don't submit)
+hashcredit-prover submit-proof \
+    abc123...txid... 0 0x1234...borrower \
+    --checkpoint 2500000 \
+    --target 2500006 \
+    --manager 0xABC123... \
+    --dry-run
+
+# Get hex-encoded proof only (no submission)
+hashcredit-prover submit-proof \
+    abc123...txid... 0 0x1234...borrower \
+    --checkpoint 2500000 \
+    --target 2500006 \
+    --hex-only
+
+# Submit to chain
+hashcredit-prover submit-proof \
+    abc123...txid... 0 0x1234...borrower \
+    --checkpoint 2500000 \
+    --target 2500006 \
+    --manager 0xABC123... \
+    --private-key $PRIVATE_KEY
+```
+
 ### Verify a proof locally
 
 ```bash
