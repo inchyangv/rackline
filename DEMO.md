@@ -4,10 +4,10 @@ This guide walks through the complete HashCredit demo flow for the CTC Hackathon
 
 ## Prerequisites
 
-- Node.js 18+ (for Foundry/Forge)
-- Python 3.11+
 - Foundry installed (`curl -L https://foundry.paradigm.xyz | bash && foundryup`)
-- Access to Creditcoin testnet RPC
+- Python 3.11+
+- Access to an EVM RPC (local Anvil or Creditcoin testnet)
+- (Optional) Node.js 18+ (only if you want to run `apps/web`)
 
 ## Quick Start (5 minutes)
 
@@ -20,10 +20,11 @@ cd ctc-btc-miner
 # Install Foundry dependencies
 forge install
 
-# Install Python relayer
-cd offchain/relayer
-pip install -e .
-cd ../..
+# Install Python relayer (recommended: venv)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -e "offchain/relayer[dev]"
 
 # Copy environment template
 cp .env.example .env
@@ -34,33 +35,51 @@ cp .env.example .env
 Edit `.env` with your values:
 
 ```bash
-# Required for deployment
+# Required (deploy + relayer submitter)
 RPC_URL=https://rpc.cc3-testnet.creditcoin.network
 CHAIN_ID=102031
 PRIVATE_KEY=your_deployer_private_key
 
-# Required for relayer
+# Required (EIP-712 signer)
 RELAYER_PRIVATE_KEY=your_relayer_signing_key
+
+# Optional: if RELAYER_PRIVATE_KEY is different from PRIVATE_KEY
+# RELAYER_SIGNER=0xYourRelayerSignerAddress
 ```
 
 ### 3. Deploy Contracts
 
 ```bash
+# Load .env into your current shell (for `make` / `cast` commands below)
+set -a
+source .env
+set +a
+
 # Deploy to local Anvil (for testing)
-make anvil &  # In another terminal
+# Terminal A:
+make anvil
+
+# Terminal B:
 make deploy-local
 
 # Or deploy to Creditcoin testnet
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast
+make deploy-testnet
 ```
+
+After deployment, copy the printed addresses into your `.env` (`HASH_CREDIT_MANAGER`, `VERIFIER`, `LENDING_VAULT`).
 
 ### 4. Register a Borrower
 
 ```bash
+# Choose a borrower EVM address and a BTC address to watch
+export BORROWER_EVM=0xBorrowerAddress
+export BTC_ADDR=bc1qexampleaddress
+export BTC_KEY_HASH=$(cast keccak "$BTC_ADDR")
+
 # Using cast (Foundry CLI)
 cast send $HASH_CREDIT_MANAGER "registerBorrower(address,bytes32)" \
-  0xBorrowerAddress \
-  0xBtcPayoutKeyHash \
+  $BORROWER_EVM \
+  $BTC_KEY_HASH \
   --rpc-url $RPC_URL \
   --private-key $PRIVATE_KEY
 ```
@@ -69,17 +88,17 @@ cast send $HASH_CREDIT_MANAGER "registerBorrower(address,bytes32)" \
 
 ```bash
 # Check payouts to a Bitcoin address
-hashcredit-relayer check bc1qexampleaddress
+hashcredit-relayer check "$BTC_ADDR"
 
 # Run relayer in single-shot mode
 hashcredit-relayer run --once \
-  --btc-address bc1qexampleaddress \
-  --evm-address 0xBorrowerAddress
+  --btc-address "$BTC_ADDR" \
+  --evm-address "$BORROWER_EVM"
 
 # Run relayer continuously
 hashcredit-relayer run \
-  --btc-address bc1qexampleaddress \
-  --evm-address 0xBorrowerAddress
+  --btc-address "$BTC_ADDR" \
+  --evm-address "$BORROWER_EVM"
 ```
 
 ### 6. Borrow Against Credit
@@ -87,12 +106,13 @@ hashcredit-relayer run \
 ```bash
 # Check available credit
 cast call $HASH_CREDIT_MANAGER "getAvailableCredit(address)" \
-  0xBorrowerAddress \
+  $BORROWER_EVM \
   --rpc-url $RPC_URL
 
 # Borrow (as borrower)
+# BORROWER_PRIVATE_KEY must match the borrower EVM address.
 cast send $HASH_CREDIT_MANAGER "borrow(uint256)" \
-  1000000000 \  # $1000 (6 decimals)
+  1000000000 \
   --rpc-url $RPC_URL \
   --private-key $BORROWER_PRIVATE_KEY
 ```
@@ -169,16 +189,13 @@ cast send $HASH_CREDIT_MANAGER "borrow(uint256)" \
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Contract Addresses (Testnet)
+## Contract Addresses
 
-| Contract | Address |
-|----------|---------|
-| HashCreditManager | (deployed) |
-| LendingVault | (deployed) |
-| RelayerSigVerifier | (deployed) |
-| RiskConfig | (deployed) |
-| PoolRegistry | (deployed) |
-| MockUSDC | (deployed) |
+The deployment script prints all deployed addresses. Copy them into your `.env`:
+
+- `HASH_CREDIT_MANAGER`
+- `VERIFIER`
+- `LENDING_VAULT`
 
 ## Security Considerations
 

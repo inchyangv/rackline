@@ -22,14 +22,25 @@ Mining Pool → BTC Payout → Relayer Detects → EVM Proof → Credit Limit �
 ```bash
 # Install dependencies
 forge install
-cd offchain/relayer && pip install -e . && cd ../..
+cd offchain/relayer && pip install -e ".[dev]" && cd ../..
+
+# Configure env
+cp .env.example .env
+# Edit .env for local:
+# RPC_URL=http://localhost:8545
+# CHAIN_ID=31337
+# PRIVATE_KEY=<anvil private key>
+# RELAYER_PRIVATE_KEY=<same key for the simplest demo>
 
 # Run tests
 forge test
 
 # Deploy (local)
-anvil &
-forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+make anvil   # Terminal A
+make deploy-local   # Terminal B
+# Copy printed addresses into .env:
+# HASH_CREDIT_MANAGER=...
+# VERIFIER=...
 
 # Run relayer
 hashcredit-relayer run --btc-address <BTC_ADDR> --evm-address <EVM_ADDR>
@@ -117,7 +128,9 @@ npm run dev
 
 ## Documentation
 
+- [LOCAL.md](./LOCAL.md) - Local development & debugging guide (Korean)
 - [DEMO.md](./DEMO.md) - Step-by-step demo walkthrough
+- [DEPLOY.md](./DEPLOY.md) - Deployment guide (local/testnet, MVP/SPV)
 - [PROJECT.md](./PROJECT.md) - Full project specification
 - [TICKET.md](./TICKET.md) - Implementation tickets
 

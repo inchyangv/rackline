@@ -11,7 +11,7 @@
 
 ## 0) TL;DR (처음 한 번에 로컬로 띄우기)
 
-터미널 2개ㅇ를 켭니다.
+터미널 2개를 켭니다.
 
 ### 터미널 A: 로컬 체인 실행
 
@@ -35,6 +35,11 @@ pip install -e "offchain/relayer[dev]"
 cp .env.example .env
 
 # 4) .env를 "로컬용"으로 수정 (예시는 아래 '2) .env(로컬용) 설정' 참고)
+
+# 4-1) (추천) 현재 쉘에 .env 로드 (cast / make에서 변수 사용)
+set -a
+source .env
+set +a
 
 # 5) 컨트랙트 배포 (Anvil로)
 make deploy-local
@@ -419,20 +424,23 @@ RelayerSigVerifier 대신 BtcSpvVerifier를 사용합니다.
 
 ### 7-1. SPV 모드 배포
 
+로컬 `.env`와 섞이지 않게 하려면 `.env.spv` 같은 별도 파일을 만들어 쓰는 걸 추천합니다.
+(`set -a; source .env.spv; set +a`로 로드)
+
 ```bash
 # Creditcoin testnet에 SPV 스택 배포
 forge script script/DeploySpv.s.sol \
-    --rpc-url $CREDITCOIN_TESTNET_RPC \
-    --broadcast \
-    --private-key $PRIVATE_KEY
+    --rpc-url "$EVM_RPC_URL" \
+    --broadcast
 ```
 
-배포 후 출력된 주소들을 `.env`에 설정:
+먼저 `.env`(또는 `.env.spv`)에 아래 기본 값을 세팅한 뒤, 배포 로그에 나온 주소들을 채웁니다:
 
 ```dotenv
 # Creditcoin testnet
 EVM_RPC_URL=https://rpc.cc3-testnet.creditcoin.network
 CHAIN_ID=102031
+PRIVATE_KEY=0x...
 
 # SPV Contracts
 CHECKPOINT_MANAGER=0x...
@@ -585,7 +593,7 @@ hashcredit-prover run-relayer --help
 
 ---
 
-## 8) (선택) 프론트 대시보드 (apps/web)
+## 9) (선택) 프론트 대시보드 (apps/web)
 
 컨트랙트 상태 조회 + 일부 트랜잭션(예: `submitPayout`, `borrow`, `repay`)을 클릭으로 실행할 수 있는 간단한 UI가 있습니다.
 

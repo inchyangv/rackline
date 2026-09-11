@@ -3,6 +3,13 @@
 
 .PHONY: build test clean fmt lint deploy relayer
 
+# Load environment variables from .env (if present).
+# Note: Keep `.env` in simple KEY=VALUE format (no `export` statements).
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 # ============================================
 # Solidity (Foundry)
 # ============================================
@@ -36,6 +43,9 @@ deploy-local:
 	forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
 
 deploy-testnet:
+	forge script script/Deploy.s.sol --rpc-url $(RPC_URL) --broadcast
+
+deploy-testnet-verify:
 	forge script script/Deploy.s.sol --rpc-url $(RPC_URL) --broadcast --verify
 
 # ============================================

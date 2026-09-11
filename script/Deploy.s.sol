@@ -32,6 +32,7 @@ contract Deploy is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
         address relayerSigner = vm.envOr("RELAYER_SIGNER", vm.addr(deployerPrivateKey));
 
         vm.startBroadcast(deployerPrivateKey);
@@ -85,7 +86,7 @@ contract Deploy is Script {
 
         // 8. Mint initial USDC liquidity (for testing)
         uint256 initialLiquidity = 1_000_000_000000; // 1M USDC
-        usdc.mint(msg.sender, initialLiquidity);
+        usdc.mint(deployer, initialLiquidity);
         usdc.approve(address(vault), initialLiquidity);
         vault.deposit(initialLiquidity);
         console.log("Initial liquidity deposited:", initialLiquidity / 1e6, "USDC");
