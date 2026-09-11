@@ -162,7 +162,7 @@
 
 ### T0.9 End-to-End Demo Script + README (Hackathon Submission Ready)
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: 심사위원이 5분 내 이해 가능한 실행 절차를 제공한다.
 - 작업:
     - `DEMO.md` 작성
