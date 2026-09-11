@@ -134,9 +134,9 @@ This struct is the contract between the proof layer and the credit layer. Swap t
 ### Three Integration Paths to USC
 
 **Path A — Swap the settlement asset**
-- Deploy `LendingVault` with USC token address instead of cUSD.
+- Deploy `LendingVault` with USC token address instead of mUSDT.
 - Keep `BtcSpvVerifier` and `HashCreditManager` unchanged.
-- Miners prove BTC payouts, borrow USC instead of cUSD.
+- Miners prove BTC payouts, borrow USC instead of mUSDT.
 - Zero changes to proof or credit logic.
 
 **Path B — Add a USC settlement adapter**
@@ -167,7 +167,7 @@ Everything below runs today on Creditcoin EVM testnet (chainId `102031`):
 | Off-chain API — checkpoint ops, borrower mapping, SPV proof builder, BTC sig param extraction | Live |
 | Frontend — dashboard, checkpoint, proof | Live |
 
-On mainnet, credit limits are driven by real SPV-proven mining payouts — each verified payout updates the miner's trailing-window credit limit. On testnet, real mining cannot be reproduced in a demo, so `grantTestnetCredit` bootstraps a flat 1,000 cUSD credit per borrower. The full SPV proof pipeline remains functional and is demonstrated separately.
+On mainnet, credit limits are driven by real SPV-proven mining payouts — each verified payout updates the miner's trailing-window credit limit. On testnet, real mining cannot be reproduced in a demo, so `registerBorrower` auto-grants a flat 1,000 mUSDT credit per borrower (via `autoGrantCreditAmount`). The full SPV proof pipeline remains functional and is demonstrated separately.
 
 USC integration is an **adapter + wiring task**. The proof system, credit engine, and vault do not need to change.
 
@@ -177,8 +177,8 @@ USC integration is an **adapter + wiring task**. The proof system, credit engine
 
 | Contract | Address |
 |----------|---------|
-| HashCreditManager | `0x3cfb7fcf0647c78c3f932763e033b6184d79a936` |
-| LendingVault | `0x60cd9c0e8b828c65c494e0f4274753e6968df0c1` |
-| CheckpointManager | `0xe792383beb2f78076e644e7361ed7057a1f4cd88` |
-| BtcSpvVerifier | `0x98b9ddafe0c49d73cb1cf878c8febad22c357f33` |
-| Stablecoin (cUSD) | `0x9e00a3a453704e6948689eb68a4f65649af30a97` |
+| HashCreditManager | `0x593e140982cDC040d69B7E7623A045C6d6Ca2055` |
+| LendingVault | `0x4d74126369BacB67085a1E70d535cA15515d1AFa` |
+| CheckpointManager | `0x4Ae5418242073cd37CCc69C908957E413a04f6f9` |
+| BtcSpvVerifier | `0x16DEd6a617a911471cd4549C24Ed8C281f096fd2` |
+| Stablecoin (mUSDT) | `0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A` |

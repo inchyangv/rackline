@@ -40,7 +40,7 @@ HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit 
 5. **Borrow** — Miner borrows USDT against their verified revenue
 6. **Auto-Repay** — Pool withholds X% of each subsequent payout; on default, pool redirects miner's hashrate
 
-LP perspective: USDT depositors earn 10% APR — 2-3× standard DeFi rates (Aave USDT ~3-4%, Curve stables ~5-7%) — backed by SPV-proven mining revenue and pool-level enforcement.
+LP perspective: USDT depositors earn fixed APR (currently 8%) — backed by SPV-proven mining revenue and pool-level enforcement.
 
 ---
 
@@ -101,7 +101,7 @@ Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierA
 | State | Zustand 5 |
 | Chain | ethers.js v6 |
 
-Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet link via on-chain sig verification, settings) · **Checkpoint** (register Bitcoin block header checkpoint) · **Proof** (build SPV proof + submit payout)
+Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet link via on-chain sig verification) · **Pool** (LP deposit/withdraw, vault metrics, share management) · **Checkpoint** (register Bitcoin block header checkpoint) · **Proof** (build SPV proof + submit payout)
 
 ---
 
@@ -112,7 +112,7 @@ Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet 
                                   BtcSpvVerifier.claimBtcAddress(pubKeyX, pubKeyY, hash, v, r, s)
                                   → on-chain ecrecover + ripemd160(sha256(compressed pubkey))
 2. Register borrower            HashCreditManager.registerBorrower(borrower, btcPayoutKeyHash)
-3. Grant testnet credit         HashCreditManager.grantTestnetCredit(borrower, amount) [owner-only]
+3. Auto-grant testnet credit    registerBorrower auto-grants 1,000 mUSDT via autoGrantCreditAmount
                                   (testnet only — mainnet credit is driven by SPV-proven payout history)
 4. Register checkpoint          CheckpointManager.setCheckpoint(height, hash, ...)
 5. Build SPV proof              API fetches headers + raw tx + Merkle branch from Bitcoin RPC
@@ -180,11 +180,11 @@ Integration paths: swap vault asset to USC stablecoin, add USC-specific settleme
 
 | Contract | Address |
 |----------|---------|
-| HashCreditManager | `0x3cfb7fcf0647c78c3f932763e033b6184d79a936` |
-| LendingVault | `0x60cd9c0e8b828c65c494e0f4274753e6968df0c1` |
-| CheckpointManager | `0xe792383beb2f78076e644e7361ed7057a1f4cd88` |
-| BtcSpvVerifier | `0x98b9ddafe0c49d73cb1cf878c8febad22c357f33` |
-| Stablecoin (cUSD) | `0x9e00a3a453704e6948689eb68a4f65649af30a97` |
+| HashCreditManager | `0x593e140982cDC040d69B7E7623A045C6d6Ca2055` |
+| LendingVault | `0x4d74126369BacB67085a1E70d535cA15515d1AFa` |
+| CheckpointManager | `0x4Ae5418242073cd37CCc69C908957E413a04f6f9` |
+| BtcSpvVerifier | `0x16DEd6a617a911471cd4549C24Ed8C281f096fd2` |
+| Stablecoin (mUSDT) | `0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A` |
 
 ---
 
