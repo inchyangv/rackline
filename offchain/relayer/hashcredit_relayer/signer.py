@@ -114,14 +114,39 @@ def sign_payout_claim(
 
 def txid_to_bytes32(txid_hex: str) -> bytes:
     """
-    Convert Bitcoin txid hex to bytes32.
+    Convert Bitcoin txid (display format) to bytes32 for on-chain use.
 
-    Bitcoin txids are displayed in reverse byte order,
-    so we need to reverse them for use on EVM.
+    Bitcoin txid display format (block explorers, APIs):
+        - Reversed byte order (big-endian display)
+        - Example: "abc123...def" as shown on blockchain.info
+
+    On-chain format (internal byte order):
+        - sha256d result without reversal
+        - This is what the contracts expect
+
+    This function converts from display format to internal format by reversing bytes.
     """
     # Remove 0x prefix if present
     txid_hex = txid_hex.replace("0x", "")
 
-    # Bitcoin txids are displayed in reverse byte order
-    # For on-chain use, we keep them as-is (little-endian as stored)
-    return bytes.fromhex(txid_hex)
+    # Convert display format (reversed) to internal format
+    # by reversing the byte order
+    display_bytes = bytes.fromhex(txid_hex)
+    internal_bytes = display_bytes[::-1]  # Reverse byte order
+
+    return internal_bytes
+
+
+def bytes32_to_txid_display(internal_bytes: bytes) -> str:
+    """
+    Convert bytes32 (internal format) back to display format hex.
+
+    This is useful for logging and debugging.
+
+    Args:
+        internal_bytes: 32 bytes in internal byte order
+
+    Returns:
+        Hex string in display format (as shown in block explorers)
+    """
+    return internal_bytes[::-1].hex()

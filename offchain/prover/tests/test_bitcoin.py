@@ -8,6 +8,8 @@ from hashcredit_prover.bitcoin import (
     reverse_bytes,
     bytes_to_hex_le,
     hex_le_to_bytes,
+    txid_display_to_internal,
+    txid_internal_to_display,
     BlockHeader,
     compute_merkle_root,
     generate_merkle_proof,
@@ -48,6 +50,69 @@ class TestByteOrder:
 
     def test_hex_le_to_bytes(self) -> None:
         assert hex_le_to_bytes("030201") == b"\x01\x02\x03"
+
+
+class TestTxidConversion:
+    """Tests for txid format conversion.
+
+    Protocol standard:
+    - On-chain: internal byte order (sha256d result without reversal)
+    - Display format (block explorers): reversed byte order
+
+    Example:
+    - Raw tx sha256d = 0102030405...1f2021222324252627282930313233 (internal)
+    - Display format = 3332313029...060504030201 (reversed)
+    """
+
+    def test_display_to_internal(self) -> None:
+        """Convert display format txid to internal format."""
+        # Display format (what you see on blockchain.info)
+        display_txid = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+
+        internal = txid_display_to_internal(display_txid)
+
+        # Should be reversed
+        expected = bytes.fromhex(display_txid)[::-1]
+        assert internal == expected
+        assert len(internal) == 32
+
+    def test_internal_to_display(self) -> None:
+        """Convert internal format txid to display format."""
+        internal = bytes.fromhex("0102030405060708091011121314151617181920212223242526272829303132")
+
+        display = txid_internal_to_display(internal)
+
+        # Should be reversed hex
+        assert display == "3231302928272625242322212019181716151413121110090807060504030201"
+
+    def test_round_trip(self) -> None:
+        """Converting display -> internal -> display should be identity."""
+        original_display = "deadbeef" * 8  # 32 bytes = 64 hex chars
+
+        internal = txid_display_to_internal(original_display)
+        back_to_display = txid_internal_to_display(internal)
+
+        assert back_to_display == original_display
+
+    def test_real_bitcoin_txid(self) -> None:
+        """Test with a real Bitcoin transaction ID.
+
+        This is the genesis block coinbase tx:
+        Display: 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        """
+        genesis_txid_display = (
+            "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+        )
+
+        internal = txid_display_to_internal(genesis_txid_display)
+
+        # Internal format should be the reversed bytes
+        assert len(internal) == 32
+        assert internal[0] == 0x3B  # First byte of internal = last byte of display
+        assert internal[31] == 0x4A  # Last byte of internal = first byte of display
+
+        # Round trip
+        assert txid_internal_to_display(internal) == genesis_txid_display
 
 
 class TestBlockHeader:

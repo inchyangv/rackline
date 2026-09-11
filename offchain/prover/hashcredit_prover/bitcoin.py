@@ -13,18 +13,56 @@ def sha256d(data: bytes) -> bytes:
 
 
 def reverse_bytes(data: bytes) -> bytes:
-    """Reverse byte order (for Bitcoin little-endian display)."""
+    """Reverse byte order."""
     return data[::-1]
 
 
 def bytes_to_hex_le(data: bytes) -> str:
-    """Convert bytes to hex string in little-endian display format."""
+    """
+    Convert internal bytes to display format hex string.
+
+    Bitcoin uses reversed byte order for display (block explorers, APIs).
+    This converts from internal (sha256d result) to display format.
+    """
     return reverse_bytes(data).hex()
 
 
 def hex_le_to_bytes(hex_str: str) -> bytes:
-    """Convert little-endian hex string to bytes."""
+    """
+    Convert display format hex string to internal bytes.
+
+    Bitcoin uses reversed byte order for display (block explorers, APIs).
+    This converts from display format to internal (sha256d result) format.
+    """
     return reverse_bytes(bytes.fromhex(hex_str))
+
+
+def txid_display_to_internal(txid_display: str) -> bytes:
+    """
+    Convert txid from display format to internal byte order.
+
+    Protocol standard: bytes32 txid = internal byte order (sha256d result without reversal)
+
+    Args:
+        txid_display: Txid as shown in block explorers (e.g., "abc123...def")
+
+    Returns:
+        32 bytes in internal byte order for on-chain use
+    """
+    return hex_le_to_bytes(txid_display)
+
+
+def txid_internal_to_display(txid_internal: bytes) -> str:
+    """
+    Convert txid from internal byte order to display format.
+
+    Args:
+        txid_internal: 32 bytes in internal byte order
+
+    Returns:
+        Hex string as shown in block explorers
+    """
+    return bytes_to_hex_le(txid_internal)
 
 
 @dataclass

@@ -631,3 +631,63 @@ npm run dev
 메타마스크를 쓴다면 Creditcoin testnet을 추가/전환해야 합니다:
 - chainId: `102031`
 - RPC: `.env`의 `VITE_RPC_URL` (기본값: `https://rpc.cc3-testnet.creditcoin.network`)
+
+---
+
+## Appendix A: Bitcoin txid Format Standard
+
+This section documents the protocol's standard for representing Bitcoin transaction IDs (`txid`) across all components.
+
+### Background
+
+Bitcoin uses different byte orderings for txid:
+- **Internal byte order**: The raw sha256d hash result (as stored in Bitcoin data structures)
+- **Display format**: Reversed bytes (as shown in block explorers like blockchain.info, mempool.space)
+
+Example for the genesis block coinbase tx:
+- Display: `4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b`
+- Internal: `3ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a`
+
+### Protocol Standard
+
+**On-chain (smart contracts)**: All `bytes32 txid` values use **internal byte order**.
+
+This is consistent with how Bitcoin itself stores txids internally and is required for:
+- Merkle proof verification (txid must match merkle tree entries)
+- Replay protection (consistent hashing of txid+vout)
+
+### Off-chain Conversion
+
+When working with external APIs (mempool.space, block explorers):
+1. Receive txid in **display format** (reversed)
+2. Convert to **internal format** before sending to contracts
+
+Python utilities:
+```python
+# offchain/prover
+from hashcredit_prover.bitcoin import txid_display_to_internal, txid_internal_to_display
+
+# offchain/relayer
+from hashcredit_relayer.signer import txid_to_bytes32, bytes32_to_txid_display
+```
+
+### Example
+
+```python
+# API returns display format
+display_txid = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"
+
+# Convert for on-chain use
+internal = txid_display_to_internal(display_txid)  # or txid_to_bytes32()
+# internal = bytes starting with 0x3b...
+
+# To log/debug, convert back to display
+display = txid_internal_to_display(internal)  # or bytes32_to_txid_display()
+# display = "4a5e1e4b..."
+```
+
+### Verification
+
+Both `offchain/relayer` and `offchain/prover` implement identical conversion logic. Unit tests verify consistency:
+- `offchain/relayer/tests/test_signer.py`
+- `offchain/prover/tests/test_bitcoin.py`
