@@ -16,6 +16,12 @@ type ApiState = {
   spvBorrower: string
   spvPubkeyHash: string
   proofHex: string
+  claimBtcAddress: string
+  claimToken: string
+  claimMessage: string
+  claimBtcSignature: string
+  claimLog: string
+  claimBusy: boolean
   borrowAmount: string
   repayAmount: string
   approveAmount: string
@@ -34,6 +40,12 @@ type ApiState = {
   setSpvBorrower: (v: string) => void
   setSpvPubkeyHash: (v: string) => void
   setProofHex: (v: string) => void
+  setClaimBtcAddress: (v: string) => void
+  setClaimToken: (v: string) => void
+  setClaimMessage: (v: string) => void
+  setClaimBtcSignature: (v: string) => void
+  setClaimLog: (v: string) => void
+  setClaimBusy: (v: boolean) => void
   setBorrowAmount: (v: string) => void
   setRepayAmount: (v: string) => void
   setApproveAmount: (v: string) => void
@@ -55,6 +67,12 @@ export const useApiStore = create<ApiState>((set) => ({
   spvBorrower: '',
   spvPubkeyHash: '',
   proofHex: '0x',
+  claimBtcAddress: '',
+  claimToken: '',
+  claimMessage: '',
+  claimBtcSignature: '',
+  claimLog: '',
+  claimBusy: false,
   borrowAmount: '1000',
   repayAmount: '1000',
   approveAmount: '1000',
@@ -73,6 +91,12 @@ export const useApiStore = create<ApiState>((set) => ({
   setSpvBorrower: (v) => set({ spvBorrower: v }),
   setSpvPubkeyHash: (v) => set({ spvPubkeyHash: v }),
   setProofHex: (v) => set({ proofHex: v }),
+  setClaimBtcAddress: (v) => set({ claimBtcAddress: v }),
+  setClaimToken: (v) => set({ claimToken: v }),
+  setClaimMessage: (v) => set({ claimMessage: v }),
+  setClaimBtcSignature: (v) => set({ claimBtcSignature: v }),
+  setClaimLog: (v) => set({ claimLog: v }),
+  setClaimBusy: (v) => set({ claimBusy: v }),
   setBorrowAmount: (v) => set({ borrowAmount: v }),
   setRepayAmount: (v) => set({ repayAmount: v }),
   setApproveAmount: (v) => set({ approveAmount: v }),
