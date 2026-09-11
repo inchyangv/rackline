@@ -747,7 +747,7 @@
 
 ### T2.13 Security CI/검증 자동화(slither/fuzz/invariant)
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 회귀 방지를 위해 정적 분석/퍼징/불변식 테스트를 CI에 포함한다.
 - 작업:
     - (선택) `slither`/`solhint` 도입 및 CI 워크플로우 추가
@@ -757,6 +757,16 @@
         - borrow/repay 불변식(totalGlobalDebt 일관성)
 - 완료 조건:
     - PR/로컬에서 최소 보안 체크가 자동으로 돌아가고, 실패 시 원인 파악이 가능하다.
+- 완료 요약:
+    - Add `test/invariant/Invariant.t.sol` with 6 invariant tests:
+      - VaultInvariantTest: totalAssetsGeShares, roundingFavorsVault, ghostAccounting
+      - ManagerInvariantTest: noReplayPossible, debtAccountingConsistent, borrowNeverExceedsLimit
+    - Update `.github/workflows/test.yml`:
+      - Add invariant test step with FOUNDRY_INVARIANT_RUNS=50
+      - Add slither static analysis job with artifact upload
+      - Add Python tests job for offchain components
+    - Add `slither.config.json` for Slither configuration
+    - All 6 invariant tests passing
 
 ---
 

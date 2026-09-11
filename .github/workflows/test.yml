@@ -35,3 +35,84 @@ jobs:
 
       - name: Run Forge tests
         run: forge test -vvv
+
+      - name: Run Invariant tests
+        run: |
+          FOUNDRY_INVARIANT_RUNS=50 FOUNDRY_INVARIANT_DEPTH=50 \
+          forge test --match-path "test/invariant/*.sol" -vvv
+
+  slither:
+    name: Slither Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Build contracts
+        run: forge build
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: contracts/
+          slither-config: slither.config.json
+          fail-on: high
+        continue-on-error: true
+        id: slither
+
+      - name: Upload Slither Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: slither-report
+          path: results.sarif
+          retention-days: 30
+
+  python-tests:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies (relayer)
+        run: |
+          cd offchain/relayer
+          pip install -e ".[dev]"
+
+      - name: Install dependencies (prover)
+        run: |
+          cd offchain/prover
+          pip install -e ".[dev]"
+
+      - name: Install dependencies (api)
+        run: |
+          cd offchain/api
+          pip install -e ".[dev]"
+
+      - name: Run relayer tests
+        run: |
+          cd offchain/relayer
+          python -m pytest tests/ -v
+
+      - name: Run prover tests
+        run: |
+          cd offchain/prover
+          python -m pytest tests/ -v
+
+      - name: Run API tests
+        run: |
+          cd offchain/api
+          python -m pytest tests/ -v
