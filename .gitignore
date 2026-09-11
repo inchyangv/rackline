@@ -1,6 +1,44 @@
-PROJECT.md
-PROMPT.md
-TICKET.md
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Foundry
+out/
+cache/
+broadcast/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# SQLite (relayer db)
+*.db
+*.sqlite
+*.sqlite3
 
 # macOS
 .DS_Store
@@ -20,3 +58,11 @@ Icon?
 *.iml
 *.ipr
 *.iws
+
+# VS Code
+.vscode/
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
