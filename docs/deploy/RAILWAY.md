@@ -18,20 +18,29 @@
 2. GitHub에서 이 레포를 Railway에 연결할 권한이 있어야 합니다.
 3. API 운영키(Private Key), API_TOKEN, CLAIM_SECRET 등 **시크릿은 절대 git에 커밋하지 않습니다.**
 
+## 0.5) 왜 Railway에 `ctc-hashcredit`로 뜨나요?
+
+- Railway에서 GitHub 레포를 "Deploy from GitHub"로 연결하면, 기본적으로 **레포 이름 기반으로 단일 서비스**가 하나 생성됩니다.
+- 이 레포는 Python(API/Worker) + Vite(Frontend)로 구성된 **isolated monorepo**라서, "레포 연결만으로 서비스가 자동으로 여러 개로 쪼개져서 생성"되는 형태가 아닙니다.
+- 따라서 목표가 `API`/`Worker`를 분리 배포라면, 아래 방식 중 하나로 **서비스를 2개로 만들어야** 합니다.
+  - (추천) Compose 드래그 앤 드롭으로 서비스 2개를 만들고, 이후 서비스별로 GitHub 연결(autodeploy) 설정
+  - (대안) GitHub 레포 연결을 서비스별로 2번 생성하면서 Root Directory를 각각 지정
+
 ## 1) (추천) Compose로 서비스 2개를 한번에 분리 생성
 
 Railway는 Compose 파일을 드래그 앤 드롭하면 서비스들을 한번에 만들어줍니다.
 
 1. Railway에서 새 프로젝트를 만듭니다.
-2. 프로젝트 캔버스에 레포 루트의 `railway.compose.yml`을 드래그 앤 드롭합니다.
+2. 프로젝트 캔버스에 레포 루트의 `railway-compose.yml`을 드래그 앤 드롭합니다.
 3. 아래 2개 서비스가 생성되는지 확인합니다.
    - `hashcredit-api`
    - `hashcredit-prover`
 
-주의:
+중요:
 
-- 이 단계는 "서비스 생성/분리" 목적입니다.
-- 실제 운영 변수/시크릿은 다음 단계에서 Railway Variables/Secrets로 설정합니다.
+- Compose 드래그 앤 드롭은 "서비스 생성/분리" 목적입니다.
+- GitHub autodeploy(커밋 푸시 시 자동 배포)를 원하면, 서비스별로 GitHub 레포 연결을 추가로 설정해야 합니다.
+- 실제 운영 변수/시크릿은 Railway Variables/Secrets로 설정합니다.
 
 ## 2) Postgres 추가 및 연결
 
@@ -60,6 +69,25 @@ Railway에서 각 서비스의 Root Directory는 다음을 사용합니다.
 - `hashcredit-prover` -> `offchain/prover`
 
 Compose로 만들었다면 이미 이 구조대로 잡히는 것이 정상입니다.
+
+### (선택, 권장) Railway Config as Code 사용
+
+이 레포에는 서비스별 `railway.toml`이 포함되어 있습니다.
+
+- API: `offchain/api/railway.toml`
+- Worker: `offchain/prover/railway.toml`
+
+목적:
+
+- FE 변경 등 "다른 폴더 변경"으로 불필요한 재배포가 트리거되는 것을 줄이기 위해 `watchPatterns`를 제한합니다.
+- API는 `/health`를 healthcheck로 사용하도록 지정합니다.
+
+주의:
+
+- Railway의 isolated monorepo에서는 Config file 경로가 Root Directory를 따라가지 않을 수 있습니다.
+- 서비스 Settings에서 Config file path를 아래처럼 지정해야 할 수 있습니다.
+  - API: `/offchain/api/railway.toml`
+  - Worker: `/offchain/prover/railway.toml`
 
 ## 4) API 서비스(`hashcredit-api`) Variables/Secrets
 
@@ -174,4 +202,3 @@ Worker:
    - **Config file path는 Root Directory를 따라가지 않습니다.**
    - 설정했다면 `/offchain/api/railway.toml` 같은 "절대 경로"로 지정해야 합니다.
    - 이 프로젝트는 Dockerfile 기반 배포가 기본이므로, 별도 `railway.toml` 없이도 배포 가능합니다.
-

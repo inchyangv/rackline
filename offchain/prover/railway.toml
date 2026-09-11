@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = [
+  "hashcredit_prover/**",
+  "pyproject.toml",
+  "start-worker.sh",
+  "Dockerfile",
+]
+
+[deploy]
+# No public HTTP. Prefer disabling public networking in Railway UI.
+restartPolicyType = "ALWAYS"
