@@ -79,13 +79,7 @@ contract CheckpointManager is ICheckpointManager {
     /**
      * @inheritdoc ICheckpointManager
      */
-    function setCheckpoint(
-        uint32 height,
-        bytes32 blockHash,
-        uint256 chainWork,
-        uint32 timestamp,
-        uint32 bits
-    )
+    function setCheckpoint(uint32 height, bytes32 blockHash, uint256 chainWork, uint32 timestamp, uint32 bits)
         external
         onlyOwner
     {

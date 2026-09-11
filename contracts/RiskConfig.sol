@@ -193,10 +193,7 @@ contract RiskConfig is IRiskConfig {
     /**
      * @inheritdoc IRiskConfig
      */
-    function applyPayoutHeuristics(
-        uint64 amountSats,
-        uint32 payoutCount
-    )
+    function applyPayoutHeuristics(uint64 amountSats, uint32 payoutCount)
         external
         view
         override

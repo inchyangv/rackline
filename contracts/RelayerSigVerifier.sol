@@ -199,11 +199,7 @@ contract RelayerSigVerifier is IVerifierAdapter {
         uint32 blockHeight,
         uint32 blockTimestamp,
         uint256 deadline
-    )
-        external
-        view
-        returns (bytes32)
-    {
+    ) external view returns (bytes32) {
         bytes32 structHash = keccak256(
             abi.encode(PAYOUT_CLAIM_TYPEHASH, borrower, txid, vout, amountSats, blockHeight, blockTimestamp, deadline)
         );

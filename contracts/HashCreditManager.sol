@@ -83,13 +83,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
     // Constructor
     // ============================================
 
-    constructor(
-        address verifier_,
-        address vault_,
-        address riskConfig_,
-        address poolRegistry_,
-        address stablecoin_
-    ) {
+    constructor(address verifier_, address vault_, address riskConfig_, address poolRegistry_, address stablecoin_) {
         if (verifier_ == address(0)) revert InvalidAddress();
         if (vault_ == address(0)) revert InvalidAddress();
         if (riskConfig_ == address(0)) revert InvalidAddress();
@@ -546,10 +540,7 @@ contract HashCreditManager is IHashCreditManager, ReentrancyGuard, Pausable {
      * @param windowSeconds Trailing window duration in seconds
      * @return trailingRevenue Sum of non-expired payout amounts
      */
-    function _pruneAndCalculateTrailingRevenue(
-        address borrower,
-        uint32 windowSeconds
-    )
+    function _pruneAndCalculateTrailingRevenue(address borrower, uint32 windowSeconds)
         internal
         returns (uint128 trailingRevenue)
     {

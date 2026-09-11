@@ -139,12 +139,7 @@ library BitcoinLib {
      * @param txIndex Transaction index in block (determines left/right)
      * @return True if proof is valid
      */
-    function verifyMerkleProof(
-        bytes32 txid,
-        bytes32 merkleRoot,
-        bytes32[] memory proof,
-        uint256 txIndex
-    )
+    function verifyMerkleProof(bytes32 txid, bytes32 merkleRoot, bytes32[] memory proof, uint256 txIndex)
         internal
         pure
         returns (bool)
@@ -306,14 +301,7 @@ library BitcoinLib {
      * @return value The integer value
      * @return newOffset Offset after reading
      */
-    function readVarInt(
-        bytes memory data,
-        uint256 offset
-    )
-        internal
-        pure
-        returns (uint256 value, uint256 newOffset)
-    {
+    function readVarInt(bytes memory data, uint256 offset) internal pure returns (uint256 value, uint256 newOffset) {
         uint8 first = uint8(data[offset]);
 
         if (first < 0xfd) {

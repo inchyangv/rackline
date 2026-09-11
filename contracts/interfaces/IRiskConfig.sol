@@ -122,11 +122,5 @@ interface IRiskConfig {
      * @param payoutCount Current payout count for the borrower
      * @return effectiveAmount Amount after applying heuristics
      */
-    function applyPayoutHeuristics(
-        uint64 amountSats,
-        uint32 payoutCount
-    )
-        external
-        view
-        returns (uint64 effectiveAmount);
+    function applyPayoutHeuristics(uint64 amountSats, uint32 payoutCount) external view returns (uint64 effectiveAmount);
 }

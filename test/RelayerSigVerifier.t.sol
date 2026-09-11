@@ -223,12 +223,7 @@ contract RelayerSigVerifierTest is Test {
     // Helper Functions
     // ============================================
 
-    function _createSignedProof(
-        address borrower,
-        bytes32 txid,
-        uint32 vout,
-        uint64 amountSats
-    )
+    function _createSignedProof(address borrower, bytes32 txid, uint32 vout, uint64 amountSats)
         internal
         view
         returns (bytes memory)
@@ -242,11 +237,7 @@ contract RelayerSigVerifierTest is Test {
         uint32 vout,
         uint64 amountSats,
         uint256 deadline
-    )
-        internal
-        view
-        returns (bytes memory)
-    {
+    ) internal view returns (bytes memory) {
         uint32 blockHeight = 800_000;
         uint32 blockTimestamp = uint32(block.timestamp);
 

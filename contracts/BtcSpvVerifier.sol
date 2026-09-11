@@ -266,11 +266,7 @@ contract BtcSpvVerifier is IVerifierAdapter {
         uint32 checkpointHeight,
         uint32 expectedBits,
         bytes[] memory headers
-    )
-        internal
-        pure
-        returns (bytes32 targetHash, BitcoinLib.BlockHeader memory targetHeader)
-    {
+    ) internal pure returns (bytes32 targetHash, BitcoinLib.BlockHeader memory targetHeader) {
         // Silence unused variable warning
         checkpointHeight;
 
@@ -316,11 +312,7 @@ contract BtcSpvVerifier is IVerifierAdapter {
      * @param headers Array of headers from checkpoint+1 to tip
      * @return parsedHeaders Array of all parsed headers
      */
-    function _verifyHeaderChainFull(
-        bytes32 checkpointHash,
-        uint32 expectedBits,
-        bytes[] memory headers
-    )
+    function _verifyHeaderChainFull(bytes32 checkpointHash, uint32 expectedBits, bytes[] memory headers)
         internal
         pure
         returns (BitcoinLib.BlockHeader[] memory parsedHeaders)

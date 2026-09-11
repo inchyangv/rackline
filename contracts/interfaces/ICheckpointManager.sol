@@ -46,14 +46,7 @@ interface ICheckpointManager {
      * @dev Only callable by authorized attestors (owner/multisig)
      *      Height must be monotonically increasing
      */
-    function setCheckpoint(
-        uint32 height,
-        bytes32 blockHash,
-        uint256 chainWork,
-        uint32 timestamp,
-        uint32 bits
-    )
-        external;
+    function setCheckpoint(uint32 height, bytes32 blockHash, uint256 chainWork, uint32 timestamp, uint32 bits) external;
 
     /**
      * @notice Get checkpoint by height

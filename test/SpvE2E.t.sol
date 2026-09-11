@@ -122,13 +122,7 @@ contract SpvE2ETest is Test {
      * @param bits Difficulty target bits
      * @param nonce Mining nonce
      */
-    function _buildHeader(
-        bytes32 prevHash,
-        bytes32 merkleRoot,
-        uint32 timestamp,
-        uint32 bits,
-        uint32 nonce
-    )
+    function _buildHeader(bytes32 prevHash, bytes32 merkleRoot, uint32 timestamp, uint32 bits, uint32 nonce)
         internal
         pure
         returns (bytes memory)
