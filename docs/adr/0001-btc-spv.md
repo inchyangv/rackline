@@ -68,6 +68,20 @@ Adopt `BtcSpvVerifier` as the active verifier behind `IVerifierAdapter`.
 - maintain checkpoint strategy aligned with proof-length limits
 - monitor worker/API health and submission failure rates
 
+## BTC Address Ownership Verification
+
+`BtcSpvVerifier` also provides `claimBtcAddress` for on-chain BTC address ownership proof.
+Since BTC and ETH both use secp256k1, a BTC wallet signature can be verified on-chain:
+
+1. User signs a BIP-137 message with their BTC wallet
+2. Off-chain API extracts (pubKeyX, pubKeyY, btcMsgHash, v, r, s) from the BIP-137 signature
+3. On-chain: `ecrecover(btcMsgHash, v, r, s)` recovers the signer's Ethereum-derived address
+4. On-chain: compare against `keccak256(pubKeyX || pubKeyY)` to verify the public key
+5. On-chain: compress the public key and compute `ripemd160(sha256(compressed))` = BTC pubkeyHash
+6. Store `borrowerPubkeyHash[msg.sender]` for SPV payout matching
+
+This eliminates the need for a trusted operator to set borrower mappings.
+
 ## Future Work
 
 - evaluate USC adapter path while preserving `IVerifierAdapter`

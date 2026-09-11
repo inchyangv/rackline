@@ -60,7 +60,32 @@ Controls:
 
 Residual risk: medium, reduced with strict provenance policy.
 
-### 2.5 Admin key compromise
+### 2.5 BTC address claim spoofing
+
+Threat: attacker claims a BTC address they don't own via `claimBtcAddress`.
+
+Controls:
+- on-chain ecrecover verifies signature against provided public key coordinates
+- pubkeyHash derived from compressed pubkey via sha256 + ripemd160 precompiles (same as Bitcoin Hash160)
+- signature must match the exact message hash (Bitcoin double-SHA256 format)
+- BTC and ETH share secp256k1 — ecrecover correctly validates BTC signatures
+
+Residual risk: low. Requires forging a secp256k1 signature.
+
+### 2.6 Testnet credit abuse
+
+Threat: unauthorized credit grants via `grantTestnetCredit`.
+
+Context: on mainnet, credit limits are driven by SPV-proven mining payouts — each `submitPayout` updates the trailing-window credit limit based on real revenue. On testnet, real mining cannot be reproduced, so `grantTestnetCredit` bootstraps a flat credit per borrower as a substitute.
+
+Controls:
+- `onlyOwner` modifier restricts access
+- borrower must be registered before credit can be granted
+- function intended for testnet only; production deployment should remove or disable
+
+Residual risk: low on testnet. Function should not be deployed to mainnet.
+
+### 2.7 Admin key compromise
 
 Threat: malicious config changes or checkpoint abuse.
 
@@ -71,7 +96,7 @@ Controls:
 
 Residual risk: high if single-key governance remains.
 
-### 2.6 Smart-contract logic bugs
+### 2.8 Smart-contract logic bugs
 
 Threat: logic, accounting, or access-control flaws.
 

@@ -13,6 +13,7 @@ On-chain transactions are wallet-side only.
 | `POST` | `/checkpoint/build` | Build checkpoint payload for wallet tx |
 | `POST` | `/claim/start` | Create claim message/token |
 | `POST` | `/claim/complete` | Verify signatures and return derived hashes (no tx) |
+| `POST` | `/claim/extract-sig-params` | Extract on-chain params (pubKeyX/Y, btcMsgHash, v, r, s) from BIP-137 signature for `BtcSpvVerifier.claimBtcAddress()` |
 
 ## Wallet-only policy
 
@@ -94,5 +95,16 @@ curl -H "Content-Type: application/json" \
     "evm_signature":"0x...",
     "btc_signature":"<base64>",
     "dry_run": true
+  }'
+```
+
+Extract on-chain BTC signature params (for `claimBtcAddress`):
+
+```bash
+curl -H "Content-Type: application/json" \
+  -X POST http://localhost:8000/claim/extract-sig-params \
+  -d '{
+    "message": "HashCredit: Link BTC to 0x...",
+    "signature_b64": "<base64 BIP-137 signature>"
   }'
 ```

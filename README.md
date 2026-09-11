@@ -77,7 +77,7 @@ LP perspective: USDT depositors earn 10% APR — 2-3× standard DeFi rates (Aave
 |----------|------|
 | `HashCreditManager` | Borrower registry, payout processing (replay-protected), trailing-window credit limit calculation, borrow/repay routing |
 | `LendingVault` | ERC4626-style stablecoin pool — LP deposit/withdraw, debt accounting, fixed-APR interest accrual |
-| `BtcSpvVerifier` | Trustless Bitcoin SPV verification — checkpoint anchor, header chain PoW, Merkle inclusion, P2WPKH/P2PKH output parsing |
+| `BtcSpvVerifier` | Trustless Bitcoin SPV verification — checkpoint anchor, header chain PoW, Merkle inclusion, P2WPKH/P2PKH output parsing; on-chain BTC address claim via `claimBtcAddress` (ecrecover + sha256/ripemd160 precompiles) |
 | `CheckpointManager` | Stores trusted Bitcoin block header checkpoints (height, hash, chainWork, bits, timestamp) |
 | `RiskConfig` | On-chain credit policy — advance rate, trailing window, payout thresholds, caps, large-payout discount |
 | `PoolRegistry` | Mining pool source eligibility (permissive mode for testnet) |
@@ -101,22 +101,26 @@ Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierA
 | State | Zustand 5 |
 | Chain | ethers.js v6 |
 
-Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet claim, settings) · **Checkpoint** (register Bitcoin block header checkpoint) · **Proof** (build SPV proof + submit payout)
+Tabs: **Dashboard** (credit overview, borrow/repay, protocol status, BTC wallet link via on-chain sig verification, settings) · **Checkpoint** (register Bitcoin block header checkpoint) · **Proof** (build SPV proof + submit payout)
 
 ---
 
 ## End-to-End Flow
 
 ```
-1. Register checkpoint          CheckpointManager.setCheckpoint(height, hash, ...)
-2. Map borrower ↔ BTC address   BtcSpvVerifier.setBorrowerPubkeyHash(borrower, hash)
-3. Register borrower            HashCreditManager.registerBorrower(borrower)
-4. Build SPV proof              API fetches headers + raw tx + Merkle branch from Bitcoin RPC
-5. Submit proof                 Wallet/worker calls HashCreditManager.submitPayout(proof)
+1. Claim BTC address            User signs BIP-137 message → API extracts params →
+                                  BtcSpvVerifier.claimBtcAddress(pubKeyX, pubKeyY, hash, v, r, s)
+                                  → on-chain ecrecover + ripemd160(sha256(compressed pubkey))
+2. Register borrower            HashCreditManager.registerBorrower(borrower, btcPayoutKeyHash)
+3. Grant testnet credit         HashCreditManager.grantTestnetCredit(borrower, amount) [owner-only]
+                                  (testnet only — mainnet credit is driven by SPV-proven payout history)
+4. Register checkpoint          CheckpointManager.setCheckpoint(height, hash, ...)
+5. Build SPV proof              API fetches headers + raw tx + Merkle branch from Bitcoin RPC
+6. Submit proof                 Wallet/worker calls HashCreditManager.submitPayout(proof)
                                   → verifier checks SPV, returns PayoutEvidence
                                   → manager enforces replay protection
                                   → trailing revenue & credit limit updated
-6. Borrow / Repay               Borrower signs borrow(amount) or repay(amount)
+7. Borrow / Repay               Borrower signs borrow(amount) or repay(amount)
 ```
 
 ---
@@ -143,7 +147,7 @@ On-chain checks:
 ## Security Model
 
 - **Replay protection** — Each `(txid, vout)` processed exactly once via `processedPayouts` mapping
-- **Borrower mapping** — Testnet uses operator-registered mappings; mainnet design requires dual-signature claim (EVM + BTC wallet `signmessage` / BIP-322)
+- **Borrower mapping** — On-chain BTC address ownership via `claimBtcAddress`: user signs a BIP-137 message with their BTC wallet, then `ecrecover` + `ripemd160(sha256(compressedPubKey))` precompiles verify and derive the BTC pubkeyHash entirely on-chain — no trusted oracle required
 - **Risk parameters** — On-chain `RiskConfig` enforces advance rate, trailing window, min payout threshold, new borrower caps, large-payout discount
 - **Reentrancy** — CEI pattern + OpenZeppelin `ReentrancyGuard`
 - **Pausability** — Owner can pause the manager in emergencies

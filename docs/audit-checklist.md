@@ -18,6 +18,8 @@
 - [ ] borrower state controls (`registerBorrower`, `freezeBorrower`, `unfreezeBorrower`)
 - [ ] vault manager assignment and APR controls
 - [ ] verifier mapping setters (`setBorrowerPubkeyHash`)
+- [ ] on-chain BTC address claim (`claimBtcAddress`) — ecrecover + pubkey derivation + Hash160
+- [ ] testnet credit grant (`grantTestnetCredit`) — owner-only, borrower must be registered
 - [ ] checkpoint updates (`setCheckpoint`)
 - [ ] risk parameter updates
 - [ ] pool registry mutations and mode toggles

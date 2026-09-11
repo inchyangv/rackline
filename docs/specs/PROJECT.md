@@ -34,7 +34,7 @@ HashCredit addresses this by turning verified Bitcoin payouts into deterministic
 |---|---|
 | `HashCreditManager` | borrower lifecycle, payout processing, credit limit state, borrow/repay routing |
 | `LendingVault` | stablecoin pool, LP shares, debt accounting |
-| `BtcSpvVerifier` | verifies Bitcoin header chain + merkle inclusion + payout output mapping |
+| `BtcSpvVerifier` | verifies Bitcoin header chain + merkle inclusion + payout output mapping; on-chain BTC address ownership via `claimBtcAddress` (ecrecover + sha256 + ripemd160) |
 | `CheckpointManager` | trusted checkpoint storage (height/hash/chainWork/timestamp/bits) |
 | `RiskConfig` | risk parameters (advance rate, windows, caps, thresholds) |
 | `PoolRegistry` | payout source eligibility policy |
@@ -43,7 +43,7 @@ HashCredit addresses this by turning verified Bitcoin payouts into deterministic
 
 | Component | Role |
 |---|---|
-| `offchain/api` | read/verify service: build SPV proofs, build checkpoint payloads, verify claim signatures |
+| `offchain/api` | read/verify service: build SPV proofs, build checkpoint payloads, verify claim signatures, extract on-chain BTC sig params (`/claim/extract-sig-params`) |
 | `offchain/prover` | optional worker: watch addresses, build proofs, submit on-chain payouts |
 
 ### 4.3 Frontend
@@ -51,14 +51,17 @@ HashCredit addresses this by turning verified Bitcoin payouts into deterministic
 - `Dashboard`: read state, borrow/repay
 - `Operations`: build checkpoint payload via API, submit `setCheckpoint` via wallet
 - `Proof`: build proof via API, submit `submitPayout` via wallet
-- `Admin`: borrower mapping/registration via wallet
+- `Claim`: BTC wallet linking via on-chain signature verification + borrower registration + testnet credit grant
 
 ## 5. Protocol Flows
 
 ### 5.1 Borrower setup
 
-1. Register borrower payout mapping
-2. Register borrower account
+1. User signs a message with their BTC wallet (BIP-137)
+2. API extracts on-chain params (`/claim/extract-sig-params`)
+3. Wallet calls `BtcSpvVerifier.claimBtcAddress(pubKeyX, pubKeyY, btcMsgHash, v, r, s)` — on-chain ecrecover + ripemd160(sha256(compressed pubkey)) stores borrower ↔ BTC pubkeyHash
+4. Wallet calls `HashCreditManager.registerBorrower(borrower, btcPayoutKeyHash)`
+5. (Testnet) Owner calls `HashCreditManager.grantTestnetCredit(borrower, amount)` to bootstrap credit — on mainnet, credit limits are instead driven by actual SPV-proven payout history (each `submitPayout` updates the trailing-window credit limit based on real mining revenue)
 
 ### 5.2 Checkpoint flow
 

@@ -34,12 +34,17 @@ This file tracks actionable work for the SPV-only architecture.
 
 ### T1.1 Documentation Convergence (SPV-Only)
 - Priority: P1
-- Status: [~] IN PROGRESS
+- Status: [x] DONE
 - Goal: align all guides/spec/security docs with active SPV-only architecture.
-- Scope:
-  - remove obsolete alternate-mode instructions
-  - document API as read/verify-only
-  - document wallet/worker transaction boundaries
+- Completion summary:
+  - removed obsolete alternate-mode instructions
+  - documented API as read/verify-only
+  - documented wallet/worker transaction boundaries
+  - updated PROJECT.md, README.md, TECH.md, DEMO.md, guides/DEMO.md for claimBtcAddress + grantTestnetCredit
+  - updated offchain/api/README.md with `/claim/extract-sig-params` endpoint
+  - updated threat-model.md with BTC address claim and testnet credit sections
+  - updated audit-checklist.md with new function checks
+  - updated ADR 0001 with BTC address ownership verification section
 
 ### T1.2 Regression Test Coverage for API Wallet-Only Mode
 - Priority: P1
@@ -54,6 +59,32 @@ This file tracks actionable work for the SPV-only architecture.
 - Priority: P1
 - Status: [ ] TODO
 - Goal: provide repeatable script for checkpoint build -> wallet submit -> proof build -> wallet submit.
+
+### T1.4 On-chain BTC Address Claim (`claimBtcAddress`)
+- Priority: P1
+- Status: [x] DONE
+- Goal: enable trustless BTC address ownership proof via on-chain signature verification.
+- Completion summary:
+  - `BtcSpvVerifier.claimBtcAddress()` added: ecrecover + sha256 + ripemd160 precompiles
+  - offchain API `/claim/extract-sig-params` endpoint extracts on-chain params from BIP-137 signature
+  - frontend Claim section updated: BTC sig → API extract → on-chain verify → register → grant credit
+  - ABI updated with `claimBtcAddress` function
+
+### T1.5 Testnet Credit Grant (`grantTestnetCredit`)
+- Priority: P1
+- Status: [x] DONE
+- Goal: allow owner to bootstrap borrower credit limits on testnet.
+- Completion summary:
+  - `HashCreditManager.grantTestnetCredit(borrower, creditLimitAmount)` added (owner-only)
+  - frontend auto-calls after borrower registration (1000 cUSD)
+  - ABI updated with `grantTestnetCredit` function
+
+### T1.6 ABI Sync Fix (`getBorrowerInfo`)
+- Priority: P1
+- Status: [x] DONE
+- Goal: fix frontend ABI mismatch with contract struct.
+- Completion summary:
+  - added missing `lastDebtUpdateTimestamp` (uint64) field to `getBorrowerInfo` ABI output
 
 ## P2
 

@@ -159,13 +159,15 @@ Everything below runs today on Creditcoin EVM testnet (chainId `102031`):
 | Component | Status |
 |-----------|--------|
 | `CheckpointManager` — trusted BTC header anchors | Live |
-| `BtcSpvVerifier` — full SPV verification on-chain | Live |
+| `BtcSpvVerifier` — full SPV verification + on-chain BTC address claim (`claimBtcAddress`) | Live |
 | `HashCreditManager` — credit limit engine, replay protection, borrow/repay | Live |
 | `LendingVault` — stablecoin pool, debt accounting | Live |
 | `RiskConfig` — advance rate, trailing window, payout thresholds | Live |
 | Off-chain prover worker — auto-detects payouts, builds + submits proofs | Live |
-| Off-chain API — checkpoint ops, borrower mapping, SPV proof builder | Live |
+| Off-chain API — checkpoint ops, borrower mapping, SPV proof builder, BTC sig param extraction | Live |
 | Frontend — dashboard, checkpoint, proof | Live |
+
+On mainnet, credit limits are driven by real SPV-proven mining payouts — each verified payout updates the miner's trailing-window credit limit. On testnet, real mining cannot be reproduced in a demo, so `grantTestnetCredit` bootstraps a flat 1,000 cUSD credit per borrower. The full SPV proof pipeline remains functional and is demonstrated separately.
 
 USC integration is an **adapter + wiring task**. The proof system, credit engine, and vault do not need to change.
 
