@@ -5,7 +5,6 @@ import { useApiStore } from '@/stores/api-store'
 
 export function useApiClient() {
   const apiUrl = useApiStore((s) => s.apiUrl)
-  const apiToken = useApiStore((s) => s.apiToken)
   const setApiBusy = useApiStore((s) => s.setApiBusy)
   const setApiLog = useApiStore((s) => s.setApiLog)
 
@@ -16,7 +15,6 @@ export function useApiClient() {
 
       const headers = new Headers(init?.headers)
       if (!headers.has('content-type')) headers.set('content-type', 'application/json')
-      if (apiToken) headers.set('X-API-Key', apiToken)
 
       const res = await fetch(`${base}${path}`, { ...init, headers })
       const text = await res.text()
@@ -35,7 +33,7 @@ export function useApiClient() {
       }
       return json
     },
-    [apiUrl, apiToken],
+    [apiUrl],
   )
 
   const apiRun = useCallback(

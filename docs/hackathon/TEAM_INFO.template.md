@@ -1,38 +1,20 @@
-# Team information (template)
+# Team Information (Template)
 
-Copy this file to `docs/hackathon/TEAM_INFO.md` and fill in the blank spaces.
+Copy this file to `docs/hackathon/TEAM_INFO.md` and fill in the blanks.
 
-Team Size:
-- TODO
+**Team size:** TODO
 
 ## Team Member 1
 
-name:
-- TODO
-
-email:
-- TODO
-
-Telegram ID (optional):
-- TODO
-
-X/Twitter (optional):
-- TODO
-
-LinkedIn (optional):
-- TODO
-
-Resume PDF URL (optional):
-- TODO
-
-Brief Introduction (Bio):
-- TODO
-
-Role within the team:
-- TODO
-
-Country of Residence:
-- TODO
-
-Country of Citizenship:
-- TODO
+| Field | Value |
+|-------|-------|
+| Full name | TODO |
+| Email | TODO |
+| Telegram ID (optional) | TODO |
+| X / Twitter (optional) | TODO |
+| LinkedIn (optional) | TODO |
+| Resume PDF URL (optional) | TODO |
+| Short bio | TODO |
+| Role | TODO |
+| Country of residence | TODO |
+| Country of citizenship | TODO |

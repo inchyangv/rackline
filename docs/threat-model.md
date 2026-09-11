@@ -1,301 +1,107 @@
-# HashCredit Threat Model
+# HashCredit Threat Model (SPV-Only)
 
-This document outlines the security threats facing the HashCredit protocol and the mitigations implemented to address them.
+## 1. System Scope
 
-## 1. Overview
+HashCredit is a revenue-based credit protocol on Creditcoin EVM.
+Active verification mode is Bitcoin SPV via `BtcSpvVerifier`.
 
-HashCredit is a revenue-based financing protocol for Bitcoin miners on Creditcoin EVM. The core trust assumptions vary between MVP (Relayer Oracle) and Production (SPV) modes:
+### Trust Boundaries
 
-| Component | MVP Trust Model | Production Trust Model |
-|-----------|-----------------|------------------------|
-| Payout Verification | Trusted relayer | Bitcoin PoW + SPV |
-| Checkpoint | N/A | Owner/multisig |
-| Credit Calculation | On-chain deterministic | On-chain deterministic |
-| Price Oracle | Admin-configured | Admin-configured |
+- trusted: protocol owner/multisig, checkpoint authority, deployment keys
+- semi-trusted: worker operators submitting proofs
+- untrusted: borrowers, LP users, public RPC/indexer traffic
 
-## 2. Threat Categories
+## 2. Primary Threats and Controls
 
-### 2.1 Oracle Compromise (MVP Only)
+### 2.1 Replay of payouts
 
-**Threat:** Malicious or compromised relayer signs fraudulent payout claims.
+Threat: same `(txid, vout)` processed multiple times.
 
-**Impact:**
-- Attacker inflates credit limit with fake payouts
-- Borrows stablecoins beyond legitimate entitlement
-- Defaults, causing LP losses
+Controls:
+- `processedPayouts` tracking in manager
+- verifier-level payout key validation
+- idempotent rejection on duplicate submit
 
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Single authorized signer | Only owner-configured relayer can sign | Implemented |
-| Signature verification | EIP-712 typed data signatures | Implemented |
-| Deadline enforcement | Claims expire after set period | Implemented |
-| Key rotation capability | Owner can change relayer address | Implemented |
-| Rate limiting (off-chain) | Relayer should limit claim frequency | Operational |
+Residual risk: low.
 
-**Residual Risk:** High for MVP. Relayer compromise is single point of failure.
+### 2.2 Invalid SPV evidence
 
-**Production Mitigation:** Replace with SPV proof verification (BtcSpvVerifier).
+Threat: forged headers/merkle branch/raw tx accepted.
 
----
+Controls:
+- header linkage and PoW checks
+- merkle inclusion verification
+- output parsing and borrower pubkey-hash match
+- max header/proof/tx size bounds
 
-### 2.2 Replay Attacks
+Residual risk: low-medium (implementation complexity risk).
 
-**Threat:** Same Bitcoin payout claimed multiple times to inflate credit.
+### 2.3 Bitcoin reorg exposure
 
-**Scenarios:**
-1. Same payout submitted twice to same contract
-2. Payout replayed across chain forks
-3. Payout replayed to different borrower accounts
+Threat: payout later removed by deep reorg.
 
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Unique payout key | `keccak256(txid, vout)` stored on first use | Implemented |
-| Dual-layer protection | Both verifier and manager track processed payouts | Implemented |
-| Chain ID in signatures | EIP-712 domain includes chainId | Implemented |
-| Borrower binding | Payout tied to specific borrower in signed message | Implemented |
+Controls:
+- confirmations policy
+- checkpoint anchoring
+- conservative advance-rate and caps
+- freeze controls for incident handling
 
-**Residual Risk:** Low. Multiple layers of replay protection.
+Residual risk: medium for extreme reorg scenarios.
 
----
+### 2.4 Self-transfer credit inflation
 
-### 2.3 Bitcoin Reorg Attacks
+Threat: borrower cycles own funds to fake revenue.
 
-**Threat:** Bitcoin transaction confirmed, payout claimed, then reorged away.
+Controls:
+- source eligibility via `PoolRegistry`
+- payout threshold and count rules
+- large payout discount
+- new borrower cap
 
-**Attack Flow:**
-1. Attacker sends BTC payout (gets 6 confirmations)
-2. Submits proof, receives credit limit increase
-3. Borrows stablecoins
-4. Bitcoin chain reorgs, removing the payout transaction
-5. Attacker keeps borrowed funds without legitimate payout
+Residual risk: medium, reduced with strict provenance policy.
 
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Confirmation requirement | MIN_CONFIRMATIONS = 6 blocks | Implemented |
-| Checkpoint anchor | SPV proofs anchor to trusted checkpoint | Implemented |
-| Header chain verification | PoW checked for all headers | Implemented |
-| Conservative advance rate | Only 50% of revenue credited | Configurable |
-| Trailing window | Credit based on recent history, not single events | Implemented |
+### 2.5 Admin key compromise
 
-**Residual Risk:** Medium. 6-block reorg is rare but possible in extreme cases.
+Threat: malicious config changes or checkpoint abuse.
 
-**Recommendations:**
-- Consider 10+ confirmations for high-value payouts
-- Monitor Bitcoin network for unusual activity
-- Implement emergency pause if large reorg detected
+Controls:
+- ownership transfer and operational procedures
+- event logging for all sensitive actions
+- recommended multisig ownership and key rotation
 
----
+Residual risk: high if single-key governance remains.
 
-### 2.4 Self-Transfer (Fake Revenue) Attacks
+### 2.6 Smart-contract logic bugs
 
-**Threat:** Borrower sends BTC to themselves to fake mining revenue.
+Threat: logic, accounting, or access-control flaws.
 
-**Attack Flow:**
-1. Attacker controls BTC and registers as borrower
-2. Sends BTC from address A to registered payout address B
-3. Claims this as "mining payout"
-4. Receives credit limit increase
-5. Borrows and defaults
+Controls:
+- unit/integration tests
+- bounded loops and input validation
+- CEI/reentrancy-safe patterns
+- independent audit checklist
 
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Pool Registry | Whitelist known mining pool payout patterns | Implemented |
-| Permissive mode bypass | MVP accepts all sources (operational risk) | Configurable |
-| Payout heuristics | Large payouts discounted via `largePayoutDiscountBps` | Implemented |
-| Minimum payout count | Full credit only after `minPayoutCountForFullCredit` payouts | Implemented |
-| New borrower cap | `newBorrowerCap` limits exposure to new accounts | Implemented |
-| Trailing window | Sustained fake revenue expensive to maintain | Implemented |
+Residual risk: medium prior to external audits.
 
-**Residual Risk:** Medium-High in MVP (permissive mode). Lower in production with strict pool validation.
+## 3. Incident Response
 
-**Recommendations:**
-- Transition to strict pool registry mode post-MVP
-- Implement input UTXO analysis for provenance
-- Consider off-chain KYC/verification for large credit lines
+### Emergency Actions
 
----
+- freeze borrower (`freezeBorrower`)
+- update risk params (`RiskConfig`)
+- rotate ownership/signing authorities
+- update checkpoint to safe anchor
 
-### 2.5 Key Loss / Compromise
+### Monitoring
 
-**Threat:** Loss or compromise of protocol admin keys.
+- payout event anomalies
+- debt-to-limit stress indicators
+- checkpoint cadence and source integrity
+- worker submit errors/retry bursts
 
-**Affected Keys:**
-| Key | Impact of Compromise | Impact of Loss |
-|-----|---------------------|----------------|
-| Protocol Owner | Full admin control, can drain via parameter manipulation | Cannot update configs, frozen protocol |
-| Relayer Signer (MVP) | Can sign fraudulent payouts | Cannot verify new payouts |
-| Checkpoint Signer | Can insert malicious checkpoint | Cannot advance checkpoints |
-
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Ownership transfer | All contracts support `transferOwnership()` | Implemented |
-| No direct fund access | Owner cannot directly withdraw LP funds | Implemented |
-| Parameter bounds | `advanceRateBps` capped at 10,000 (100%) | Implemented |
-| Event logging | All admin actions emit events | Implemented |
-
-**Residual Risk:** High for single-key ownership.
-
-**Recommendations:**
-- Migrate to multisig ownership (Gnosis Safe)
-- Implement timelock for sensitive operations
-- Establish key recovery procedures
-
----
-
-### 2.6 Smart Contract Vulnerabilities
-
-**Threat:** Bugs in contract code leading to fund loss.
-
-**Attack Vectors:**
-| Vector | Mitigation | Status |
-|--------|------------|--------|
-| Reentrancy | No external calls before state updates | Applied |
-| Integer overflow | Solidity 0.8.x automatic checks | Applied |
-| Access control bypass | `onlyOwner`, `onlyManager` modifiers | Applied |
-| Flash loan attacks | No oracle price dependency in single tx | Not applicable |
-| Front-running | No MEV-sensitive operations | Applied |
-
-**Residual Risk:** Medium. Formal audit recommended.
-
----
-
-### 2.7 Price Oracle Manipulation
-
-**Threat:** BTC/USD price manipulation to inflate credit limits.
-
-**Current Model:**
-- `btcPriceUsd` set by admin via `RiskConfig.setBtcPrice()`
-- No on-chain price feed dependency
-
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Admin-only price updates | Only owner can set price | Implemented |
-| No atomic price dependency | Price manipulation requires admin compromise | Implemented |
-| Event logging | Price changes emit `BtcPriceUpdated` event | Implemented |
-
-**Residual Risk:** Low for external attackers. Medium for admin compromise.
-
-**Future Consideration:** Integrate Chainlink or similar oracle with sanity bounds.
-
----
-
-### 2.8 Liquidity Provider (LP) Risks
-
-**Threat:** LP fund losses due to borrower defaults.
-
-**Risk Factors:**
-- Undercollateralized lending (by design)
-- Revenue can decrease (market conditions)
-- Borrower can abandon operations
-
-**Mitigations:**
-| Control | Description | Status |
-|---------|-------------|--------|
-| Advance rate < 100% | Default 50%, configurable | Implemented |
-| Global cap | `globalCap` limits total exposure | Implemented |
-| Borrower freeze | Admin can freeze risky borrowers | Implemented |
-| Interest accrual | Borrowers pay interest on outstanding debt | Implemented |
-| No forced liquidation | Protocol designed for gradual wind-down | By design |
-
-**Residual Risk:** Inherent to the business model. LPs accept default risk.
-
----
-
-## 3. Security Architecture
-
-### 3.1 Trust Boundaries
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     TRUSTED ZONE                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │ Protocol     │  │ Relayer      │  │ Checkpoint           │   │
-│  │ Owner        │  │ Signer (MVP) │  │ Signers (Production) │   │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   SMART CONTRACTS                               │
-│  ┌────────────────────┐  ┌────────────────┐  ┌──────────────┐   │
-│  │ HashCreditManager  │──│ IVerifierAdapter│──│ LendingVault │   │
-│  └────────────────────┘  └────────────────┘  └──────────────┘   │
-│           │                     │                    │          │
-│  ┌────────────────────┐  ┌────────────────┐  ┌──────────────┐   │
-│  │ RiskConfig         │  │ PoolRegistry   │  │ Checkpoint   │   │
-│  │                    │  │                │  │ Manager      │   │
-│  └────────────────────┘  └────────────────┘  └──────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   UNTRUSTED ZONE                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │ Borrowers    │  │ LPs          │  │ Proof Submitters     │   │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 3.2 Defense in Depth
-
-| Layer | Controls |
-|-------|----------|
-| L1: Input Validation | Proof size limits, address validation, amount bounds |
-| L2: Cryptographic | Signature verification, hash verification, PoW validation |
-| L3: State Protection | Replay prevention, nonce tracking, status checks |
-| L4: Economic | Advance rate, caps, windows, heuristics |
-| L5: Operational | Freeze capability, parameter updates, monitoring |
-
----
-
-## 4. Incident Response
-
-### 4.1 Emergency Actions
-
-| Action | Method | Effect |
-|--------|--------|--------|
-| Freeze borrower | `freezeBorrower(address)` | Block new borrows, allow repay |
-| Change relayer | `setRelayerSigner(address)` | Invalidate old signer |
-| Update checkpoint | `setCheckpoint(...)` | Anchor to safe block |
-| Pause (if implemented) | N/A | Halt all operations |
-
-### 4.2 Monitoring Recommendations
-
-- Track `PayoutRecorded` events for unusual patterns
-- Monitor `BtcPriceUpdated` for unauthorized changes
-- Alert on `BorrowerStatusChanged` events
-- Track total debt vs credit limits
-- Monitor Bitcoin network for reorg events
-
----
-
-## 5. Recommendations Summary
-
-### 5.1 Critical (Pre-Production)
-- [ ] External security audit
-- [ ] Multisig for owner keys
-- [ ] Formal verification of critical paths
-
-### 5.2 High Priority
-- [ ] Timelock for admin operations
-- [ ] Emergency pause mechanism
-- [ ] On-chain monitoring/alerts
-
-### 5.3 Medium Priority
-- [ ] Strict pool registry mode
-- [ ] Input UTXO provenance analysis
-- [ ] Chainlink price oracle integration
-
----
-
-## 6. Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2025-02 | Initial threat model document |
+## 4. Recommendations
+
+1. use multisig for owner roles
+2. enforce strict source eligibility in production
+3. maintain runbooks for reorg and key incidents
+4. run periodic contract + operational security reviews

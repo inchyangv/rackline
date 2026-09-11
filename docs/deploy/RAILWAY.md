@@ -1,171 +1,150 @@
-# Railway distribution (monorepo, FE=Vercel / rest=Railway)
+# Railway Deployment Guide
 
-This document outlines the procedures for distributing the HashCredit monorepo to Railway in a “clean” manner by separating off-chain components into service units.
+This document describes how to deploy the HashCredit off-chain services to Railway.
 
-- Frontend: Vercel (`apps/web`)
-- Backend/API: Railway (`offchain/api`)
-- Worker(Prover): Railway (`offchain/prover`)
-- DB: Railway Postgres plugin (recommended)
+## Service Layout
 
-Operating domain (fixed):
+| Component | Platform | Source |
+|-----------|----------|--------|
+| Frontend | Vercel | `apps/web` |
+| API | Railway | `offchain/api` |
+| Prover (Worker) | Railway | `offchain/prover` |
+| Database | Railway Postgres | — |
 
-- FE: `https://hashcredit.studioliq.com`
+Production domains:
+- Frontend: `https://hashcredit.studioliq.com`
 - API: `https://api-hashcredit.studioliq.com`
 
-## 0) Pre-check
+## Prerequisites
 
-1. You must have a Railway account/workspace ready.
-2. You must have permission to link this repo to Railway on GitHub.
-3. API private key, API_TOKEN, CLAIM_SECRET, etc. **Secrets are never committed to git.**
+1. A Railway account and workspace.
+2. Permission to link this GitHub repo to Railway.
+3. Secrets (`PRIVATE_KEY`, `CLAIM_SECRET`, etc.) — never commit these to git.
 
-## 0.5) Why does it appear as `ctc-hashcredit` in Railway?
+## Why Two Services?
 
-- When you connect a GitHub repo in Railway with "Deploy from GitHub", a **single service** is created based on the repo name.
-- This repo is an **isolated monorepo** consisting of Python (API/Worker) + Vite (Frontend), so it is not in the form of “the service is automatically divided into multiple parts just by connecting the repo.”
-- Therefore, if your goal is to distribute `API`/`Worker` separately, you must **create two services** in one of the ways below.
-- (Recommended) Create two services by dragging and dropping Compose, and then set up GitHub connection (autodeploy) for each service.
-- (Alternative) Create a GitHub repo connection twice for each service and specify the Root Directory respectively.
-- (Auto Staging) We have registered `offchain/api` and `offchain/prover` as root `package.json` workspaces to trigger Railway's "automatic detection of JS monorepo".
-- When you import a new repo, expect the `hashcredit-api` / `hashcredit-prover` services to be automatically staged separately.
-- Each service defaults to **Dockerfile build** and does not run with the Node runtime.
+This is a monorepo with Python (API + Worker) and Vite (Frontend). Railway does not auto-split it into multiple services from a single repo connection. You must create two services explicitly:
 
-## 0.6) `start.sh not found` / Reason for Railpack build failure and solution
+- **(Recommended)** Drag-and-drop the Compose file to create both services at once.
+- **(Alternative)** Create two GitHub repo connections, each with a different Root Directory.
+- **(Auto-staging)** The `offchain/api` and `offchain/prover` directories are registered as workspaces in the root `package.json`, so Railway may auto-detect `hashcredit-api` and `hashcredit-prover` as separate services on import.
 
-If you connect the repo route as is in Railway, Railpack will try to auto-detect the language/entrypoint. This repo doesn't have a single app signal like `package.json`/`requirements.txt` in the root, which can cause Railpack to fall to `shell` and fail looking for `start.sh`.
+Each service uses **Dockerfile-based builds**, not the Node runtime.
 
-Solve (one of two):
+## Fixing `start.sh not found` / Railpack Build Failures
 
-1. (Recommended) Set the service root directory to `offchain/api` or `offchain/prover` and deploy with a Dockerfile build.
-2. (Quick bypass) I added the Dockerfile to the root.
-- API Basics: Repo root `Dockerfile`
-- Worker: Repo root `Dockerfile.prover` (replace Dockerfile path with this in service settings)
+If Railway's auto-detection (Railpack) fails because the repo root has no single `package.json` or `requirements.txt`, it may fall back to `shell` mode and look for `start.sh`.
 
-## 1) (Recommended) Create two services separately at once with Compose
+**Solutions (pick one):**
 
-Railway creates services at once by dragging and dropping a Compose file.
+1. **(Recommended)** Set each service's Root Directory to `offchain/api` or `offchain/prover` and use Dockerfile builds.
+2. **(Quick bypass)** Use the Dockerfiles at the repo root:
+   - API: `Dockerfile`
+   - Worker: `Dockerfile.prover` (set this as the Dockerfile path in service settings)
+
+## 1. Create Services via Compose
 
 1. Create a new project in Railway.
-2. Drag and drop `railway-compose.yml` from the repo root onto the project canvas.
-3. Verify that the two services below are created.
-   - `hashcredit-api`
-   - `hashcredit-prover`
+2. Drag-and-drop `railway-compose.yml` from the repo root onto the project canvas.
+3. Verify two services appear: `hashcredit-api` and `hashcredit-prover`.
 
-importance:
+**Note:** Compose drag-and-drop creates the service structure only. To enable auto-deploy on push, connect each service to the GitHub repo separately.
 
-- Compose drag and drop is for “creating/detaching services” purpose.
-- If you want GitHub autodeploy (automatic deployment when a commit is pushed), you must additionally set up a GitHub repo connection for each service.
-- Actual operating variables/secrets are set to Railway Variables/Secrets.
+## 2. Add Postgres
 
-## 2) Add and connect Postgres
-
-Worker (Prover) needs DB for dedupe/state storage. For operations, we recommend the Railway Postgres plugin.
+The prover worker requires a database for deduplication and state storage.
 
 1. Add the Postgres plugin in the Railway project.
-2. Connect the `DATABASE_URL` provided by the plugin to the service below.
-- `hashcredit-prover` (required)
-- (Optional) If the API is expanded to use DB, it can be connected to `hashcredit-api`
+2. Connect the `DATABASE_URL` reference to:
+   - `hashcredit-prover` (required)
+   - `hashcredit-api` (optional, if the API needs DB access later)
 
-reference:
+The prover code automatically converts Railway's `postgres://` format to `postgresql://`.
 
-- Railway Postgres can be in the format `postgres://...`.
-- The prover/relayer code automatically converts the Railway format to `postgresql://...` for processing.
+## 3. Build Settings
 
-## 3) Build/run settings for each service
-
-In this repo, each off-chain service has its own `Dockerfile`.
-
+Each service has its own Dockerfile:
 - `offchain/api/Dockerfile`
 - `offchain/prover/Dockerfile`
 
-The Root Directory of each service in Railway uses:
+Set Root Directories in Railway:
+- `hashcredit-api` → `offchain/api`
+- `hashcredit-prover` → `offchain/prover`
 
-- `hashcredit-api` -> `offchain/api`
-- `hashcredit-prover` -> `offchain/prover`
+### (Optional) Config as Code
 
-If you created it with Compose, it is normal to already have this structure.
-
-### (optional, recommended) Use Railway Config as Code
-
-This repo contains a service-specific `railway.toml`.
-
+Service-specific `railway.toml` files are included:
 - API: `offchain/api/railway.toml`
 - Worker: `offchain/prover/railway.toml`
 
-purpose:
+These limit `watchPatterns` to avoid unnecessary redeployments when unrelated files change (e.g., frontend changes should not redeploy the API).
 
-- Limit `watchPatterns` to reduce unnecessary redistribution being triggered by "changes to other folders", such as FE changes.
-- The API specifies to use `/health` as healthcheck.
+**Important:** Railway Config file paths do not follow the Root Directory. You may need to set the absolute path in Service Settings:
+- API: `/offchain/api/railway.toml`
+- Worker: `/offchain/prover/railway.toml`
 
-caution:
+## 4. API Service Variables (`hashcredit-api`)
 
-- In Railway's isolated monorepo, the Config file path may not follow the Root Directory.
-- You may need to specify the Config file path in Service Settings as shown below.
-  - API: `/offchain/api/railway.toml`
-  - Worker: `/offchain/prover/railway.toml`
+Set these in Railway → `hashcredit-api` → Variables/Secrets.
 
-## 4) API service (`hashcredit-api`) Variables/Secrets
+### Required
 
-Set the following in Railway -> `hashcredit-api` service -> Variables/Secrets.
+| Variable | Type | Description |
+|----------|------|-------------|
+| `ALLOWED_ORIGINS` | Variable | CORS origins as JSON array |
+| `BITCOIN_RPC_URL` | Variable | Bitcoin RPC endpoint |
+| `BITCOIN_RPC_USER` | Secret | Optional — for authenticated RPC |
+| `BITCOIN_RPC_PASSWORD` | Secret | Optional — for authenticated RPC |
+| `EVM_RPC_URL` | Variable | Creditcoin EVM RPC |
+| `CHAIN_ID` | Variable | e.g., `102031` |
 
-Required/Recommended:
+### Contract Addresses
 
-- `API_TOKEN` (Secrets): For protecting the entire API. Creation example:
-  - `python -c "import secrets; print(secrets.token_urlsafe(32))"`
-- `ALLOWED_ORIGINS` (Variables): CORS allowed origin (JSON array string)
-- Example: `["https://hashcredit.studioliq.com","http://localhost:5173","http://127.0.0.1:5173"]`
-- `BITCOIN_RPC_URL` (Variables)
-- Demo (testnet): `https://bitcoin-testnet-rpc.publicnode.com`
-- `BITCOIN_RPC_USER` (Secrets, optional)
-- `BITCOIN_RPC_PASSWORD` (Secrets, optional)
-- `EVM_RPC_URL` (Variables)
-- Example: `https://rpc.cc3-testnet.creditcoin.network`
-- `CHAIN_ID` (Variables)
-- Example: `102031`
-- `PRIVATE_KEY` (Secrets): Contract call/registration/submission transaction signing key (operation key)
+| Variable | Type |
+|----------|------|
+| `HASH_CREDIT_MANAGER` | Variable |
+| `CHECKPOINT_MANAGER` | Variable |
+| `BTC_SPV_VERIFIER` | Variable |
 
-Contract Address (Variables):
+### Borrower Mapping Mode
 
-- `HASH_CREDIT_MANAGER`
-- `CHECKPOINT_MANAGER`
-- `BTC_SPV_VERIFIER`
+| Mode | `BORROWER_MAPPING_MODE` | Description |
+|------|------------------------|-------------|
+| Testnet/Demo | `demo` | Operator registers borrower ↔ BTC mappings directly |
+| Production | `claim` | Borrower proves ownership via BTC + EVM signatures |
 
-Borrower mapping modes:
+For `claim` mode, also set:
+- `CLAIM_SECRET` (Secret)
 
-- Testnet/Demo: `BORROWER_MAPPING_MODE=demo`
-- Operator directly registers borrower(EVM) <-> BTC address mapping.
-- Mainnet: `BORROWER_MAPPING_MODE=claim` (recommended)
-- When the borrower proves (claims) ownership with a BTC/EVM signature, the server registers it on-chain.
-- This mode requires the following secrets:
-    - `CLAIM_SECRET` (Secrets)
-- (Optional) `CLAIM_REQUIRE_API_TOKEN=true`
+### Port
 
-Port/Binding:
+Railway injects `PORT` automatically. `HOST=0.0.0.0` is the Dockerfile default.
 
-- Railway automatically injects `PORT`.
-- `HOST=0.0.0.0` is set as the Dockerfile default.
+## 5. Worker Service Variables (`hashcredit-prover`)
 
-## 5) Worker service (`hashcredit-prover`) Variables/Secrets
+Set these in Railway → `hashcredit-prover` → Variables/Secrets.
 
-Set the following in Railway -> `hashcredit-prover` service -> Variables/Secrets.
+### Required
 
-essential:
+| Variable | Type | Description |
+|----------|------|-------------|
+| `DATABASE_URL` | Reference | Reference Railway Postgres `DATABASE_URL` |
+| `BITCOIN_RPC_URL` | Variable | Bitcoin RPC endpoint |
+| `EVM_RPC_URL` | Variable | Creditcoin EVM RPC |
+| `CHAIN_ID` | Variable | e.g., `102031` |
+| `PRIVATE_KEY` | Secret | Operator key for proof submission |
+| `HASH_CREDIT_MANAGER` | Variable | Contract address |
+| `CHECKPOINT_MANAGER` | Variable | Contract address |
 
-- `DATABASE_URL` (Variables/Reference): Refer to `DATABASE_URL` of Railway Postgres.
-- `BITCOIN_RPC_URL` (Variables)
-- Demo: `https://bitcoin-testnet-rpc.publicnode.com`
-- `EVM_RPC_URL` (Variables)
-- `CHAIN_ID` (Variables)
-- `PRIVATE_KEY` (Secrets): proof submission transaction signing key (operation key)
-- `HASH_CREDIT_MANAGER` (Variables)
-- `CHECKPOINT_MANAGER` (Variables)
+### Watched Addresses (one of three — pick one)
 
-Watched addresses (required, only one of the three below):
+| Variable | Type | Notes |
+|----------|------|-------|
+| `ADDRESSES_JSON_B64` | Secret | Base64-encoded JSON (recommended) |
+| `ADDRESSES_JSON` | Secret | Raw JSON string |
+| `ADDRESSES_FILE` | Variable | File path inside container (volume-dependent, not recommended) |
 
-- `ADDRESSES_JSON_B64` (Recommended, Secrets): base64(JSON)
-- `ADDRESSES_JSON` (Secrets): JSON string
-- `ADDRESSES_FILE` (not recommended): File path inside container (volume dependent)
-
-Example of creating `ADDRESSES_JSON_B64`:
+Example — generating `ADDRESSES_JSON_B64`:
 
 ```bash
 cat <<'JSON' | base64
@@ -175,44 +154,42 @@ cat <<'JSON' | base64
 JSON
 ```
 
-Tuning (optional):
+### Tuning (Optional)
 
-- `SPV_CONFIRMATIONS` (default 6)
-- `SPV_POLL_INTERVAL` (default 60 seconds)
-- `SPV_RUN_ONCE` (default false)
-- `RELAYER_ARGS` (start-worker.sh is passed as a CLI argument)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPV_CONFIRMATIONS` | `6` | Required confirmations |
+| `SPV_POLL_INTERVAL` | `60` | Poll interval in seconds |
+| `SPV_RUN_ONCE` | `false` | Run one cycle and exit |
 
-Networking:
+### Networking
 
-- `hashcredit-prover` does not require external HTTP.
-- It is recommended to turn off Public Networking in Railway.
+The prover does not expose HTTP endpoints. Disable Public Networking in Railway for this service.
 
-## 6) Custom domain connection (API)
+## 6. Custom Domain (API)
 
-The API uses `api-hashcredit.studioliq.com`.
+1. In Railway, add a custom domain under `hashcredit-api` → Networking/Domain.
+2. Create the DNS record (CNAME or A) as guided by Railway.
+3. Once HTTPS is provisioned, configure the frontend with `VITE_API_URL=https://api-hashcredit.studioliq.com`.
 
-1. In Railway, add a custom domain in `hashcredit-api` service -> Networking/Domain.
-2. Register the DNS record (CNAME/A) guided by Railway.
-3. Once HTTPS issuance is complete, FE calls `VITE_API_URL=https://api-hashcredit.studioliq.com`.
+## 7. Post-Deployment Checklist
 
-## 7) Post-deployment verification (checklist)
+### API
 
-API:
+- [ ] `GET /health` returns 200
+- [ ] Frontend calls the correct API URL
+- [ ] API is in wallet-only mode (no server-side transaction submission)
 
-1. Verify that `GET /health` returns 200.
-2. Verify that the API URL is correct in FE.
-3. `X-API-Key: <API_TOKEN>` is required when calling the operational endpoint.
+### Worker
 
-Worker:
+- [ ] Logs show `Loaded N watched addresses`
+- [ ] No Postgres connection errors
+- [ ] (Demo) Detects testnet payouts and submits proofs
 
-1. Check whether `Loaded N watched addresses` is displayed in the log.
-2. Make sure there are no Postgres connection errors.
-3. (Demo) Detect testnet payout coming to the watched address and check whether proof submission is in progress.
+## 8. Monorepo Considerations
 
-## 8) Monorepo precautions (Railway)
-
-1. If the service root directory in Railway is incorrectly set (repo root, etc.), the build may be messed up.
-2. When using Railway Config as Code (`railway.toml`):
-- **Config file path does not follow the Root Directory.**
-- If set, it must be specified as an “absolute path” such as `/offchain/api/railway.toml`.
-- This project is basically Dockerfile-based deployment, so it can be deployed without a separate `railway.toml`.
+1. Incorrect Root Directory settings (e.g., pointing to repo root) will cause build failures.
+2. Railway `railway.toml` Config file paths are **absolute from repo root**, not relative to the service Root Directory. Specify them explicitly:
+   - API: `/offchain/api/railway.toml`
+   - Worker: `/offchain/prover/railway.toml`
+3. Dockerfile-based deployment works without `railway.toml` — the config files are optional optimizations.

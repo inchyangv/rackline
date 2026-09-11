@@ -1,63 +1,71 @@
-# HashCredit Prover/Worker (`offchain/prover`)
+# HashCredit Prover (`offchain/prover`)
 
-This is a CLI/worker that creates **SPV proof (header chain + Merkle inclusion)** for Bitcoin transactions and automates submission to on-chain if necessary.
+CLI tool and background worker that builds Bitcoin SPV proofs (header chain + Merkle inclusion) and submits them on-chain to the HashCredit protocol.
 
-## What I do
+## Commands
 
-- `build-proof`: Generate SPV proof with txid/vout/height input
-- `submit-proof`: Create proof and submit to `HashCreditManager.submitPayout`
-- `set-checkpoint`: Register checkpoint (block header) in `CheckpointManager`
-- `set-borrower-pubkey-hash`: Register borrower (EVM) ↔ BTC address (pubkeyHash) in `BtcSpvVerifier`
-- `run-relayer`: Polls the watch address list and automatically generates/submits proof (worker)
+| Command | Description |
+|---------|-------------|
+| `build-proof` | Generate an SPV proof for a given txid/vout/height |
+| `submit-proof` | Build proof and submit to `HashCreditManager.submitPayout` |
+| `set-checkpoint` | Register a block header checkpoint in `CheckpointManager` |
+| `set-borrower-pubkey-hash` | Register borrower (EVM) ↔ BTC address mapping in `BtcSpvVerifier` |
+| `run-relayer` | Poll watched addresses and auto-build/submit proofs (worker mode) |
 
-## installation
+## Installation
 
 ```bash
 cd offchain/prover
 pip install -e .
-```
 
-For development purposes:
-
-```bash
+# With dev dependencies
 pip install -e ".[dev]"
 ```
 
-## Environment variables
-
-When deploying Railway, just put the same key in Railway Variables/Secrets instead of `.env`.
+## Configuration
 
 ```bash
 cp .env.example .env
 ```
 
-Required (based on live proof):
+For Railway deployment, set the same variables in Railway Variables/Secrets instead of `.env`.
 
-- `BITCOIN_RPC_URL`
-- Your node (testnet): Usually `http://127.0.0.1:18332`
-- Public (testnet, unauthenticated example): `https://bitcoin-testnet-rpc.publicnode.com`
-- `EVM_RPC_URL` (Creditcoin testnet RPC)
-- `CHAIN_ID` (default 102031)
-- `PRIVATE_KEY` (on-chain transaction signing key)
-- `HASH_CREDIT_MANAGER`
-- `CHECKPOINT_MANAGER`
+### Required Variables
 
-## SPV proof constraints (practical tips)
+| Variable | Description |
+|----------|-------------|
+| `BITCOIN_RPC_URL` | Bitcoin RPC endpoint (e.g., `https://bitcoin-testnet-rpc.publicnode.com`) |
+| `EVM_RPC_URL` | Creditcoin EVM RPC endpoint |
+| `CHAIN_ID` | Chain ID (default: `102031`) |
+| `PRIVATE_KEY` | Operator key for signing on-chain transactions |
+| `HASH_CREDIT_MANAGER` | HashCreditManager contract address |
+| `CHECKPOINT_MANAGER` | CheckpointManager contract address |
 
-For gas/cost reasons, we use a strategy of limiting the header chain length included in the proof.
+### Worker-Specific Variables
 
-- It is usually recommended to keep the difference between `checkpoint_height` and `target_height` in the range of **1..144**.
+| Variable | Description |
+|----------|-------------|
+| `ADDRESSES_JSON_B64` | Base64-encoded JSON of watched addresses (recommended) |
+| `ADDRESSES_JSON` | Raw JSON string of watched addresses (alternative) |
+| `ADDRESSES_FILE` | Path to addresses JSON file (not recommended for containers) |
+| `SPV_CONFIRMATIONS` | Required confirmations (default: `6`) |
+| `SPV_POLL_INTERVAL` | Poll interval in seconds (default: `60`) |
+| `SPV_RUN_ONCE` | Run one cycle and exit (default: `false`) |
 
-## How to use
+## SPV Proof Constraints
 
-### 1) Checkpoint registration
+For gas efficiency, the header chain length in each proof is limited. Keep the difference between `checkpoint_height` and `target_height` within **1–144 blocks**.
+
+## Usage
+
+### Register a checkpoint
 
 ```bash
 hashcredit-prover set-checkpoint <height> \
   --checkpoint-manager $CHECKPOINT_MANAGER
 ```
 
-### 2) Register borrower BTC address (pubkeyHash)
+### Register borrower BTC address
 
 ```bash
 hashcredit-prover set-borrower-pubkey-hash \
@@ -66,11 +74,10 @@ hashcredit-prover set-borrower-pubkey-hash \
 ```
 
 Supported address formats:
+- Bech32 P2WPKH: testnet `tb1q...`, mainnet `bc1q...`
+- Base58 P2PKH: testnet `m.../n...`, mainnet `1...`
 
-- bech32 P2WPKH: testnet `tb1q...`, mainnet `bc1q...`
-- base58 P2PKH: testnet `m.../n...`, mainnet `1...`
-
-### 3) Proof generation (HEX)
+### Build proof (hex output)
 
 ```bash
 hashcredit-prover build-proof \
@@ -78,7 +85,7 @@ hashcredit-prover build-proof \
   --hex
 ```
 
-### 4) Proof creation + submission
+### Build and submit proof
 
 ```bash
 hashcredit-prover submit-proof \
@@ -89,13 +96,12 @@ hashcredit-prover submit-proof \
 ```
 
 Options:
+- `--dry-run` — Build proof without submitting
+- `--hex-only` — Print proof hex without submitting
 
-- `--dry-run`: Create proof but do not submit it
-- `--hex-only`: Print only proof hex without submission
+### Run worker (auto-detect and submit)
 
-### 5) Walker (run-relayer)
-
-Prepare list of watch addresses as JSON:
+Prepare a JSON file of watched addresses:
 
 ```json
 [
@@ -103,7 +109,7 @@ Prepare list of watch addresses as JSON:
 ]
 ```
 
-Local:
+Run locally:
 
 ```bash
 hashcredit-prover run-relayer addresses.json \
@@ -111,9 +117,7 @@ hashcredit-prover run-relayer addresses.json \
   --checkpoint-manager $CHECKPOINT_MANAGER
 ```
 
-Railway recommended (injected as an environment variable):
-
-- `ADDRESSES_JSON_B64`: A string encoding the above JSON in base64.
+For Railway, encode the address list as base64 and set `ADDRESSES_JSON_B64`:
 
 ```bash
 base64 < addresses.json | tr -d '\n'
@@ -122,5 +126,4 @@ base64 < addresses.json | tr -d '\n'
 ## Requirements
 
 - Python 3.11+
-- Bitcoin RPC access
-- Live proof requires random txid lookup, so `txindex=1` is recommended for your node.
+- Bitcoin RPC access (`txindex=1` recommended for arbitrary txid lookups)

@@ -16,3 +16,12 @@ export function setLocalStorageString(key: string, value: string): void {
     // ignore
   }
 }
+
+export function removeLocalStorageKey(key: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // ignore
+  }
+}

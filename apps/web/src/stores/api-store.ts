@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { env } from '@/lib/env'
-import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
+import { getLocalStorageString, removeLocalStorageKey, setLocalStorageString } from '@/lib/storage'
+
+removeLocalStorageKey('hashcredit_api_token')
 
 type ApiState = {
   apiUrl: string
-  apiToken: string
   apiBusy: boolean
   apiLog: string
   apiDryRun: boolean
@@ -25,7 +26,6 @@ type ApiState = {
   repayAmount: string
   approveAmount: string
   setApiUrl: (v: string) => void
-  setApiToken: (v: string) => void
   setApiBusy: (v: boolean) => void
   setApiLog: (v: string) => void
   setApiDryRun: (v: boolean) => void
@@ -50,7 +50,6 @@ type ApiState = {
 
 export const useApiStore = create<ApiState>((set) => ({
   apiUrl: getLocalStorageString('hashcredit_api_url', env.apiUrl),
-  apiToken: getLocalStorageString('hashcredit_api_token', ''),
   apiBusy: false,
   apiLog: '',
   apiDryRun: false,
@@ -73,10 +72,6 @@ export const useApiStore = create<ApiState>((set) => ({
   setApiUrl: (v) => {
     setLocalStorageString('hashcredit_api_url', v)
     set({ apiUrl: v })
-  },
-  setApiToken: (v) => {
-    setLocalStorageString('hashcredit_api_token', v)
-    set({ apiToken: v })
   },
   setApiBusy: (v) => set({ apiBusy: v }),
   setApiLog: (v) => set({ apiLog: v }),

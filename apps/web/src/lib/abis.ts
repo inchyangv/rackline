@@ -150,6 +150,7 @@ export const CheckpointManagerAbi = [
           { internalType: 'uint32', name: 'height', type: 'uint32' },
           { internalType: 'uint256', name: 'chainWork', type: 'uint256' },
           { internalType: 'uint32', name: 'timestamp', type: 'uint32' },
+          { internalType: 'uint32', name: 'bits', type: 'uint32' },
         ],
         internalType: 'struct ICheckpointManager.Checkpoint',
         name: 'checkpoint',
@@ -169,6 +170,7 @@ export const CheckpointManagerAbi = [
           { internalType: 'uint32', name: 'height', type: 'uint32' },
           { internalType: 'uint256', name: 'chainWork', type: 'uint256' },
           { internalType: 'uint32', name: 'timestamp', type: 'uint32' },
+          { internalType: 'uint32', name: 'bits', type: 'uint32' },
         ],
         internalType: 'struct ICheckpointManager.Checkpoint',
         name: '',
@@ -184,6 +186,7 @@ export const CheckpointManagerAbi = [
       { internalType: 'bytes32', name: 'blockHash', type: 'bytes32' },
       { internalType: 'uint256', name: 'chainWork', type: 'uint256' },
       { internalType: 'uint32', name: 'timestamp', type: 'uint32' },
+      { internalType: 'uint32', name: 'bits', type: 'uint32' },
     ],
     name: 'setCheckpoint',
     outputs: [],
@@ -218,4 +221,3 @@ export const Erc20Abi = [
     type: 'function',
   },
 ] as const;
-

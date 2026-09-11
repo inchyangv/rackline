@@ -1,73 +1,70 @@
-# BUIDL CTC Hackathon 2026 - Submission Checklist
+# BUIDL CTC Hackathon 2026 — Submission Checklist
 
-This folder contains a checklist to quickly fill out the BUIDL CTC Hackathon (Creditcoin / Credit Labs) submission form.
+Checklist for completing the BUIDL CTC Hackathon (Creditcoin / Credit Labs) submission form.
 
-Schedule (EST):
-- Submission deadline: 2026-03-07 23:59
-- Results Announcement: 2026-03-21
+**Deadlines (EST):**
+- Submission: 2026-03-07 23:59
+- Results announcement: 2026-03-21
 
-## 1) Participation qualifications (self-confirmation)
+## 1. Eligibility (Self-Check)
 
 - [ ] All team members: No criminal records
-- [ ] All team members: No criminal cases pending.
+- [ ] All team members: No pending criminal cases
 - [ ] All team members: Not residents of sanctioned countries
 - [ ] All team members: Not individuals subject to sanctions
-- [ ] All team members: Participation is permitted under the laws of the country of residence.
+- [ ] All team members: Participation permitted under their country of residence laws
 
-## 2) Project information (required)
+## 2. Project Information (Required)
 
-First organize it in `docs/hackathon/SUBMISSION_VALUES.md` and then paste it into the submission form.
+Fill in `docs/hackathon/SUBMISSION_VALUES.md` first, then paste into the submission form.
 
 - [ ] Project name
-- [ ] Project logo URL (PNG/SVG/AI) (optional)
-- [ ] Fields (DeFi / RWA / DePIN / Gaming, etc.)
+- [ ] Project logo URL (PNG/SVG/AI) — optional
+- [ ] Category (DeFi / RWA / DePIN / Gaming, etc.)
 - [ ] Project description
-- [ ] GitHub repo URL (including README)
-- [ ] Deck/White Paper PDF URL
+- [ ] GitHub repo URL (with README)
+- [ ] Deck / whitepaper PDF URL
 - [ ] Prototype demo video URL
 
-## 3) Team information (required for each team member)
+## 3. Team Information (Required Per Member)
 
-Use `docs/hackathon/TEAM_INFO.template.md`.
+Use `docs/hackathon/TEAM_INFO.template.md` as a starting point.
 
-By team member:
-- [ ] Name (First & Last Name)
-- [ ] email
-- [ ] Telegram ID (optional)
-- [ ]
-- [ ] LinkedIn (optional)
-- [ ] Resume PDF URL (optional)
-- [ ] Short introduction (Bio)
+Per member:
+- [ ] Full name
+- [ ] Email
+- [ ] Telegram ID — optional
+- [ ] X / Twitter — optional
+- [ ] LinkedIn — optional
+- [ ] Resume PDF URL — optional
+- [ ] Short bio
 - [ ] Role within the team
-- [ ] Country of Residence
-- [ ] Country of Citizenship
+- [ ] Country of residence
+- [ ] Country of citizenship
 
-addition:
-- [ ] Team size (minimum 1 person)
+Additionally:
+- [ ] Team size (minimum 1)
 
-## 4) Project requirements (required)
+## 4. Project Requirements (Required)
 
-- [ ] Can explain that this is new work/development during the hackathon period
+- [ ] Can demonstrate this is new work / development during the hackathon period
 - [ ] Testnet deployment completed
-- [ ] No third party IP infringement
+- [ ] No third-party IP infringement
 
-reference:
-- This repo `README.md` has the phrase `"Built for CTC Hackathon 2024"`. If the 2026 regulations strictly require “creation within the hackathon period,” check with the organizer whether existing work can be extended or clearly outline the scope of changes made during the 2026 period.
+## 5. Terms and Conditions (Agreement Required)
 
-## 5) Terms and Conditions (Agreement required)
+- [ ] All submitted information is accurate and true
+- [ ] Team has the right to use all submitted code, content, and materials
 
-- [ ] The information submitted is accurate and true.
-- [ ] We have the right to use the submitted code/content/material
-
-## 6) Already prepared in the repo
+## 6. Already Prepared in Repo
 
 - [ ] `README.md` exists
-- [ ] Deployment guide exists: `DEPLOY.md`
-- [ ] `.env` template exists: `.env.example`
+- [ ] Deployment guide exists (`DEPLOY.md` or `docs/deploy/`)
+- [ ] `.env.example` template exists
 
-## 7) What the team must prepare on their own (required)
+## 7. Team Must Prepare Separately
 
-- [ ] Deck/White Paper PDF public URL
-- [ ] Demo video public URL
-- [ ] Logo public URL (optional)
-- [ ] Team member profile/link information required in the submission form
+- [ ] Deck / whitepaper PDF (public URL)
+- [ ] Demo video (public URL)
+- [ ] Logo (public URL) — optional
+- [ ] Team member profile information for the submission form

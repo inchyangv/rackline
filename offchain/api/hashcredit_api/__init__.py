@@ -3,7 +3,8 @@ HashCredit API - HTTP bridge for Frontend to Bitcoin Core/Prover.
 
 Provides REST endpoints for:
 - Building SPV proofs
-- Setting checkpoints
+- Building checkpoint payloads
+- Verifying claim signatures
 - Health checks
 """
 

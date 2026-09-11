@@ -33,7 +33,7 @@ Every pool payout is a Bitcoin transaction proportional to contributed hash powe
 
 HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit layer through **mining pools as institutional counterparties**:
 
-1. **Register** — Mining pool agrees to withhold repayment % from miner payouts (원천징수)
+1. **Register** — Mining pool agrees to withhold a repayment percentage from miner payouts (withholding at source)
 2. **Prove** — Generate an SPV proof of a real Bitcoin payout transaction
 3. **Verify** — On-chain verifier checks checkpoint anchor, header chain PoW, Merkle inclusion, and output script
 4. **Credit** — Protocol records the payout (replay-protected) and updates the miner's trailing-window credit limit
@@ -53,8 +53,8 @@ LP perspective: USDT depositors earn 10% APR — 2-3× standard DeFi rates (Aave
 │                  │     │                       │     │                          │
 │  Mining payouts ─┼────►│  API (FastAPI)        │     │  CheckpointManager       │
 │  Block headers   │     │  ├─ SPV proof builder │────►│  BtcSpvVerifier          │
-│                  │     │  ├─ Checkpoint ops    │     │  HashCreditManager       │
-│                  │     │  └─ Borrower mapping  │     │  ├─ Credit limit engine  │
+│                  │     │  ├─ Checkpoint payload│     │  HashCreditManager       │
+│                  │     │  └─ Claim verification│     │  ├─ Credit limit engine  │
 │                  │     │                       │     │  ├─ Replay protection    │
 │                  │     │  Prover (Worker)      │     │  └─ Borrow/Repay router  │
 │                  │     │  └─ Auto-detect &     │     │  LendingVault            │
@@ -89,7 +89,7 @@ Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierA
 
 | Service | Role |
 |---------|------|
-| `offchain/api` | FastAPI — builds SPV proofs from Bitcoin RPC, submits operator transactions, exposes BTC address history via Esplora indexer |
+| `offchain/api` | FastAPI — read/verify only: builds SPV proofs + checkpoint payloads and verifies claim signatures; exposes BTC address history via Esplora indexer |
 | `offchain/prover` | Background worker — watches BTC addresses, detects qualifying payouts, waits for confirmations, auto-builds and submits SPV proofs |
 
 ### Frontend (Vercel)
@@ -101,7 +101,7 @@ Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierA
 | State | Zustand 5 |
 | Chain | ethers.js v6 |
 
-Tabs: **Dashboard** (read on-chain state) · **Operations** (borrow/repay) · **Proof** (build/submit SPV) · **Admin** (operator panel) · **Settings** (RPC/contract config)
+Tabs: **Dashboard** (read + borrow/repay) · **Operations** (checkpoint payload build + wallet setCheckpoint) · **Proof** (build proof via API + wallet submitPayout) · **Admin** (wallet-based borrower mapping) · **Settings** (RPC/contract config)
 
 ---
 
@@ -112,7 +112,7 @@ Tabs: **Dashboard** (read on-chain state) · **Operations** (borrow/repay) · **
 2. Map borrower ↔ BTC address   BtcSpvVerifier.setBorrowerPubkeyHash(borrower, hash)
 3. Register borrower            HashCreditManager.registerBorrower(borrower)
 4. Build SPV proof              API fetches headers + raw tx + Merkle branch from Bitcoin RPC
-5. Submit proof                 HashCreditManager.submitPayout(proof)
+5. Submit proof                 Wallet/worker calls HashCreditManager.submitPayout(proof)
                                   → verifier checks SPV, returns PayoutEvidence
                                   → manager enforces replay protection
                                   → trailing revenue & credit limit updated
@@ -253,9 +253,8 @@ contracts/             Solidity contracts + interfaces + mocks + library
 test/                  Foundry tests (unit, integration, invariant fuzzing, gas profiling)
 script/                Foundry deploy scripts
 offchain/
-  api/                 FastAPI — proof builder, operator endpoints, claim flow
+  api/                 FastAPI — proof/checkpoint payload builders, claim verification (no tx submit)
   prover/              Background SPV worker — auto-detect, prove, submit
-  relayer/             MVP EIP-712 relayer (legacy)
 apps/
   web/                 React 19 frontend — dashboard, operations, proof, admin
 docs/

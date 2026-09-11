@@ -1,54 +1,37 @@
-# HashCredit Relayer
+# HashCredit Relayer Utility
 
-Bitcoin payout relayer for the HashCredit protocol.
+This package is a standalone EIP-712 signer utility kept for compatibility experiments.
 
-## Overview
-
-The relayer watches Bitcoin blockchain for payout transactions to registered borrowers and submits EIP-712 signed proofs to the HashCreditManager contract on Creditcoin (EVM).
+The active HashCredit runtime path uses:
+- `offchain/api` for payload/proof building and verification
+- `offchain/prover` for SPV worker submission
 
 ## Installation
 
 ```bash
-# From repository root
-cd offchain/relayer
+# from this package directory
 pip install -e .
-
-# Or with dev dependencies
-pip install -e ".[dev]"
 ```
 
-## Usage
+## Commands
 
 ```bash
-# Run the relayer
-python -m hashcredit_relayer
-
-# Or using the CLI
-hashcredit-relayer run
-
-# Show version
+hashcredit-relayer run --help
 hashcredit-relayer version
 ```
 
 ## Configuration
 
 Copy `.env.example` to `.env` and configure:
-
-- `BITCOIN_API_URL`: Bitcoin data source (mempool.space API for MVP)
-- `RPC_URL`: EVM RPC endpoint
-- `RELAYER_PRIVATE_KEY`: Key for signing EIP-712 payloads
-- `HASH_CREDIT_MANAGER`: Contract address
+- `BITCOIN_API_URL`
+- `RPC_URL`
+- `RELAYER_PRIVATE_KEY`
+- `HASH_CREDIT_MANAGER`
 
 ## Development
 
 ```bash
-# Run tests
 pytest
-
-# Type check
 mypy hashcredit_relayer
-
-# Format
-black hashcredit_relayer
 ruff check hashcredit_relayer
 ```
