@@ -10,4 +10,5 @@ watchPatterns = [
 
 [deploy]
 # No public HTTP. Prefer disabling public networking in Railway UI.
+startCommand = "sh ./start-worker.sh"
 restartPolicyType = "ALWAYS"

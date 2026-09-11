@@ -11,5 +11,5 @@ COPY . .
 
 RUN pip install --no-cache-dir -e .
 
-CMD ["sh", "./start-worker.sh"]
-
+# Keep worker startup resilient even if the platform start command is misconfigured.
+ENTRYPOINT ["sh", "./start-worker.sh"]
