@@ -63,11 +63,118 @@ extract_created_address() {
   jq -r --arg n "$contract_name" '.transactions[] | select(.transactionType == "CREATE" and .contractName == $n) | .contractAddress' "$run_json" | tail -n 1
 }
 
+artifact_bytecode() {
+  local contract="$1"
+  jq -r '.bytecode.object // .bytecode' "out/${contract}.sol/${contract}.json" | sed 's/^0x//'
+}
+
+encode_ctor() {
+  local sig="$1"; shift
+  cast abi-encode "$sig" "$@" | sed 's/^0x//'
+}
+
+deploy_create() {
+  local label="$1"; shift
+  local create_code_hex="$1"; shift
+  local tx
+  local addr
+
+  log "deploying (cast): ${label}"
+
+  tx="$(cast send --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --legacy --gas-price "$GAS_PRICE" \
+    --create "0x${create_code_hex}" 2>/dev/null | grep -Eo '0x[0-9a-fA-F]{64}' | tail -n 1 || true)"
+  if [[ -z "$tx" ]]; then
+    echo "error: could not parse tx hash for ${label}" >&2
+    exit 1
+  fi
+
+  addr="$(cast receipt --rpc-url "$RPC_URL" --json "$tx" | jq -r '.contractAddress')"
+  if [[ -z "$addr" || "$addr" == "null" ]]; then
+    echo "error: receipt missing contractAddress for ${label} (tx=${tx})" >&2
+    exit 1
+  fi
+
+  echo "$addr"
+}
+
+deploy_spv_stack_cast() {
+  # NOTE: Creditcoin CC3 testnet RPC may omit block header fields required by `forge script`.
+  # This path deploys by raw bytecode via `cast send --create`.
+  log "deploying SPV stack via cast (no forge script)"
+
+  forge build >/dev/null
+
+  GAS_PRICE="${GAS_PRICE:-$(cast gas-price --rpc-url "$RPC_URL")}"
+  DEPLOYER="$(cast wallet address --private-key "$PRIVATE_KEY")"
+
+  # 1) Stablecoin
+  local stablecoin_bc stablecoin_args
+  stablecoin_bc="$(artifact_bytecode TestnetMintableERC20)"
+  stablecoin_args="$(encode_ctor 'constructor(string,string,uint8,address)' 'HashCredit USD' 'hcUSD' 6 "$DEPLOYER")"
+  STABLECOIN_ADDRESS="$(deploy_create TestnetMintableERC20 "${stablecoin_bc}${stablecoin_args}")"
+
+  # 2) CheckpointManager
+  local cp_bc cp_args
+  cp_bc="$(artifact_bytecode CheckpointManager)"
+  cp_args="$(encode_ctor 'constructor(address)' "$DEPLOYER")"
+  CHECKPOINT_MANAGER="$(deploy_create CheckpointManager "${cp_bc}${cp_args}")"
+
+  # 3) BtcSpvVerifier
+  local spv_bc spv_args
+  spv_bc="$(artifact_bytecode BtcSpvVerifier)"
+  spv_args="$(encode_ctor 'constructor(address,address)' "$DEPLOYER" "$CHECKPOINT_MANAGER")"
+  BTC_SPV_VERIFIER="$(deploy_create BtcSpvVerifier "${spv_bc}${spv_args}")"
+
+  # 4) RiskConfig
+  local risk_bc risk_args
+  risk_bc="$(artifact_bytecode RiskConfig)"
+  local FIXED_APR_BPS=1000
+  local BTC_PRICE_USD=5000000000000
+  local ADVANCE_RATE_BPS=5000
+  local WINDOW_SECONDS=$((30*24*60*60))
+  local NEW_BORROWER_CAP=10000000000
+  local MIN_PAYOUT_SATS=10000
+  local risk_tuple="(6,${ADVANCE_RATE_BPS},${WINDOW_SECONDS},${NEW_BORROWER_CAP},0,${MIN_PAYOUT_SATS},${BTC_PRICE_USD},3,10000000,5000,${WINDOW_SECONDS})"
+  risk_args="$(encode_ctor 'constructor((uint32,uint32,uint32,uint128,uint128,uint64,uint64,uint32,uint64,uint32,uint32))' "$risk_tuple")"
+  RISK_CONFIG="$(deploy_create RiskConfig "${risk_bc}${risk_args}")"
+
+  # 5) PoolRegistry(true)
+  local pool_bc pool_args
+  pool_bc="$(artifact_bytecode PoolRegistry)"
+  pool_args="$(encode_ctor 'constructor(bool)' true)"
+  POOL_REGISTRY="$(deploy_create PoolRegistry "${pool_bc}${pool_args}")"
+
+  # 6) LendingVault(stablecoin, FIXED_APR_BPS)
+  local vault_bc vault_args
+  vault_bc="$(artifact_bytecode LendingVault)"
+  vault_args="$(encode_ctor 'constructor(address,uint256)' "$STABLECOIN_ADDRESS" "$FIXED_APR_BPS")"
+  LENDING_VAULT="$(deploy_create LendingVault "${vault_bc}${vault_args}")"
+
+  # 7) HashCreditManager(spv,vault,risk,pool,stablecoin)
+  local manager_bc manager_args
+  manager_bc="$(artifact_bytecode HashCreditManager)"
+  manager_args="$(encode_ctor 'constructor(address,address,address,address,address)' "$BTC_SPV_VERIFIER" "$LENDING_VAULT" "$RISK_CONFIG" "$POOL_REGISTRY" "$STABLECOIN_ADDRESS")"
+  HASH_CREDIT_MANAGER="$(deploy_create HashCreditManager "${manager_bc}${manager_args}")"
+
+  # Configure vault + initial liquidity
+  cast send --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --legacy --gas-price "$GAS_PRICE" \
+    "$LENDING_VAULT" 'setManager(address)' "$HASH_CREDIT_MANAGER" >/dev/null
+
+  INITIAL_LIQUIDITY="${INITIAL_LIQUIDITY:-1000000000000}"
+  cast send --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --legacy --gas-price "$GAS_PRICE" \
+    "$STABLECOIN_ADDRESS" 'mint(address,uint256)' "$DEPLOYER" "$INITIAL_LIQUIDITY" >/dev/null
+  cast send --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --legacy --gas-price "$GAS_PRICE" \
+    "$STABLECOIN_ADDRESS" 'approve(address,uint256)' "$LENDING_VAULT" "$INITIAL_LIQUIDITY" >/dev/null
+  cast send --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY" --legacy --gas-price "$GAS_PRICE" \
+    "$LENDING_VAULT" 'deposit(uint256)' "$INITIAL_LIQUIDITY" >/dev/null
+}
+
 require_cmd jq
 require_cmd curl
 require_cmd forge
 require_cmd cast
 require_cmd hashcredit-prover
+require_cmd grep
 
 export RPC_URL="${RPC_URL:-${EVM_RPC_URL:-}}"
 export EVM_RPC_URL="${EVM_RPC_URL:-${RPC_URL:-}}"
@@ -92,32 +199,10 @@ log "using Bitcoin RPC: ${BITCOIN_RPC_URL}"
 log "chain id: ${CHAIN_ID}"
 
 if [[ "$SKIP_DEPLOY" != "1" ]]; then
-  log "deploying SPV stack"
-  forge script script/DeploySpv.s.sol --rpc-url "$RPC_URL" --broadcast
+  deploy_spv_stack_cast
 else
   log "SKIP_DEPLOY=1, skipping deployment"
 fi
-
-DEPLOY_RUN_JSON="broadcast/DeploySpv.s.sol/${CHAIN_ID}/run-latest.json"
-if [[ ! -f "$DEPLOY_RUN_JSON" ]]; then
-  DEPLOY_RUN_JSON="$(find broadcast/DeploySpv.s.sol -type f -name 'run-latest.json' ! -path '*/dry-run/*' | sort | tail -n 1 || true)"
-fi
-
-if [[ ! -f "${DEPLOY_RUN_JSON:-}" ]]; then
-  echo "error: could not locate DeploySpv run-latest.json" >&2
-  exit 1
-fi
-
-log "parsing deployment addresses from ${DEPLOY_RUN_JSON}"
-
-if [[ -z "${STABLECOIN_ADDRESS:-}" ]]; then
-  STABLECOIN_ADDRESS="$(extract_created_address "$DEPLOY_RUN_JSON" "TestnetMintableERC20")"
-fi
-
-CHECKPOINT_MANAGER="${CHECKPOINT_MANAGER:-$(extract_created_address "$DEPLOY_RUN_JSON" "CheckpointManager")}"
-BTC_SPV_VERIFIER="${BTC_SPV_VERIFIER:-$(extract_created_address "$DEPLOY_RUN_JSON" "BtcSpvVerifier")}"
-LENDING_VAULT="${LENDING_VAULT:-$(extract_created_address "$DEPLOY_RUN_JSON" "LendingVault")}"
-HASH_CREDIT_MANAGER="${HASH_CREDIT_MANAGER:-$(extract_created_address "$DEPLOY_RUN_JSON" "HashCreditManager")}"
 
 require_var STABLECOIN_ADDRESS
 require_var CHECKPOINT_MANAGER
