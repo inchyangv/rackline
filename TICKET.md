@@ -92,7 +92,7 @@
 
 ### T0.5 RelayerSigVerifier — EIP-712 Signature Verification
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: 오프체인 relayer가 서명한 payout payload를 온체인에서 검증한다.
 - 작업:
     - EIP-712 domain/struct 정의
