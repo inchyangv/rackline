@@ -36,7 +36,6 @@ export function useVaultInfo(): VaultInfo {
       return
     }
 
-    setIsLoading(true)
     try {
       const [ta, tb, al, ts, ur, apr] = await Promise.all([
         vault.totalAssets() as Promise<bigint>,
@@ -83,18 +82,7 @@ export function useVaultInfo(): VaultInfo {
   }, [vault, walletAccount])
 
   useEffect(() => {
-    let cancelled = false
-
     void fetchVaultInfo()
-
-    const interval = setInterval(() => {
-      if (!cancelled) void fetchVaultInfo()
-    }, 10_000)
-
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
   }, [vault, fetchVaultInfo])
 
   return {
