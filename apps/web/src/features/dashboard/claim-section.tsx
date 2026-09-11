@@ -13,6 +13,7 @@ import { useApiClient } from '@/hooks/use-api-client'
 import { sendContractTx } from '@/stores/tx-store'
 import { HashCreditManagerAbi, BtcSpvVerifierAbi } from '@/lib/abis'
 import { getErrorMessage } from '@/lib/ethereum'
+import { copyToClipboard } from '@/lib/clipboard'
 import { toast } from 'sonner'
 
 export function ClaimSection() {
@@ -37,6 +38,19 @@ export function ClaimSection() {
   const claimMessage = borrower
     ? `HashCredit: Link BTC to ${borrower}`
     : ''
+  const canSubmit =
+    !!claimBtcAddress &&
+    !!claimBtcSignature.trim() &&
+    ethers.isAddress(borrower)
+
+  async function copyClaimMessage() {
+    if (!claimMessage) {
+      toast.error('Connect wallet or enter borrower address first')
+      return
+    }
+    await copyToClipboard(claimMessage)
+    toast.success('Message copied')
+  }
 
   async function verifyAndRegister() {
     if (!ethers.isAddress(borrower)) {
@@ -148,17 +162,34 @@ export function ClaimSection() {
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">2</span>
             <Label className="text-xs font-semibold">Sign Message with BTC Wallet</Label>
           </div>
-          {claimMessage && (
-            <div>
-              <Label className="text-[10px] uppercase tracking-widest">Message to sign</Label>
-              <Textarea
-                value={claimMessage}
-                readOnly
-                rows={2}
-                className="mt-1 font-mono text-xs bg-secondary/30"
-              />
+          <div className="rounded-lg border border-border/40 bg-secondary/20 p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">How to create BTC signature</p>
+            <ol className="mt-1 list-decimal space-y-1 pl-4">
+              <li>Open your BTC wallet&apos;s <span className="font-medium">Sign Message</span> screen.</li>
+              <li>Select the same BTC address you entered in Step 1.</li>
+              <li>Sign the exact message below (do not edit spaces/newlines).</li>
+              <li>Paste the base64 signature here.</li>
+            </ol>
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-[10px] uppercase tracking-widest">Message to sign (exact)</Label>
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={() => void copyClaimMessage()}
+                disabled={!claimMessage}
+              >
+                Copy Message
+              </Button>
             </div>
-          )}
+            <Textarea
+              value={claimMessage || 'Connect wallet or enter borrower address to generate message'}
+              readOnly
+              rows={2}
+              className="mt-1 font-mono text-xs bg-secondary/30"
+            />
+          </div>
           <div>
             <Label className="text-[10px] uppercase tracking-widest">BTC Signature (base64)</Label>
             <Textarea
@@ -183,7 +214,7 @@ export function ClaimSection() {
           <Button
             size="sm"
             onClick={() => void verifyAndRegister()}
-            disabled={claimBusy || !claimBtcSignature.trim() || !walletAccount || !claimBtcAddress}
+            disabled={claimBusy || !canSubmit}
           >
             Verify & Register
           </Button>

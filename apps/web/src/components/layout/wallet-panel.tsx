@@ -10,9 +10,11 @@ export function WalletPanel() {
   const walletAccount = useWalletStore((s) => s.walletAccount)
   const walletChainId = useWalletStore((s) => s.walletChainId)
   const connectWallet = useWalletStore((s) => s.connectWallet)
+  const disconnectWallet = useWalletStore((s) => s.disconnectWallet)
   const chainId = useConfigStore((s) => s.chainId)
   const rpcUrl = useConfigStore((s) => s.rpcUrl)
   const hasInjectedWallet = getEthereum() !== null
+  const isConnected = Boolean(walletAccount)
   const chainMismatch = walletChainId !== null && walletChainId !== chainId
 
   return (
@@ -44,11 +46,17 @@ export function WalletPanel() {
           variant="default"
           size="sm"
           className="flex-1 sm:flex-none"
-          onClick={() => void connectWallet()}
+          onClick={() => {
+            if (isConnected) {
+              disconnectWallet()
+              return
+            }
+            void connectWallet()
+          }}
           disabled={!hasInjectedWallet}
         >
           <Wallet className="mr-1.5 h-3.5 w-3.5" />
-          {hasInjectedWallet ? 'Connect' : 'No Wallet'}
+          {hasInjectedWallet ? (isConnected ? 'Disconnect' : 'Connect') : 'No Wallet'}
         </Button>
         <Button
           variant="secondary"

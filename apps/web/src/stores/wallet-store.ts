@@ -11,6 +11,7 @@ type WalletState = {
   setWalletChainId: (v: number | null) => void
   setTxState: (v: TxState) => void
   connectWallet: () => Promise<void>
+  disconnectWallet: () => void
 }
 
 export const useWalletStore = create<WalletState>((set) => ({
@@ -36,6 +37,13 @@ export const useWalletStore = create<WalletState>((set) => ({
     set({
       walletAccount: accounts[0] ?? signer.address,
       walletChainId: Number(network.chainId),
+      txState: { status: 'idle' },
+    })
+  },
+  disconnectWallet: () => {
+    set({
+      walletAccount: '',
+      walletChainId: null,
       txState: { status: 'idle' },
     })
   },
