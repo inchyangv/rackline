@@ -39,7 +39,7 @@ Bitcoin(testnet/main)  ->  Railway(API/Worker/DB)  ->  Creditcoin EVM(contracts)
 - `offchain/prover`: Monitoring address polling and automatic proof submission (worker)
 - Postgres: worker status/duplicate submission prevention
 - Frontend (Vercel)
-- `apps/web`: On-chain inquiry + demo operation button + demo wallet creation (local storage)
+- `apps/web`: On-chain inquiry + demo operation button
 
 ## Demo/Operation Flow (Summary)
 

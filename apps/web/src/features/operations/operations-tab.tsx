@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { useApiStore } from '@/stores/api-store'
-import { useDemoStore } from '@/stores/demo-store'
 import { useApiClient } from '@/hooks/use-api-client'
 import { isHexBytes } from '@/lib/format'
 import { toast } from 'sonner'
@@ -41,9 +40,6 @@ export function OperationsTab() {
   const setApiTargetHeight = useApiStore((s) => s.setApiTargetHeight)
   const proofHex = useApiStore((s) => s.proofHex)
   const setProofHex = useApiStore((s) => s.setProofHex)
-  const borrowerBtcMap = useDemoStore((s) => s.borrowerBtcMap)
-  const rememberBorrowerBtcAddress = useDemoStore((s) => s.rememberBorrowerBtcAddress)
-  const recordDemoBtcPayout = useDemoStore((s) => s.recordDemoBtcPayout)
 
   const { apiRequest, apiRun } = useApiClient()
 
@@ -75,14 +71,10 @@ export function OperationsTab() {
       return
     }
     await apiRun('POST /borrower/set-pubkey-hash', async () => {
-      const result = await apiRequest('/borrower/set-pubkey-hash', {
+      return apiRequest('/borrower/set-pubkey-hash', {
         method: 'POST',
         body: JSON.stringify({ borrower: spvBorrower, btc_address: adminBtcAddr, dry_run: apiDryRun }),
       })
-      if (typeof result === 'object' && result !== null && (result as Record<string, unknown>).success) {
-        rememberBorrowerBtcAddress(spvBorrower, adminBtcAddr)
-      }
-      return result
     })
   }
 
@@ -103,7 +95,6 @@ export function OperationsTab() {
       if (typeof result === 'object' && result !== null) {
         const r = result as Record<string, unknown>
         if (typeof r.btc_payout_key_hash === 'string') setAdminBtcKeyHash(r.btc_payout_key_hash)
-        if (r.success) rememberBorrowerBtcAddress(adminBorrower, adminBtcAddr)
       }
       return result
     })
@@ -134,18 +125,6 @@ export function OperationsTab() {
         const r = result as Record<string, unknown>
         if (r.success && typeof r.proof_hex === 'string') {
           setProofHex(r.proof_hex)
-          const linkedBtcAddress = borrowerBtcMap[spvBorrower.toLowerCase()] ?? adminBtcAddr.trim()
-          const amountSats = typeof r.amount_sats === 'number' ? r.amount_sats : null
-          recordDemoBtcPayout({
-            borrower: spvBorrower,
-            btcAddress: linkedBtcAddress,
-            txid: apiTxid.trim(),
-            vout: outputIndex,
-            amountSats,
-            checkpointHeight,
-            targetHeight,
-            source: 'build',
-          })
         }
       }
       return result
@@ -192,23 +171,6 @@ export function OperationsTab() {
       const submitted = await apiRequest('/spv/submit', {
         method: 'POST',
         body: JSON.stringify({ proof_hex: builtProofHex, dry_run: apiDryRun }),
-      })
-      const linkedBtcAddress = borrowerBtcMap[spvBorrower.toLowerCase()] ?? adminBtcAddr.trim()
-      const amountSats = typeof (built as Record<string, unknown>).amount_sats === 'number' ? (built as Record<string, unknown>).amount_sats as number : null
-      const submitTxHash =
-        typeof submitted === 'object' && submitted !== null && typeof (submitted as Record<string, unknown>).tx_hash === 'string'
-          ? (submitted as Record<string, unknown>).tx_hash as string
-          : null
-      recordDemoBtcPayout({
-        borrower: spvBorrower,
-        btcAddress: linkedBtcAddress,
-        txid: apiTxid.trim(),
-        vout: outputIndex,
-        amountSats,
-        checkpointHeight,
-        targetHeight,
-        source: 'build+submit',
-        submitTxHash,
       })
       return { build: built, submit: submitted }
     })

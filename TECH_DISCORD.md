@@ -18,7 +18,6 @@ Current demo scope (already running):
 - Borrow/repay execution through vault.
 - Replay protection and risk-config driven policy.
 - API ops flow for checkpointing, borrower mapping, and proof submit.
-- Demo Wallet linked BTC history (external indexer), with mining-reward flags, mining-only filter, auto-refresh, and explorer tx links.
 
 What you can try right now:
 1. Register checkpoint.
@@ -26,6 +25,5 @@ What you can try right now:
 3. Build and submit SPV proof.
 4. Confirm credit limit update on-chain.
 5. Execute borrow/repay.
-6. View linked BTC address history in dashboard.
 
 In short: we implemented the USC-shaped architecture now, proved it end-to-end with real BTC proof flow, and left a clean path to attach USC by wiring adapters.
