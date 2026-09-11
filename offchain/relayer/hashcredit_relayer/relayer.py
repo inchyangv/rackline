@@ -61,14 +61,8 @@ class HashCreditRelayer:
             self.evm = None
             logger.warning("EVM client not configured - dry run mode")
 
-        # Parse database URL for SQLite path
-        db_url = settings.database_url
-        if db_url.startswith("sqlite:///"):
-            db_path = db_url.replace("sqlite:///", "")
-        else:
-            db_path = "relayer.db"
-
-        self.db = database or PayoutDatabase(db_path)
+        # Use database URL directly (supports SQLite and PostgreSQL)
+        self.db = database or PayoutDatabase(settings.database_url)
 
         logger.info(
             "relayer_initialized",

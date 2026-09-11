@@ -3,16 +3,32 @@ Bitcoin address watcher for SPV relayer.
 
 Monitors Bitcoin addresses for incoming transactions and
 triggers proof generation/submission when confirmations are met.
+
+Supports both SQLite (local) and PostgreSQL (production) via DATABASE_URL.
 """
 
 import asyncio
-import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import List, Optional, Union
+from urllib.parse import urlparse
+
 import structlog
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
+    select,
+)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import Engine
 
 from .rpc import BitcoinRPC, BitcoinRPCConfig
 
@@ -20,6 +36,37 @@ logger = structlog.get_logger()
 
 # Constants for BTC to satoshis conversion
 SATS_PER_BTC = Decimal("100000000")
+
+# SQLAlchemy metadata
+metadata = MetaData()
+
+# Table definitions
+pending_payouts_table = Table(
+    "pending_payouts",
+    metadata,
+    Column("txid", String(64), nullable=False, primary_key=True),
+    Column("output_index", Integer, nullable=False, primary_key=True),
+    Column("borrower", String(42), nullable=False),
+    Column("btc_address", String(100), nullable=False),
+    Column("amount_sats", Integer, nullable=False),
+    Column("block_height", Integer, nullable=False),
+    Column("block_hash", String(64), nullable=False),
+    Column("first_seen", DateTime, nullable=False),
+    Index("idx_pending_borrower", "borrower"),
+)
+
+submitted_payouts_table = Table(
+    "submitted_payouts",
+    metadata,
+    Column("txid", String(64), nullable=False, primary_key=True),
+    Column("output_index", Integer, nullable=False, primary_key=True),
+    Column("borrower", String(42), nullable=False),
+    Column("amount_sats", Integer, nullable=False),
+    Column("block_height", Integer, nullable=False),
+    Column("submitted_at", DateTime, nullable=False),
+    Column("evm_tx_hash", String(66), nullable=False),
+    Index("idx_submitted_borrower", "borrower"),
+)
 
 
 def btc_to_sats(value: Union[int, float, str, Decimal]) -> int:
@@ -87,185 +134,191 @@ class PendingPayout:
     confirmations: int = 0
 
 
+def parse_database_url(url: str) -> str:
+    """
+    Parse and normalize database URL.
+
+    Handles:
+    - sqlite:///path/to/db.db (or just file path)
+    - postgresql://user:pass@host:port/db
+    - postgres://... (Railway format, converted to postgresql://)
+    """
+    # Handle plain file paths for backwards compatibility
+    if not url.startswith(("sqlite://", "postgresql://", "postgres://")):
+        return f"sqlite:///{url}"
+
+    if url.startswith("postgres://"):
+        # Railway uses postgres:// but SQLAlchemy requires postgresql://
+        url = url.replace("postgres://", "postgresql://", 1)
+    return url
+
+
 class PayoutStore:
     """
-    SQLite store for tracking payout transactions.
+    Store for tracking payout transactions.
+
+    Supports SQLite (local) and PostgreSQL (production) via database URL.
 
     Tracks:
     - Pending payouts waiting for confirmations
     - Submitted payouts (to prevent double-submission)
     """
 
-    def __init__(self, db_path: Path):
-        self.db_path = db_path
+    def __init__(self, database_url: str = "sqlite:///./spv_relayer.db"):
+        """
+        Initialize database connection.
+
+        Args:
+            database_url: SQLAlchemy database URL or file path (backwards compatible)
+        """
+        self.database_url = parse_database_url(database_url)
+        self._engine: Optional[Engine] = None
+        self._is_postgres = self.database_url.startswith("postgresql://")
         self._init_db()
+
+    def _get_engine(self) -> Engine:
+        """Get or create database engine."""
+        if self._engine is None:
+            connect_args = {}
+            if self.database_url.startswith("sqlite://"):
+                connect_args["check_same_thread"] = False
+
+            self._engine = create_engine(
+                self.database_url,
+                connect_args=connect_args,
+                pool_pre_ping=True,
+            )
+        return self._engine
+
+    def _mask_url(self, url: str) -> str:
+        """Mask password in URL for logging."""
+        parsed = urlparse(url)
+        if parsed.password:
+            return url.replace(parsed.password, "***")
+        return url
 
     def _init_db(self) -> None:
         """Initialize database schema."""
-        conn = sqlite3.connect(self.db_path)
-        try:
-            conn.executescript("""
-                CREATE TABLE IF NOT EXISTS pending_payouts (
-                    txid TEXT NOT NULL,
-                    output_index INTEGER NOT NULL,
-                    borrower TEXT NOT NULL,
-                    btc_address TEXT NOT NULL,
-                    amount_sats INTEGER NOT NULL,
-                    block_height INTEGER NOT NULL,
-                    block_hash TEXT NOT NULL,
-                    first_seen TEXT NOT NULL,
-                    PRIMARY KEY (txid, output_index)
-                );
+        engine = self._get_engine()
+        metadata.create_all(engine)
+        logger.info(
+            "payout_store_initialized",
+            url=self._mask_url(self.database_url),
+            backend="postgresql" if self._is_postgres else "sqlite",
+        )
 
-                CREATE TABLE IF NOT EXISTS submitted_payouts (
-                    txid TEXT NOT NULL,
-                    output_index INTEGER NOT NULL,
-                    borrower TEXT NOT NULL,
-                    amount_sats INTEGER NOT NULL,
-                    block_height INTEGER NOT NULL,
-                    submitted_at TEXT NOT NULL,
-                    evm_tx_hash TEXT NOT NULL,
-                    PRIMARY KEY (txid, output_index)
-                );
-
-                CREATE INDEX IF NOT EXISTS idx_pending_borrower
-                ON pending_payouts(borrower);
-
-                CREATE INDEX IF NOT EXISTS idx_submitted_borrower
-                ON submitted_payouts(borrower);
-            """)
-            conn.commit()
-        finally:
-            conn.close()
+    def close(self) -> None:
+        """Close database connection."""
+        if self._engine:
+            self._engine.dispose()
+            self._engine = None
 
     def add_pending(self, payout: PendingPayout) -> bool:
         """
         Add a pending payout. Returns False if already exists.
         """
-        conn = sqlite3.connect(self.db_path)
-        try:
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO pending_payouts
-                (txid, output_index, borrower, btc_address, amount_sats,
-                 block_height, block_hash, first_seen)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    payout.txid,
-                    payout.output_index,
-                    payout.borrower,
-                    payout.btc_address,
-                    payout.amount_sats,
-                    payout.block_height,
-                    payout.block_hash,
-                    payout.first_seen.isoformat(),
-                ),
-            )
-            conn.commit()
-            return conn.total_changes > 0
-        finally:
-            conn.close()
+        engine = self._get_engine()
+        with engine.begin() as conn:
+            if self._is_postgres:
+                # PostgreSQL: use ON CONFLICT DO NOTHING
+                stmt = pg_insert(pending_payouts_table).values(
+                    txid=payout.txid,
+                    output_index=payout.output_index,
+                    borrower=payout.borrower,
+                    btc_address=payout.btc_address,
+                    amount_sats=payout.amount_sats,
+                    block_height=payout.block_height,
+                    block_hash=payout.block_hash,
+                    first_seen=payout.first_seen,
+                ).on_conflict_do_nothing()
+                result = conn.execute(stmt)
+                return result.rowcount > 0
+            else:
+                # SQLite: use INSERT OR IGNORE
+                stmt = pending_payouts_table.insert().prefix_with("OR IGNORE").values(
+                    txid=payout.txid,
+                    output_index=payout.output_index,
+                    borrower=payout.borrower,
+                    btc_address=payout.btc_address,
+                    amount_sats=payout.amount_sats,
+                    block_height=payout.block_height,
+                    block_hash=payout.block_hash,
+                    first_seen=payout.first_seen,
+                )
+                result = conn.execute(stmt)
+                return result.rowcount > 0
 
     def get_pending(self) -> List[PendingPayout]:
         """Get all pending payouts."""
-        conn = sqlite3.connect(self.db_path)
-        try:
-            rows = conn.execute(
-                """
-                SELECT txid, output_index, borrower, btc_address, amount_sats,
-                       block_height, block_hash, first_seen
-                FROM pending_payouts
-                """
-            ).fetchall()
+        engine = self._get_engine()
+        with engine.connect() as conn:
+            result = conn.execute(select(pending_payouts_table)).fetchall()
             return [
                 PendingPayout(
-                    txid=row[0],
-                    output_index=row[1],
-                    borrower=row[2],
-                    btc_address=row[3],
-                    amount_sats=row[4],
-                    block_height=row[5],
-                    block_hash=row[6],
-                    first_seen=datetime.fromisoformat(row[7]),
+                    txid=row.txid,
+                    output_index=row.output_index,
+                    borrower=row.borrower,
+                    btc_address=row.btc_address,
+                    amount_sats=row.amount_sats,
+                    block_height=row.block_height,
+                    block_hash=row.block_hash,
+                    first_seen=row.first_seen,
                 )
-                for row in rows
+                for row in result
             ]
-        finally:
-            conn.close()
 
     def mark_submitted(
         self, txid: str, output_index: int, evm_tx_hash: str
     ) -> None:
         """Move payout from pending to submitted."""
-        conn = sqlite3.connect(self.db_path)
-        try:
+        engine = self._get_engine()
+        with engine.begin() as conn:
             # Get pending payout
-            row = conn.execute(
-                """
-                SELECT borrower, amount_sats, block_height
-                FROM pending_payouts
-                WHERE txid = ? AND output_index = ?
-                """,
-                (txid, output_index),
-            ).fetchone()
+            stmt = select(pending_payouts_table).where(
+                pending_payouts_table.c.txid == txid,
+                pending_payouts_table.c.output_index == output_index,
+            )
+            row = conn.execute(stmt).fetchone()
 
             if row:
                 # Insert into submitted
-                conn.execute(
-                    """
-                    INSERT INTO submitted_payouts
-                    (txid, output_index, borrower, amount_sats, block_height,
-                     submitted_at, evm_tx_hash)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        txid,
-                        output_index,
-                        row[0],
-                        row[1],
-                        row[2],
-                        datetime.now().isoformat(),
-                        evm_tx_hash,
-                    ),
+                insert_stmt = submitted_payouts_table.insert().values(
+                    txid=txid,
+                    output_index=output_index,
+                    borrower=row.borrower,
+                    amount_sats=row.amount_sats,
+                    block_height=row.block_height,
+                    submitted_at=datetime.utcnow(),
+                    evm_tx_hash=evm_tx_hash,
                 )
+                conn.execute(insert_stmt)
 
                 # Remove from pending
-                conn.execute(
-                    "DELETE FROM pending_payouts WHERE txid = ? AND output_index = ?",
-                    (txid, output_index),
+                delete_stmt = pending_payouts_table.delete().where(
+                    pending_payouts_table.c.txid == txid,
+                    pending_payouts_table.c.output_index == output_index,
                 )
-
-                conn.commit()
-        finally:
-            conn.close()
+                conn.execute(delete_stmt)
 
     def is_submitted(self, txid: str, output_index: int) -> bool:
         """Check if payout was already submitted."""
-        conn = sqlite3.connect(self.db_path)
-        try:
-            row = conn.execute(
-                """
-                SELECT 1 FROM submitted_payouts
-                WHERE txid = ? AND output_index = ?
-                """,
-                (txid, output_index),
-            ).fetchone()
-            return row is not None
-        finally:
-            conn.close()
+        engine = self._get_engine()
+        with engine.connect() as conn:
+            stmt = select(submitted_payouts_table.c.txid).where(
+                submitted_payouts_table.c.txid == txid,
+                submitted_payouts_table.c.output_index == output_index,
+            )
+            return conn.execute(stmt).fetchone() is not None
 
     def remove_pending(self, txid: str, output_index: int) -> None:
         """Remove a pending payout (e.g., if block was orphaned)."""
-        conn = sqlite3.connect(self.db_path)
-        try:
-            conn.execute(
-                "DELETE FROM pending_payouts WHERE txid = ? AND output_index = ?",
-                (txid, output_index),
+        engine = self._get_engine()
+        with engine.begin() as conn:
+            stmt = pending_payouts_table.delete().where(
+                pending_payouts_table.c.txid == txid,
+                pending_payouts_table.c.output_index == output_index,
             )
-            conn.commit()
-        finally:
-            conn.close()
+            conn.execute(stmt)
 
 
 class AddressWatcher:

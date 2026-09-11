@@ -800,7 +800,7 @@
 
 ### T2.15 Offchain DB: SQLite → Postgres 포팅(공통 스키마/마이그레이션)
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: Railway 배포에서 파일 기반 SQLite(`relayer.db`) 의존을 제거하고, 모든 오프체인 컴포넌트가 **Postgres(DATABASE_URL)** 를 사용하도록 포팅한다.
 - 작업:
     - 목표 범위:
@@ -813,7 +813,7 @@
         - `DATABASE_URL` 기반으로 엔진/커넥션 생성(Postgres URL 우선, 로컬은 sqlite 허용 가능)
         - (권장) SQLAlchemy 2.x + `psycopg`(sync) / `asyncpg`(async) 중 하나로 통일
     - 마이그레이션:
-        - Alembic 도입 또는 “스키마 init 커맨드” 제공(운영에서 재현 가능해야 함)
+        - Alembic 도입 또는 "스키마 init 커맨드" 제공(운영에서 재현 가능해야 함)
         - Railway deploy 시 마이그레이션 실행 플로우 정의(Release Command 등)
     - 문서 업데이트:
         - `docs/guides/LOCAL.md`의 `DATABASE_URL=sqlite...` 섹션을 Postgres 옵션 포함으로 갱신
@@ -823,12 +823,20 @@
         - 프로세스 재시작 후에도 dedupe가 유지되는지
 - 완료 조건:
     - Railway Postgres를 붙였을 때 로컬 파일 없이 relayer/prover가 정상 동작한다.
+- 완료 요약:
+    - Migrate relayer PayoutDatabase to SQLAlchemy with SQLite/PostgreSQL support
+    - Migrate prover PayoutStore to SQLAlchemy with SQLite/PostgreSQL support
+    - Add psycopg2-binary to both relayer and prover dependencies
+    - Support postgres:// URL format (Railway) with automatic conversion to postgresql://
+    - Use ON CONFLICT DO UPDATE/DO NOTHING for PostgreSQL idempotent upserts
+    - Use INSERT OR REPLACE/IGNORE for SQLite backwards compatibility
+    - Auto-detect backend from DATABASE_URL and use appropriate SQL dialect
 
 ---
 
 ### T2.16 hashcredit-relayer(Postgres) 적용 + DATABASE_URL 표준화
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: `offchain/relayer`가 `DATABASE_URL=postgresql://...`를 받아 Postgres로 동작하도록 한다(현재는 sqlite path만 파싱).
 - 작업:
     - `offchain/relayer/hashcredit_relayer/config.py`:
@@ -842,12 +850,18 @@
     - pytest로 Postgres 연결 시 `is_processed/mark_processed/update_status`가 동작하는지
 - 완료 조건:
     - `DATABASE_URL`만으로 SQLite ↔ Postgres를 스위칭할 수 있다(운영은 Postgres).
+- 완료 요약:
+    - (Completed as part of T2.15)
+    - Replaced sqlite3 with SQLAlchemy in db.py
+    - Added parse_database_url() to handle postgres:// → postgresql:// conversion
+    - Updated relayer.py to pass database_url directly to PayoutDatabase
+    - All 6 relayer tests passing
 
 ---
 
 ### T2.17 hashcredit-prover(SPV relayer) Postgres 포팅 + Watcher DB URL화
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: `offchain/prover`의 `PayoutStore`/`run-relayer --db`가 파일 경로가 아니라 **DB URL**로도 동작하도록 만들어 Railway에서 운영 가능하게 한다.
 - 작업:
     - `offchain/prover/hashcredit_prover/watcher.py`:
@@ -861,6 +875,14 @@
     - 동일 payout이 여러 번 관측되어도 pending/submitted가 중복 생성되지 않는지
 - 완료 조건:
     - Railway worker로 `hashcredit-prover run-relayer`를 띄워도 DB가 영속적으로 유지된다.
+- 완료 요약:
+    - (Completed as part of T2.15)
+    - Replaced sqlite3 with SQLAlchemy in watcher.py PayoutStore
+    - Added parse_database_url() for URL normalization (supports file paths for backwards compat)
+    - Use ON CONFLICT DO NOTHING for PostgreSQL idempotent inserts
+    - Added close() method for proper connection lifecycle
+    - sqlalchemy and psycopg2-binary added to prover dependencies
+    - All 17 prover watcher tests passing
 
 ---
 

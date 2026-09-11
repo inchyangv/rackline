@@ -1,16 +1,55 @@
 """
 Database for payout deduplication.
+
+Supports both SQLite (local development) and PostgreSQL (production/Railway).
+Use DATABASE_URL environment variable to configure:
+- SQLite: sqlite:///./relayer.db
+- PostgreSQL: postgresql://user:pass@host:5432/dbname
 """
 
-import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 import structlog
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    UniqueConstraint,
+    create_engine,
+    select,
+)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import Engine
 
 logger = structlog.get_logger()
+
+# SQLAlchemy metadata
+metadata = MetaData()
+
+# Table definition - compatible with both SQLite and PostgreSQL
+processed_payouts = Table(
+    "processed_payouts",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("txid", String(64), nullable=False),
+    Column("vout", Integer, nullable=False),
+    Column("borrower", String(42), nullable=False),
+    Column("amount_sats", Integer, nullable=False),
+    Column("block_height", Integer, nullable=False),
+    Column("submitted_at", DateTime, default=datetime.utcnow),
+    Column("tx_hash", String(66), nullable=True),
+    Column("status", String(20), default="pending"),
+    UniqueConstraint("txid", "vout", name="uq_txid_vout"),
+    Index("idx_txid_vout", "txid", "vout"),
+    Index("idx_status", "status"),
+)
 
 
 @dataclass
@@ -27,60 +66,90 @@ class ProcessedPayout:
     status: str  # "pending", "confirmed", "failed"
 
 
-class PayoutDatabase:
-    """SQLite database for tracking processed payouts."""
+def parse_database_url(url: str) -> str:
+    """
+    Parse and normalize database URL.
 
-    def __init__(self, db_path: str = "relayer.db"):
-        self.db_path = db_path
+    Handles:
+    - sqlite:///path/to/db.db
+    - postgresql://user:pass@host:port/db
+    - postgres://... (Railway format, converted to postgresql://)
+    """
+    if url.startswith("postgres://"):
+        # Railway uses postgres:// but SQLAlchemy requires postgresql://
+        url = url.replace("postgres://", "postgresql://", 1)
+    return url
+
+
+class PayoutDatabase:
+    """
+    Database for tracking processed payouts.
+
+    Supports SQLite (default) and PostgreSQL via DATABASE_URL.
+    """
+
+    def __init__(self, database_url: str = "sqlite:///./relayer.db"):
+        """
+        Initialize database connection.
+
+        Args:
+            database_url: SQLAlchemy database URL.
+                          Default: sqlite:///./relayer.db
+        """
+        self.database_url = parse_database_url(database_url)
+        self._engine: Optional[Engine] = None
+        self._is_postgres = self.database_url.startswith("postgresql://")
         self._init_db()
+
+    def _get_engine(self) -> Engine:
+        """Get or create database engine."""
+        if self._engine is None:
+            # SQLite needs check_same_thread=False for multi-threaded use
+            connect_args = {}
+            if self.database_url.startswith("sqlite://"):
+                connect_args["check_same_thread"] = False
+
+            self._engine = create_engine(
+                self.database_url,
+                connect_args=connect_args,
+                pool_pre_ping=True,  # Test connection health
+            )
+        return self._engine
 
     def _init_db(self) -> None:
         """Initialize database schema."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS processed_payouts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                txid TEXT NOT NULL,
-                vout INTEGER NOT NULL,
-                borrower TEXT NOT NULL,
-                amount_sats INTEGER NOT NULL,
-                block_height INTEGER NOT NULL,
-                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                tx_hash TEXT,
-                status TEXT DEFAULT 'pending',
-                UNIQUE(txid, vout)
-            )
-        """
+        engine = self._get_engine()
+        metadata.create_all(engine)
+        logger.info(
+            "database_initialized",
+            url=self._mask_url(self.database_url),
+            backend="postgresql" if self._is_postgres else "sqlite",
         )
 
-        cursor.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_txid_vout
-            ON processed_payouts (txid, vout)
-        """
-        )
+    def _mask_url(self, url: str) -> str:
+        """Mask password in URL for logging."""
+        parsed = urlparse(url)
+        if parsed.password:
+            masked = url.replace(parsed.password, "***")
+            return masked
+        return url
 
-        conn.commit()
-        conn.close()
-
-        logger.info("database_initialized", path=self.db_path)
+    def close(self) -> None:
+        """Close database connection."""
+        if self._engine:
+            self._engine.dispose()
+            self._engine = None
 
     def is_processed(self, txid: str, vout: int) -> bool:
         """Check if a payout has been processed."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT 1 FROM processed_payouts WHERE txid = ? AND vout = ?",
-            (txid, vout),
-        )
-        result = cursor.fetchone() is not None
-
-        conn.close()
-        return result
+        engine = self._get_engine()
+        with engine.connect() as conn:
+            stmt = select(processed_payouts.c.id).where(
+                processed_payouts.c.txid == txid,
+                processed_payouts.c.vout == vout,
+            )
+            result = conn.execute(stmt).fetchone()
+            return result is not None
 
     def mark_processed(
         self,
@@ -92,21 +161,47 @@ class PayoutDatabase:
         tx_hash: Optional[str] = None,
         status: str = "pending",
     ) -> None:
-        """Mark a payout as processed."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        """
+        Mark a payout as processed (upsert).
 
-        cursor.execute(
-            """
-            INSERT OR REPLACE INTO processed_payouts
-            (txid, vout, borrower, amount_sats, block_height, tx_hash, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-            (txid, vout, borrower, amount_sats, block_height, tx_hash, status),
-        )
-
-        conn.commit()
-        conn.close()
+        Uses INSERT ... ON CONFLICT for idempotent upsert.
+        """
+        engine = self._get_engine()
+        with engine.begin() as conn:
+            if self._is_postgres:
+                # PostgreSQL: use ON CONFLICT DO UPDATE
+                stmt = pg_insert(processed_payouts).values(
+                    txid=txid,
+                    vout=vout,
+                    borrower=borrower,
+                    amount_sats=amount_sats,
+                    block_height=block_height,
+                    tx_hash=tx_hash,
+                    status=status,
+                    submitted_at=datetime.utcnow(),
+                )
+                stmt = stmt.on_conflict_do_update(
+                    constraint="uq_txid_vout",
+                    set_={
+                        "tx_hash": stmt.excluded.tx_hash,
+                        "status": stmt.excluded.status,
+                        "submitted_at": stmt.excluded.submitted_at,
+                    },
+                )
+                conn.execute(stmt)
+            else:
+                # SQLite: use INSERT OR REPLACE
+                stmt = processed_payouts.insert().prefix_with("OR REPLACE").values(
+                    txid=txid,
+                    vout=vout,
+                    borrower=borrower,
+                    amount_sats=amount_sats,
+                    block_height=block_height,
+                    tx_hash=tx_hash,
+                    status=status,
+                    submitted_at=datetime.utcnow(),
+                )
+                conn.execute(stmt)
 
         logger.info(
             "payout_marked_processed",
@@ -116,49 +211,45 @@ class PayoutDatabase:
             status=status,
         )
 
-    def update_status(self, txid: str, vout: int, status: str, tx_hash: Optional[str] = None) -> None:
+    def update_status(
+        self, txid: str, vout: int, status: str, tx_hash: Optional[str] = None
+    ) -> None:
         """Update payout status."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        engine = self._get_engine()
+        with engine.begin() as conn:
+            values = {"status": status}
+            if tx_hash:
+                values["tx_hash"] = tx_hash
 
-        if tx_hash:
-            cursor.execute(
-                "UPDATE processed_payouts SET status = ?, tx_hash = ? WHERE txid = ? AND vout = ?",
-                (status, tx_hash, txid, vout),
+            stmt = (
+                processed_payouts.update()
+                .where(
+                    processed_payouts.c.txid == txid,
+                    processed_payouts.c.vout == vout,
+                )
+                .values(**values)
             )
-        else:
-            cursor.execute(
-                "UPDATE processed_payouts SET status = ? WHERE txid = ? AND vout = ?",
-                (status, txid, vout),
-            )
-
-        conn.commit()
-        conn.close()
+            conn.execute(stmt)
 
     def get_pending_payouts(self) -> list[ProcessedPayout]:
         """Get payouts pending confirmation."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT txid, vout, borrower, amount_sats, block_height, submitted_at, tx_hash, status "
-            "FROM processed_payouts WHERE status = 'pending'"
-        )
-
-        payouts = []
-        for row in cursor.fetchall():
-            payouts.append(
-                ProcessedPayout(
-                    txid=row[0],
-                    vout=row[1],
-                    borrower=row[2],
-                    amount_sats=row[3],
-                    block_height=row[4],
-                    submitted_at=datetime.fromisoformat(row[5]) if row[5] else datetime.now(),
-                    tx_hash=row[6],
-                    status=row[7],
-                )
+        engine = self._get_engine()
+        with engine.connect() as conn:
+            stmt = select(processed_payouts).where(
+                processed_payouts.c.status == "pending"
             )
+            result = conn.execute(stmt).fetchall()
 
-        conn.close()
-        return payouts
+            return [
+                ProcessedPayout(
+                    txid=row.txid,
+                    vout=row.vout,
+                    borrower=row.borrower,
+                    amount_sats=row.amount_sats,
+                    block_height=row.block_height,
+                    submitted_at=row.submitted_at or datetime.utcnow(),
+                    tx_hash=row.tx_hash,
+                    status=row.status,
+                )
+                for row in result
+            ]
