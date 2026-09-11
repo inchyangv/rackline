@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+# Root-level Dockerfile variant for the SPV worker (Railway background service).
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN pip install --no-cache-dir --upgrade pip
+
+# Copy only the prover package from the monorepo.
+COPY offchain/prover/ ./
+
+RUN pip install --no-cache-dir -e .
+
+CMD ["sh", "./start-worker.sh"]
+

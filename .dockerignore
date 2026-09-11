@@ -1,0 +1,33 @@
+# Keep root Docker builds small/fast.
+.git
+.github
+.idea
+.vscode
+
+# Local-only / secrets
+.env
+.env.*
+keys
+docs/guides
+DEPLOY.md
+DEMO.md
+DORAHACKS.md
+
+# Foundry artifacts
+out
+cache
+broadcast
+
+# Python
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.venv
+**/venv
+**/*.pyc
+
+# Node
+**/node_modules
+**/dist
+

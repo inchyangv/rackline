@@ -26,6 +26,17 @@
   - (추천) Compose 드래그 앤 드롭으로 서비스 2개를 만들고, 이후 서비스별로 GitHub 연결(autodeploy) 설정
   - (대안) GitHub 레포 연결을 서비스별로 2번 생성하면서 Root Directory를 각각 지정
 
+## 0.6) `start.sh not found` / Railpack 빌드 실패가 뜨는 이유와 해결
+
+Railway에서 레포 루트를 그대로 연결하면, Railpack이 언어/엔트리포인트를 자동 감지하려고 합니다. 이 레포는 루트에 `package.json`/`requirements.txt` 같은 단일 앱 신호가 없어서 Railpack이 `Shell`로 떨어지고 `start.sh`를 찾다가 실패할 수 있습니다.
+
+해결(둘 중 하나):
+
+1. (권장) 서비스 Root Directory를 `offchain/api` 또는 `offchain/prover`로 정확히 잡고, Dockerfile 빌드로 배포합니다.
+2. (빠른 우회) 루트에 Dockerfile을 추가해 두었습니다.
+   - API 기본: 레포 루트 `Dockerfile`
+   - Worker: 레포 루트 `Dockerfile.prover` (서비스 설정에서 Dockerfile path를 이것으로 바꾸면 됨)
+
 ## 1) (추천) Compose로 서비스 2개를 한번에 분리 생성
 
 Railway는 Compose 파일을 드래그 앤 드롭하면 서비스들을 한번에 만들어줍니다.
