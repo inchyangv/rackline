@@ -1,96 +1,268 @@
 # HashCredit
 
-**Bitcoin Mining Profit Based (RBF) Lending Protocol on Creditcoin (SPV Mode)**
+**Revenue-Based Financing for Bitcoin Miners on Creditcoin EVM**
 
-HashCredit verifies Bitcoin miners’ “full payout” transactions with SPVs, allowing Creditcoin EVM to calculate loan limits and borrow stablecoins without collateral.
+HashCredit turns real Bitcoin mining payouts into on-chain credit lines. Miners prove their revenue with SPV proofs — no collateral lockup required.
 
-## Demo link
+```
+Bitcoin payout (tx) → SPV proof → On-chain credit limit → Borrow / Repay stablecoins
+```
 
-- Frontend: `https://hashcredit.studioliq.com`
-- API: `https://api-hashcredit.studioliq.com`
+## Live Demo
 
-## Overview (one line)
+| Component | URL |
+|-----------|-----|
+| Frontend  | https://hashcredit.studioliq.com |
+| API       | https://api-hashcredit.studioliq.com |
 
-`Bitcoin payout(tx)` -> `SPV proof` -> `Creditcoin on-chain credit limit` -> `Borrow/Repay`
+> Chain: **Creditcoin EVM Testnet** (chainId `102031`)
 
-## Core features
+---
 
-- Revenue-based credit limit: Convert trailing BTC profits to USD to calculate credit limit
-- SPV verification: Verify Bitcoin transaction inclusion with checkpoint + header chain + Merkle inclusion proof
-- Prevent replay: Same payout is reflected only once
-- Risk parameters: advance rate, new borrower cap, window, etc.
+## Problem
+
+Bitcoin miners earn recurring revenue but face persistent working capital needs — hardware, electricity, facility costs. Existing on-chain lending requires locking collateral, which doesn't model a miner's actual revenue stream. Off-chain credit underwriting is opaque and impossible to verify on-chain.
+
+## Solution
+
+HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit layer:
+
+1. **Prove** — Generate an SPV proof of a real Bitcoin payout transaction
+2. **Verify** — On-chain verifier checks checkpoint anchor, header chain PoW, Merkle inclusion, and output script
+3. **Credit** — Protocol records the payout (replay-protected) and updates the miner's trailing-window credit limit
+4. **Borrow** — Miner borrows stablecoins against their verified revenue; repays on their own schedule
+
+---
 
 ## Architecture
 
-```text
-Bitcoin(testnet/main)  ->  Railway(API/Worker/DB)  ->  Creditcoin EVM(contracts)
+```
+┌─────────────────┐     ┌──────────────────────┐     ┌──────────────────────────┐
+│  Bitcoin Network │     │   Off-chain Services  │     │   Creditcoin EVM         │
+│  (testnet/main)  │     │   (Railway)           │     │   (Contracts)            │
+│                  │     │                       │     │                          │
+│  Mining payouts ─┼────►│  API (FastAPI)        │     │  CheckpointManager       │
+│  Block headers   │     │  ├─ SPV proof builder │────►│  BtcSpvVerifier          │
+│                  │     │  ├─ Checkpoint ops    │     │  HashCreditManager       │
+│                  │     │  └─ Borrower mapping  │     │  ├─ Credit limit engine  │
+│                  │     │                       │     │  ├─ Replay protection    │
+│                  │     │  Prover (Worker)      │     │  └─ Borrow/Repay router  │
+│                  │     │  └─ Auto-detect &     │     │  LendingVault            │
+│                  │     │    submit proofs      │     │  └─ Stablecoin pool      │
+│                  │     │                       │     │  RiskConfig              │
+│                  │     │  Postgres (state/     │     │  └─ Policy parameters    │
+│                  │     │   deduplication)      │     │                          │
+└─────────────────┘     └──────────────────────┘     └──────────────────────────┘
+                                                              ▲
+                        ┌──────────────────────┐              │
+                        │  Frontend (Vercel)    │              │
+                        │  React 19 + ethers.js ├──────────────┘
+                        │  Dashboard / Ops / Proof             │
+                        └──────────────────────┘
 ```
 
-## Component
+### On-chain Contracts (Solidity 0.8.24, Foundry)
 
-- On-chain (Creditcoin EVM)
-- `HashCreditManager`: Borrower registration, payout reflection, credit limit calculation, borrow/repay
-- `LendingVault`: Stablecoin deposit/loan vault
-- `CheckpointManager`: Stores Bitcoin block header checkpoints
-- `BtcSpvVerifier`: SPV proof verification
-- `RiskConfig`, `PoolRegistry`: Risk/Pool settings
-- Off-chain (Railway)
-- `offchain/api`: proof creation + checkpoint/borrower registration + proof submission (operation key)
-- `offchain/prover`: Monitoring address polling and automatic proof submission (worker)
-- Postgres: worker status/duplicate submission prevention
-- Frontend (Vercel)
-- `apps/web`: On-chain inquiry + demo operation button
+| Contract | Role |
+|----------|------|
+| `HashCreditManager` | Borrower registry, payout processing (replay-protected), trailing-window credit limit calculation, borrow/repay routing |
+| `LendingVault` | ERC4626-style stablecoin pool — LP deposit/withdraw, debt accounting, fixed-APR interest accrual |
+| `BtcSpvVerifier` | Trustless Bitcoin SPV verification — checkpoint anchor, header chain PoW, Merkle inclusion, P2WPKH/P2PKH output parsing |
+| `CheckpointManager` | Stores trusted Bitcoin block header checkpoints (height, hash, chainWork, bits, timestamp) |
+| `RiskConfig` | On-chain credit policy — advance rate, trailing window, payout thresholds, caps, large-payout discount |
+| `PoolRegistry` | Mining pool source eligibility (permissive mode for testnet) |
+| `BitcoinLib` | Pure library — double-SHA256, header parsing, PoW validation, Merkle proof, tx output parsing |
 
-## Demo/Operation Flow (Summary)
+Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierAdapter` interface. This decouples credit logic from verification details, making the protocol portable to new proof sources (e.g., USC).
 
-1. Register checkpoint on-chain (`CheckpointManager`)
-2. Borrower(EVM) <-> Register BTC address (pubkeyHash) (`BtcSpvVerifier`)
-3. Borrower registration (`HashCreditManager.registerBorrower`)
-4. Create and submit proof (`HashCreditManager.submitPayout`)
-5. Borrower executes ‘Borrow/Repay’
+### Off-chain Services (Python, Railway)
 
-## Important security note (mainnet)
+| Service | Role |
+|---------|------|
+| `offchain/api` | FastAPI — builds SPV proofs from Bitcoin RPC, submits operator transactions, exposes BTC address history via Esplora indexer |
+| `offchain/prover` | Background worker — watches BTC addresses, detects qualifying payouts, waits for confirmations, auto-builds and submits SPV proofs |
 
-In the testnet demo, the operator registers a borrower (EVM) <-> BTC address.
+### Frontend (Vercel)
 
-To prevent random mapping attacks on the mainnet, **claim based on proof of ownership (two-sided signature)** is required.
-- Server issues nonce
-- Borrower signs EVM + BTC signature (based on wallet `signmessage`. BIP-322 method is recommended in the long term)
-- Execute pubkeyHash/borrower registration transaction on-chain only after verification
+| Stack | Details |
+|-------|---------|
+| Framework | React 19 + TypeScript + Vite 7 |
+| Styling | Tailwind CSS v4 + shadcn/ui (Radix) |
+| State | Zustand 5 |
+| Chain | ethers.js v6 |
 
-Current implementation:
-- If you turn on `BORROWER_MAPPING_MODE=claim` in `offchain/api`, you can perform the above flow with `/claim/start` and `/claim/complete`.
+Tabs: **Dashboard** (read on-chain state) · **Operations** (borrow/repay) · **Proof** (build/submit SPV) · **Admin** (operator panel) · **Settings** (RPC/contract config)
 
-## Local Development (Summary)
+---
+
+## End-to-End Flow
+
+```
+1. Register checkpoint          CheckpointManager.setCheckpoint(height, hash, ...)
+2. Map borrower ↔ BTC address   BtcSpvVerifier.setBorrowerPubkeyHash(borrower, hash)
+3. Register borrower            HashCreditManager.registerBorrower(borrower)
+4. Build SPV proof              API fetches headers + raw tx + Merkle branch from Bitcoin RPC
+5. Submit proof                 HashCreditManager.submitPayout(proof)
+                                  → verifier checks SPV, returns PayoutEvidence
+                                  → manager enforces replay protection
+                                  → trailing revenue & credit limit updated
+6. Borrow / Repay               Borrower signs borrow(amount) or repay(amount)
+```
+
+---
+
+## SPV Proof Verification
+
+The proof contains:
+- **Checkpoint** — Trusted block header stored on-chain
+- **Header chain** — Sequence of 80-byte headers from checkpoint+1 to target block (max 144)
+- **Raw transaction** — The Bitcoin payout tx
+- **Merkle proof** — Siblings + tx index for inclusion in target block
+- **Output index** — Which output pays the miner
+
+On-chain checks:
+1. Header chain connects from checkpoint to target (prev-hash linkage)
+2. Each header satisfies proof-of-work (hash ≤ target from `bits`)
+3. Retarget boundary stays within same 2016-block epoch
+4. Target block's Merkle root includes the transaction
+5. Specified output pays to the borrower's registered `pubkeyHash` (P2WPKH or P2PKH)
+6. Minimum 6 confirmations enforced
+
+---
+
+## Security Model
+
+- **Replay protection** — Each `(txid, vout)` processed exactly once via `processedPayouts` mapping
+- **Borrower mapping** — Testnet uses operator-registered mappings; mainnet design requires dual-signature claim (EVM + BTC wallet `signmessage` / BIP-322)
+- **Risk parameters** — On-chain `RiskConfig` enforces advance rate, trailing window, min payout threshold, new borrower caps, large-payout discount
+- **Reentrancy** — CEI pattern + OpenZeppelin `ReentrancyGuard`
+- **Pausability** — Owner can pause the manager in emergencies
+
+See [`docs/threat-model.md`](docs/threat-model.md) and [`docs/audit-checklist.md`](docs/audit-checklist.md) for detailed analysis.
+
+---
+
+## USC Readiness
+
+USC (Universal Smart Contract) mainnet was not live during development. The architecture is designed for drop-in integration:
+
+- `IVerifierAdapter` decouples proof verification from credit logic
+- `LendingVault` accepts any ERC20 token address
+- USC integration is an **adapter + wiring task**, not a protocol rewrite
+
+Integration paths: swap vault asset to USC token, add USC-specific settlement adapter, or run multi-verifier mode alongside BTC SPV.
+
+---
+
+## Testnet Contract Addresses
+
+> Creditcoin EVM Testnet · chainId `102031`
+
+| Contract | Address |
+|----------|---------|
+| HashCreditManager | `0x3cfb7fcf0647c78c3f932763e033b6184d79a936` |
+| LendingVault | `0x60cd9c0e8b828c65c494e0f4274753e6968df0c1` |
+| CheckpointManager | `0xe792383beb2f78076e644e7361ed7057a1f4cd88` |
+| BtcSpvVerifier | `0x98b9ddafe0c49d73cb1cf878c8febad22c357f33` |
+| Stablecoin (cUSD) | `0x9e00a3a453704e6948689eb68a4f65649af30a97` |
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- [Foundry](https://getfoundry.sh/) (forge, anvil, cast)
+- Python 3.11+
+- Node 20+
+
+### Contracts
 
 ```bash
-# contracts
-forge build
-forge test
+forge install          # Solidity deps
+forge build            # Compile
+forge test -vvv        # Run tests
+forge test --gas-report # Gas profiling
+```
 
-# API
+### Off-chain API
+
+```bash
 cd offchain/api
-cp .env.example .env
+cp .env.example .env   # Configure
 pip install -e .
-hashcredit-api
+hashcredit-api         # Start server
+```
 
-# Prover/Worker
-cd ../prover
-cp .env.example .env
+### Off-chain Prover (Worker)
+
+```bash
+cd offchain/prover
+cp .env.example .env   # Configure
 pip install -e .
 hashcredit-prover --help
+```
 
-# Frontend
-cd ../../apps/web
-cp .env.example .env
+### Frontend
+
+```bash
+cd apps/web
+cp .env.example .env   # Configure
 npm install
 npm run dev
 ```
 
-## document
+### Full Local Stack (Docker)
 
-- `docs/hackathon/SUBMISSION_CHECKLIST.md`: Submission checklist
-- Distribution/demo operation documents are managed locally only (they are not uploaded to the repo).
+```bash
+docker compose up      # Postgres + API + Prover
+```
+
+### Makefile Shortcuts
+
+```bash
+make build             # forge build
+make test              # forge test -vvv
+make test-gas          # Gas report
+make deploy-local      # Deploy to local Anvil
+make anvil             # Start local chain
+```
+
+---
+
+## Project Structure
+
+```
+contracts/             Solidity contracts + interfaces + mocks + library
+test/                  Foundry tests (unit, integration, invariant fuzzing, gas profiling)
+script/                Foundry deploy scripts
+offchain/
+  api/                 FastAPI — proof builder, operator endpoints, claim flow
+  prover/              Background SPV worker — auto-detect, prove, submit
+  relayer/             MVP EIP-712 relayer (legacy)
+apps/
+  web/                 React 19 frontend — dashboard, operations, proof, admin
+docs/
+  adr/                 Architecture Decision Records
+  specs/               Protocol specifications
+  hackathon/           Submission templates
+lib/                   Foundry dependencies (forge-std, openzeppelin)
+```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`docs/adr/0001-btc-spv.md`](docs/adr/0001-btc-spv.md) | SPV design rationale, checkpoint model, gas budgets |
+| [`docs/threat-model.md`](docs/threat-model.md) | Threat analysis and mitigations |
+| [`docs/audit-checklist.md`](docs/audit-checklist.md) | Security audit checklist |
+| [`docs/gas-limits.md`](docs/gas-limits.md) | Per-operation gas estimates |
+| [`docs/specs/PROJECT.md`](docs/specs/PROJECT.md) | Full protocol specification |
+| [`.env.example`](.env.example) | Environment variable reference |
+
+---
 
 ## License
 
