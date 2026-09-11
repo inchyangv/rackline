@@ -350,4 +350,133 @@ contract LendingVaultTest is Test {
         uint256 assets = vault.withdraw(20_000e6);
         assertEq(assets, 20_000e6);
     }
+
+    // ============================================
+    // Share Dilution Prevention Tests (T2.6)
+    // ============================================
+
+    function test_shareDilutionPrevention_depositAfterInterestAccrual() public {
+        // Setup: Alice deposits first
+        vm.prank(alice);
+        vault.deposit(100_000e6);
+
+        // Borrow funds
+        vm.prank(manager);
+        vault.borrowFunds(borrower, 100_000e6);
+
+        // Time passes - 1 year at 10% APR = 10,000 USDC interest
+        vm.warp(block.timestamp + 365 days);
+
+        // Record total assets before Bob's deposit
+        uint256 totalAssetsBefore = vault.totalAssets();
+        // Should be: 0 (balance) + 100,000 (borrowed) + 10,000 (interest) = 110,000
+        assertEq(totalAssetsBefore, 110_000e6);
+
+        // Bob deposits the same amount as Alice
+        address bob = makeAddr("bob");
+        stablecoin.mint(bob, 100_000e6);
+        vm.startPrank(bob);
+        stablecoin.approve(address(vault), 100_000e6);
+        uint256 bobShares = vault.deposit(100_000e6);
+        vm.stopPrank();
+
+        // Bob should get LESS shares than Alice because Alice earned interest
+        uint256 aliceShares = vault.sharesOf(alice);
+        assertLt(bobShares, aliceShares, "Bob should get fewer shares than Alice");
+
+        // Bob's shares should be proportionally less
+        // Alice: 100,000 shares at 1:1
+        // Bob: 100,000 * 100,000 / 110,000 = ~90,909 shares
+        uint256 expectedBobShares = (uint256(100_000e6) * uint256(100_000e6)) / uint256(110_000e6);
+        assertApproxEqAbs(bobShares, expectedBobShares, 1e6, "Bob shares calculation");
+    }
+
+    function test_accumulatedInterestIncludedInTotalAssets() public {
+        // Setup
+        vm.prank(alice);
+        vault.deposit(100_000e6);
+
+        vm.prank(manager);
+        vault.borrowFunds(borrower, 100_000e6);
+
+        // Warp time
+        vm.warp(block.timestamp + 365 days);
+
+        // Total assets should include pending interest
+        uint256 totalAssets1 = vault.totalAssets();
+        assertEq(totalAssets1, 110_000e6);
+
+        // Trigger accrual (e.g., by setFixedAPR which calls _accrueInterest)
+        vault.setFixedAPR(1000); // Same APR, just to trigger accrual
+
+        // Total assets should still be the same after accrual
+        // (accumulatedInterest now holds the interest, pendingInterest is 0)
+        uint256 totalAssets2 = vault.totalAssets();
+        assertEq(totalAssets2, 110_000e6, "Interest should not disappear after accrual");
+    }
+
+    function test_interestDeductionOnRepay() public {
+        // Setup
+        vm.prank(alice);
+        vault.deposit(100_000e6);
+
+        vm.prank(manager);
+        vault.borrowFunds(borrower, 100_000e6);
+
+        // Warp time - 1 year = 10,000 USDC interest
+        vm.warp(block.timestamp + 365 days);
+
+        // Trigger accrual
+        vault.setFixedAPR(1000);
+
+        // Check accumulated interest
+        assertEq(vault.accumulatedInterest(), 10_000e6, "Should have accumulated 10k interest");
+
+        // Repay principal + interest (110,000)
+        stablecoin.mint(manager, 110_000e6);
+        vm.startPrank(manager);
+        stablecoin.approve(address(vault), 110_000e6);
+        vault.repayFunds(borrower, 110_000e6);
+        vm.stopPrank();
+
+        // Accumulated interest should be reduced
+        assertEq(vault.accumulatedInterest(), 0, "Accumulated interest should be cleared after repay");
+
+        // Total borrowed should be 0
+        assertEq(vault.totalBorrowed(), 0);
+
+        // Total assets should still be 110,000 (now all in balance)
+        assertEq(vault.totalAssets(), 110_000e6);
+    }
+
+    function test_partialInterestRepay() public {
+        // Setup
+        vm.prank(alice);
+        vault.deposit(100_000e6);
+
+        vm.prank(manager);
+        vault.borrowFunds(borrower, 100_000e6);
+
+        // Warp time - 1 year = 10,000 USDC interest
+        vm.warp(block.timestamp + 365 days);
+
+        // Trigger accrual
+        vault.setFixedAPR(1000);
+
+        // Repay principal + partial interest (105,000 = 100k principal + 5k interest)
+        stablecoin.mint(manager, 105_000e6);
+        vm.startPrank(manager);
+        stablecoin.approve(address(vault), 105_000e6);
+        vault.repayFunds(borrower, 105_000e6);
+        vm.stopPrank();
+
+        // 5,000 interest remains in accumulatedInterest
+        assertEq(vault.accumulatedInterest(), 5_000e6, "5k interest should remain");
+
+        // Total borrowed should be 0
+        assertEq(vault.totalBorrowed(), 0);
+
+        // Total assets = balance(105k) + borrowed(0) + accumulated(5k) + pending(0) = 110k
+        assertEq(vault.totalAssets(), 110_000e6);
+    }
 }

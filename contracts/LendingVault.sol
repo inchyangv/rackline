@@ -205,9 +205,20 @@ contract LendingVault is ILendingVault {
 
         _accrueInterest();
 
-        // Cap repayment at total borrowed
-        uint256 actualRepay = amount > totalBorrowed ? totalBorrowed : amount;
-        totalBorrowed -= actualRepay;
+        // Cap principal repayment at total borrowed
+        uint256 principalRepay = amount > totalBorrowed ? totalBorrowed : amount;
+        uint256 interestPortion = amount - principalRepay;
+
+        totalBorrowed -= principalRepay;
+
+        // When interest is repaid, reduce accumulatedInterest to prevent double-counting
+        // (interest tokens come into balanceOf, so we reduce the "expected" interest)
+        if (interestPortion > 0 && accumulatedInterest > 0) {
+            uint256 interestDeduction = interestPortion > accumulatedInterest
+                ? accumulatedInterest
+                : interestPortion;
+            accumulatedInterest -= interestDeduction;
+        }
 
         // Transfer from manager (msg.sender), not borrower
         // Manager is responsible for collecting from borrower first
@@ -222,9 +233,11 @@ contract LendingVault is ILendingVault {
 
     /**
      * @inheritdoc ILendingVault
+     * @dev Includes: actual balance + outstanding borrowed + accrued interest + pending interest
+     *      This ensures share price reflects all earned interest at any point in time
      */
     function totalAssets() public view override returns (uint256) {
-        return _asset.balanceOf(address(this)) + totalBorrowed + _pendingInterest();
+        return _asset.balanceOf(address(this)) + totalBorrowed + accumulatedInterest + _pendingInterest();
     }
 
     /**

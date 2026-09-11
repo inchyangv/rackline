@@ -576,7 +576,7 @@
 
 ### T2.6 (High) LendingVault 이자 누적(totalAssets) 버그 수정 + Share Dilution 방지
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: `LendingVault`에서 `_accrueInterest()`로 누적한 `accumulatedInterest`가 `totalAssets()`에 반영되지 않아, 중간 호출(예: deposit/withdraw/borrow/repay) 시 **share 가격이 왜곡/희석**되는 문제를 해결한다.
 - 작업:
     - `contracts/LendingVault.sol`:
@@ -588,6 +588,12 @@
     - “이자 발생 후 withdraw” 시 기대값과 일치하는지 테스트 보강
 - 완료 조건:
     - 이자 누적이 어떤 호출 순서에서도 `totalAssets()/convertToShares/convertToAssets`에 일관되게 반영된다.
+- 완료 요약:
+    - `totalAssets()` 수정: `balanceOf + totalBorrowed + accumulatedInterest + _pendingInterest()`
+    - `repayFunds()` 수정: 이자 부분이 들어오면 `accumulatedInterest` 차감 (중복 계산 방지)
+    - Share dilution 방지 테스트 추가: `test_shareDilutionPrevention_depositAfterInterestAccrual()`
+    - `accumulatedInterest` 반영 테스트: `test_accumulatedInterestIncludedInTotalAssets()`
+    - 이자 차감 테스트: `test_interestDeductionOnRepay()`, `test_partialInterestRepay()`
 
 ---
 
