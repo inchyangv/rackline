@@ -1,149 +1,95 @@
 # HashCredit
 
-**Revenue-Based Financing for Bitcoin Miners on Creditcoin**
+**Bitcoin 채굴 수익 기반(RBF) 대출 프로토콜 on Creditcoin (SPV 모드)**
 
-HashCredit enables Bitcoin miners to borrow stablecoins against their future mining revenue. Instead of traditional collateral, credit limits are determined by verifiable on-chain payout events from mining pools.
+HashCredit는 Bitcoin 채굴자의 “풀 payout(수익 지급)” 트랜잭션을 SPV로 검증해, Creditcoin EVM에서 담보 없이도 대출 한도를 산정하고 스테이블코인을 빌릴 수 있게 합니다.
 
-## Overview
+## 데모 링크
 
+- Frontend: `https://hashcredit.studioliq.com`
+- API: `https://api-hashcredit.studioliq.com`
+
+## 개요(한 줄)
+
+`Bitcoin payout(tx)` -> `SPV proof` -> `Creditcoin on-chain credit limit` -> `Borrow/Repay`
+
+## 핵심 기능
+
+- 수익 기반 신용 한도: trailing BTC 수익을 USD로 환산해 credit limit 계산
+- SPV 검증: 체크포인트 + header chain + Merkle inclusion proof로 Bitcoin 트랜잭션 포함을 검증
+- 리플레이 방지: 동일 payout은 1회만 반영
+- 리스크 파라미터: advance rate, 신규 차입자 cap, 기간(window) 등
+
+## 아키텍처
+
+```text
+Bitcoin(testnet/main)  ->  Railway(API/Worker/DB)  ->  Creditcoin EVM(contracts)
 ```
-Mining Pool → BTC Payout → Relayer Detects → EVM Proof → Credit Limit ↑ → Borrow USDC
-```
 
-### Key Features
+## 구성 요소
 
-- **Revenue-Based Credit**: Credit limits based on trailing mining revenue, not locked collateral
-- **Verifiable Payouts**: EIP-712 signed proofs from trusted relayer (MVP) or Bitcoin SPV (production)
-- **Replay Protection**: Each payout can only be credited once
-- **Risk Management**: Configurable advance rates, caps, and freeze controls
+- On-chain (Creditcoin EVM)
+  - `HashCreditManager`: 차입자 등록, payout 반영, credit limit 계산, borrow/repay
+  - `LendingVault`: 스테이블코인 예치/대출 vault
+  - `CheckpointManager`: Bitcoin 블록 헤더 체크포인트 저장
+  - `BtcSpvVerifier`: SPV proof 검증
+  - `RiskConfig`, `PoolRegistry`: 리스크/풀 설정
+- Off-chain (Railway)
+  - `offchain/api`: proof 생성 + 체크포인트/borrower 등록 + proof 제출(운영키)
+  - `offchain/prover`: 감시 주소 폴링 및 자동 proof 제출(worker)
+  - Postgres: worker 상태/중복 제출 방지
+- Frontend (Vercel)
+  - `apps/web`: 온체인 조회 + 데모 운영 버튼 + 데모 지갑 생성(로컬 저장)
 
-## Quick Start
+## 데모/운영 플로우(요약)
+
+1. 체크포인트를 온체인 등록 (`CheckpointManager`)
+2. borrower(EVM) <-> BTC 주소(pubkeyHash)를 등록 (`BtcSpvVerifier`)
+3. borrower 등록 (`HashCreditManager.registerBorrower`)
+4. proof 생성 및 제출 (`HashCreditManager.submitPayout`)
+5. 차입자가 `Borrow/Repay` 실행
+
+## 중요한 보안 메모(메인넷)
+
+테스트넷 데모에서는 운영자가 borrower(EVM) <-> BTC 주소를 등록합니다.
+
+메인넷에서는 임의 매핑 공격을 막기 위해, **소유권 증명(양쪽 서명) 기반 claim**이 필요합니다.
+- 서버가 nonce 발급
+- borrower가 EVM 서명 + BTC 서명(BIP-322 권장)
+- 검증 후에만 온체인에 pubkeyHash/borrower 등록 트랜잭션 실행
+
+## 로컬 개발(요약)
 
 ```bash
-# Install dependencies
-forge install
-cd offchain/relayer && pip install -e ".[dev]" && cd ../..
-
-# Configure env
-cp .env.example .env
-# Edit .env for local:
-# RPC_URL=http://localhost:8545
-# CHAIN_ID=31337
-# PRIVATE_KEY=<anvil private key>
-# RELAYER_PRIVATE_KEY=<same key for the simplest demo>
-
-# Run tests
+# contracts
+forge build
 forge test
 
-# Deploy (local)
-make anvil   # Terminal A
-make deploy-local   # Terminal B
-# Copy printed addresses into .env:
-# HASH_CREDIT_MANAGER=...
-# VERIFIER=...
-
-# Run relayer
-hashcredit-relayer run --btc-address <BTC_ADDR> --evm-address <EVM_ADDR>
-```
-
-## Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Bitcoin        │────►│  Python         │────►│  Creditcoin     │
-│  Network        │     │  Relayer        │     │  EVM            │
-│                 │     │                 │     │                 │
-│  • Pool Payouts │     │  • Watch Addrs  │     │  • Manager      │
-│  • Confirmations│     │  • EIP-712 Sign │     │  • Vault        │
-│                 │     │  • Submit Proof │     │  • Verifier     │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-## Contracts
-
-| Contract | Description |
-|----------|-------------|
-| `HashCreditManager` | Core contract: borrower registry, payout recording, credit limits, borrow/repay |
-| `LendingVault` | Stablecoin liquidity pool with LP shares and interest accrual |
-| `RelayerSigVerifier` | EIP-712 signature verification for payout proofs (MVP) |
-| `RiskConfig` | Risk parameters: advance rate, caps, confirmation requirements |
-| `PoolRegistry` | Mining pool allowlist for payout source verification |
-
-## Protocol Flow
-
-1. **Register Borrower**: Admin registers miner with their BTC payout address hash
-2. **Detect Payout**: Relayer watches Bitcoin for payouts to registered addresses
-3. **Submit Proof**: Relayer signs and submits payout evidence to Manager
-4. **Update Credit**: Manager calculates new credit limit based on trailing revenue
-5. **Borrow**: Miner borrows stablecoin up to their credit limit
-6. **Repay**: Miner repays debt with interest
-
-## Credit Calculation
-
-```
-creditLimit = trailingRevenue(BTC) × btcPrice(USD) × advanceRate(%)
-```
-
-Example:
-- Trailing Revenue: 1 BTC
-- BTC Price: $50,000
-- Advance Rate: 50%
-- Credit Limit: **$25,000 USDC**
-
-## Security
-
-- **Replay Protection**: txid/vout uniqueness check prevents double-counting
-- **Signature Verification**: Only authorized relayer can submit proofs
-- **Time Limits**: Signatures have deadlines to prevent stale submissions
-- **New Borrower Caps**: Lower limits for unproven borrowers
-- **Admin Controls**: Freeze capability for emergency situations
-
-## Development
-
-```bash
-# Build contracts
-forge build
-
-# Run tests with verbosity
-forge test -vvv
-
-# Gas report
-forge test --gas-report
-
-# Format code
-forge fmt
-```
-
-## Frontend Dashboard (optional)
-
-`apps/web` contains a small web dashboard for reading state and sending transactions (borrow/repay/submitPayout).
-
-```bash
-cd apps/web
+# API
+cd offchain/api
 cp .env.example .env
-# Fill VITE_* contract addresses in apps/web/.env
+pip install -e .
+hashcredit-api
+
+# Prover/Worker
+cd ../prover
+cp .env.example .env
+pip install -e .
+hashcredit-prover --help
+
+# Frontend
+cd ../../apps/web
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-## Documentation
+## 문서
 
-- [DEPLOY.md](./DEPLOY.md) - 배포 가이드 (컨트랙트 별도 + Vercel + Railway)
-- [PROJECT.md](./docs/specs/PROJECT.md) - Full project specification
-- [TICKET.md](./docs/process/TICKET.md) - Implementation tickets
-- [Submission checklist](./docs/hackathon/SUBMISSION_CHECKLIST.md) - 해커톤 제출 체크리스트
-
-## Tech Stack
-
-- **Smart Contracts**: Solidity 0.8.24, Foundry
-- **Off-chain**: Python 3.11+, web3.py, httpx
-- **Bitcoin Data**: mempool.space API (MVP), Bitcoin Core RPC (production)
-- **Target Chain**: Creditcoin EVM (testnet: chain ID 102031)
+- `docs/hackathon/SUBMISSION_CHECKLIST.md`: 제출 체크리스트
+- 배포/데모 운영 문서는 로컬 전용으로 관리합니다(레포에는 올라가지 않음).
 
 ## License
 
 MIT
 
----
-
-Built for CTC Hackathon 2024

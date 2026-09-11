@@ -81,3 +81,6 @@ DEMO.md
 
 # Local-only deploy keys (do not commit)
 keys/
+
+# DoraHacks submission draft (local only)
+DORAHACKS.md
