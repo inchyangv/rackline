@@ -314,6 +314,7 @@ contract SpvE2ETest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"0100000001000000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0140420f0000000000160014751e76e8199196d454941c45d1b3a323f1433bd600000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -337,6 +338,7 @@ contract SpvE2ETest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"0100000001000000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0140420f0000000000160014751e76e8199196d454941c45d1b3a323f1433bd600000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -366,6 +368,7 @@ contract SpvE2ETest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"0100000001000000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0140420f0000000000160014751e76e8199196d454941c45d1b3a323f1433bd600000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -407,6 +410,7 @@ contract SpvE2ETest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: wrongTx, // Wrong pubkey hash
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -440,6 +444,7 @@ contract SpvE2ETest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: new bytes(60),
             merkleProof: new bytes32[](0),
             txIndex: 0,

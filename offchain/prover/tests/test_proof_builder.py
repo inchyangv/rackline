@@ -102,6 +102,28 @@ def mock_rpc() -> MockBitcoinRPC:
     header_800006 = create_mock_header(hash_800005, txid, timestamp=1690003600)
     hash_800006 = sha256d(header_800006)
 
+    # Additional blocks for confirmations (800007-800011)
+    # Need 6 confirmations: if tx is in block N, we need blocks up to N+5
+    merkle_root_800007 = sha256d(b"block 800007")
+    header_800007 = create_mock_header(hash_800006, merkle_root_800007, timestamp=1690004200)
+    hash_800007 = sha256d(header_800007)
+
+    merkle_root_800008 = sha256d(b"block 800008")
+    header_800008 = create_mock_header(hash_800007, merkle_root_800008, timestamp=1690004800)
+    hash_800008 = sha256d(header_800008)
+
+    merkle_root_800009 = sha256d(b"block 800009")
+    header_800009 = create_mock_header(hash_800008, merkle_root_800009, timestamp=1690005400)
+    hash_800009 = sha256d(header_800009)
+
+    merkle_root_800010 = sha256d(b"block 800010")
+    header_800010 = create_mock_header(hash_800009, merkle_root_800010, timestamp=1690006000)
+    hash_800010 = sha256d(header_800010)
+
+    merkle_root_800011 = sha256d(b"block 800011")
+    header_800011 = create_mock_header(hash_800010, merkle_root_800011, timestamp=1690006600)
+    hash_800011 = sha256d(header_800011)
+
     # Add blocks to mock
     rpc.add_block(800000, hash_800000[::-1].hex(), header_800000.hex(), [])
     rpc.add_block(800001, hash_800001[::-1].hex(), header_800001.hex(), [])
@@ -110,6 +132,11 @@ def mock_rpc() -> MockBitcoinRPC:
     rpc.add_block(800004, hash_800004[::-1].hex(), header_800004.hex(), [])
     rpc.add_block(800005, hash_800005[::-1].hex(), header_800005.hex(), [])
     rpc.add_block(800006, hash_800006[::-1].hex(), header_800006.hex(), [txid_display])
+    rpc.add_block(800007, hash_800007[::-1].hex(), header_800007.hex(), [])
+    rpc.add_block(800008, hash_800008[::-1].hex(), header_800008.hex(), [])
+    rpc.add_block(800009, hash_800009[::-1].hex(), header_800009.hex(), [])
+    rpc.add_block(800010, hash_800010[::-1].hex(), header_800010.hex(), [])
+    rpc.add_block(800011, hash_800011[::-1].hex(), header_800011.hex(), [])
 
     # Add transaction
     rpc.add_transaction(txid_display, test_tx.hex())
@@ -147,7 +174,8 @@ class TestProofBuilder:
 
         # Check proof structure
         assert result.proof.checkpoint_height == 800000
-        assert len(result.proof.headers) == 6  # 800001-800006
+        assert len(result.proof.headers) == 11  # 800001-800011 (tip_height default: target+5)
+        assert result.proof.tx_block_index == 5  # tx is in 800006, index 5 in headers
         assert result.proof.output_index == 0
         assert result.proof.borrower == borrower
 
@@ -219,7 +247,8 @@ class TestProofBuilder:
         proof_dict = result.proof.to_dict()
 
         assert proof_dict["checkpointHeight"] == 800000
-        assert len(proof_dict["headers"]) == 6
+        assert len(proof_dict["headers"]) == 11  # 800001-800011
+        assert proof_dict["txBlockIndex"] == 5  # tx is in 800006
         assert proof_dict["outputIndex"] == 0
         assert proof_dict["borrower"] == borrower
 

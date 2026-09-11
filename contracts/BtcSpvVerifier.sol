@@ -80,6 +80,7 @@ contract BtcSpvVerifier is IVerifierAdapter {
     error InsufficientConfirmations();
     error DifficultyMismatch(uint32 expected, uint32 actual);
     error RetargetBoundaryCrossing(uint32 checkpointHeight, uint32 targetHeight);
+    error TxBlockIndexOutOfRange(uint32 txBlockIndex, uint256 headersLength);
 
     // ============================================
     // Events
@@ -94,16 +95,22 @@ contract BtcSpvVerifier is IVerifierAdapter {
     /**
      * @notice SPV proof structure
      * @param checkpointHeight Height of anchor checkpoint
-     * @param headers Array of 80-byte headers from checkpoint+1 to target block
+     * @param headers Array of 80-byte headers from checkpoint+1 to tip
+     * @param txBlockIndex Index within headers[] where the transaction is included (0-based)
      * @param rawTx Full serialized Bitcoin transaction
      * @param merkleProof Merkle branch for transaction
-     * @param txIndex Transaction index in block
+     * @param txIndex Transaction index in block (for merkle proof left/right determination)
      * @param outputIndex Output index (vout) in transaction
      * @param borrower Claimed borrower address
+     *
+     * @dev Confirmations are calculated as: headers.length - txBlockIndex
+     *      For example, if headers.length=7 and txBlockIndex=0, confirmations=7.
+     *      The merkle proof is verified against headers[txBlockIndex].merkleRoot.
      */
     struct SpvProof {
         uint32 checkpointHeight;
         bytes[] headers;
+        uint32 txBlockIndex;
         bytes rawTx;
         bytes32[] merkleProof;
         uint256 txIndex;
@@ -170,7 +177,17 @@ contract BtcSpvVerifier is IVerifierAdapter {
         if (spvProof.headers.length > MAX_HEADER_CHAIN) revert HeaderChainTooLong();
         if (spvProof.merkleProof.length > MAX_MERKLE_DEPTH) revert MerkleProofTooLong();
         if (spvProof.rawTx.length > MAX_TX_SIZE) revert TxTooLarge();
-        if (spvProof.headers.length < MIN_CONFIRMATIONS) revert InsufficientConfirmations();
+
+        // Validate txBlockIndex is within bounds
+        if (spvProof.txBlockIndex >= spvProof.headers.length) {
+            revert TxBlockIndexOutOfRange(spvProof.txBlockIndex, spvProof.headers.length);
+        }
+
+        // Calculate confirmations: how many blocks have been built on top of the tx block
+        // confirmations = headers.length - txBlockIndex
+        // For MIN_CONFIRMATIONS=6: if tx is at index 0 and chain has 6 headers, confirmations=6 (OK)
+        uint256 confirmations = spvProof.headers.length - spvProof.txBlockIndex;
+        if (confirmations < MIN_CONFIRMATIONS) revert InsufficientConfirmations();
 
         // Check borrower registration
         bytes20 expectedPubkeyHash = borrowerPubkeyHash[spvProof.borrower];
@@ -180,25 +197,27 @@ contract BtcSpvVerifier is IVerifierAdapter {
         ICheckpointManager.Checkpoint memory checkpoint = checkpointManager.getCheckpoint(spvProof.checkpointHeight);
         if (checkpoint.height == 0) revert InvalidCheckpoint();
 
-        // Calculate target height and verify retarget boundary
-        uint32 targetHeight = checkpoint.height + uint32(spvProof.headers.length);
-        if ((checkpoint.height / RETARGET_PERIOD) != (targetHeight / RETARGET_PERIOD)) {
-            revert RetargetBoundaryCrossing(checkpoint.height, targetHeight);
+        // Calculate tip height (last header) and verify retarget boundary
+        uint32 tipHeight = checkpoint.height + uint32(spvProof.headers.length);
+        if ((checkpoint.height / RETARGET_PERIOD) != (tipHeight / RETARGET_PERIOD)) {
+            revert RetargetBoundaryCrossing(checkpoint.height, tipHeight);
         }
 
-        // Verify header chain and get target block info
-        (, BitcoinLib.BlockHeader memory targetHeader) = _verifyHeaderChain(
+        // Verify header chain and get all headers info
+        BitcoinLib.BlockHeader[] memory parsedHeaders = _verifyHeaderChainFull(
             checkpoint.blockHash,
-            checkpoint.height,
             checkpoint.bits,
             spvProof.headers
         );
 
+        // Get the header where tx is included
+        BitcoinLib.BlockHeader memory txBlockHeader = parsedHeaders[spvProof.txBlockIndex];
+
         // Calculate txid
         bytes32 txid = BitcoinLib.sha256d(spvProof.rawTx);
 
-        // Verify Merkle inclusion
-        if (!BitcoinLib.verifyMerkleProof(txid, targetHeader.merkleRoot, spvProof.merkleProof, spvProof.txIndex)) {
+        // Verify Merkle inclusion using the tx block's merkle root
+        if (!BitcoinLib.verifyMerkleProof(txid, txBlockHeader.merkleRoot, spvProof.merkleProof, spvProof.txIndex)) {
             revert InvalidMerkleProof();
         }
 
@@ -218,13 +237,15 @@ contract BtcSpvVerifier is IVerifierAdapter {
         _processedPayouts[payoutKey] = true;
 
         // Build evidence
+        // blockHeight is the height where the tx was included, not the tip
+        uint32 txBlockHeight = checkpoint.height + 1 + spvProof.txBlockIndex;
         evidence = PayoutEvidence({
             borrower: spvProof.borrower,
             txid: txid,
             vout: spvProof.outputIndex,
             amountSats: output.value,
-            blockHeight: checkpoint.height + uint32(spvProof.headers.length),
-            blockTimestamp: targetHeader.timestamp
+            blockHeight: txBlockHeight,
+            blockTimestamp: txBlockHeader.timestamp
         });
     }
 
@@ -289,6 +310,49 @@ contract BtcSpvVerifier is IVerifierAdapter {
                 targetHash = blockHash;
                 targetHeader = header;
             }
+        }
+    }
+
+    /**
+     * @notice Verify header chain and return all parsed headers
+     * @param checkpointHash Hash of checkpoint block
+     * @param expectedBits Expected difficulty bits from checkpoint
+     * @param headers Array of headers from checkpoint+1 to tip
+     * @return parsedHeaders Array of all parsed headers
+     */
+    function _verifyHeaderChainFull(
+        bytes32 checkpointHash,
+        uint32 expectedBits,
+        bytes[] memory headers
+    ) internal pure returns (BitcoinLib.BlockHeader[] memory parsedHeaders) {
+        parsedHeaders = new BitcoinLib.BlockHeader[](headers.length);
+        bytes32 prevHash = checkpointHash;
+
+        for (uint256 i = 0; i < headers.length; i++) {
+            // Parse header
+            BitcoinLib.BlockHeader memory header = BitcoinLib.parseHeader(headers[i]);
+            parsedHeaders[i] = header;
+
+            // Verify prevBlockHash links
+            if (header.prevBlockHash != prevHash) {
+                revert InvalidHeaderChain();
+            }
+
+            // Verify difficulty matches checkpoint (within same retarget period)
+            if (header.bits != expectedBits) {
+                revert DifficultyMismatch(expectedBits, header.bits);
+            }
+
+            // Calculate block hash
+            bytes32 blockHash = BitcoinLib.hashHeader(headers[i]);
+
+            // Verify PoW
+            if (!BitcoinLib.verifyPoW(blockHash, header.bits)) {
+                revert InvalidPoW();
+            }
+
+            // Update for next iteration
+            prevHash = blockHash;
         }
     }
 

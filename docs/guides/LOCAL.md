@@ -559,15 +559,38 @@ cast call $CHECKPOINT_MANAGER "getCheckpoint(uint32)((bytes32,uint32,uint256,uin
 cast call $BTC_SPV_VERIFIER "getBorrowerPubkeyHash(address)(bytes20)" $BORROWER_EVM --rpc-url $EVM_RPC_URL
 ```
 
-#### SPV 검증 제한사항
+#### SPV Proof Format and Confirmations
 
-- **Header chain 최대 144 블록** (약 1일)
-- **최소 6 confirmations** 필요
-- **Difficulty retarget 경계 불가** (2016 블록 단위)
-- **지원 스크립트**: P2WPKH, P2PKH만 지원
+The SPV proof includes:
+- `checkpointHeight`: Height of anchor checkpoint block
+- `headers[]`: Array of 80-byte headers from checkpoint+1 to **tip** (not target block)
+- `txBlockIndex`: Index within `headers[]` where the transaction is included (0-based)
+- `rawTx`: Full serialized Bitcoin transaction
+- `merkleProof[]`: Merkle branch for transaction inclusion
+- `txIndex`: Transaction's index in the block (for merkle proof direction)
+- `outputIndex`: Output index (vout) in transaction
+- `borrower`: Claimed borrower address
 
-Checkpoint가 너무 오래되면 header chain이 144 블록을 초과할 수 있습니다.
-이 경우 새 checkpoint를 등록해야 합니다.
+**Confirmations calculation:**
+```
+confirmations = headers.length - txBlockIndex
+```
+
+For example:
+- If `headers.length = 11` and `txBlockIndex = 5`, then `confirmations = 6`
+- The merkle proof is verified against `headers[txBlockIndex].merkleRoot`
+- `PayoutEvidence.blockHeight` is calculated as `checkpointHeight + 1 + txBlockIndex`
+
+#### SPV Validation Rules
+
+- **Header chain max 144 blocks** (~1 day)
+- **Min 6 confirmations** required (calculated as `headers.length - txBlockIndex >= 6`)
+- **No retarget boundary crossing** (checkpoint and tip must be in same 2016-block epoch)
+- **Difficulty validation**: All headers must have same bits as checkpoint
+- **Supported scripts**: P2WPKH, P2PKH only
+
+If checkpoint is too old, the header chain may exceed 144 blocks.
+In that case, register a new checkpoint.
 
 ---
 

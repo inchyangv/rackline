@@ -518,7 +518,7 @@
 
 ### T2.4 (Critical) SPV Confirmations 정의/검증 방식 수정
 - Priority: P0
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: `MIN_CONFIRMATIONS`가 “checkpoint↔txBlock 거리”가 아니라 **tx 포함 블록이 tip 대비 몇 블록 깊이인지** 를 의미하도록 proof 구조/검증을 바로잡는다.
 - 배경:
     - 현재 `contracts/BtcSpvVerifier.sol`은 `headers.length >= MIN_CONFIRMATIONS`만 확인하는데, 이는 일반적인 confirmations 의미와 다르다.
@@ -535,7 +535,17 @@
     - 정상 케이스: MIN_CONFIRMATIONS 충족 시 verify 성공
     - 문서/예제: `docs/guides/LOCAL.md`(또는 관련 가이드)에 proof 입력값 의미 갱신
 - 완료 조건:
-    - “confirmations”가 일반적인 정의로 동작하고, 테스트로 보장된다.
+    - "confirmations"가 일반적인 정의로 동작하고, 테스트로 보장된다.
+- 완료 요약:
+    - SpvProof struct에 `txBlockIndex` 필드 추가 (uint32)
+    - Confirmations 계산: `headers.length - txBlockIndex >= MIN_CONFIRMATIONS`
+    - Merkle proof는 `headers[txBlockIndex]`의 merkleRoot로 검증
+    - `PayoutEvidence.blockHeight`가 tx 포함 블록 height로 정확히 계산
+    - 새 에러 타입: `TxBlockIndexOutOfRange(txBlockIndex, headersLength)`
+    - `_verifyHeaderChainFull()` 함수 추가하여 모든 헤더 파싱/반환
+    - offchain prover의 `build_proof()`에 `tip_height` 파라미터 추가 (기본: target+5)
+    - 테스트: txBlockIndex 범위 초과, confirmations 부족, confirmations 계산 검증
+    - `docs/guides/LOCAL.md`에 SPV Proof Format 문서 추가
 
 ---
 

@@ -325,6 +325,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -349,6 +350,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: merkleProof,
             txIndex: 0,
@@ -373,6 +375,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: largeTx,
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -395,6 +398,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -419,6 +423,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: CHECKPOINT_HEIGHT,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -441,6 +446,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: 999999, // Non-existent checkpoint
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -490,6 +496,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: checkpointHeight,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -547,6 +554,7 @@ contract BtcSpvVerifierTest is Test {
         BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
             checkpointHeight: 900000,
             headers: headers,
+            txBlockIndex: 0,
             rawTx: hex"01000000",
             merkleProof: new bytes32[](0),
             txIndex: 0,
@@ -561,6 +569,86 @@ contract BtcSpvVerifierTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(BtcSpvVerifier.DifficultyMismatch.selector, 0x17053894, 0x1d00ffff)
         );
+        verifier.verifyPayout(encodedProof);
+    }
+
+    function test_verifyPayout_revertsIfTxBlockIndexOutOfRange() public {
+        // Create proof with txBlockIndex >= headers.length
+        bytes[] memory headers = new bytes[](6);
+        for (uint i = 0; i < 6; i++) {
+            headers[i] = new bytes(80);
+        }
+
+        BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
+            checkpointHeight: CHECKPOINT_HEIGHT,
+            headers: headers,
+            txBlockIndex: 6, // Out of range: headers.length is 6, so max valid index is 5
+            rawTx: hex"01000000",
+            merkleProof: new bytes32[](0),
+            txIndex: 0,
+            outputIndex: 0,
+            borrower: borrower
+        });
+
+        bytes memory encodedProof = abi.encode(proof);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(BtcSpvVerifier.TxBlockIndexOutOfRange.selector, 6, 6)
+        );
+        verifier.verifyPayout(encodedProof);
+    }
+
+    function test_verifyPayout_revertsIfConfirmationsInsufficientDueToTxBlockIndex() public {
+        // Create proof with headers.length=6 and txBlockIndex=1
+        // confirmations = 6 - 1 = 5 < MIN_CONFIRMATIONS(6)
+        bytes[] memory headers = new bytes[](6);
+        for (uint i = 0; i < 6; i++) {
+            headers[i] = new bytes(80);
+        }
+
+        BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
+            checkpointHeight: CHECKPOINT_HEIGHT,
+            headers: headers,
+            txBlockIndex: 1, // confirmations = 6 - 1 = 5 < 6
+            rawTx: hex"01000000",
+            merkleProof: new bytes32[](0),
+            txIndex: 0,
+            outputIndex: 0,
+            borrower: borrower
+        });
+
+        bytes memory encodedProof = abi.encode(proof);
+
+        vm.expectRevert(BtcSpvVerifier.InsufficientConfirmations.selector);
+        verifier.verifyPayout(encodedProof);
+    }
+
+    function test_verifyPayout_confirmationsCalculation() public {
+        // Verify confirmations are calculated as headers.length - txBlockIndex
+        // If headers.length=7 and txBlockIndex=0, confirmations=7 (passes MIN_CONFIRMATIONS=6)
+        // If headers.length=7 and txBlockIndex=1, confirmations=6 (passes MIN_CONFIRMATIONS=6)
+        // If headers.length=7 and txBlockIndex=2, confirmations=5 (fails MIN_CONFIRMATIONS=6)
+
+        // Test case: headers.length=7, txBlockIndex=2 should fail
+        bytes[] memory headers = new bytes[](7);
+        for (uint i = 0; i < 7; i++) {
+            headers[i] = new bytes(80);
+        }
+
+        BtcSpvVerifier.SpvProof memory proof = BtcSpvVerifier.SpvProof({
+            checkpointHeight: CHECKPOINT_HEIGHT,
+            headers: headers,
+            txBlockIndex: 2, // confirmations = 7 - 2 = 5 < 6
+            rawTx: hex"01000000",
+            merkleProof: new bytes32[](0),
+            txIndex: 0,
+            outputIndex: 0,
+            borrower: borrower
+        });
+
+        bytes memory encodedProof = abi.encode(proof);
+
+        vm.expectRevert(BtcSpvVerifier.InsufficientConfirmations.selector);
         verifier.verifyPayout(encodedProof);
     }
 }
