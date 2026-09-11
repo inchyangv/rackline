@@ -23,7 +23,7 @@ import { TestnetMintableERC20 } from "../contracts/TestnetMintableERC20.sol";
  */
 contract Deploy is Script {
     // Default configuration
-    uint256 constant FIXED_APR_BPS = 1000; // 10% APR
+    uint256 constant FIXED_APR_BPS = 800; // 8% APR
     uint64 constant BTC_PRICE_USD = 5_000_000_000_000; // $50,000 (8 decimals)
     uint32 constant ADVANCE_RATE_BPS = 5000; // 50%
     uint32 constant WINDOW_SECONDS = 30 days;
