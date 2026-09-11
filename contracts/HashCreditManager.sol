@@ -6,7 +6,9 @@ import { IVerifierAdapter } from "./interfaces/IVerifierAdapter.sol";
 import { ILendingVault } from "./interfaces/ILendingVault.sol";
 import { IRiskConfig } from "./interfaces/IRiskConfig.sol";
 import { IPoolRegistry } from "./interfaces/IPoolRegistry.sol";
-import { IERC20 } from "lib/forge-std/src/interfaces/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title HashCreditManager
@@ -20,7 +22,9 @@ import { IERC20 } from "lib/forge-std/src/interfaces/IERC20.sol";
  * - Borrow/repay routing to LendingVault
  * - Replay protection for payouts
  */
-contract HashCreditManager is IHashCreditManager {
+contract HashCreditManager is IHashCreditManager, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     // ============================================
     // Constants
     // ============================================
@@ -285,7 +289,7 @@ contract HashCreditManager is IHashCreditManager {
     /**
      * @inheritdoc IHashCreditManager
      */
-    function borrow(uint256 amount) external override {
+    function borrow(uint256 amount) external override nonReentrant {
         if (amount == 0) revert ZeroAmount();
 
         BorrowerInfo storage info = _borrowers[msg.sender];
@@ -306,7 +310,7 @@ contract HashCreditManager is IHashCreditManager {
             revert ExceedsCreditLimit();
         }
 
-        // Update state - compound interest into principal
+        // Update state before external call (CEI pattern)
         info.currentDebt = uint128(newDebt);
         info.lastDebtUpdateTimestamp = uint64(block.timestamp);
         totalGlobalDebt += accruedInterest + amount;
@@ -320,7 +324,7 @@ contract HashCreditManager is IHashCreditManager {
     /**
      * @inheritdoc IHashCreditManager
      */
-    function repay(uint256 amount) external override {
+    function repay(uint256 amount) external override nonReentrant {
         if (amount == 0) revert ZeroAmount();
 
         BorrowerInfo storage info = _borrowers[msg.sender];
@@ -347,16 +351,16 @@ contract HashCreditManager is IHashCreditManager {
             principalPaid = actualRepay - accruedInterest;
         }
 
-        // Transfer stablecoin from borrower
-        IERC20(stablecoin).transferFrom(msg.sender, address(this), actualRepay);
+        // Transfer stablecoin from borrower (SafeERC20 for non-standard tokens)
+        IERC20(stablecoin).safeTransferFrom(msg.sender, address(this), actualRepay);
 
-        // Approve vault to pull funds
-        IERC20(stablecoin).approve(vault, actualRepay);
+        // Approve vault to pull funds (forceApprove handles tokens requiring 0 approval first)
+        IERC20(stablecoin).forceApprove(vault, actualRepay);
 
         // Route to vault (full amount including interest)
         ILendingVault(vault).repayFunds(msg.sender, actualRepay);
 
-        // Update state
+        // Update state after external calls (vault call is to trusted contract)
         info.currentDebt -= uint128(principalPaid);
         info.lastDebtUpdateTimestamp = uint64(block.timestamp);
         // totalGlobalDebt tracks principal only, so only subtract principal paid

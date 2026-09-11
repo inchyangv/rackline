@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { IERC20 } from "lib/forge-std/src/interfaces/IERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ILendingVault } from "./interfaces/ILendingVault.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title LendingVault
@@ -17,13 +19,12 @@ import { ILendingVault } from "./interfaces/ILendingVault.sol";
  * - Shares represent proportional ownership of vault assets
  * - Share value increases as interest accrues
  */
-contract LendingVault is ILendingVault {
+contract LendingVault is ILendingVault, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     // ============================================
     // Constants
     // ============================================
-
-    /// @notice Precision for interest calculations
-    uint256 private constant PRECISION = 1e18;
 
     /// @notice Seconds per year for APR calculations
     uint256 private constant SECONDS_PER_YEAR = 365 days;
@@ -141,7 +142,7 @@ contract LendingVault is ILendingVault {
     /**
      * @inheritdoc ILendingVault
      */
-    function deposit(uint256 amount) external override returns (uint256 shares) {
+    function deposit(uint256 amount) external override nonReentrant returns (uint256 shares) {
         if (amount == 0) revert ZeroAmount();
 
         _accrueInterest();
@@ -149,10 +150,11 @@ contract LendingVault is ILendingVault {
         shares = convertToShares(amount);
         if (shares == 0) revert ZeroAmount();
 
+        // Transfer tokens first (checks-effects-interactions pattern with nonReentrant guard)
+        _asset.safeTransferFrom(msg.sender, address(this), amount);
+
         sharesOf[msg.sender] += shares;
         totalShares += shares;
-
-        _asset.transferFrom(msg.sender, address(this), amount);
 
         emit Deposited(msg.sender, amount, shares);
     }
@@ -160,7 +162,7 @@ contract LendingVault is ILendingVault {
     /**
      * @inheritdoc ILendingVault
      */
-    function withdraw(uint256 shares) external override returns (uint256 amount) {
+    function withdraw(uint256 shares) external override nonReentrant returns (uint256 amount) {
         if (shares == 0) revert ZeroAmount();
         if (shares > sharesOf[msg.sender]) revert InsufficientShares();
 
@@ -169,10 +171,11 @@ contract LendingVault is ILendingVault {
         amount = convertToAssets(shares);
         if (amount > availableLiquidity()) revert InsufficientLiquidity();
 
+        // Update state before external call (CEI pattern)
         sharesOf[msg.sender] -= shares;
         totalShares -= shares;
 
-        _asset.transfer(msg.sender, amount);
+        _asset.safeTransfer(msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount, shares);
     }
@@ -184,15 +187,16 @@ contract LendingVault is ILendingVault {
     /**
      * @inheritdoc ILendingVault
      */
-    function borrowFunds(address borrower, uint256 amount) external override onlyManager {
+    function borrowFunds(address borrower, uint256 amount) external override onlyManager nonReentrant {
         if (amount == 0) revert ZeroAmount();
         if (amount > availableLiquidity()) revert InsufficientLiquidity();
 
         _accrueInterest();
 
+        // Update state before external call (CEI pattern)
         totalBorrowed += amount;
 
-        _asset.transfer(borrower, amount);
+        _asset.safeTransfer(borrower, amount);
 
         emit BorrowedFromVault(borrower, amount);
     }
@@ -200,10 +204,14 @@ contract LendingVault is ILendingVault {
     /**
      * @inheritdoc ILendingVault
      */
-    function repayFunds(address borrower, uint256 amount) external override onlyManager {
+    function repayFunds(address borrower, uint256 amount) external override onlyManager nonReentrant {
         if (amount == 0) revert ZeroAmount();
 
         _accrueInterest();
+
+        // Transfer tokens first (receiving funds is safe before state update)
+        // Manager is responsible for collecting from borrower first
+        _asset.safeTransferFrom(msg.sender, address(this), amount);
 
         // Cap principal repayment at total borrowed
         uint256 principalRepay = amount > totalBorrowed ? totalBorrowed : amount;
@@ -219,10 +227,6 @@ contract LendingVault is ILendingVault {
                 : interestPortion;
             accumulatedInterest -= interestDeduction;
         }
-
-        // Transfer from manager (msg.sender), not borrower
-        // Manager is responsible for collecting from borrower first
-        _asset.transferFrom(msg.sender, address(this), amount);
 
         emit RepaidToVault(borrower, amount);
     }

@@ -625,7 +625,7 @@
 
 ### T2.8 ERC20 안전성(SafeERC20) + Approval 호환성 + Reentrancy 방어
 - Priority: P2
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 비표준 ERC20(리턴값 false, approve=0 선행 요구 등) 및 토큰 콜백 기반 reentrancy에 대한 방어를 추가한다.
 - 작업:
     - OpenZeppelin `SafeERC20`/`ReentrancyGuard` 도입
@@ -637,6 +637,14 @@
     - reentrancy 시나리오(가능하면 ERC777 스타일 mock)에서 share/부채 불변식이 깨지지 않음을 확인
 - 완료 조건:
     - 토큰 호환성/재진입 공격면이 줄고, 테스트로 보장된다.
+- 완료 요약:
+    - OpenZeppelin `SafeERC20` 및 `ReentrancyGuard` 도입 (lib/openzeppelin-contracts)
+    - `LendingVault.sol`: `transfer` → `safeTransfer`, `transferFrom` → `safeTransferFrom`
+    - `LendingVault.sol`: `deposit`, `withdraw`, `borrowFunds`, `repayFunds`에 `nonReentrant` 적용
+    - `HashCreditManager.sol`: `transferFrom` → `safeTransferFrom`, `approve` → `forceApprove`
+    - `HashCreditManager.sol`: `borrow`, `repay`에 `nonReentrant` 적용
+    - Mock 토큰 추가: `MockUSDT` (approve 0 필요), `MockNoReturnERC20` (리턴값 없음), `ReentrantToken` (callback 기반)
+    - 9개 테스트 추가: USDT-style 호환성, no-return 토큰 호환성, reentrancy 방어
 
 ---
 
