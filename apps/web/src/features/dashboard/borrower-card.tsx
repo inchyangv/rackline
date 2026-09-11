@@ -11,6 +11,7 @@ import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
 import { useManagerReads } from '@/hooks/use-manager-reads'
 import { useBorrowerInfo } from '@/hooks/use-borrower-info'
+import { useVaultInfo } from '@/hooks/use-vault-info'
 import { sendContractTx } from '@/stores/tx-store'
 import { HashCreditManagerAbi, Erc20Abi } from '@/lib/abis'
 import { toast } from 'sonner'
@@ -29,6 +30,13 @@ export function BorrowerCard() {
   const { stablecoin } = useManagerReads()
   const { availableCredit, borrowerInfo, stablecoinDecimals, stablecoinBalance, isLoading } =
     useBorrowerInfo(borrowerAddress, stablecoin)
+  const { borrowAPR } = useVaultInfo()
+
+  // Determine if borrow should be disabled (unregistered or no credit)
+  const borrowerStatus = typeof borrowerInfo?.status === 'bigint' ? Number(borrowerInfo.status) : 0
+  const creditLimit = typeof borrowerInfo?.creditLimit === 'bigint' ? borrowerInfo.creditLimit : 0n
+  const isBorrowDisabled = !borrowerInfo || borrowerStatus === 0 || creditLimit === 0n
+  const aprDisplay = borrowAPR !== null ? `${(Number(borrowAPR) / 100).toFixed(2)}%` : '—'
 
   async function doBorrow() {
     const amount = ethers.parseUnits(borrowAmount || '0', stablecoinDecimals)
@@ -105,17 +113,31 @@ export function BorrowerCard() {
         <div className="space-y-2.5 pt-2">
           <div>
             <Label className="text-[10px] uppercase tracking-widest">Borrow</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                value={borrowAmount}
-                onChange={(e) => setBorrowAmount(e.target.value)}
-                placeholder="e.g. 1000"
-                className="font-mono text-xs"
-              />
-              <Button size="sm" onClick={() => void doBorrow()} disabled={!walletAccount}>
-                Borrow
-              </Button>
-            </div>
+            {isBorrowDisabled ? (
+              <div className="mt-1 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                <p className="text-xs text-amber-200 font-medium">BTC wallet not linked</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Link your BTC wallet in the &quot;Link BTC Wallet&quot; section below to enable borrowing.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Fixed APR: {aprDisplay}
+                </p>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={borrowAmount}
+                    onChange={(e) => setBorrowAmount(e.target.value)}
+                    placeholder="e.g. 1000"
+                    className="font-mono text-xs"
+                  />
+                  <Button size="sm" onClick={() => void doBorrow()} disabled={!walletAccount}>
+                    Borrow
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
           <div>
             <Label className="text-[10px] uppercase tracking-widest">Approve Spending</Label>
