@@ -142,7 +142,7 @@
 
 ### T0.8 Offchain Relayer (Python) — Watch + Sign + Submit
 - Priority: P0
-- Status: [ ]
+- Status: [x] DONE
 - 목적: Bitcoin payout을 감지하고 EVM에 제출한다(해커톤 데모 핵심).
 - 작업:
     - 데이터 소스 선택:
