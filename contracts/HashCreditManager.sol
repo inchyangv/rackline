@@ -198,7 +198,8 @@ contract HashCreditManager is IHashCreditManager {
             currentDebt: 0,
             lastPayoutTimestamp: 0,
             registeredAt: uint64(block.timestamp),
-            payoutCount: 0
+            payoutCount: 0,
+            lastDebtUpdateTimestamp: 0
         });
 
         emit BorrowerRegistered(borrower, btcPayoutKeyHash, uint64(block.timestamp));
@@ -291,19 +292,24 @@ contract HashCreditManager is IHashCreditManager {
         if (info.status == BorrowerStatus.None) revert BorrowerNotRegistered();
         if (info.status != BorrowerStatus.Active) revert BorrowerNotActive();
 
-        // Check credit limit
-        uint256 newDebt = uint256(info.currentDebt) + amount;
+        // Compound any accrued interest into principal before adding new borrow
+        uint256 accruedInterest = _calculateAccruedInterest(info);
+        uint256 currentPrincipal = uint256(info.currentDebt) + accruedInterest;
+
+        // Check credit limit with new amount
+        uint256 newDebt = currentPrincipal + amount;
         if (newDebt > info.creditLimit) revert ExceedsCreditLimit();
 
         // Check global cap
         IRiskConfig.RiskParams memory params = IRiskConfig(riskConfig).getRiskParams();
-        if (params.globalCap > 0 && totalGlobalDebt + amount > params.globalCap) {
+        if (params.globalCap > 0 && totalGlobalDebt + accruedInterest + amount > params.globalCap) {
             revert ExceedsCreditLimit();
         }
 
-        // Update state
+        // Update state - compound interest into principal
         info.currentDebt = uint128(newDebt);
-        totalGlobalDebt += amount;
+        info.lastDebtUpdateTimestamp = uint64(block.timestamp);
+        totalGlobalDebt += accruedInterest + amount;
 
         // Route to vault
         ILendingVault(vault).borrowFunds(msg.sender, amount);
@@ -320,8 +326,26 @@ contract HashCreditManager is IHashCreditManager {
         BorrowerInfo storage info = _borrowers[msg.sender];
         if (info.status == BorrowerStatus.None) revert BorrowerNotRegistered();
 
-        // Cap at current debt
-        uint256 actualRepay = amount > info.currentDebt ? info.currentDebt : amount;
+        // Calculate accrued interest
+        uint256 accruedInterest = _calculateAccruedInterest(info);
+        uint256 totalDebt = uint256(info.currentDebt) + accruedInterest;
+
+        // Cap repayment at total debt (principal + interest)
+        uint256 actualRepay = amount > totalDebt ? totalDebt : amount;
+
+        // Calculate how much goes to interest vs principal
+        uint256 interestPaid;
+        uint256 principalPaid;
+
+        if (actualRepay <= accruedInterest) {
+            // Only paying interest (or partial interest)
+            interestPaid = actualRepay;
+            principalPaid = 0;
+        } else {
+            // Paying all interest + some/all principal
+            interestPaid = accruedInterest;
+            principalPaid = actualRepay - accruedInterest;
+        }
 
         // Transfer stablecoin from borrower
         IERC20(stablecoin).transferFrom(msg.sender, address(this), actualRepay);
@@ -329,12 +353,14 @@ contract HashCreditManager is IHashCreditManager {
         // Approve vault to pull funds
         IERC20(stablecoin).approve(vault, actualRepay);
 
-        // Route to vault
+        // Route to vault (full amount including interest)
         ILendingVault(vault).repayFunds(msg.sender, actualRepay);
 
         // Update state
-        info.currentDebt -= uint128(actualRepay);
-        totalGlobalDebt -= actualRepay;
+        info.currentDebt -= uint128(principalPaid);
+        info.lastDebtUpdateTimestamp = uint64(block.timestamp);
+        // totalGlobalDebt tracks principal only, so only subtract principal paid
+        totalGlobalDebt -= principalPaid;
 
         emit Repaid(msg.sender, actualRepay, info.currentDebt);
     }
@@ -363,17 +389,59 @@ contract HashCreditManager is IHashCreditManager {
     /**
      * @notice Get available credit for a borrower
      * @param borrower Address to check
-     * @return Available credit (creditLimit - currentDebt)
+     * @return Available credit (creditLimit - currentDebt including interest)
      */
     function getAvailableCredit(address borrower) external view returns (uint256) {
         BorrowerInfo storage info = _borrowers[borrower];
-        if (info.creditLimit <= info.currentDebt) return 0;
-        return info.creditLimit - info.currentDebt;
+        uint256 totalDebt = uint256(info.currentDebt) + _calculateAccruedInterest(info);
+        if (info.creditLimit <= totalDebt) return 0;
+        return info.creditLimit - totalDebt;
+    }
+
+    /**
+     * @inheritdoc IHashCreditManager
+     */
+    function getCurrentDebt(address borrower) external view override returns (uint256) {
+        BorrowerInfo storage info = _borrowers[borrower];
+        return uint256(info.currentDebt) + _calculateAccruedInterest(info);
+    }
+
+    /**
+     * @inheritdoc IHashCreditManager
+     */
+    function getAccruedInterest(address borrower) external view override returns (uint256) {
+        return _calculateAccruedInterest(_borrowers[borrower]);
     }
 
     // ============================================
     // Internal Functions
     // ============================================
+
+    /// @notice Seconds per year for APR calculations
+    uint256 private constant SECONDS_PER_YEAR = 365 days;
+
+    /**
+     * @notice Calculate accrued interest for a borrower
+     * @param info Borrower info storage reference
+     * @return interest Accrued interest in stablecoin decimals
+     */
+    function _calculateAccruedInterest(BorrowerInfo storage info) internal view returns (uint256) {
+        if (info.currentDebt == 0 || info.lastDebtUpdateTimestamp == 0) {
+            return 0;
+        }
+
+        uint256 timeElapsed = block.timestamp - info.lastDebtUpdateTimestamp;
+        if (timeElapsed == 0) {
+            return 0;
+        }
+
+        // Get APR from vault
+        uint256 aprBps = ILendingVault(vault).borrowAPR();
+
+        // interest = principal * rate * time / year
+        // rate is in basis points, so divide by BPS
+        return (uint256(info.currentDebt) * aprBps * timeElapsed) / (SECONDS_PER_YEAR * BPS);
+    }
 
     /**
      * @notice Calculate credit limit from trailing revenue

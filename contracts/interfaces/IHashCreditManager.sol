@@ -36,7 +36,7 @@ interface IHashCreditManager {
         uint128 trailingRevenueSats;
         /// @notice Current credit limit in stablecoin (6 decimals)
         uint128 creditLimit;
-        /// @notice Current outstanding debt in stablecoin (6 decimals)
+        /// @notice Current outstanding debt principal in stablecoin (6 decimals)
         uint128 currentDebt;
         /// @notice Last payout timestamp (for window calculations)
         uint64 lastPayoutTimestamp;
@@ -44,6 +44,8 @@ interface IHashCreditManager {
         uint64 registeredAt;
         /// @notice Total number of payouts received (for provenance heuristics)
         uint32 payoutCount;
+        /// @notice Last timestamp when debt was updated (for interest calculation)
+        uint64 lastDebtUpdateTimestamp;
     }
 
     // ============================================
@@ -166,6 +168,20 @@ interface IHashCreditManager {
      * @return info Borrower information struct
      */
     function getBorrowerInfo(address borrower) external view returns (BorrowerInfo memory info);
+
+    /**
+     * @notice Get current debt including accrued interest
+     * @param borrower Address to query
+     * @return Total debt (principal + accrued interest) in stablecoin decimals
+     */
+    function getCurrentDebt(address borrower) external view returns (uint256);
+
+    /**
+     * @notice Get accrued interest for a borrower
+     * @param borrower Address to query
+     * @return Accrued interest in stablecoin decimals
+     */
+    function getAccruedInterest(address borrower) external view returns (uint256);
 
     /**
      * @notice Get current verifier adapter address

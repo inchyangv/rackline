@@ -493,6 +493,171 @@ contract HashCreditManagerTest is Test {
     }
 
     // ============================================
+    // Interest Accrual Tests (T2.7)
+    // ============================================
+
+    function test_getCurrentDebt_includesInterest() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000); // $5,000
+
+        // Check initial debt equals principal
+        assertEq(manager.getCurrentDebt(alice), 5000_000000);
+        assertEq(manager.getAccruedInterest(alice), 0);
+
+        // Advance time by 1 year (10% APR = $500 interest)
+        vm.warp(block.timestamp + 365 days);
+
+        // Interest = 5000 * 10% * 1 year = 500
+        uint256 expectedInterest = 500_000000;
+        assertApproxEqRel(manager.getAccruedInterest(alice), expectedInterest, 0.001e18);
+        assertApproxEqRel(manager.getCurrentDebt(alice), 5500_000000, 0.001e18);
+    }
+
+    function test_repay_interestFirst() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000);
+
+        // Advance time by 1 year
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 interest = manager.getAccruedInterest(alice);
+        uint256 halfInterest = interest / 2;
+
+        // Repay less than interest
+        vm.prank(alice);
+        manager.repay(halfInterest);
+
+        // Principal should remain unchanged
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.currentDebt, 5000_000000, "Principal should not change when only paying interest");
+
+        // Accrued interest should reset (we paid half, timestamp updated)
+        assertEq(manager.getAccruedInterest(alice), 0, "Interest should reset after repay");
+    }
+
+    function test_repay_interestAndPrincipal() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000);
+
+        // Advance time by 1 year
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 totalDebt = manager.getCurrentDebt(alice);
+        uint256 interest = manager.getAccruedInterest(alice);
+
+        // Repay full debt (principal + interest)
+        vm.prank(alice);
+        manager.repay(totalDebt);
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.currentDebt, 0, "Principal should be zero after full repay");
+        assertEq(manager.getCurrentDebt(alice), 0, "Total debt should be zero");
+    }
+
+    function test_repay_overpayment_capped() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000);
+
+        // Advance time
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 totalDebt = manager.getCurrentDebt(alice);
+        uint256 balanceBefore = stablecoin.balanceOf(alice);
+
+        // Try to repay more than total debt
+        vm.prank(alice);
+        manager.repay(totalDebt + 1000_000000);
+
+        // Should only transfer totalDebt amount
+        assertEq(stablecoin.balanceOf(alice), balanceBefore - totalDebt, "Should only repay actual debt");
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        assertEq(info.currentDebt, 0);
+    }
+
+    function test_borrow_compoundsInterestIntoPrincipal() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000);
+
+        // Advance time by 1 year
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 accruedInterest = manager.getAccruedInterest(alice);
+
+        // Borrow more - should compound interest into principal
+        vm.prank(alice);
+        manager.borrow(1000_000000);
+
+        IHashCreditManager.BorrowerInfo memory info = manager.getBorrowerInfo(alice);
+        // New principal = old principal + accrued interest + new borrow
+        uint256 expectedPrincipal = 5000_000000 + accruedInterest + 1000_000000;
+        assertApproxEqRel(info.currentDebt, expectedPrincipal, 0.001e18);
+
+        // After compounding, accrued interest should be 0
+        assertEq(manager.getAccruedInterest(alice), 0);
+    }
+
+    function test_getAvailableCredit_considersInterest() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        uint256 initialAvailable = manager.getAvailableCredit(alice);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000);
+
+        uint256 afterBorrowAvailable = manager.getAvailableCredit(alice);
+        assertEq(afterBorrowAvailable, initialAvailable - 5000_000000);
+
+        // Advance time - interest accrues
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 afterInterestAvailable = manager.getAvailableCredit(alice);
+        // Available credit should decrease by accrued interest
+        assertLt(afterInterestAvailable, afterBorrowAvailable, "Available credit should decrease with interest");
+
+        uint256 interest = manager.getAccruedInterest(alice);
+        assertEq(afterInterestAvailable, afterBorrowAvailable - interest);
+    }
+
+    function test_vaultReceivesInterestOnRepay() public {
+        _setupBorrowerWithCredit(alice, 1_00000000);
+
+        vm.prank(alice);
+        manager.borrow(5000_000000);
+
+        // Record vault balance after borrow (reduced by borrowed amount)
+        uint256 vaultBalanceAfterBorrow = stablecoin.balanceOf(address(vault));
+
+        // Advance time
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 totalDebt = manager.getCurrentDebt(alice);
+        uint256 interest = manager.getAccruedInterest(alice);
+
+        // Repay full debt (principal + interest)
+        vm.prank(alice);
+        manager.repay(totalDebt);
+
+        uint256 vaultBalanceAfterRepay = stablecoin.balanceOf(address(vault));
+
+        // Vault should receive principal + interest (the full repayment amount)
+        uint256 received = vaultBalanceAfterRepay - vaultBalanceAfterBorrow;
+        assertApproxEqRel(received, 5000_000000 + interest, 0.001e18);
+        // Also verify the net gain is exactly the interest
+        assertApproxEqRel(interest, 500_000000, 0.001e18);
+    }
+
+    // ============================================
     // Helper Functions
     // ============================================
 

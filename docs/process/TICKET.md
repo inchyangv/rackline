@@ -599,7 +599,7 @@
 
 ### T2.7 (High) Manager/Vault 이자 모델 정합성(부채 이자 반영) 구현
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 현재 `HashCreditManager.currentDebt`는 이자를 반영하지 않아 borrower가 이자를 상환할 수 없고, `LendingVault`의 이자 모델과 불일치한다. borrower debt에 이자를 반영해 vault에 이자 수익이 실제로 귀속되도록 한다.
 - 작업:
     - 설계 선택:
@@ -612,6 +612,14 @@
     - 상환액이 이자 미만/이자+원금/초과 등 엣지 케이스
 - 완료 조건:
     - borrower가 이자를 실제로 상환 가능하고, LP 수익이 회계상/실제 토큰 흐름 모두 일치한다.
+- 완료 요약:
+    - `IHashCreditManager.BorrowerInfo`에 `lastDebtUpdateTimestamp` 필드 추가
+    - `IHashCreditManager`에 `getCurrentDebt(address)`, `getAccruedInterest(address)` 함수 추가
+    - `HashCreditManager._calculateAccruedInterest()` 구현: Vault의 borrowAPR()을 조회하여 시간 기반 이자 계산
+    - `borrow()` 수정: 기존 accrued interest를 principal에 합산 후 새 borrow 추가
+    - `repay()` 수정: 이자 우선 상환, 남은 금액으로 원금 상환, Vault에 전체 금액 전달
+    - `getAvailableCredit()` 수정: 이자 포함한 총 debt 기준으로 available credit 계산
+    - 7개 테스트 추가: interest accrual, repay interest first, repay capped, compound interest, available credit with interest, vault receives interest
 
 ---
 
