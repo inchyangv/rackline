@@ -248,6 +248,162 @@
 
 ---
 
+### T1.6 Creditcoin Testnet SPV 배포 스크립트 + Wiring
+- Priority: P1
+- Status: [x] DONE
+- 목적: Creditcoin testnet(chainId=102031)에서 SPV 스택을 **재현 가능하게 배포**하고, Manager가 SPV verifier를 쓰도록 연결한다.
+- 작업:
+    - `CheckpointManager` + `BtcSpvVerifier` 포함한 배포 스크립트 추가(예: `script/DeploySpv.s.sol`)
+    - 배포 후 `HashCreditManager.setVerifier(BtcSpvVerifier)` 호출(또는 처음부터 SPV verifier로 Manager 배포)
+    - 콘솔에 주소 요약 출력 + `.env`에 넣을 키 목록 정리(문서/로그)
+- 완료 조건:
+    - Creditcoin testnet에서 스크립트 1회 실행으로 SPV 관련 컨트랙트 주소를 얻고, Manager verifier가 SPV로 설정된다.
+- 완료 요약:
+    - Created `script/DeploySpv.s.sol` - full SPV mode deployment script
+    - Deploys: MockUSDC → CheckpointManager → BtcSpvVerifier → RiskConfig → PoolRegistry → LendingVault → HashCreditManager
+    - Manager is deployed with BtcSpvVerifier as verifier (not RelayerSigVerifier)
+    - Console output includes all addresses and .env configuration guide
+    - Usage: `forge script script/DeploySpv.s.sol --rpc-url $CREDITCOIN_TESTNET_RPC --broadcast`
+
+---
+
+### T1.7 Checkpoint 등록 툴링 (Bitcoin Core RPC → CheckpointManager)
+- Priority: P1
+- Status: [ ] TODO
+- 목적: **Bitcoin testnet** Bitcoin Core RPC에서 블록 헤더/메타를 읽어서 `CheckpointManager.setCheckpoint()`를 **실수 없이** 실행한다.
+- 작업:
+    - `hashcredit-prover`에 `set-checkpoint` 커맨드 추가(또는 별도 스크립트)
+    - 입력: `height` (또는 `--height`), EVM `RPC_URL`, `PRIVATE_KEY`, `CHECKPOINT_MANAGER` 주소, Bitcoin RPC 접속정보
+        - 기본값(권장): `BITCOIN_RPC_URL=http://127.0.0.1:18332` (Bitcoin Core `-testnet` RPC)
+    - `blockHash`는 **헤더 bytes로 sha256d 계산한 내부 endian(bytes32)** 을 사용(엔디안 혼동 방지)
+    - `timestamp`, `chainWork`를 Bitcoin Core 결과에서 안전하게 파싱
+- 완료 조건:
+    - 지정 height로 checkpoint 등록 트랜잭션이 성공하고, `latestCheckpointHeight()`가 갱신된다.
+
+---
+
+### T1.8 Borrower BTC Address → pubkeyHash 등록 툴링 (BtcSpvVerifier)
+- Priority: P1
+- Status: [ ] TODO
+- 목적: borrower의 **Bitcoin testnet** 주소(P2WPKH bech32 `tb1...` / P2PKH base58 `m...`/`n...`)를 받아 **20-byte pubkey hash**를 추출하고 `BtcSpvVerifier.setBorrowerPubkeyHash()`를 실행한다.
+- 작업:
+    - 주소 디코더 구현(bech32 v0 + base58check 최소 구현; 외부 무거운 라이브러리 의존 최소화)
+    - `hashcredit-prover set-borrower-pubkey-hash --borrower 0x.. --btc-address ...` 커맨드 추가
+    - 성공 후 `getBorrowerPubkeyHash(borrower)`로 검증
+- 완료 조건:
+    - 실제 BTC 주소 1개로 pubkey hash가 올바르게 등록되고, 이후 SPV proof가 해당 주소로만 통과한다.
+
+---
+
+### T1.9 SPV Proof 생성 + EVM 제출 커맨드 (txid 단발)
+- Priority: P1
+- Status: [ ] TODO
+- 목적: 복잡한 “watcher/relayer” 전에, **Bitcoin testnet txid 한 건을 입력하면** proof를 만들고 `HashCreditManager.submitPayout()`까지 끝내는 단발 플로우를 제공한다.
+- 작업:
+    - `hashcredit-prover submit-proof` 커맨드 추가
+    - 입력:
+        - Bitcoin: `txid`(display), `outputIndex`, `targetHeight`, `checkpointHeight`(또는 자동 선택)
+        - EVM: `RPC_URL`(Creditcoin), `CHAIN_ID=102031`, `PRIVATE_KEY`, `HASH_CREDIT_MANAGER`
+        - borrower EVM address
+    - 내부:
+        - ProofBuilder로 `abi.encode(SpvProof)` 생성
+        - web3.py로 `HashCreditManager.submitPayout(bytes)` 전송 + receipt 확인
+- 완료 조건:
+    - “txid 1건” 입력으로 on-chain payout 반영 트랜잭션이 성공한다.
+
+---
+
+### T1.10 SPV Relayer(감시/자동 제출) + dedupe/confirmations
+- Priority: P1
+- Status: [ ] TODO
+- 목적: 운영 가능한 최소 relayer를 만들어 **Bitcoin testnet 주소 감시 → confirmations 충족 → proof 생성 → submit → dedupe**까지 자동화한다.
+- 작업:
+    - Bitcoin Core RPC 기반 주소 감시(최소: txid 리스트/블록 스캔 전략 중 하나)
+    - checkpoint 선택 로직:
+        - header chain 길이 제약(≤144) 만족하도록 `checkpointHeight` 자동 선택
+    - sqlite dedupe(기존 relayer DB 재사용 가능)
+    - 실패 케이스(재시도/로그/원인 노출) 정리
+- 완료 조건:
+    - 한 주소를 지정하면 payout 트랜잭션을 자동으로 찾아 submit하고, 중복 제출이 방지된다.
+
+---
+
+### T1.11 결정적(offline) SPV fixtures + Manager E2E 테스트 + 문서
+- Priority: P1
+- Status: [ ] TODO
+- 목적: 네트워크 없이도 검증 가능한 형태로 **Bitcoin testnet 기반 SPV proof 검증/제출의 회귀 테스트**를 만들고, Creditcoin testnet 기준 운영 문서를 완성한다.
+- 작업:
+    - `test/fixtures/`에 실제 메인넷/테스트넷 tx 기반(또는 최소한 고정 데이터 기반) proof 구성요소 저장
+    - `BtcSpvVerifier.verifyPayout()` 성공/실패 테스트 추가(머클/헤더체인/출력 불일치 등)
+    - `HashCreditManager.submitPayout()`까지 이어지는 E2E 테스트 추가(creditLimit 증가 + replay 방지)
+    - `LOCAL.md`에 Creditcoin testnet SPV 모드 실행/디버깅 섹션 추가
+- 완료 조건:
+    - `forge test`로 SPV 경로의 핵심 검증이 안정적으로 재현되고, 문서만 보고 testnet에서 end-to-end 실행 가능하다.
+
+---
+
+### T1.12 Frontend 스캐폴딩 (Vite + React) + 컨트랙트 조회 대시보드
+- Priority: P1
+- Status: [x] DONE
+- 목적: 인턴/심사위원이 “지금 상태가 어떤지”를 바로 볼 수 있는 **웹 대시보드**를 만든다(일단 읽기 위주).
+- 작업:
+    - `apps/web` 생성(Vite + React + TS)
+    - 환경변수 템플릿: `apps/web/.env.example` (`VITE_RPC_URL`, `VITE_CHAIN_ID=102031`, `VITE_HASH_CREDIT_MANAGER`, `VITE_BTC_SPV_VERIFIER`, `VITE_CHECKPOINT_MANAGER` 등)
+    - 화면:
+        - 연결 상태(지갑 연결 여부 / chainId / 현재 계정)
+        - Manager 정보: `owner`, `verifier`, `stablecoin`, `getAvailableCredit(borrower)`, `getBorrowerInfo(borrower)` 조회
+        - Checkpoint 정보: `latestCheckpointHeight`, `getCheckpoint(height)` 조회(읽기)
+    - 배포/실행 명령 문서화(`npm/pnpm install`, `dev`, `build`)
+- 완료 조건:
+    - 브라우저에서 RPC read-only로 Manager/Checkpoint 상태를 조회할 수 있다(지갑 없이도).
+- 완료 요약:
+    - `apps/web` Vite + React + TS 스캐폴딩 추가
+    - `apps/web/.env.example`로 Creditcoin testnet RPC/주소 설정 지원
+    - Manager/Borrower/Checkpoint/SPV verifier read-only 대시보드 구현
+    - `apps/web`에서 `npm run lint`, `npm run build` 통과 확인
+
+---
+
+### T1.13 Frontend 쓰기 플로우 (Submit Payout Proof / Borrow / Repay)
+- Priority: P1
+- Status: [x] DONE
+- 목적: SPV E2E에서 필요한 “쓰기”를 UI로도 수행할 수 있게 한다(운영 편의).
+- 작업:
+    - 지갑 연결(MetaMask 등) + Creditcoin testnet 네트워크 안내(또는 자동 추가)
+    - `submitPayout(bytes)`:
+        - 사용자가 `hashcredit-prover`가 뽑아준 proof hex(`0x...`)를 붙여넣고 제출
+        - tx hash/receipt/에러 메시지 표시
+    - `borrow(uint256)`:
+        - amount 입력(6 decimals 가이드 포함) 후 borrow tx 전송
+    - `repay(uint256)`:
+        - repay 전에 `stablecoin.approve(manager, amount)` 버튼 제공(필요 시)
+        - repay tx 전송
+- 완료 조건:
+    - UI에서 proof 제출 1회 성공 + borrower borrow/repay(approve 포함)가 실행된다.
+- 완료 요약:
+    - 지갑 연결 + `wallet_switchEthereumChain`/`wallet_addEthereumChain` 기반 체인 전환 버튼 추가
+    - UI에서 `submitPayout(bytes)`/`borrow(uint256)`/`approve(spender,amount)`/`repay(uint256)` 전송 가능
+    - 관리자용 버튼 추가: `registerBorrower`, `setVerifier`, `setBorrowerPubkeyHash`
+    - 트랜잭션 상태(pending/confirmed/error) 표시 패널 추가
+
+---
+
+### T1.14 (선택) Frontend ↔ Prover/Bitcoin Core 브리지 API
+- Priority: P2
+- Status: [ ] TODO
+- 목적: 브라우저가 Bitcoin Core RPC에 직접 붙을 수 없으므로, **로컬/서버에서 prover를 실행**해주는 얇은 API를 제공한다(완전 자동화 옵션).
+- 작업:
+    - `apps/api`(또는 `offchain/api`)에 최소 HTTP API:
+        - `POST /spv/build-proof` (txid/outputIndex/targetHeight/borrower → proof hex)
+        - `POST /checkpoint/set` (height → checkpoint tx)
+    - 인증/보안:
+        - 로컬 전용(기본 `127.0.0.1` 바인딩) + 간단 토큰/allowlist
+    - `apps/web`에서 API를 호출해 proof 생성/체크포인트 등록을 UI에서 원클릭으로 수행(선택)
+- 완료 조건:
+    - (로컬 기준) UI에서 txid만 넣으면 proof 생성+제출까지 한 번에 가능하다(옵션).
+
+---
+
 ## P2 — Polishing / Security / Launch Readiness
 
 ### T2.1 Gas Profiling + Limits
