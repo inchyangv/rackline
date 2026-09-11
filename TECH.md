@@ -70,31 +70,50 @@ All of this runs in `BtcSpvVerifier` and `BitcoinLib`. The result is a `PayoutEv
 
 ## Why This Is the Same Principle as USC
 
-USC (Universal Smart Contract, Creditcoin's settlement layer) follows the same architectural logic:
+USC (Universal Smart Contract) is Creditcoin's cross-chain oracle infrastructure. It enables smart contracts to query, verify, and act on transaction data from any external blockchain through a pipeline of distributed attestors, competitive provers, STARK zero-knowledge proofs, and a native verifier precompile at `0x0FD2`.
+
+HashCredit follows the **exact same architectural pattern**, using Bitcoin SPV as the proof mechanism:
 
 > **Prove a real-world economic event cryptographically → use that proof to authorize on-chain financial operations.**
 
-The mechanism differs (USC has its own attestation/settlement primitives), but the underlying pattern is identical:
+### Precise Architectural Mapping
 
-| Dimension | USC | HashCredit (our implementation) |
-|-----------|-----|----------------------------------|
-| Real-world signal | Off-chain credit/trade event | Bitcoin mining payout |
-| Proof mechanism | USC attestation/settlement | Bitcoin SPV (PoW + Merkle + output check) |
-| On-chain boundary | USC settlement contract | `IVerifierAdapter` → `PayoutEvidence` |
-| Credit layer | Creditcoin credit logic | `HashCreditManager` |
-| Settlement asset | USC / stablecoin | `LendingVault` (any ERC20) |
+| Design Principle | USC | HashCredit |
+|---|---|---|
+| **Proof ↔ business separation** | `INativeQueryVerifier` ↔ Business contract | `IVerifierAdapter` ↔ `HashCreditManager` |
+| **Structured evidence output** | Decoded event data from `encodedTransaction` | `PayoutEvidence` struct |
+| **Stateless verifier** | `0x0FD2` precompile (pure function) | `BtcSpvVerifier.verifyPayout()` (no state writes) |
+| **App-layer replay protection** | `processedQueries[hash(chain,height,index)]` | `processedPayouts[keccak256(txid,vout)]` |
+| **Checkpoint / anchor** | Attestation chain digests (attestor consensus) | `CheckpointManager` trusted headers |
+| **Chain continuity proof** | STARK zero-knowledge proof | PoW header chain verification |
+| **Transaction inclusion** | Merkle proof (Keccak-256) | Merkle proof (SHA-256d) |
+| **Event / output extraction** | `EvmV1Decoder` extracts logs | `BitcoinLib` parses tx outputs, matches pubkeyHash |
 
-In both cases, the **proof layer is cleanly separated from the credit layer**. The credit contract doesn't know how the proof works — it only receives structured, verified evidence through a well-defined interface.
+This alignment is deliberate. USC mainnet was not live during development. We implemented the same architecture ourselves — so the protocol works now and transitions to native USC via a single adapter swap.
 
-This is not a coincidence. We deliberately mirrored USC's architecture pattern when building HashCredit, because USC mainnet was not live during development and we needed to prove the concept now rather than wait.
+---
+
+## BTC Identity Binding: What USC Doesn't Cover
+
+USC documentation does not specify how to bind a source-chain address to an EVM address. This is left as an application-level concern. HashCredit solves it **on-chain with pure cryptography**:
+
+```
+BTC wallet signs message (BIP-137)
+    → ecrecover(btcMsgHash, v, r, s)                  // verify signature
+    → compressed = [0x02|0x03 || pubKeyX]              // compress pubkey
+    → ripemd160(sha256(compressed))                     // derive BTC address
+    → borrowerPubkeyHash[msg.sender] = pubkeyHash      // store binding
+```
+
+This works because BTC and ETH share **secp256k1**. EVM precompiles (`ecrecover` at `0x01`, `sha256` at `0x02`, `ripemd160` at `0x03`) natively validate BTC signatures and derive BTC addresses. No oracle, no bridge, no trusted third party.
+
+During SPV proof verification, the output script's pubkeyHash must match the stored `borrowerPubkeyHash` — ensuring that only the registered miner can claim payouts to their BTC address.
+
+See [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) for the full deep-dive.
 
 ---
 
 ## Our Implementation vs USC: The Portability Design
-
-USC mainnet was not available when we built this. Rather than stub it out or wait, we implemented the same architectural pattern ourselves using BTC SPV as the proof source.
-
-The result is a system that works today *and* can attach to USC later without redesigning the core proof-credit separation.
 
 ### The Key Abstraction: `IVerifierAdapter`
 
@@ -121,11 +140,12 @@ The result is a system that works today *and* can attach to USC later without re
 
 ```solidity
 struct PayoutEvidence {
-    address borrower;
-    uint256 amount;        // satoshis or normalized unit
-    uint256 blockHeight;
-    bytes32 txId;
-    uint32  outputIndex;
+    address borrower;      // EVM address of the miner
+    bytes32 txid;          // Bitcoin transaction ID
+    uint32  vout;          // Output index
+    uint64  amountSats;    // Payout amount in satoshis
+    uint32  blockHeight;   // Confirmation block height
+    uint32  blockTimestamp; // Block timestamp
 }
 ```
 
@@ -134,21 +154,51 @@ This struct is the contract between the proof layer and the credit layer. Swap t
 ### Three Integration Paths to USC
 
 **Path A — Swap the settlement asset**
-- Deploy `LendingVault` with USC token address instead of mUSDT.
+- Deploy `LendingVault` with USC stablecoin address instead of mUSDT.
 - Keep `BtcSpvVerifier` and `HashCreditManager` unchanged.
-- Miners prove BTC payouts, borrow USC instead of mUSDT.
+- Miners prove BTC payouts, borrow USC-native stablecoin.
 - Zero changes to proof or credit logic.
 
-**Path B — Add a USC settlement adapter**
-- Keep current BTC SPV payout proof path entirely unchanged.
-- Add a `UscSettlementAdapter` that routes credit events through USC's settlement primitives.
-- Replay, risk, and debt checks remain in `HashCreditManager`.
+**Path B — Add a USC verification adapter**
+- Implement `UscVerifierAdapter` that calls `0x0FD2` precompile.
+- Maps verified BTC transaction data to `PayoutEvidence`.
+- Call `manager.setVerifier(uscAdapterAddress)`.
+- Credit logic, vault, risk config — all untouched.
 
 **Path C — Multi-verifier mode**
-- Keep `BtcSpvVerifier` as one adapter.
-- Add a USC-native verifier for USC-specific attestations as a second adapter.
-- Route both through `IVerifierAdapter`-compatible interfaces into the same `HashCreditManager`.
-- A miner's credit limit could incorporate evidence from both sources.
+- Keep `BtcSpvVerifier` as adapter #1.
+- Add `UscVerifierAdapter` as adapter #2.
+- Credit limit incorporates evidence from both proof sources.
+
+See [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) for detailed integration design.
+
+---
+
+## Credit Scoring from Mining Records
+
+### Mainnet: SPV-Driven Credit
+
+Each `submitPayout()` call triggers the following credit pipeline:
+
+```
+SPV-verified payout
+    → Heuristics applied (large-payout discount, new-borrower cap)
+    → Added to trailing window (30 days)
+    → trailingRevenueSats × btcPriceUsd / SATS_PER_BTC = btcValueUsd
+    → btcValueUsd × advanceRateBps / 10000 = creditLimit
+    → More mining = higher credit limit
+```
+
+Risk parameters (configurable via `RiskConfig`):
+- Advance rate: 50% (borrow up to half of trailing revenue value)
+- Window: 30 days (only recent payouts count)
+- New borrower cap: $10,000 (first 30 days)
+- Large payout discount: 50% (single payouts > 0.1 BTC counted at half)
+- Min payout threshold: 10,000 sats (dust payouts ignored)
+
+### Testnet: Auto-Grant
+
+Real mining cannot be reproduced on testnet. `registerBorrower` auto-grants a flat 1,000 mUSDT credit per borrower (via `autoGrantCreditAmount`). The full SPV proof pipeline remains functional and is demonstrated separately.
 
 ---
 
@@ -165,9 +215,7 @@ Everything below runs today on Creditcoin EVM testnet (chainId `102031`):
 | `RiskConfig` — advance rate, trailing window, payout thresholds | Live |
 | Off-chain prover worker — auto-detects payouts, builds + submits proofs | Live |
 | Off-chain API — checkpoint ops, borrower mapping, SPV proof builder, BTC sig param extraction | Live |
-| Frontend — dashboard, checkpoint, proof | Live |
-
-On mainnet, credit limits are driven by real SPV-proven mining payouts — each verified payout updates the miner's trailing-window credit limit. On testnet, real mining cannot be reproduced in a demo, so `registerBorrower` auto-grants a flat 1,000 mUSDT credit per borrower (via `autoGrantCreditAmount`). The full SPV proof pipeline remains functional and is demonstrated separately.
+| Frontend — dashboard, pool, checkpoint, proof | Live |
 
 USC integration is an **adapter + wiring task**. The proof system, credit engine, and vault do not need to change.
 

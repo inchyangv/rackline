@@ -162,15 +162,21 @@ HashCredit and Creditcoin's USC share the same architectural principle:
 
 > **Prove a real-world economic event cryptographically → authorize on-chain financial operations.**
 
-USC (Universal Smart Contract) does this for off-chain credit and trade events. HashCredit does it for Bitcoin mining payouts. The proof mechanism differs; the pattern is identical.
+USC does this through distributed attestors + STARK proofs + native precompile verification. HashCredit does it through Bitcoin SPV (PoW header chain + Merkle inclusion + output parsing). The proof mechanism differs; **the architecture is identical**:
 
-USC mainnet was not live during development. Rather than wait, we implemented the same architecture ourselves using BTC SPV as the proof source — so the protocol works now and can attach to USC later without redesigning the core proof-credit separation.
+| Design Principle | USC | HashCredit |
+|---|---|---|
+| Proof ↔ business separation | `INativeQueryVerifier` ↔ Business contract | `IVerifierAdapter` ↔ `HashCreditManager` |
+| Structured evidence | Decoded event data | `PayoutEvidence` struct |
+| Stateless verifier | `0x0FD2` precompile | `BtcSpvVerifier.verifyPayout()` |
+| App-layer replay protection | `processedQueries` mapping | `processedPayouts` mapping |
+| Checkpoint anchor | Attestation chain digests | `CheckpointManager` trusted headers |
 
-- `IVerifierAdapter` is the seam: new proof sources plug in without touching credit logic
-- `LendingVault` accepts any ERC20 token address — swap the stablecoin with zero code changes
-- USC integration is an **adapter + wiring task**, not a protocol rewrite
+**BTC identity binding** — `claimBtcAddress()` proves BTC address ownership on-chain using EVM precompiles (`ecrecover` + `sha256` + `rimemd160`). No oracle, no bridge. USC docs leave cross-chain identity as an app-level concern; we solved it with pure cryptography.
 
-Integration paths: swap vault asset to USC stablecoin, add USC-specific settlement adapter, or run multi-verifier mode alongside BTC SPV.
+USC integration is an **adapter + wiring task**, not a protocol rewrite. Deploy `UscVerifierAdapter`, call `manager.setVerifier()` — credit logic, vault, and risk config remain untouched.
+
+See [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) and [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) for detailed design documents.
 
 ---
 
@@ -279,6 +285,8 @@ lib/                   Foundry dependencies (forge-std, openzeppelin)
 | [`docs/audit-checklist.md`](docs/audit-checklist.md) | Security audit checklist |
 | [`docs/gas-limits.md`](docs/gas-limits.md) | Per-operation gas estimates |
 | [`docs/specs/PROJECT.md`](docs/specs/PROJECT.md) | Full protocol specification |
+| [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) | USC integration design, architecture comparison, transition paths |
+| [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) | BTC wallet binding, SPV revenue verification, credit scoring deep-dive |
 | [`.env.example`](.env.example) | Environment variable reference |
 
 ---

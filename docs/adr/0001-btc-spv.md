@@ -82,8 +82,44 @@ Since BTC and ETH both use secp256k1, a BTC wallet signature can be verified on-
 
 This eliminates the need for a trusted operator to set borrower mappings.
 
+## Relationship to Creditcoin USC
+
+HashCredit's architecture deliberately mirrors USC's design principles:
+
+### Same Pattern, Different Proof Mechanism
+
+| Principle | USC Implementation | HashCredit Implementation |
+|---|---|---|
+| Proof-business separation | `INativeQueryVerifier` ↔ Business contract | `IVerifierAdapter` ↔ `HashCreditManager` |
+| Structured evidence | Decoded event data from `encodedTransaction` | `PayoutEvidence` struct |
+| Stateless verifier | `0x0FD2` precompile (pure function) | `BtcSpvVerifier.verifyPayout()` (no state writes) |
+| App-layer replay protection | `processedQueries[hash(chain,height,index)]` | `processedPayouts[keccak256(txid,vout)]` |
+| Checkpoint anchoring | Attestation chain digests | `CheckpointManager` trusted headers |
+| Chain continuity proof | STARK zero-knowledge proof | PoW header chain verification |
+| Transaction inclusion | Merkle proof (Keccak-256) | Merkle proof (SHA-256d) |
+
+### What HashCredit Adds Beyond USC's Scope
+
+1. **BTC identity binding** — `claimBtcAddress()` proves BTC address ownership on-chain using ecrecover + Hash160, without any oracle. USC documentation leaves cross-chain identity binding as an application-level concern.
+
+2. **Revenue-based credit scoring** — Trailing-window revenue accumulation, BTC→USD conversion, advance rate, payout heuristics (large-payout discount, new-borrower caps). This financial engineering layer sits on top of proof verification.
+
+3. **Bitcoin-native PoW verification** — For Bitcoin specifically, verifying actual proof-of-work is arguably more trustless than attestor consensus, since forging a proof requires Bitcoin-level hashpower.
+
+### USC Transition Path
+
+When USC ships with Bitcoin chain support:
+1. Implement `UscVerifierAdapter` (implements `IVerifierAdapter`)
+2. Adapter calls `0x0FD2` precompile to verify BTC tx
+3. Maps verified data to `PayoutEvidence` struct
+4. Owner calls `manager.setVerifier(uscAdapterAddress)`
+5. **Zero changes** to HashCreditManager, LendingVault, or RiskConfig
+
+See `docs/specs/USC_ADAPTER.md` for detailed integration design.
+
 ## Future Work
 
-- evaluate USC adapter path while preserving `IVerifierAdapter`
+- implement `UscVerifierAdapter` when USC precompile supports Bitcoin `chainKey`
 - extend test vectors with broader real-world tx/script patterns
 - formalize checkpoint authority model (multisig/attestor policy)
+- evaluate multi-verifier mode (SPV + USC running in parallel)
