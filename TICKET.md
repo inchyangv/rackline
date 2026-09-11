@@ -177,7 +177,7 @@
 
 ### T1.1 SPV Design Finalization (ADR)
 - Priority: P1
-- Status: [ ]
+- Status: [x] DONE
 - 목적: Bitcoin SPV를 어떤 안전/가스/운영 가정으로 구현할지 ADR로 고정한다.
 - 포함:
     - checkpoint trust model(멀티시그/attestor set)
