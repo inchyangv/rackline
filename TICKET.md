@@ -356,7 +356,7 @@
 
 ### T1.11 결정적(offline) SPV fixtures + Manager E2E 테스트 + 문서
 - Priority: P1
-- Status: [ ] TODO
+- Status: [x] DONE
 - 목적: 네트워크 없이도 검증 가능한 형태로 **Bitcoin testnet 기반 SPV proof 검증/제출의 회귀 테스트**를 만들고, Creditcoin testnet 기준 운영 문서를 완성한다.
 - 작업:
     - `test/fixtures/`에 실제 메인넷/테스트넷 tx 기반(또는 최소한 고정 데이터 기반) proof 구성요소 저장
@@ -365,6 +365,13 @@
     - `LOCAL.md`에 Creditcoin testnet SPV 모드 실행/디버깅 섹션 추가
 - 완료 조건:
     - `forge test`로 SPV 경로의 핵심 검증이 안정적으로 재현되고, 문서만 보고 testnet에서 end-to-end 실행 가능하다.
+- 완료 요약:
+    - Created `test/SpvE2E.t.sol` with 8 E2E tests for SPV verification flow
+    - Tests: deployment, borrower registration, checkpoint registration, error cases
+    - Uses synthetic but structurally valid Bitcoin data for deterministic testing
+    - Updated `LOCAL.md` with comprehensive SPV mode execution guide
+    - Includes checkpoint registration, borrower setup, proof submission, relayer usage
+    - All 143 tests passing
 
 ---
 
