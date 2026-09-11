@@ -6,6 +6,7 @@ Provides REST endpoints for:
 - Setting checkpoints (POST /checkpoint/set)
 - Setting borrower pubkey hash (POST /borrower/set-pubkey-hash)
 - Submitting proofs (POST /spv/submit)
+- Querying BTC address history (GET /btc/address-history)
 - Health checks (GET /health)
 """
 
@@ -13,6 +14,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+import httpx
 import structlog
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,11 +24,13 @@ from .address import decode_btc_address
 from .auth import verify_api_token
 from .btc_signmessage import verify_bip137_signature
 from .bitcoin import BitcoinRPC, BitcoinRPCConfig, sha256d
+from .btc_indexer import BtcIndexer, BtcIndexerConfig
 from .claim import build_claim_message, issue_claim_token, verify_claim_token
 from .proof import BlockHeader
 from .config import Settings, get_settings
 from .evm import EVMClient
 from .models import (
+    BtcAddressHistoryResponse,
     BuildProofRequest,
     BuildProofResponse,
     ClaimCompleteRequest,
@@ -69,12 +73,13 @@ logger = structlog.get_logger()
 # Global clients (initialized at startup)
 _bitcoin_rpc: BitcoinRPC | None = None
 _evm_client: EVMClient | None = None
+_btc_indexer: BtcIndexer | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
-    global _bitcoin_rpc, _evm_client
+    global _bitcoin_rpc, _evm_client, _btc_indexer
 
     settings = get_settings()
 
@@ -89,6 +94,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Initialize EVM client
     _evm_client = EVMClient(settings)
+    _btc_indexer = BtcIndexer(
+        BtcIndexerConfig(
+            base_url=settings.btc_indexer_base_url,
+            timeout=settings.btc_indexer_timeout_seconds,
+        )
+    )
 
     logger.info(
         "API started",
@@ -96,6 +107,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         host=settings.host,
         port=settings.port,
         bitcoin_rpc=settings.bitcoin_rpc_url,
+        btc_indexer=settings.btc_indexer_base_url,
         evm_rpc=settings.evm_rpc_url,
     )
 
@@ -104,6 +116,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Cleanup
     if _bitcoin_rpc:
         await _bitcoin_rpc.close()
+    if _btc_indexer:
+        await _btc_indexer.close()
 
     logger.info("API stopped")
 
@@ -141,6 +155,7 @@ async def health_check(settings: Settings = Depends(get_settings)) -> HealthResp
     Returns service status and connectivity to Bitcoin/EVM RPCs.
     """
     bitcoin_ok = False
+    btc_indexer_ok = False
     evm_ok = False
 
     if _bitcoin_rpc:
@@ -148,11 +163,18 @@ async def health_check(settings: Settings = Depends(get_settings)) -> HealthResp
 
     if _evm_client:
         evm_ok = await _evm_client.check_connectivity()
+    if _btc_indexer:
+        try:
+            await _btc_indexer.get_tip_height()
+            btc_indexer_ok = True
+        except Exception:
+            btc_indexer_ok = False
 
     return HealthResponse(
         status="ok" if (bitcoin_ok and evm_ok) else "degraded",
         version=__version__,
         bitcoin_rpc=bitcoin_ok,
+        btc_indexer=btc_indexer_ok,
         evm_rpc=evm_ok,
         contracts={
             "hash_credit_manager": settings.hash_credit_manager,
@@ -160,6 +182,63 @@ async def health_check(settings: Settings = Depends(get_settings)) -> HealthResp
             "btc_spv_verifier": settings.btc_spv_verifier,
         },
     )
+
+
+# ============================================================================
+# BTC Address History (External Indexer)
+# ============================================================================
+
+
+@app.get(
+    "/btc/address-history",
+    response_model=BtcAddressHistoryResponse,
+    dependencies=[Depends(verify_api_token)],
+)
+async def btc_address_history(address: str, limit: int = 25) -> BtcAddressHistoryResponse:
+    """
+    Get address-level BTC history from an external Esplora-compatible indexer.
+
+    This endpoint is read-only and used by demo/ops UI to show address activity.
+    """
+    if _btc_indexer is None:
+        raise HTTPException(status_code=503, detail="BTC indexer not initialized")
+
+    decoded = decode_btc_address(address)
+    if decoded is None:
+        return BtcAddressHistoryResponse(
+            success=False,
+            address=address,
+            error="Unsupported or invalid BTC address",
+        )
+
+    try:
+        result = await _btc_indexer.get_address_history(address=address, limit=limit)
+        return BtcAddressHistoryResponse(
+            success=True,
+            address=result["address"],
+            tip_height=result.get("tip_height"),
+            balance_chain_sats=result.get("balance_chain_sats"),
+            balance_mempool_delta_sats=result.get("balance_mempool_delta_sats"),
+            tx_count_chain=result.get("tx_count_chain"),
+            tx_count_mempool=result.get("tx_count_mempool"),
+            items=result.get("items", []),
+        )
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code if e.response is not None else 502
+        msg = f"Indexer returned HTTP {status}"
+        logger.warning("BTC indexer HTTP error", address=address, status=status)
+        return BtcAddressHistoryResponse(
+            success=False,
+            address=address,
+            error=msg,
+        )
+    except Exception as e:
+        logger.error("Failed to fetch BTC address history", address=address, error=str(e))
+        return BtcAddressHistoryResponse(
+            success=False,
+            address=address,
+            error=str(e),
+        )
 
 
 # ============================================================================

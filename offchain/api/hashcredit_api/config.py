@@ -84,6 +84,14 @@ class Settings(BaseSettings):
     )
     bitcoin_rpc_user: str = Field(default="", description="Bitcoin RPC username")
     bitcoin_rpc_password: str = Field(default="", description="Bitcoin RPC password")
+    btc_indexer_base_url: str = Field(
+        default="https://blockstream.info/testnet/api",
+        description="External Bitcoin indexer base URL (Esplora-compatible)"
+    )
+    btc_indexer_timeout_seconds: float = Field(
+        default=20.0,
+        description="Timeout for external Bitcoin indexer requests"
+    )
 
     # EVM
     evm_rpc_url: str = Field(

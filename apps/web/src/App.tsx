@@ -22,6 +22,12 @@ function shortAddr(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`
 }
 
+function shortBtcAddress(addr: string): string {
+  if (!addr) return ''
+  if (addr.length <= 18) return addr
+  return `${addr.slice(0, 8)}…${addr.slice(-6)}`
+}
+
 type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] | Record<string, unknown> }) => Promise<unknown>
 }
@@ -120,6 +126,46 @@ type DemoWallet = {
   createdAt: number
 }
 
+type BorrowerBtcMap = Record<string, string>
+
+type DemoBtcPayoutRecord = {
+  id: string
+  createdAt: number
+  borrower: string
+  btcAddress: string
+  txid: string
+  vout: number
+  amountSats: number | null
+  checkpointHeight: number
+  targetHeight: number
+  source: 'build' | 'build+submit'
+  submitTxHash: string | null
+}
+
+type BtcAddressHistoryItem = {
+  txid: string
+  confirmed: boolean
+  block_time: number | null
+  block_height: number | null
+  confirmations: number | null
+  sent_sats: number
+  received_sats: number
+  net_sats: number
+  direction: 'in' | 'out' | 'self' | 'mining' | string
+  has_coinbase_input: boolean
+  is_mining_reward: boolean
+}
+
+type BtcAddressHistorySnapshot = {
+  fetchedAt: number
+  address: string
+  balanceChainSats: number | null
+  balanceMempoolDeltaSats: number | null
+  txCountChain: number | null
+  txCountMempool: number | null
+  items: BtcAddressHistoryItem[]
+}
+
 function parseDemoWallets(raw: string): DemoWallet[] {
   try {
     const v = JSON.parse(raw) as unknown
@@ -133,6 +179,53 @@ function parseDemoWallets(raw: string): DemoWallet[] {
         createdAt: typeof x.createdAt === 'number' ? x.createdAt : Date.now(),
       }))
       .filter((w) => ethers.isAddress(w.address) && /^0x[0-9a-fA-F]{64}$/.test(w.privateKey))
+  } catch {
+    return []
+  }
+}
+
+function parseBorrowerBtcMap(raw: string): BorrowerBtcMap {
+  try {
+    const v = JSON.parse(raw) as unknown
+    if (!isRecord(v)) return {}
+    const out: BorrowerBtcMap = {}
+    for (const [k, val] of Object.entries(v)) {
+      if (!ethers.isAddress(k)) continue
+      if (typeof val !== 'string') continue
+      const btc = val.trim()
+      if (!btc) continue
+      out[k.toLowerCase()] = btc
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+function parseDemoBtcPayoutHistory(raw: string): DemoBtcPayoutRecord[] {
+  try {
+    const v = JSON.parse(raw) as unknown
+    if (!Array.isArray(v)) return []
+    return v
+      .filter((x) => isRecord(x))
+      .map((x) => {
+        const source: DemoBtcPayoutRecord['source'] = x.source === 'build+submit' ? 'build+submit' : 'build'
+        return {
+          id: typeof x.id === 'string' ? x.id : '',
+          createdAt: typeof x.createdAt === 'number' ? x.createdAt : Date.now(),
+          borrower: typeof x.borrower === 'string' ? x.borrower : '',
+          btcAddress: typeof x.btcAddress === 'string' ? x.btcAddress : '',
+          txid: typeof x.txid === 'string' ? x.txid : '',
+          vout: typeof x.vout === 'number' ? x.vout : 0,
+          amountSats: typeof x.amountSats === 'number' ? x.amountSats : null,
+          checkpointHeight: typeof x.checkpointHeight === 'number' ? x.checkpointHeight : 0,
+          targetHeight: typeof x.targetHeight === 'number' ? x.targetHeight : 0,
+          source,
+          submitTxHash: typeof x.submitTxHash === 'string' ? x.submitTxHash : null,
+        }
+      })
+      .filter((x) => x.id && ethers.isAddress(x.borrower) && x.txid)
+      .slice(0, 200)
   } catch {
     return []
   }
@@ -167,6 +260,15 @@ function App() {
   const [demoWallets, setDemoWallets] = useState<DemoWallet[]>(() =>
     parseDemoWallets(getLocalStorageString('hashcredit_demo_wallets', '[]')),
   )
+  const [borrowerBtcMap, setBorrowerBtcMap] = useState<BorrowerBtcMap>(() =>
+    parseBorrowerBtcMap(getLocalStorageString('hashcredit_borrower_btc_map', '{}')),
+  )
+  const [demoBtcPayoutHistory, setDemoBtcPayoutHistory] = useState<DemoBtcPayoutRecord[]>(() =>
+    parseDemoBtcPayoutHistory(getLocalStorageString('hashcredit_demo_btc_payout_history', '[]')),
+  )
+  const [btcChainHistoryByAddress, setBtcChainHistoryByAddress] = useState<Record<string, BtcAddressHistorySnapshot>>({})
+  const [btcChainHistoryLoading, setBtcChainHistoryLoading] = useState<Record<string, boolean>>({})
+  const [btcChainHistoryError, setBtcChainHistoryError] = useState<Record<string, string>>({})
 
   // Wallet connection (write txs)
   const [walletAccount, setWalletAccount] = useState<string>('')
@@ -514,6 +616,14 @@ function App() {
     setLocalStorageString('hashcredit_demo_wallets', JSON.stringify(demoWallets))
   }, [demoWallets])
 
+  useEffect(() => {
+    setLocalStorageString('hashcredit_borrower_btc_map', JSON.stringify(borrowerBtcMap))
+  }, [borrowerBtcMap])
+
+  useEffect(() => {
+    setLocalStorageString('hashcredit_demo_btc_payout_history', JSON.stringify(demoBtcPayoutHistory))
+  }, [demoBtcPayoutHistory])
+
   // Convenience: compute keccak256(btcAddressString) for registerBorrower
   useEffect(() => {
     if (!adminBtcAddr) return
@@ -524,6 +634,41 @@ function App() {
       // ignore
     }
   }, [adminBtcAddr])
+
+  function rememberBorrowerBtcAddress(borrower: string, btcAddress: string): void {
+    if (!ethers.isAddress(borrower)) return
+    const nextBtcAddress = btcAddress.trim()
+    if (!nextBtcAddress) return
+    setBorrowerBtcMap((prev) => ({ ...prev, [borrower.toLowerCase()]: nextBtcAddress }))
+  }
+
+  function recordDemoBtcPayout(params: {
+    borrower: string
+    btcAddress: string
+    txid: string
+    vout: number
+    amountSats: number | null
+    checkpointHeight: number
+    targetHeight: number
+    source: 'build' | 'build+submit'
+    submitTxHash?: string | null
+  }): void {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+    const item: DemoBtcPayoutRecord = {
+      id,
+      createdAt: Date.now(),
+      borrower: params.borrower,
+      btcAddress: params.btcAddress,
+      txid: params.txid,
+      vout: params.vout,
+      amountSats: params.amountSats,
+      checkpointHeight: params.checkpointHeight,
+      targetHeight: params.targetHeight,
+      source: params.source,
+      submitTxHash: params.submitTxHash ?? null,
+    }
+    setDemoBtcPayoutHistory((prev) => [item, ...prev].slice(0, 200))
+  }
 
   function createDemoWallet(count: number): void {
     const n = Math.max(1, Math.min(5, Math.floor(count)))
@@ -574,6 +719,57 @@ function App() {
     return json
   }
 
+  async function fetchBtcAddressHistory(address: string, limit = 12): Promise<void> {
+    const key = address.trim().toLowerCase()
+    if (!key) return
+    setBtcChainHistoryLoading((prev) => ({ ...prev, [key]: true }))
+    setBtcChainHistoryError((prev) => ({ ...prev, [key]: '' }))
+    try {
+      const q = new URLSearchParams({ address: address.trim(), limit: String(limit) })
+      const result = await apiRequest(`/btc/address-history?${q.toString()}`, { method: 'GET' })
+      if (!(typeof result === 'object' && result !== null)) {
+        throw new Error('Unexpected API response')
+      }
+      if ((result as any).success !== true) {
+        throw new Error(typeof (result as any).error === 'string' ? (result as any).error : 'Failed to fetch history')
+      }
+      const itemsRaw: unknown[] = Array.isArray((result as any).items) ? (result as any).items : []
+      const items: BtcAddressHistoryItem[] = itemsRaw
+        .filter((x: unknown): x is Record<string, unknown> & { txid: string } => isRecord(x) && typeof x.txid === 'string')
+        .map((x) => ({
+          txid: String(x.txid),
+          confirmed: Boolean(x.confirmed),
+          block_time: typeof x.block_time === 'number' ? x.block_time : null,
+          block_height: typeof x.block_height === 'number' ? x.block_height : null,
+          confirmations: typeof x.confirmations === 'number' ? x.confirmations : null,
+          sent_sats: typeof x.sent_sats === 'number' ? x.sent_sats : 0,
+          received_sats: typeof x.received_sats === 'number' ? x.received_sats : 0,
+          net_sats: typeof x.net_sats === 'number' ? x.net_sats : 0,
+          direction: typeof x.direction === 'string' ? x.direction : 'self',
+          has_coinbase_input: Boolean(x.has_coinbase_input),
+          is_mining_reward: Boolean(x.is_mining_reward),
+        }))
+
+      setBtcChainHistoryByAddress((prev) => ({
+        ...prev,
+        [key]: {
+          fetchedAt: Date.now(),
+          address: typeof (result as any).address === 'string' ? (result as any).address : address.trim(),
+          balanceChainSats: typeof (result as any).balance_chain_sats === 'number' ? (result as any).balance_chain_sats : null,
+          balanceMempoolDeltaSats:
+            typeof (result as any).balance_mempool_delta_sats === 'number' ? (result as any).balance_mempool_delta_sats : null,
+          txCountChain: typeof (result as any).tx_count_chain === 'number' ? (result as any).tx_count_chain : null,
+          txCountMempool: typeof (result as any).tx_count_mempool === 'number' ? (result as any).tx_count_mempool : null,
+          items,
+        },
+      }))
+    } catch (e) {
+      setBtcChainHistoryError((prev) => ({ ...prev, [key]: getErrorMessage(e) }))
+    } finally {
+      setBtcChainHistoryLoading((prev) => ({ ...prev, [key]: false }))
+    }
+  }
+
   async function apiRun(label: string, fn: () => Promise<unknown>): Promise<void> {
     setApiBusy(true)
     setApiLog('')
@@ -614,12 +810,16 @@ function App() {
       setApiLog('POST /borrower/set-pubkey-hash\nERROR: BTC address is empty.')
       return
     }
-    await apiRun('POST /borrower/set-pubkey-hash', async () =>
-      apiRequest('/borrower/set-pubkey-hash', {
+    await apiRun('POST /borrower/set-pubkey-hash', async () => {
+      const result = await apiRequest('/borrower/set-pubkey-hash', {
         method: 'POST',
         body: JSON.stringify({ borrower: spvBorrower, btc_address: adminBtcAddr, dry_run: apiDryRun }),
-      }),
-    )
+      })
+      if (typeof result === 'object' && result !== null && (result as any).success) {
+        rememberBorrowerBtcAddress(spvBorrower, adminBtcAddr)
+      }
+      return result
+    })
   }
 
   async function apiRegisterBorrower(): Promise<void> {
@@ -639,6 +839,9 @@ function App() {
       if (typeof result === 'object' && result !== null && 'btc_payout_key_hash' in (result as any)) {
         const keyHash = (result as any).btc_payout_key_hash
         if (typeof keyHash === 'string') setAdminBtcKeyHash(keyHash)
+      }
+      if (typeof result === 'object' && result !== null && (result as any).success) {
+        rememberBorrowerBtcAddress(adminBorrower, adminBtcAddr)
       }
       return result
     })
@@ -682,6 +885,18 @@ function App() {
       })
       if (typeof result === 'object' && result !== null && (result as any).success && typeof (result as any).proof_hex === 'string') {
         setProofHex((result as any).proof_hex)
+        const linkedBtcAddress = borrowerBtcMap[spvBorrower.toLowerCase()] ?? adminBtcAddr.trim()
+        const amountSats = typeof (result as any).amount_sats === 'number' ? Number((result as any).amount_sats) : null
+        recordDemoBtcPayout({
+          borrower: spvBorrower,
+          btcAddress: linkedBtcAddress,
+          txid: apiTxid.trim(),
+          vout: outputIndex,
+          amountSats,
+          checkpointHeight,
+          targetHeight,
+          source: 'build',
+        })
       }
       return result
     })
@@ -736,6 +951,23 @@ function App() {
       const submitted = await apiRequest('/spv/submit', {
         method: 'POST',
         body: JSON.stringify({ proof_hex: builtProofHex, dry_run: apiDryRun }),
+      })
+      const linkedBtcAddress = borrowerBtcMap[spvBorrower.toLowerCase()] ?? adminBtcAddr.trim()
+      const amountSats = typeof (built as any).amount_sats === 'number' ? Number((built as any).amount_sats) : null
+      const submitTxHash =
+        typeof submitted === 'object' && submitted !== null && typeof (submitted as any).tx_hash === 'string'
+          ? (submitted as any).tx_hash
+          : null
+      recordDemoBtcPayout({
+        borrower: spvBorrower,
+        btcAddress: linkedBtcAddress,
+        txid: apiTxid.trim(),
+        vout: outputIndex,
+        amountSats,
+        checkpointHeight,
+        targetHeight,
+        source: 'build+submit',
+        submitTxHash,
       })
       return { build: built, submit: submitted }
     })
@@ -843,6 +1075,21 @@ function App() {
             : `Error: ${txState.label}`
   const txOverviewTone =
     txState.status === 'confirmed' ? 'ok' : txState.status === 'error' ? 'err' : txState.status === 'pending' ? 'warn' : ''
+  const payoutCountByBorrower = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const payout of demoBtcPayoutHistory) {
+      const key = payout.borrower.toLowerCase()
+      counts[key] = (counts[key] ?? 0) + 1
+    }
+    return counts
+  }, [demoBtcPayoutHistory])
+  const filteredDemoBtcPayoutHistory = useMemo(() => {
+    const q = borrowerAddress.trim()
+    if (!ethers.isAddress(q)) return demoBtcPayoutHistory
+    const key = q.toLowerCase()
+    return demoBtcPayoutHistory.filter((x) => x.borrower.toLowerCase() === key)
+  }, [demoBtcPayoutHistory, borrowerAddress])
+  const recentDemoBtcPayoutHistory = filteredDemoBtcPayoutHistory.slice(0, 20)
 
   return (
     <div className="layout">
@@ -1080,34 +1327,128 @@ function App() {
                 <div className="hint">No demo wallets generated yet.</div>
               ) : (
                 <div className="list" aria-label="demo wallets">
-                  {demoWallets.map((w) => (
-                    <div className="list-item" key={w.address}>
-                      <div className="list-head">
-                        <div style={{ minWidth: 0 }}>
-                          <div className="list-title">{w.name}</div>
-                          <div className="list-meta mono">{w.address}</div>
+                  {demoWallets.map((w) => {
+                    const linkedBtcAddress = borrowerBtcMap[w.address.toLowerCase()] ?? ''
+                    const linkedPayouts = payoutCountByBorrower[w.address.toLowerCase()] ?? 0
+                    const historyKey = linkedBtcAddress ? linkedBtcAddress.toLowerCase() : ''
+                    const chainHistory = historyKey ? btcChainHistoryByAddress[historyKey] : undefined
+                    const chainHistoryLoading = historyKey ? Boolean(btcChainHistoryLoading[historyKey]) : false
+                    const chainHistoryError = historyKey ? btcChainHistoryError[historyKey] : ''
+                    const miningRewardCount = chainHistory ? chainHistory.items.filter((item) => item.is_mining_reward).length : 0
+                    return (
+                      <div className="list-item" key={w.address}>
+                        <div className="list-head">
+                          <div style={{ minWidth: 0 }}>
+                            <div className="list-title">{w.name}</div>
+                            <div className="list-meta mono">{w.address}</div>
+                          </div>
+                          <div className="mini-actions">
+                            <button className="btn tiny secondary" onClick={() => applyAsBorrower(w.address)}>
+                              Set as borrower
+                            </button>
+                            <button className="btn tiny ghost" onClick={() => void copyToClipboard(w.address)}>
+                              Copy address
+                            </button>
+                            <button className="btn tiny ghost" onClick={() => void copyToClipboard(w.privateKey)}>
+                              Copy private key
+                            </button>
+                            <button
+                              className="btn tiny ghost"
+                              onClick={() => void fetchBtcAddressHistory(linkedBtcAddress)}
+                              disabled={!linkedBtcAddress || chainHistoryLoading}
+                            >
+                              {chainHistoryLoading ? 'Loading...' : 'Load BTC history'}
+                            </button>
+                            <button className="btn tiny" onClick={() => removeDemoWallet(w.address)}>
+                              Delete
+                            </button>
+                          </div>
                         </div>
-                        <div className="mini-actions">
-                          <button className="btn tiny secondary" onClick={() => applyAsBorrower(w.address)}>
-                            Set as borrower
-                          </button>
-                          <button className="btn tiny ghost" onClick={() => void copyToClipboard(w.address)}>
-                            Copy address
-                          </button>
-                          <button className="btn tiny ghost" onClick={() => void copyToClipboard(w.privateKey)}>
-                            Copy private key
-                          </button>
-                          <button className="btn tiny" onClick={() => removeDemoWallet(w.address)}>
-                            Delete
-                          </button>
+                        <div className="sep" />
+                        <div className="hint">
+                          Created at: {new Date(w.createdAt).toLocaleString()} | Linked BTC:{' '}
+                          <span className="mono">{linkedBtcAddress ? shortBtcAddress(linkedBtcAddress) : '—'}</span> | Proof events:{' '}
+                          {linkedPayouts} | Private key: <span className="mono">{shortAddr(w.privateKey)}</span>
+                        </div>
+                        {chainHistoryError ? <div className="hint">BTC history error: {chainHistoryError}</div> : null}
+                        {chainHistory ? (
+                          <div className="hint">
+                            BTC chain balance: {chainHistory.balanceChainSats ?? 0} sats
+                            {chainHistory.balanceMempoolDeltaSats ? ` (mempool delta: ${chainHistory.balanceMempoolDeltaSats} sats)` : ''} | tx count:{' '}
+                            {chainHistory.txCountChain ?? 0} | mining rewards: {miningRewardCount} | refreshed:{' '}
+                            {new Date(chainHistory.fetchedAt).toLocaleTimeString()}
+                          </div>
+                        ) : null}
+                        {chainHistory && chainHistory.items.length > 0 ? (
+                          <div className="hint">
+                            Recent tx:{" "}
+                            {chainHistory.items.slice(0, 3).map((item) => {
+                              const directionLabel = item.is_mining_reward ? 'mining reward' : item.direction
+                              const txLabel = `${directionLabel} ${item.net_sats >= 0 ? '+' : ''}${item.net_sats} sats`
+                              return (
+                                <span key={item.txid}>
+                                  <span className="mono">{shortAddr(`0x${item.txid.replace(/^0x/, '')}`)}</span> ({txLabel})
+                                  {' '}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+            <section className="card full">
+              <h2>BTC Proof Timeline (Demo)</h2>
+              <div className="hint">
+                This timeline links each proof build/submit event to a Demo Wallet (borrower EVM address) and mapped BTC address.
+                Use the borrower search box to filter to one wallet.
+              </div>
+              {recentDemoBtcPayoutHistory.length === 0 ? (
+                <div className="hint">No BTC proof events recorded yet.</div>
+              ) : (
+                <div className="list" aria-label="btc proof timeline">
+                  {recentDemoBtcPayoutHistory.map((item) => {
+                    const linkedWallet = demoWallets.find((w) => w.address.toLowerCase() === item.borrower.toLowerCase())
+                    const txidHex = item.txid.replace(/^0x/, '')
+                    const txUrl = /^[0-9a-fA-F]{64}$/.test(txidHex) ? `https://mempool.space/testnet/tx/${txidHex}` : ''
+                    return (
+                      <div className="list-item" key={item.id}>
+                        <div className="list-head">
+                          <div style={{ minWidth: 0 }}>
+                            <div className="list-title">{linkedWallet?.name ?? 'External Borrower Wallet'}</div>
+                            <div className="list-meta mono">{item.borrower}</div>
+                          </div>
+                          <div className="pill">{item.source === 'build+submit' ? 'Build + Submit' : 'Build Only'}</div>
+                        </div>
+                        <div className="sep" />
+                        <div className="hint">
+                          BTC: <span className="mono">{item.btcAddress ? shortBtcAddress(item.btcAddress) : '—'}</span> | TX:{' '}
+                          {txUrl ? (
+                            <a href={txUrl} target="_blank" rel="noreferrer" className="mono">
+                              {shortAddr(`0x${txidHex}`)}
+                            </a>
+                          ) : (
+                            <span className="mono">{item.txid}</span>
+                          )}{' '}
+                          | vout: {item.vout} | amount: {item.amountSats === null ? '—' : `${item.amountSats} sats`}
+                        </div>
+                        <div className="hint">
+                          checkpoint/target: {item.checkpointHeight}/{item.targetHeight}
+                          {item.submitTxHash ? (
+                            <>
+                              {' '}
+                              | submit tx: <span className="mono">{shortAddr(item.submitTxHash)}</span>
+                            </>
+                          ) : null}
+                          {' | '}recorded: {new Date(item.createdAt).toLocaleString()}
                         </div>
                       </div>
-                      <div className="sep" />
-                      <div className="hint">
-                        Created at: {new Date(w.createdAt).toLocaleString()} | Private key: <span className="mono">{shortAddr(w.privateKey)}</span>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </section>

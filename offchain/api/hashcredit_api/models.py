@@ -240,6 +240,43 @@ class ClaimCompleteResponse(BaseModel):
 
 
 # ============================================================================
+# BTC Address History
+# ============================================================================
+
+
+class BtcAddressHistoryItem(BaseModel):
+    """Single BTC transaction summary for a specific address."""
+
+    txid: str = Field(..., description="Bitcoin transaction ID")
+    confirmed: bool = Field(..., description="Whether tx is confirmed")
+    block_height: Optional[int] = Field(None, description="Block height if confirmed")
+    block_time: Optional[int] = Field(None, description="Block unix timestamp if confirmed")
+    block_hash: Optional[str] = Field(None, description="Block hash if confirmed")
+    confirmations: Optional[int] = Field(None, description="Current confirmation count")
+    fee_sats: Optional[int] = Field(None, description="Transaction fee in sats")
+    sent_sats: int = Field(..., description="Sats sent from this address in the tx")
+    received_sats: int = Field(..., description="Sats received by this address in the tx")
+    net_sats: int = Field(..., description="received_sats - sent_sats")
+    direction: str = Field(..., description="in / out / self / mining")
+    has_coinbase_input: bool = Field(False, description="True if tx has coinbase input")
+    is_mining_reward: bool = Field(False, description="True if this address directly received coinbase reward")
+
+
+class BtcAddressHistoryResponse(BaseModel):
+    """Address-level BTC history from an external indexer."""
+
+    success: bool = Field(..., description="Whether history fetch succeeded")
+    address: str = Field(..., description="Bitcoin address queried")
+    tip_height: Optional[int] = Field(None, description="Indexer tip height")
+    balance_chain_sats: Optional[int] = Field(None, description="Confirmed chain balance in sats")
+    balance_mempool_delta_sats: Optional[int] = Field(None, description="Mempool delta vs chain balance in sats")
+    tx_count_chain: Optional[int] = Field(None, description="Confirmed tx count")
+    tx_count_mempool: Optional[int] = Field(None, description="Mempool tx count")
+    items: list[BtcAddressHistoryItem] = Field(default_factory=list, description="Newest tx summaries")
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+# ============================================================================
 # Health Check
 # ============================================================================
 
@@ -249,6 +286,7 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="Service status")
     version: str = Field(..., description="API version")
     bitcoin_rpc: bool = Field(..., description="Bitcoin RPC connectivity")
+    btc_indexer: Optional[bool] = Field(None, description="External BTC indexer connectivity")
     evm_rpc: bool = Field(..., description="EVM RPC connectivity")
     contracts: dict[str, Optional[str]] = Field(
         ...,
