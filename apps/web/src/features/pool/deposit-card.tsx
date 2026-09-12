@@ -49,7 +49,7 @@ export function DepositCard({ embedded = false }: Props) {
     void fetchBalance()
     const interval = setInterval(() => void fetchBalance(), 10_000)
     return () => clearInterval(interval)
-  }, [fetchBalance])
+  }, [fetchBalance, txStatus])
 
   useEffect(() => {
     let cancelled = false
