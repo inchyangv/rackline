@@ -1,0 +1,631 @@
+HASHCREDIT — PRESENTATION CUE SHEET
+RWA Demo Day | 12 min
+====================================================
+
+
+[1] COVER                                        0:40
+----------------------------------------------------
+
+(pause, let the slide land)
+
+Bitcoin miners earned seventeen billion dollars
+last year. Not one dollar of it can be borrowed
+against on-chain.
+
+비트코인 마이너들이 작년에 벌어들인 돈, 170억 달러.
+그 중 1달러도 온체인에서 빌릴 수 없습니다.
+
+We're HashCredit. We fix that.
+저희는 HashCredit입니다. 저희가 이걸 해결합니다.
+
+Pool-enforced repayment. SPV-proven revenue.
+USDT on demand. Built on BNB Chain.
+The full pipeline is live on testnet — today.
+
+풀이 알아서 갚게 하고, SPV로 증명하고,
+USDT를 바로 내어줍니다. BNB Chain 위에서.
+전체 파이프라인이 테스트넷에서 지금 돌아가고 있습니다.
+
+
+[2] PROBLEM                                      1:30
+----------------------------------------------------
+
+Let me paint you a picture of Bitcoin mining
+in 2026.
+
+2026년 비트코인 마이닝의 현실을 그려보겠습니다.
+
+After the halving — $137,000 to mine one Bitcoin.
+Hardware ROI: over 1,200 days.
+Three years just to break even on one machine.
+
+반감기 이후 BTC 1개 캐는 데 13만 7천 달러.
+장비 회수 기간 1,200일 — 3년 넘어야 본전.
+
+(slow down, storytelling)
+
+Think about it. You're a miner. You just bought
+$2 million in ASICs. Electricity is six figures
+a month. And the halving just cut your revenue
+in half overnight. You need cash — now.
+
+여러분이 마이너라면. ASIC 200만 달러어치 샀습니다.
+월 전기세 수십만 달러. 반감기가 수익을 반토막.
+지금 당장 현금이 필요합니다.
+
+$11 billion in convertible debt since 2023.
+Public miners dumped 5,359 BTC in one month
+— December 2025 — just to pay the bills.
+This isn't cyclical. It's structural.
+
+전환사채만 110억 달러. 2025년 12월 한 달에
+상장 마이너들이 내다 판 BTC가 5,359개.
+구조적 수요입니다. 분기마다 가속됩니다.
+
+(rhythmic — pause after each)
+
+So what are the options?
+Lock your BTC at Ledn — freezes your operating asset.
+Pledge ASICs at Luxor — overcollateralized, weeks.
+Centralized lender?
+BlockFi — bankrupt.
+Celsius — bankrupt.
+Genesis — bankrupt.
+
+선택지가 뭡니까?
+BTC 잠그기 — 운영 자산 묶임.
+ASIC 담보 — 과잉담보, 몇 주.
+중앙화 대출?
+BlockFi — 파산. Celsius — 파산. Genesis — 파산.
+
+(pause, then thesis)
+
+The trust model is dead.
+And the $17B RWA market? 90% static assets.
+Treasuries. Bonds.
+Nobody has financialized the most productive
+real-world asset in crypto — mining infrastructure.
+That's the gap.
+
+신뢰 모델은 끝났습니다.
+170억 달러 RWA 시장의 90%가 정적 자산.
+마이닝 인프라를 금융화한 사람은 아무도 없습니다.
+이게 빈 칸입니다.
+
+
+[3] INSIGHT                                      0:50
+----------------------------------------------------
+
+Here's the insight that unlocks everything.
+
+이게 전부를 여는 핵심 인사이트입니다.
+
+You can't prove hashrate — it's a physical rate.
+No smart contract can see your ASIC speed.
+But you CAN prove its output.
+Every pool payout is a Bitcoin transaction —
+committed by proof-of-work, immutable,
+verifiable by anyone with block headers.
+
+해시레이트는 증명 불가. 물리적 속도니까.
+하지만 그 결과물은 증명 가능.
+모든 풀 페이아웃은 PoW로 커밋된 비트코인 트랜잭션.
+블록 헤더만 있으면 누구나 검증 가능.
+
+Payout history IS the hashrate record.
+Already on a public ledger.
+
+페이아웃 히스토리 자체가 해시레이트 기록.
+이미 퍼블릭 원장 위에 있습니다.
+
+(slow, deliberate)
+
+Stripe Capital lends based on payment data.
+We lend based on something strictly better —
+revenue verified by $50 billion in annual
+mining energy. Not self-reported. Not attested.
+
+Stripe Capital이 결제 데이터로 대출합니다.
+우리는 더 강한 데이터로 합니다 —
+연간 500억 달러 에너지가 보증하는 수익.
+
+(drop it)
+
+Math. Not trust.
+
+수학입니다. 신뢰가 아니라.
+
+
+[4] SOLUTION                                     1:00
+----------------------------------------------------
+
+HashCredit turns verified Bitcoin payouts into
+a revolving USDT credit line on BNB Chain.
+
+HashCredit은 검증된 BTC 페이아웃을
+BNB Chain 위 회전 USDT 신용한도로 바꿉니다.
+
+The pipeline: Pool pays miner in Bitcoin —
+business as usual. Our worker detects it.
+Builds an SPV proof — block headers, Merkle path,
+output script. Submits to BNB Chain.
+On-chain verifier checks PoW, Merkle inclusion,
+output address. No oracle. No bridge.
+Just cryptography.
+
+파이프라인: 풀이 BTC로 지급. 워커가 감지.
+SPV 증명 생성. BNB Chain에 제출.
+온체인 검증기가 PoW, 머클, 주소 확인.
+오라클 없음. 브릿지 없음. 순수 암호학.
+
+Credit updates automatically. Miner draws USDT
+— instant. Next payout? Pool withholds
+a percentage as repayment. Withholding at source
+— same mechanism as payroll tax.
+
+신용한도 자동 업데이트. USDT 즉시 인출.
+다음 페이아웃에서 풀이 자동 원천징수.
+급여세와 같은 메커니즘.
+
+(drive it home, light smile)
+
+Default? Pool redirects their hashrate.
+That's our collateral. Not a warehouse asset.
+Not a locked token. Hashrate.
+Try running away from that.
+
+디폴트? 풀이 해시파워를 리다이렉트.
+이게 담보입니다. 실물도 아니고 토큰도 아닌
+해시레이트. 도망칠 수 없습니다.
+
+
+[5] HOW IT WORKS                                 0:45
+----------------------------------------------------
+
+Seven steps. Fully automated.
+
+7단계. 완전 자동.
+
+One — pool registers, agrees to withholding. Once.
+Two — miner keeps mining. Nothing changes.
+Three — worker detects payout.
+Four — builds SPV proof off-chain.
+Five — submits to BNB Chain. Verifier checks
+PoW + Merkle. Trustless.
+Six — credit updates.
+Seven — miner draws USDT. Pool withholds next time.
+
+1 — 풀 등록, 원천징수 동의. 한 번.
+2 — 마이너는 계속 채굴. 변화 없음.
+3 — 워커가 페이아웃 감지.
+4 — SPV 증명 오프체인 생성.
+5 — BNB Chain 제출. PoW + 머클 검증.
+6 — 크레딧 업데이트.
+7 — USDT 인출. 풀이 다음에 원천징수.
+
+Miners touch nothing after setup.
+The pool is the enforcement layer — that's what
+makes this work. Not governance. Not legal wrappers.
+A mining pool with economic incentive to cooperate.
+
+셋업 후 마이너가 할 일 없음.
+풀이 집행자. 거버넌스도, 법적 래퍼도 아님.
+협력할 경제적 인센티브가 있는 마이닝 풀.
+
+
+[6] WHY NOW                                      0:40
+----------------------------------------------------
+
+Why is this the right moment?
+
+왜 지금인가.
+
+2024 halving — revenue per hash cut in half.
+Hardware ROI crossed 1,200 days.
+Miners selling BTC at record pace — 5,359 in
+December alone. $11B in debt and counting.
+Not cyclical. Structural. Getting worse.
+
+반감기 — 해시당 수익 반토막.
+장비 ROI 1,200일. 12월에만 BTC 5,359개 매각.
+채무 110억 달러, 계속 증가. 구조적. 악화 중.
+
+The centralized lenders are all bankrupt.
+RWA market is $17B but 90% passive.
+And nobody is building trustless BTC proof
++ pool enforcement + on-chain credit.
+
+중앙화 대출 전부 파산. RWA 170억 달러 중 90% 패시브.
+이 조합을 만드는 곳이 없음.
+
+First mover takes the category.
+
+선점이 카테고리를 가져갑니다.
+
+
+[7] MARKET & BUSINESS MODEL                      1:10
+----------------------------------------------------
+
+TAM: $17.2 billion — annual BTC miner revenue.
+SAM: $5-7 billion — mid-market miners,
+30-40% of global hashrate.
+Too small for capital markets,
+too big for personal credit. No good option.
+
+TAM 172억 달러. SAM 52~69억 달러.
+비상장 중규모 마이너. 선택지 없는 사람들.
+
+Distribution hack: top 10 pools control
+90%+ of hashrate. One pool = thousands of borrowers.
+Not B2C. B2B2C.
+
+유통: 상위 10개 풀이 해시레이트 90%+.
+풀 하나 = 수천 명 마이너. B2B2C.
+
+Stripe Capital: $9B+ to merchants,
+same revenue-based model.
+We apply it to a more verifiable revenue stream.
+
+Stripe Capital: 같은 모델로 90억 달러+.
+우리는 더 검증 가능한 수익원에 적용.
+
+(transition — business model)
+
+Three participants.
+Miners borrow at 10% APR through their pool.
+LPs deposit USDT, earn 8% — 2-3x Venus,
+2-3x PancakeSwap. Real yield.
+SPV-proven revenue + pool enforcement.
+Not token emissions.
+
+마이너: 풀 통해 10% APR로 대출.
+LP: USDT 예치, 8% APR. Venus/PancakeSwap의 2~3배.
+실물 수익 기반. 토큰 에미션 아님.
+
+Protocol keeps 2% spread + 0.5% origination fee.
+10% penetration = $1.7B volume,
+$170M annual revenue opportunity.
+Mining CAGR 12.7% through 2035.
+
+프로토콜: 2% 스프레드 + 0.5% 오리지네이션 피.
+10% 침투 = 17억 대출, 연 1.7억 수익 기회.
+마이닝 CAGR 12.7%.
+
+
+[8] COMPETITIVE EDGE                             0:30
+----------------------------------------------------
+
+Every alternative: lock collateral or trust
+a centralized underwriter. We use neither.
+
+다른 건 전부 담보 잠금 아니면 중앙화 심사.
+저희는 둘 다 불필요.
+
+No collateral — revenue-proven.
+Verification — SPV, pure math.
+Repayment — automatic, pool withholds.
+Speed — instant, every payout.
+Access — permissionless, any miner via pool.
+
+담보 없음. 검증은 SPV. 상환은 자동.
+속도는 즉각. 진입은 퍼미션리스.
+
+Same trust model Bitcoin has used since 2009.
+No oracle to bribe. No custodian to trust.
+
+2009년부터 비트코인이 쓴 신뢰 모델.
+뇌물 줄 오라클도, 믿을 커스토디언도 없음.
+
+
+[9] TRACTION                                     1:00
+----------------------------------------------------
+
+This is not a whitepaper.
+Not a concept deck with "coming soon."
+This works. Today. BSC Testnet.
+
+백서 아닙니다. 컨셉 덱 아닙니다.
+지금 작동합니다.
+
+7 production smart contracts — live.
+SPV proofs from real Bitcoin testnet txs
+— not mocked, not simulated. Real.
+Full borrow/repay lifecycle — end to end.
+24/7 automated prover worker.
+Frontend dashboard — live.
+Full test suite — unit, integration,
+invariant fuzzing, gas profiling.
+
+컨트랙트 7개 라이브.
+실제 BTC 테스트넷 트랜잭션으로 SPV 증명.
+Borrow/Repay 전 라이프사이클 작동.
+24/7 프루버 워커. 프론트엔드 라이브.
+유닛/인테그레이션/퍼징/가스 테스트 완비.
+
+One technical detail — BTC wallet binding.
+BTC and ETH share secp256k1. We verify Bitcoin
+signatures on-chain via EVM ecrecover,
+derive BTC address via sha256 + ripemd160.
+All EVM precompiles. Zero external dependencies.
+
+기술 하나 더 — BTC 지갑 바인딩.
+BTC·ETH 같은 secp256k1. EVM ecrecover로
+BTC 서명 검증, sha256+ripemd160으로 주소 도출.
+전부 EVM 프리컴파일. 외부 의존성 제로.
+
+(pause — then the flex)
+
+Two people built all of this.
+Contracts. SPV prover. Worker. Frontend.
+
+이걸 두 명이 다 만들었습니다.
+컨트랙트. SPV 프루버. 워커. 프론트엔드.
+
+Two.
+
+두 명.
+
+
+[10] RWA VALUE                                   0:50
+----------------------------------------------------
+
+Let's talk RWA — that's why we're here.
+
+RWA 얘기를 하죠. 우리가 여기 모인 이유.
+
+$17B tokenized RWA market. But look inside.
+Ondo, Franklin — treasuries.
+Maple, Centrifuge — private credit.
+Real estate deeds.
+All rely on off-chain attestations, legal wrappers,
+oracle feeds. Trust is only as strong as
+the intermediary.
+
+170억 달러 RWA. 안을 보면
+국채, 프라이빗 크레딧, 부동산 증서.
+전부 오프체인 증명, 법적 래퍼, 오라클 의존.
+신뢰가 중개자만큼만 강함.
+
+Mining is different. Productive, not static.
+Revenue every day, not quarterly.
+And that revenue is verified by Bitcoin PoW
+— $50B in annual energy expenditure
+securing the network. That's your attestation.
+No oracle can match it.
+
+마이닝은 다릅니다. 생산적 자산. 매일 수익.
+그 수익은 BTC PoW로 검증 — 연 500억 달러 에너지.
+그게 증명서. 어떤 오라클도 못 이김.
+
+HashCredit doesn't need a third party.
+Bitcoin already proved it for us.
+This is the next RWA frontier — productive assets
+with cryptographic revenue verification.
+
+HashCredit은 제3자가 필요 없습니다.
+비트코인이 이미 증명해줬으니까.
+RWA의 다음 프론티어 — 암호학적 수익 검증 가능한 생산적 자산.
+
+
+[11] ROADMAP                                     0:20
+----------------------------------------------------
+
+Q1 done — everything you've seen is live.
+Q2: audit, BNB Chain mainnet, 10 pilots.
+Q3: 50 miners, $500K TVL, pool API partnerships.
+Q4: $5M TVL, 200+ miners, Series A.
+
+Q1 완료. Q2: 감사, 메인넷, 파일럿 10개.
+Q3: 50개, TVL 50만, 풀 파트너십.
+Q4: TVL 500만, 200개+, 시리즈 A.
+
+
+[12] TEAM                                        1:10
+----------------------------------------------------
+
+Two founders.
+Every line of code — ourselves.
+
+파운더 두 명. 코드 전부 직접.
+
+(story, not resume)
+
+I'm Incheol Yang. Dropped out of KAIST CS
+to co-found a DeFi system trading house.
+Not yield farming — real systematic strategies.
+$20M fund, 40%+ APR.
+Before that — KRAFTON, PUBG Studio.
+In-game trading, inventory, payment systems.
+Millions of transactions a day.
+Before that — Coinone, Korea's #3 exchange.
+Smart order routing, institutional WebSocket APIs.
+Gaming, CeFi, DeFi — financial infrastructure
+at every layer.
+
+양인철. KAIST CS 중퇴.
+DeFi 시스템 트레이딩 하우스 공동 창업.
+$2천만 펀드, 40%+ APR — 실제 시스템 전략.
+크래프톤 PUBG — 인게임 거래·결제 시스템.
+코인원 — 스마트 오더 라우팅, 기관 웹소켓 API.
+게임, CeFi, DeFi 전 레이어 금융 인프라.
+
+My co-founder Juhyeong Park. Yonsei CS.
+CTO of Onther — led a mainnet to $750M market cap,
+designed Plasma EVM. One of the earliest
+Ethereum scaling solutions.
+Before that — Chainpartners.
+DEX aggregators, perpetual DEXs.
+One of the deepest smart contract architects
+in Korea.
+
+박주형. 연세대 CS.
+온더 CTO — 시총 7.5억 달러 메인넷, Plasma EVM 설계.
+이더리움 초기 스케일링 솔루션.
+체인파트너스 — DEX 어그리게이터, 퍼페추얼 DEX.
+한국 최고 수준의 스마트 컨트랙트 아키텍트.
+
+(look at audience)
+
+DeFi fund management. Exchange infra.
+Mainnet engineering. Smart contract architecture.
+We've shipped systems processing billions.
+And we built this entire protocol
+with two pairs of hands.
+
+DeFi 펀드. 거래소 인프라. 메인넷. 스마트 컨트랙트.
+수십억 볼륨 금융 시스템을 만들어왔고,
+이 프로토콜 전체를 네 손으로 만들었습니다.
+
+
+[13] WHY BNB CHAIN                               1:00
+----------------------------------------------------
+
+Why BNB Chain — and why BNB Chain should want us.
+
+왜 BNB Chain인가 — 그리고 왜 BNB Chain이
+저희를 원해야 하는가.
+
+What we bring: Real miner TVL — not synthetic,
+not speculative. Novel RWA primitive — hashrate
+financialization, not another tokenized treasury.
+Organic USDT demand from a $17B sector.
+Predictable daily traffic from payout cycles
+— not volume that vanishes when prices drop.
+
+가져다주는 것: 진짜 마이너 TVL.
+해시레이트 금융화라는 새 RWA 프리미티브.
+170억 달러 산업의 유기적 USDT 수요.
+투기 아닌 예측 가능한 일일 온체인 트래픽.
+
+Why it has to be BNB Chain:
+Deepest USDT liquidity — essential for lending.
+$0.01 gas — frequent proof submissions viable.
+Ethereum L1 would cost 100x more.
+Strongest RWA ecosystem in crypto.
+
+왜 BNB Chain이어야 하는가:
+USDT 유동성 최고. 가스비 1센트 — 빈번한 증명 제출 가능.
+이더리움 L1은 100배 비쌈. 최강 RWA 생태계.
+
+(build to the reveal — this is the line)
+
+But here's what matters most in this room.
+
+이 자리에서 가장 중요한 포인트입니다.
+
+Nano Labs — host of this event —
+world's largest mining chip designer.
+Their chips power the ASICs.
+Their customers are the miners.
+Our customers... are their customers.
+HashCredit turns Nano Labs' hardware buyers
+into BNB Chain DeFi users.
+
+Nano Labs — 이 행사 주최사 —
+세계 최대 마이닝 칩 설계사.
+그들의 칩이 ASIC을 구동.
+그들의 고객이 마이너.
+저희 고객이... 그들의 고객.
+HashCredit은 Nano Labs 하드웨어 고객을
+BNB Chain DeFi 유저로 전환합니다.
+
+Chip designer. Miner. Pool. HashCredit. BNB Chain.
+Every actor wins.
+Not a coincidence — vertical integration.
+You're looking at the missing piece.
+
+칩 설계사. 마이너. 풀. HashCredit. BNB Chain.
+모든 참여자가 이깁니다.
+우연이 아닙니다 — 수직 통합.
+지금 보고 계신 게 빠진 퍼즐 조각입니다.
+
+
+[14] THE ASK                                     0:50
+----------------------------------------------------
+
+$250K seed round.
+
+25만 달러 시드.
+
+40% engineering + mainnet — critical path.
+20% security audit — non-negotiable.
+20% vault USDT seed liquidity — LP day one.
+20% pool partnerships + GTM.
+
+40% 엔지니어링+메인넷. 20% 감사.
+20% 볼트 유동성. 20% 풀 파트너십+GTM.
+
+This round delivers: audit, mainnet,
+50 pilot miners, $500K TVL.
+Those milestones unlock Series A.
+
+이 라운드: 감사, 메인넷, 파일럿 50개, TVL 50만.
+시리즈 A를 여는 마일스톤.
+
+From this ecosystem —
+ICC Incubation, BNB Chain RWA fast-track,
+Nano Labs mentorship, HK Web3 Festival showcase.
+The accelerants from pilot to category leader.
+
+ICC 인큐베이션, BNB Chain RWA 패스트트랙,
+Nano Labs 멘토링, 홍콩 Web3 Festival.
+파일럿에서 카테고리 리더로의 가속.
+
+
+[15] THANK YOU                                   0:15
+----------------------------------------------------
+
+Miners earn billions.
+Can't borrow on-chain.
+Trust-based lenders — all dead.
+We built the trustless one.
+It works today.
+And the host of this event makes the chips
+that power our customers' machines.
+
+마이너들이 수십억을 법니다. 빌릴 수 없습니다.
+신뢰 기반 대출 전부 죽었습니다.
+저희가 trustless를 만들었습니다. 지금 작동합니다.
+이 행사 주최사가 고객 기계의 칩을 만듭니다.
+
+Thank you.
+감사합니다.
+
+
+====================================================
+TIMING
+====================================================
+
+ 1  Cover                0:40     0:40
+ 2  Problem              1:30     2:10
+ 3  Insight              0:50     3:00
+ 4  Solution             1:00     4:00
+ 5  How It Works         0:45     4:45
+ 6  Why Now              0:40     5:25
+ 7  Market + Biz Model   1:10     6:35
+ 8  Competitive Edge     0:30     7:05
+ 9  Traction             1:00     8:05
+10  RWA Value            0:50     8:55
+11  Roadmap              0:20     9:15
+12  Team                 1:10    10:25
+13  Why BNB Chain        1:00    11:25
+14  Ask                  0:50    12:15
+15  Thank You            0:15    12:30
+
+Transitions ~30s. Target: ~12:00.
+
+
+====================================================
+QUICK REFERENCE
+====================================================
+
+10분 컷: Slide 5, 6, 8 스킵
+14분 확장: Traction 후 라이브 데모 2분 추가
+
+킬러 원라이너 (질문 대비):
+"The question isn't whether this product is needed.
+It's whether you want to be in the seed round
+before mainnet."
+
+"질문은 이 제품이 필요한가가 아닙니다.
+메인넷 전 시드에 들어올 건지입니다."

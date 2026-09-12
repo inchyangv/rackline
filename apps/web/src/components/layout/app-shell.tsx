@@ -6,9 +6,6 @@ import { WalletPanel } from './wallet-panel'
 import { Footer } from './footer'
 import { MetricsBar } from '@/components/shared/metrics-bar'
 import { MetricCard } from '@/components/shared/metric-card'
-import { TxStatusPill } from '@/components/shared/tx-status-pill'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { useWalletStore } from '@/stores/wallet-store'
 import { useApiStore } from '@/stores/api-store'
 import { useManagerReads } from '@/hooks/use-manager-reads'
@@ -89,27 +86,9 @@ export function AppShell() {
           <WalletPanel />
         </div>
 
-        {/* Borrower search strip */}
-        <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2.5">
-          <Input
-            value={borrowerAddress}
-            onChange={(e) => setBorrowerAddress(e.target.value)}
-            placeholder="Enter wallet address"
-            className="font-mono text-xs"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setBorrowerAddress(walletAccount)}
-            disabled={!walletAccount}
-          >
-            Use Connected Wallet
-          </Button>
-        </div>
-
         {/* Metrics bar */}
         <MetricsBar>
-          <MetricCard label="Network" value="Creditcoin Testnet" />
+          <MetricCard label="Network" value="HashKey Chain Testnet" />
           <MetricCard
             label="Available Credit"
             value={availableCreditDisplay}
@@ -128,14 +107,6 @@ export function AppShell() {
       <main className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {tab === 'dashboard' && <DashboardTab />}
         {tab === 'pool' && <PoolTab />}
-
-        {/* Tx Status always visible */}
-        <div className="col-span-full">
-          <div className="rounded-xl border border-border/40 bg-gradient-to-br from-card/80 to-card/60 p-4">
-            <h2 className="text-sm font-semibold text-foreground/90 mb-2">Transaction Status</h2>
-            <TxStatusPill txState={txState} />
-          </div>
-        </div>
       </main>
 
       <Footer />

@@ -1,0 +1,282 @@
+HASHCREDIT — RWA DEMO DAY
+English Script | ~8:30
+PPT slides 1-14 + Thank You
+====================================================
+
+
+[S1] COVER                                       0:30
+----------------------------------------------------
+
+Bitcoin miners earned $17 billion last year.
+Not one dollar can be borrowed against on-chain.
+
+We're HashCredit. Pool-enforced repayment,
+SPV-proven revenue, USDT on demand.
+Built on BNB Chain. Live on testnet today.
+
+
+[S2] PROBLEM                                     1:00
+----------------------------------------------------
+
+Post-halving, it costs $137,000 to mine
+one Bitcoin. Hardware ROI: over 1,200 days.
+
+Miners have raised $11 billion in convertible
+debt since 2023. Public miners sold 5,359 BTC
+in December 2025 alone — just to stay liquid.
+This is structural, not cyclical.
+
+The options?
+BTC lockup at Ledn — freezes your operating asset.
+ASIC collateral at Luxor — overcollateralized,
+institutional only. Centralized lenders?
+BlockFi — bankrupt.
+Celsius — bankrupt.
+Genesis — bankrupt.
+
+(pause)
+
+The trust model has failed. And the $17B
+RWA market is 90% static assets.
+Mining infrastructure — the most productive
+real-world asset in crypto — has no on-chain
+financial product. That gap is wide open.
+
+
+[S3] INSIGHT                                     0:40
+----------------------------------------------------
+
+You can't prove hashrate — it's a physical rate.
+But you can prove its output.
+
+Every pool payout is a Bitcoin transaction,
+committed by proof-of-work, verifiable
+by anyone with block headers.
+Payout history is the hashrate record.
+
+Stripe Capital lends based on payment data.
+We lend based on something stronger —
+revenue verified by $50 billion in annual
+mining energy.
+
+Not self-reported. Not attested.
+Math — not trust.
+
+
+[S4] SOLUTION                                    0:40
+----------------------------------------------------
+
+HashCredit turns verified mining payouts into
+a revolving USDT credit line on BNB Chain.
+
+Pool pays miner in Bitcoin. Our worker detects it,
+builds an SPV proof, submits to BNB Chain.
+On-chain verifier checks PoW, Merkle inclusion,
+output address. No oracle. No bridge.
+
+Credit updates automatically. Miner draws USDT.
+Next payout, the pool withholds a percentage
+— withholding at source, like payroll tax.
+
+On default, the pool redirects hashrate.
+That's our collateral.
+
+
+[S5] HOW IT WORKS                                0:30
+----------------------------------------------------
+
+Seven steps, fully automated.
+
+Pool registers once. Miner keeps mining.
+Worker detects payout, builds SPV proof,
+submits to BNB Chain. Verifier checks PoW
+and Merkle. Credit updates. Miner draws USDT.
+Pool withholds next time.
+
+After setup, miners touch nothing.
+The pool is the enforcement layer.
+
+
+[S6] WHY NOW                                     0:25
+----------------------------------------------------
+
+2024 halving cut revenue per hash in half.
+Hardware ROI crossed 1,200 days.
+$11 billion in debt issuance and growing.
+Every centralized lender that tried this
+market has gone bankrupt.
+
+No one is combining trustless BTC proof
+with pool enforcement and on-chain credit.
+The category is open.
+
+
+[S7] MARKET                                      0:50
+----------------------------------------------------
+
+TAM: $17.2 billion — annual miner revenue.
+SAM: $5 to $7 billion — mid-market miners,
+30-40% of hashrate. No good financing option.
+
+Distribution: top 10 pools control 90%+
+of hashrate. One pool partnership
+= thousands of borrowers. B2B2C.
+
+Comparable: Stripe Capital — $9B+ in merchant
+advances, same revenue-based model.
+
+Miners borrow at 10% APR. LPs earn 8% —
+two to three times Venus or PancakeSwap.
+Real yield, not token emissions.
+
+Protocol keeps 2% spread + 0.5% origination fee.
+10% penetration = $1.7B volume,
+$170M annual revenue opportunity.
+
+
+[S8] COMPETITIVE EDGE                            0:20
+----------------------------------------------------
+
+Every alternative: lock collateral
+or trust a centralized underwriter.
+
+HashCredit: no collateral, SPV verification,
+automatic pool repayment, instant credit,
+permissionless access.
+
+Same trust model Bitcoin has used since 2009.
+
+
+[S9] TRACTION                                    0:40
+----------------------------------------------------
+
+This isn't a whitepaper. It works today.
+
+Seven contracts on BSC Testnet.
+SPV proofs from real Bitcoin testnet transactions.
+Full borrow/repay lifecycle — end to end.
+24/7 prover worker. Frontend live.
+Full test suite including invariant fuzzing.
+
+Two people built all of this.
+Contracts, prover, worker, frontend.
+That's the kind of team we are.
+
+
+[S10] RWA VALUE                                  0:30
+----------------------------------------------------
+
+$17B RWA market — 90% treasuries, bonds,
+real estate. Off-chain attestations,
+oracle dependencies.
+
+Mining is different. Productive, not static.
+Daily revenue verified by Bitcoin PoW
+— $50 billion in annual energy.
+No oracle can match that.
+
+HashCredit doesn't need a third party.
+Bitcoin already proves it.
+
+
+[S11] ROADMAP                                    0:15
+----------------------------------------------------
+
+Q1 done — you're looking at it.
+Q2: audit, BNB Chain mainnet, 10 pilots.
+Q3: 50 miners, $500K TVL.
+Q4: $5M TVL, 200+ miners, Series A.
+
+
+[S12] TEAM                                       0:45
+----------------------------------------------------
+
+Two founders. Built the entire stack ourselves.
+
+Incheol Yang. Left KAIST CS to co-found
+a DeFi trading house — $20M fund, 40%+ APR.
+Before that, KRAFTON PUBG Studio —
+trading and payment systems.
+Coinone — smart order routing, institutional APIs.
+
+Juhyeong Park, Yonsei CS. CTO of Onther —
+$750M mainnet, Plasma EVM.
+Chainpartners — DEX aggregators, perp DEXs.
+
+DeFi, exchange infra, mainnet engineering,
+smart contracts. We've shipped systems
+processing billions — and built this entire
+protocol ourselves.
+
+
+[S13] WHY BNB CHAIN                              0:45
+----------------------------------------------------
+
+What we bring: real miner TVL, a novel RWA
+primitive, organic USDT demand from a $17B sector,
+predictable daily on-chain activity.
+
+Why BNB Chain: deepest USDT liquidity,
+one-cent gas for frequent proof submissions,
+strongest RWA ecosystem in crypto.
+
+But here's what connects it all for this event.
+
+Nano Labs — the host — world's largest
+mining chip designer. Their chips power ASICs.
+Their customers are the miners.
+Our customers are their customers.
+
+Chip designer to miner to pool to HashCredit
+to BNB Chain. Every participant benefits.
+That's a vertical integration opportunity.
+
+
+[S14] THE ASK                                    0:25
+----------------------------------------------------
+
+$250K seed round.
+
+40% engineering + mainnet. 20% audit.
+20% vault seed liquidity. 20% pool partnerships.
+
+Delivers: audit, mainnet, 50 pilots, $500K TVL
+— the milestones for Series A.
+
+From this ecosystem: ICC Incubation,
+BNB Chain RWA fast-track, Nano Labs mentorship,
+HK Web3 Festival showcase.
+
+
+[S15] THANK YOU                                  0:10
+----------------------------------------------------
+
+Miners earn billions. Can't borrow on-chain.
+Trust-based lenders are gone.
+We've built the trustless alternative.
+It works today.
+
+Thank you.
+
+
+====================================================
+TIMING (per PPT slide)
+====================================================
+
+ S1   Cover               0:30      0:30
+ S2   Problem              1:00      1:30
+ S3   Insight              0:40      2:10
+ S4   Solution             0:40      2:50
+ S5   How It Works         0:30      3:20
+ S6   Why Now              0:25      3:45
+ S7   Market               0:50      4:35
+ S8   Competitive Edge     0:20      4:55
+ S9   Traction             0:40      5:35
+S10   RWA Value            0:30      6:05
+S11   Roadmap              0:15      6:20
+S12   Team                 0:45      7:05
+S13   Why BNB Chain        0:45      7:50
+S14   Ask                  0:25      8:15
+S15   Thank You            0:10      8:25
+
+~30s transitions. Target: ~8:30
