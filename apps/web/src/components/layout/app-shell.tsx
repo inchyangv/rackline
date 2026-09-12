@@ -15,6 +15,7 @@ import { DashboardTab } from '@/features/dashboard/dashboard-tab'
 import { PoolTab } from '@/features/pool/pool-tab'
 import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
 import { STABLECOIN_SYMBOL } from '@/lib/constants'
+import { getEvmTxExplorerUrl } from '@/lib/explorer'
 
 export function AppShell() {
   const [tab, setTab] = useState<TabId>(() => {
@@ -77,16 +78,33 @@ export function AppShell() {
   const myShareValueDisplay =
     myShareValue === null ? '—' : `${ethers.formatUnits(myShareValue, 6)} ${STABLECOIN_SYMBOL}`
 
+  const txHash = 'hash' in txState ? txState.hash : undefined
+  const txExplorerUrl = txHash ? getEvmTxExplorerUrl(txHash) : ''
+
   const txOverview =
-    txState.status === 'idle'
-      ? 'No transactions yet'
-      : txState.status === 'signing'
-        ? `Signing: ${txState.label}`
-        : txState.status === 'pending'
-          ? `Pending: ${txState.label}`
-          : txState.status === 'confirmed'
-            ? `Confirmed: ${txState.label}`
-            : `Error: ${txState.label} — ${txState.message}`
+    txState.status === 'idle' ? (
+      'No transactions yet'
+    ) : txState.status === 'signing' ? (
+      `Signing: ${txState.label}`
+    ) : txState.status === 'pending' ? (
+      `Pending: ${txState.label}`
+    ) : txState.status === 'confirmed' ? (
+      txExplorerUrl ? (
+        <a
+          href={txExplorerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 hover:underline"
+        >
+          Confirmed: {txState.label}
+          <span className="text-[10px]">↗</span>
+        </a>
+      ) : (
+        `Confirmed: ${txState.label}`
+      )
+    ) : (
+      `Error: ${txState.label} — ${txState.message}`
+    )
 
   const txOverviewTone =
     txState.status === 'confirmed'
