@@ -234,7 +234,10 @@ export function ClaimSection() {
           `  Register tx: ${regData.register_tx}\n` +
           `  Grant tx: ${regData.grant_tx}`,
       )
-      toast.success('BTC wallet linked & borrower registered!')
+      toast.success('BTC wallet linked! You now have borrowing credit.', {
+        description: `${regData.credit_amount} credit granted — head to the Actions section to borrow.`,
+        duration: 6000,
+      })
     } catch (e) {
       setClaimLog(`Error: ${getErrorMessage(e)}`)
       toast.error(getErrorMessage(e))
@@ -256,7 +259,13 @@ export function ClaimSection() {
 
       {walletAccount && isBtcLinked && (
         <div className="mx-6 mb-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
-          BTC wallet already linked for this borrower.
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+            <div>
+              <span className="font-semibold text-emerald-300">BTC wallet linked!</span>
+              <span className="text-emerald-200/80 ml-1">You can now borrow against your mining credit.</span>
+            </div>
+          </div>
         </div>
       )}
 
