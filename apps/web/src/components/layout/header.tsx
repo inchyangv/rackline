@@ -1,5 +1,6 @@
 import type { TabId } from '@/types'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 
 type Props = {
   tab: TabId
@@ -24,7 +25,12 @@ export function Header({ tab, onTabChange }: Props) {
           decoding="async"
         />
         <div className="min-w-0">
-          <div className="text-lg font-bold leading-tight sm:text-xl">HashCredit</div>
+          <div className="flex items-center gap-2">
+            <div className="text-lg font-bold leading-tight sm:text-xl">HashCredit</div>
+            <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-[10px] px-1.5 py-0">
+              Testnet
+            </Badge>
+          </div>
           <div className="text-xs text-muted-foreground mt-0.5">
             Bitcoin Mining Credit Protocol
           </div>
