@@ -18,117 +18,149 @@ const DECIMALS = 6
 
 type Props = {
   vault: VaultInfo
+  embedded?: boolean
 }
 
-export function WithdrawCard({ vault }: Props) {
+export function WithdrawCard({ vault, embedded = false }: Props) {
   const walletAccount = useWalletStore((s) => s.walletAccount)
   const vaultAddress = useConfigStore((s) => s.vaultAddress)
   const vaultContract = useVaultRead()
 
-  const { myShares, availableLiquidity } = vault
+  const { myShares, myShareValue, availableLiquidity } = vault
 
-  const [shares, setShares] = useState('')
-  const [expectedAmount, setExpectedAmount] = useState<bigint | null>(null)
+  // mUSDT-based input (user-facing), shares derived internally
+  const [usdtAmount, setUsdtAmount] = useState('')
+  const [requiredShares, setRequiredShares] = useState<bigint | null>(null)
 
-  // Preview expected mUSDT output
+  // Derive required shares from mUSDT input
   useEffect(() => {
     let cancelled = false
     async function preview() {
-      if (!vaultContract || !shares) {
-        setExpectedAmount(null)
+      if (!vaultContract || !usdtAmount) {
+        setRequiredShares(null)
         return
       }
       try {
-        const parsed = ethers.parseUnits(shares, DECIMALS)
+        const parsed = ethers.parseUnits(usdtAmount, DECIMALS)
         if (parsed <= 0n) {
-          setExpectedAmount(null)
+          setRequiredShares(null)
           return
         }
-        const amount = (await vaultContract.convertToAssets(parsed)) as bigint
-        if (!cancelled) setExpectedAmount(amount)
+        const shares = (await vaultContract.convertToShares(parsed)) as bigint
+        if (!cancelled) setRequiredShares(shares)
       } catch {
-        if (!cancelled) setExpectedAmount(null)
+        if (!cancelled) setRequiredShares(null)
       }
     }
     void preview()
     return () => {
       cancelled = true
     }
-  }, [vaultContract, shares])
+  }, [vaultContract, usdtAmount])
 
   function handleMax() {
-    if (myShares !== null && myShares > 0n) {
-      setShares(ethers.formatUnits(myShares, DECIMALS))
+    if (myShareValue !== null && myShareValue > 0n) {
+      setUsdtAmount(ethers.formatUnits(myShareValue, DECIMALS))
     }
   }
 
   async function doWithdraw() {
-    const parsed = ethers.parseUnits(shares || '0', DECIMALS)
+    // Use requiredShares if derived, otherwise parse from input as shares fallback
+    const sharesToRedeem =
+      requiredShares !== null
+        ? requiredShares
+        : ethers.parseUnits(usdtAmount || '0', DECIMALS)
     toast.promise(
-      sendContractTx('withdraw', vaultAddress, LendingVaultAbi, (c) => c.withdraw(parsed)),
+      sendContractTx('withdraw', vaultAddress, LendingVaultAbi, (c) => c.withdraw(sharesToRedeem)),
       { loading: 'Withdrawing...', success: 'Withdraw confirmed!', error: 'Withdraw failed' },
     )
   }
 
   const disabled = !walletAccount
   const exceedsLiquidity =
-    expectedAmount !== null && availableLiquidity !== null && expectedAmount > availableLiquidity
+    requiredShares !== null && availableLiquidity !== null && requiredShares > availableLiquidity
 
-  return (
-    <SectionCard title="Withdraw" description="Redeem shares for mUSDT">
-      <div className="space-y-3">
-        <KeyValueList>
+  const content = (
+    <div className="space-y-3">
+      <KeyValueList>
+        <KeyValueRow
+          label={
+            <span className="flex items-center gap-1">
+              My Shares
+              <span
+                className="text-[10px] text-muted-foreground cursor-help"
+                title="Pool ownership tokens. Value grows as the pool earns yield."
+              >
+                ⓘ
+              </span>
+            </span>
+          }
+          value={myShares === null ? '—' : ethers.formatUnits(myShares, DECIMALS)}
+          mono
+        />
+        <KeyValueRow
+          label="Current Value"
+          value={myShareValue === null ? '—' : `${ethers.formatUnits(myShareValue, DECIMALS)} mUSDT`}
+          mono
+        />
+        {requiredShares !== null && (
           <KeyValueRow
-            label="My Shares"
-            value={myShares === null ? '—' : ethers.formatUnits(myShares, DECIMALS)}
+            label="Shares to redeem"
+            value={ethers.formatUnits(requiredShares, DECIMALS)}
             mono
           />
-          {expectedAmount !== null && (
-            <KeyValueRow
-              label="Expected mUSDT"
-              value={`${ethers.formatUnits(expectedAmount, DECIMALS)} mUSDT`}
-              mono
-            />
-          )}
-        </KeyValueList>
-
-        {exceedsLiquidity && (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            Withdrawal amount exceeds available liquidity.
-          </div>
         )}
+      </KeyValueList>
 
-        <div>
-          <div className="flex items-center justify-between">
-            <Label className="text-[10px] uppercase tracking-widest">Shares</Label>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="text-[10px] uppercase tracking-widest text-primary"
-              onClick={handleMax}
-              disabled={disabled || myShares === null || myShares === 0n}
-            >
-              Max
-            </Button>
-          </div>
+      {exceedsLiquidity && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          Withdrawal amount exceeds available liquidity.
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <Label className="text-[11px] uppercase tracking-wider">Amount</Label>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-[11px] text-primary"
+            onClick={handleMax}
+            disabled={disabled || myShareValue === null || myShareValue === 0n}
+          >
+            Max
+          </Button>
+        </div>
+        <div className="relative">
           <Input
-            value={shares}
-            onChange={(e) => setShares(e.target.value)}
-            placeholder="e.g. 500"
-            className="mt-1 font-mono text-xs"
+            value={usdtAmount}
+            onChange={(e) => setUsdtAmount(e.target.value)}
+            placeholder="0.00"
+            className="font-mono text-xs pr-16"
             type="text"
             inputMode="decimal"
           />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+            mUSDT
+          </span>
         </div>
-
-        <Button
-          size="sm"
-          onClick={() => void doWithdraw()}
-          disabled={disabled || !shares || exceedsLiquidity}
-        >
-          Withdraw
-        </Button>
       </div>
+
+      <Button
+        size="sm"
+        onClick={() => void doWithdraw()}
+        disabled={disabled || !usdtAmount || exceedsLiquidity}
+      >
+        Withdraw
+      </Button>
+    </div>
+  )
+
+  if (embedded) return content
+
+  return (
+    <SectionCard title="Withdraw" description="Redeem shares for mUSDT">
+      {content}
     </SectionCard>
   )
 }

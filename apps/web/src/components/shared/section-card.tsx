@@ -8,8 +8,8 @@ import {
 import { cn } from '@/lib/utils'
 
 type Props = {
-  title: string
-  description?: string
+  title: React.ReactNode
+  description?: React.ReactNode
   full?: boolean
   children: React.ReactNode
   className?: string

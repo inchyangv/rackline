@@ -15,7 +15,11 @@ import { toast } from 'sonner'
 
 const DECIMALS = 6
 
-export function DepositCard() {
+type Props = {
+  embedded?: boolean
+}
+
+export function DepositCard({ embedded = false }: Props) {
   const walletAccount = useWalletStore((s) => s.walletAccount)
   const vaultAddress = useConfigStore((s) => s.vaultAddress)
   const stablecoinAddress = useConfigStore((s) => s.stablecoinAddress)
@@ -26,7 +30,6 @@ export function DepositCard() {
   const [balance, setBalance] = useState<bigint | null>(null)
   const [expectedShares, setExpectedShares] = useState<bigint | null>(null)
 
-  // Fetch mUSDT balance
   const fetchBalance = useCallback(async () => {
     if (!stablecoinContract || !ethers.isAddress(walletAccount)) {
       setBalance(null)
@@ -46,7 +49,6 @@ export function DepositCard() {
     return () => clearInterval(interval)
   }, [fetchBalance])
 
-  // Preview expected shares
   useEffect(() => {
     let cancelled = false
     async function preview() {
@@ -90,56 +92,90 @@ export function DepositCard() {
     )
   }
 
+  function handleMax() {
+    if (balance !== null && balance > 0n) {
+      setAmount(ethers.formatUnits(balance, DECIMALS))
+    }
+  }
+
   const disabled = !walletAccount
 
-  return (
-    <SectionCard title="Deposit" description="Deposit mUSDT to earn yield">
-      <div className="space-y-3">
-        <KeyValueList>
+  const content = (
+    <div className="space-y-3">
+      <KeyValueList>
+        <KeyValueRow
+          label="My mUSDT Balance"
+          value={balance === null ? '—' : `${ethers.formatUnits(balance, DECIMALS)} mUSDT`}
+          mono
+        />
+        {expectedShares !== null && (
           <KeyValueRow
-            label="My mUSDT Balance"
+            label="Expected Shares"
             value={
-              balance === null
-                ? '—'
-                : `${ethers.formatUnits(balance, DECIMALS)} mUSDT`
+              <span className="flex items-center gap-1">
+                {ethers.formatUnits(expectedShares, DECIMALS)}
+                <span
+                  className="text-[10px] text-muted-foreground cursor-help"
+                  title="Pool ownership tokens. Value grows as the pool earns yield."
+                >
+                  ⓘ
+                </span>
+              </span>
             }
             mono
           />
-          {expectedShares !== null && (
-            <KeyValueRow
-              label="Expected Shares"
-              value={ethers.formatUnits(expectedShares, DECIMALS)}
-              mono
-            />
-          )}
-        </KeyValueList>
+        )}
+      </KeyValueList>
 
-        <div>
-          <Label className="text-[10px] uppercase tracking-widest">Amount (mUSDT)</Label>
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <Label className="text-[11px] uppercase tracking-wider">Amount</Label>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-[11px] text-primary"
+            onClick={handleMax}
+            disabled={disabled || balance === null || balance === 0n}
+          >
+            Max
+          </Button>
+        </div>
+        <div className="relative">
           <Input
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="e.g. 1000"
-            className="mt-1 font-mono text-xs"
+            placeholder="0.00"
+            className="font-mono text-xs pr-16"
             type="text"
             inputMode="decimal"
           />
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => void doApprove()}
-            disabled={disabled || !amount}
-          >
-            Approve
-          </Button>
-          <Button size="sm" onClick={() => void doDeposit()} disabled={disabled || !amount}>
-            Deposit
-          </Button>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+            mUSDT
+          </span>
         </div>
       </div>
+
+      <div className="flex gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => void doApprove()}
+          disabled={disabled || !amount}
+        >
+          Approve
+        </Button>
+        <Button size="sm" onClick={() => void doDeposit()} disabled={disabled || !amount}>
+          Deposit
+        </Button>
+      </div>
+    </div>
+  )
+
+  if (embedded) return content
+
+  return (
+    <SectionCard title="Deposit" description="Deposit mUSDT to earn yield">
+      {content}
     </SectionCard>
   )
 }

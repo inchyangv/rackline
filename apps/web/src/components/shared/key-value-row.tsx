@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 
 type Props = {
-  label: string
+  label: React.ReactNode
   value: React.ReactNode
   mono?: boolean
   pre?: boolean
