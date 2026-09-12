@@ -1,6 +1,5 @@
-import { Wallet, ArrowLeftRight } from 'lucide-react'
+import { Wallet, ArrowLeftRight, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
 import { getEthereum, ensureWalletChain } from '@/lib/ethereum'
@@ -37,37 +36,32 @@ export function WalletPanel() {
       : 'bg-emerald-400'
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-border/40 bg-gradient-to-b from-[rgba(18,30,61,0.72)] to-[rgba(12,21,45,0.84)] p-3.5 sm:p-4">
-      <div className="grid gap-2 min-w-0">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Wallet
-          </span>
-          <span className={cn('font-mono text-xs', !walletAccount && 'text-muted-foreground italic')}>
-            {walletAccount ? shortAddr(walletAccount) : 'Not connected'}
-          </span>
+    <div className="flex flex-col gap-3 rounded-2xl border border-border/40 bg-gradient-to-b from-[rgba(18,30,61,0.72)] to-[rgba(12,21,45,0.84)] p-3.5 sm:p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="grid gap-2 min-w-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Wallet
+            </span>
+            <span className={cn('font-mono text-xs', !walletAccount && 'text-muted-foreground italic')}>
+              {walletAccount ? shortAddr(walletAccount) : 'Not connected'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Network
+            </span>
+            <span className="flex items-center gap-1.5 text-xs">
+              <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor)} />
+              <span title={`Chain ID: ${walletChainId ?? chainId}`}>{networkName}</span>
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Network
-          </span>
-          <span className="flex items-center gap-1.5 text-xs">
-            <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor)} />
-            <span title={`Chain ID: ${walletChainId ?? chainId}`}>{networkName}</span>
-          </span>
-          {chainMismatch && (
-            <Badge variant="outline" className="border-warning/40 text-warning text-[10px]">
-              Expected: {getChainName(chainId)}
-            </Badge>
-          )}
-        </div>
-      </div>
 
-      <div className="flex gap-2 w-full sm:w-auto">
         <Button
           variant="default"
           size="sm"
-          className="flex-1 sm:flex-none"
+          className="w-full sm:w-auto"
           onClick={() => {
             if (isConnected) {
               disconnectWallet()
@@ -84,20 +78,28 @@ export function WalletPanel() {
               : 'Connect Wallet'
             : 'Install MetaMask'}
         </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="flex-1 sm:flex-none"
-          onClick={async () => {
-            const ok = await ensureWalletChain(chainId, rpcUrl)
-            if (ok) await refreshWalletState()
-          }}
-          disabled={!hasInjectedWallet}
-        >
-          <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
-          Switch Network
-        </Button>
       </div>
+
+      {chainMismatch && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+          <div className="flex items-center gap-1.5 text-xs text-amber-300 min-w-0">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>Wrong network — switch to {getChainName(chainId)} to use HashCredit</span>
+          </div>
+          <Button
+            variant="outline"
+            size="xs"
+            className="border-amber-500/40 text-amber-300 hover:bg-amber-500/20 flex-shrink-0"
+            onClick={async () => {
+              const ok = await ensureWalletChain(chainId, rpcUrl)
+              if (ok) await refreshWalletState()
+            }}
+          >
+            <ArrowLeftRight className="mr-1 h-3 w-3" />
+            Switch
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
