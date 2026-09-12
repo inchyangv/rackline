@@ -32,15 +32,22 @@ export function AppShell() {
   const txState = useWalletStore((s) => s.txState)
   const borrowerAddress = useApiStore((s) => s.borrowerAddress)
   const setBorrowerAddress = useApiStore((s) => s.setBorrowerAddress)
+  const resetForDisconnect = useApiStore((s) => s.resetForDisconnect)
 
   // Set default borrower from wallet
   useEffect(() => {
-    if (walletAccount && !borrowerAddress) setBorrowerAddress(walletAccount)
-  }, [walletAccount, borrowerAddress, setBorrowerAddress])
+    if (walletAccount) {
+      if (!borrowerAddress) setBorrowerAddress(walletAccount)
+      return
+    }
+    resetForDisconnect()
+  }, [walletAccount, borrowerAddress, setBorrowerAddress, resetForDisconnect])
+
+  const activeBorrower = walletAccount || ''
 
   const { stablecoin } = useManagerReads()
   const { availableCredit, currentDebt, stablecoinBalance, stablecoinDecimals, isLoading } =
-    useBorrowerInfo(borrowerAddress, stablecoin)
+    useBorrowerInfo(activeBorrower, stablecoin)
 
   // Vault info for Pool tab metrics
   const vault = useVaultInfo()

@@ -49,6 +49,7 @@ type ApiState = {
   setBorrowAmount: (v: string) => void
   setRepayAmount: (v: string) => void
   setApproveAmount: (v: string) => void
+  resetForDisconnect: () => void
 }
 
 export const useApiStore = create<ApiState>((set) => ({
@@ -100,4 +101,15 @@ export const useApiStore = create<ApiState>((set) => ({
   setBorrowAmount: (v) => set({ borrowAmount: v }),
   setRepayAmount: (v) => set({ repayAmount: v }),
   setApproveAmount: (v) => set({ approveAmount: v }),
+  resetForDisconnect: () =>
+    set({
+      borrowerAddress: '',
+      claimBtcAddress: '',
+      claimBtcSignature: '',
+      claimLog: '',
+      claimBusy: false,
+      borrowAmount: '0',
+      repayAmount: '0',
+      approveAmount: '0',
+    }),
 }))

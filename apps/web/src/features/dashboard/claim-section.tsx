@@ -11,6 +11,8 @@ import { useApiStore } from '@/stores/api-store'
 import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
 import { useApiClient } from '@/hooks/use-api-client'
+import { useManagerReads } from '@/hooks/use-manager-reads'
+import { useBorrowerInfo } from '@/hooks/use-borrower-info'
 import { sendContractTx } from '@/stores/tx-store'
 import { BtcSpvVerifierAbi } from '@/lib/abis'
 import { getErrorMessage } from '@/lib/ethereum'
@@ -85,23 +87,32 @@ export function ClaimSection() {
   const setClaimBusy = useApiStore((s) => s.setClaimBusy)
   const borrowerAddress = useApiStore((s) => s.borrowerAddress)
   const walletAccount = useWalletStore((s) => s.walletAccount)
+  const txStatus = useWalletStore((s) => s.txState.status)
   const spvVerifierAddress = useConfigStore((s) => s.spvVerifierAddress)
+  const { stablecoin } = useManagerReads()
+  const { borrowerInfo } = useBorrowerInfo(borrowerAddress || walletAccount, stablecoin)
 
   const { apiRequest } = useApiClient()
 
   const borrower = borrowerAddress || walletAccount
   const claimMessage = borrower ? `HashCredit: Link BTC to ${borrower}` : ''
+  const txBusy = txStatus === 'signing' || txStatus === 'pending'
+  const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
+  const btcPayoutKeyHash =
+    typeof borrowerInfo?.btcPayoutKeyHash === 'string' ? borrowerInfo.btcPayoutKeyHash : ZERO_BYTES32
+  const isBtcLinked = btcPayoutKeyHash !== ZERO_BYTES32
   const canSubmit =
-    !!claimBtcAddress && !!claimBtcSignature.trim() && ethers.isAddress(borrower)
+    !!claimBtcAddress && !!claimBtcSignature.trim() && ethers.isAddress(borrower) && !txBusy
 
   // Step gating
-  const step1Done = !!claimBtcAddress
-  const step2Done = !!claimBtcSignature.trim()
+  const step1Done = isBtcLinked || !!claimBtcAddress
+  const step2Done = isBtcLinked || !!claimBtcSignature.trim()
 
   // Which step is expanded: default to first incomplete step
   const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3
 
   function getStepState(n: number): StepState {
+    if (isBtcLinked) return 'done'
     if (n === 1) return step1Done ? 'done' : 'active'
     if (n === 2) return step2Done ? 'done' : step1Done ? 'active' : 'pending'
     return step2Done ? 'active' : 'pending'
@@ -109,6 +120,7 @@ export function ClaimSection() {
 
   // Only the current active step is expanded
   const useLocalExpanded = (n: number) => {
+    if (isBtcLinked) return false
     return n === activeStep
   }
 
@@ -123,7 +135,7 @@ export function ClaimSection() {
 
   async function verifyAndRegister() {
     if (!ethers.isAddress(borrower)) {
-      toast.error('Connect wallet or enter a borrower address first')
+      toast.error('Connect wallet first')
       return
     }
     if (!claimBtcAddress) {
@@ -138,7 +150,7 @@ export function ClaimSection() {
     setClaimBusy(true)
     setClaimLog('')
     try {
-      setClaimLog('Step 1/3: Extracting signature parameters...')
+      setClaimLog('[1/3] Extracting signature parameters from API...')
       const result = await apiRequest('/claim/extract-sig-params', {
         method: 'POST',
         body: JSON.stringify({
@@ -153,7 +165,7 @@ export function ClaimSection() {
         return
       }
 
-      setClaimLog('Step 2/3: Verifying BTC signature on-chain...')
+      setClaimLog('[2/3] Verifying BTC signature on-chain...')
       await sendContractTx(
         'claimBtcAddress',
         spvVerifierAddress,
@@ -169,7 +181,7 @@ export function ClaimSection() {
           ),
       )
 
-      setClaimLog('Step 3/3: Registering borrower & granting credit...')
+      setClaimLog('[3/3] Registering borrower and granting testnet credit...')
       const regResult = await apiRequest('/claim/register-and-grant', {
         method: 'POST',
         body: JSON.stringify({
@@ -185,7 +197,7 @@ export function ClaimSection() {
       }
 
       setClaimLog(
-        `Done!\n` +
+        `Done\n` +
           `  BTC signature verified on-chain (secp256k1 ecrecover)\n` +
           `  BTC address: ${claimBtcAddress}\n` +
           `  Borrower registered with ${regData.credit_amount} credit\n` +
@@ -206,6 +218,18 @@ export function ClaimSection() {
       title="Link BTC Wallet"
       description="Complete 3 steps to connect your Bitcoin identity and unlock borrowing."
     >
+      {!walletAccount && (
+        <div className="mx-6 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-muted-foreground">
+          Connect your EVM wallet first. BTC linking is available after wallet connection.
+        </div>
+      )}
+
+      {walletAccount && isBtcLinked && (
+        <div className="mx-6 mb-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+          BTC wallet already linked for this borrower.
+        </div>
+      )}
+
       <div className="divide-y divide-border/25 -mx-6 -mb-6">
         {/* Step 1: BTC Address */}
         <div>
@@ -226,6 +250,7 @@ export function ClaimSection() {
                 onChange={(e) => setClaimBtcAddress(e.target.value.trim())}
                 placeholder="tb1q... or bc1q..."
                 className="font-mono text-xs"
+                disabled={!walletAccount || isBtcLinked || txBusy}
               />
             </div>
           )}
@@ -280,6 +305,7 @@ export function ClaimSection() {
                   placeholder="Paste base64 signature from your BTC wallet..."
                   rows={2}
                   className="mt-1 font-mono text-xs"
+                  disabled={!walletAccount || isBtcLinked || txBusy}
                 />
               </div>
             </div>
@@ -304,7 +330,7 @@ export function ClaimSection() {
               <Button
                 size="sm"
                 onClick={() => void verifyAndRegister()}
-                disabled={claimBusy || !canSubmit}
+                disabled={claimBusy || !canSubmit || !walletAccount || isBtcLinked}
               >
                 {claimBusy ? 'Processing...' : 'Verify & Register'}
               </Button>

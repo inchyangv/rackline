@@ -18,6 +18,7 @@ export type VaultInfo = {
 export function useVaultInfo(): VaultInfo {
   const vault = useVaultRead()
   const walletAccount = useWalletStore((s) => s.walletAccount)
+  const txStatus = useWalletStore((s) => s.txState.status)
 
   const [totalAssets, setTotalAssets] = useState<bigint | null>(null)
   const [totalBorrowed, setTotalBorrowed] = useState<bigint | null>(null)
@@ -83,7 +84,11 @@ export function useVaultInfo(): VaultInfo {
 
   useEffect(() => {
     void fetchVaultInfo()
-  }, [vault, fetchVaultInfo])
+    const interval = setInterval(() => {
+      void fetchVaultInfo()
+    }, 10_000)
+    return () => clearInterval(interval)
+  }, [vault, fetchVaultInfo, txStatus])
 
   return {
     totalAssets,

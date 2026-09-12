@@ -22,6 +22,7 @@ export function WalletPanel() {
   const walletChainId = useWalletStore((s) => s.walletChainId)
   const connectWallet = useWalletStore((s) => s.connectWallet)
   const disconnectWallet = useWalletStore((s) => s.disconnectWallet)
+  const refreshWalletState = useWalletStore((s) => s.refreshWalletState)
   const chainId = useConfigStore((s) => s.chainId)
   const rpcUrl = useConfigStore((s) => s.rpcUrl)
   const hasInjectedWallet = getEthereum() !== null
@@ -87,7 +88,10 @@ export function WalletPanel() {
           variant="secondary"
           size="sm"
           className="flex-1 sm:flex-none"
-          onClick={() => void ensureWalletChain(chainId, rpcUrl)}
+          onClick={async () => {
+            const ok = await ensureWalletChain(chainId, rpcUrl)
+            if (ok) await refreshWalletState()
+          }}
           disabled={!hasInjectedWallet}
         >
           <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />

@@ -21,6 +21,7 @@ type Props = {
 
 export function DepositCard({ embedded = false }: Props) {
   const walletAccount = useWalletStore((s) => s.walletAccount)
+  const txStatus = useWalletStore((s) => s.txState.status)
   const vaultAddress = useConfigStore((s) => s.vaultAddress)
   const stablecoinAddress = useConfigStore((s) => s.stablecoinAddress)
   const stablecoinContract = useStablecoinRead(stablecoinAddress)
@@ -75,7 +76,17 @@ export function DepositCard({ embedded = false }: Props) {
   }, [vaultContract, amount])
 
   async function doApprove() {
-    const parsed = ethers.parseUnits(amount || '0', DECIMALS)
+    let parsed: bigint
+    try {
+      parsed = ethers.parseUnits(amount.trim() || '0', DECIMALS)
+    } catch {
+      toast.error('Invalid amount format')
+      return
+    }
+    if (parsed <= 0n) {
+      toast.error('Enter a valid amount')
+      return
+    }
     toast.promise(
       sendContractTx('approve', stablecoinAddress, Erc20Abi, (c) =>
         c.approve(vaultAddress, parsed),
@@ -85,7 +96,17 @@ export function DepositCard({ embedded = false }: Props) {
   }
 
   async function doDeposit() {
-    const parsed = ethers.parseUnits(amount || '0', DECIMALS)
+    let parsed: bigint
+    try {
+      parsed = ethers.parseUnits(amount.trim() || '0', DECIMALS)
+    } catch {
+      toast.error('Invalid amount format')
+      return
+    }
+    if (parsed <= 0n) {
+      toast.error('Enter a valid amount')
+      return
+    }
     toast.promise(
       sendContractTx('deposit', vaultAddress, LendingVaultAbi, (c) => c.deposit(parsed)),
       { loading: 'Depositing...', success: 'Deposit confirmed!', error: 'Deposit failed' },
@@ -98,7 +119,8 @@ export function DepositCard({ embedded = false }: Props) {
     }
   }
 
-  const disabled = !walletAccount
+  const txBusy = txStatus === 'signing' || txStatus === 'pending'
+  const disabled = !walletAccount || txBusy
 
   const content = (
     <div className="space-y-3">
@@ -148,6 +170,7 @@ export function DepositCard({ embedded = false }: Props) {
             className="font-mono text-xs pr-16"
             type="text"
             inputMode="decimal"
+            disabled={disabled}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
             mUSDT
@@ -160,11 +183,11 @@ export function DepositCard({ embedded = false }: Props) {
           variant="secondary"
           size="sm"
           onClick={() => void doApprove()}
-          disabled={disabled || !amount}
+          disabled={disabled || !amount.trim()}
         >
           Approve
         </Button>
-        <Button size="sm" onClick={() => void doDeposit()} disabled={disabled || !amount}>
+        <Button size="sm" onClick={() => void doDeposit()} disabled={disabled || !amount.trim()}>
           Deposit
         </Button>
       </div>

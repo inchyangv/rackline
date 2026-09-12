@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import { useManagerRead, useStablecoinRead } from './use-contracts'
+import { useWalletStore } from '@/stores/wallet-store'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -9,6 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function useBorrowerInfo(borrowerAddress: string, stablecoinAddress: string) {
   const managerRead = useManagerRead()
   const stablecoinRead = useStablecoinRead(stablecoinAddress)
+  const txStatus = useWalletStore((s) => s.txState.status)
   const [availableCredit, setAvailableCredit] = useState<bigint | null>(null)
   const [borrowerInfo, setBorrowerInfo] = useState<Record<string, unknown> | null>(null)
   const [stablecoinDecimals, setStablecoinDecimals] = useState(6)
@@ -19,6 +21,7 @@ export function useBorrowerInfo(borrowerAddress: string, stablecoinAddress: stri
 
   useEffect(() => {
     let cancelled = false
+
     async function run(): Promise<void> {
       if (!managerRead || !ethers.isAddress(borrowerAddress)) {
         setBorrowerInfo(null)
@@ -26,6 +29,7 @@ export function useBorrowerInfo(borrowerAddress: string, stablecoinAddress: stri
         setStablecoinBalance(null)
         setCurrentDebt(null)
         setAccruedInterest(null)
+        setIsLoading(false)
         return
       }
 
@@ -74,9 +78,17 @@ export function useBorrowerInfo(borrowerAddress: string, stablecoinAddress: stri
         if (!cancelled) setIsLoading(false)
       }
     }
+
     void run()
-    return () => { cancelled = true }
-  }, [managerRead, stablecoinRead, borrowerAddress])
+    const interval = setInterval(() => {
+      void run()
+    }, 10_000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [managerRead, stablecoinRead, borrowerAddress, txStatus])
 
   return { availableCredit, borrowerInfo, stablecoinDecimals, stablecoinBalance, currentDebt, accruedInterest, isLoading }
 }

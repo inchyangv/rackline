@@ -23,6 +23,7 @@ type Props = {
 
 export function WithdrawCard({ vault, embedded = false }: Props) {
   const walletAccount = useWalletStore((s) => s.walletAccount)
+  const txStatus = useWalletStore((s) => s.txState.status)
   const vaultAddress = useConfigStore((s) => s.vaultAddress)
   const vaultContract = useVaultRead()
 
@@ -30,6 +31,7 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
 
   // mUSDT-based input (user-facing), shares derived internally
   const [usdtAmount, setUsdtAmount] = useState('')
+  const [requestedAssets, setRequestedAssets] = useState<bigint | null>(null)
   const [requiredShares, setRequiredShares] = useState<bigint | null>(null)
 
   // Derive required shares from mUSDT input
@@ -37,19 +39,25 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
     let cancelled = false
     async function preview() {
       if (!vaultContract || !usdtAmount) {
+        setRequestedAssets(null)
         setRequiredShares(null)
         return
       }
       try {
         const parsed = ethers.parseUnits(usdtAmount, DECIMALS)
         if (parsed <= 0n) {
+          setRequestedAssets(null)
           setRequiredShares(null)
           return
         }
+        if (!cancelled) setRequestedAssets(parsed)
         const shares = (await vaultContract.convertToShares(parsed)) as bigint
         if (!cancelled) setRequiredShares(shares)
       } catch {
-        if (!cancelled) setRequiredShares(null)
+        if (!cancelled) {
+          setRequestedAssets(null)
+          setRequiredShares(null)
+        }
       }
     }
     void preview()
@@ -65,20 +73,21 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
   }
 
   async function doWithdraw() {
-    // Use requiredShares if derived, otherwise parse from input as shares fallback
-    const sharesToRedeem =
-      requiredShares !== null
-        ? requiredShares
-        : ethers.parseUnits(usdtAmount || '0', DECIMALS)
+    if (requiredShares === null || requiredShares <= 0n) {
+      toast.error('Enter a valid withdraw amount')
+      return
+    }
+    const sharesToRedeem = requiredShares
     toast.promise(
       sendContractTx('withdraw', vaultAddress, LendingVaultAbi, (c) => c.withdraw(sharesToRedeem)),
       { loading: 'Withdrawing...', success: 'Withdraw confirmed!', error: 'Withdraw failed' },
     )
   }
 
-  const disabled = !walletAccount
+  const txBusy = txStatus === 'signing' || txStatus === 'pending'
+  const disabled = !walletAccount || txBusy
   const exceedsLiquidity =
-    requiredShares !== null && availableLiquidity !== null && requiredShares > availableLiquidity
+    requestedAssets !== null && availableLiquidity !== null && requestedAssets > availableLiquidity
 
   const content = (
     <div className="space-y-3">
@@ -139,6 +148,7 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
             className="font-mono text-xs pr-16"
             type="text"
             inputMode="decimal"
+            disabled={disabled}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
             mUSDT
@@ -149,7 +159,7 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
       <Button
         size="sm"
         onClick={() => void doWithdraw()}
-        disabled={disabled || !usdtAmount || exceedsLiquidity}
+        disabled={disabled || requiredShares === null || exceedsLiquidity}
       >
         Withdraw
       </Button>
