@@ -11,6 +11,7 @@ import { useConfigStore } from '@/stores/config-store'
 import { useVaultRead, useStablecoinRead } from '@/hooks/use-contracts'
 import { sendContractTx } from '@/stores/tx-store'
 import { LendingVaultAbi, Erc20Abi } from '@/lib/abis'
+import { STABLECOIN_SYMBOL } from '@/lib/constants'
 import { toast } from 'sonner'
 
 const DECIMALS = 6
@@ -127,7 +128,7 @@ export function DepositCard({ embedded = false }: Props) {
       <KeyValueList>
         <KeyValueRow
           label="My mUSDT Balance"
-          value={balance === null ? '—' : `${ethers.formatUnits(balance, DECIMALS)} mUSDT`}
+          value={balance === null ? '—' : `${ethers.formatUnits(balance, DECIMALS)} ${STABLECOIN_SYMBOL}`}
           mono
         />
         {expectedShares !== null && (
@@ -173,7 +174,7 @@ export function DepositCard({ embedded = false }: Props) {
             disabled={disabled}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
-            mUSDT
+            {STABLECOIN_SYMBOL}
           </span>
         </div>
       </div>
@@ -197,7 +198,7 @@ export function DepositCard({ embedded = false }: Props) {
   if (embedded) return content
 
   return (
-    <SectionCard title="Deposit" description="Deposit mUSDT to earn yield">
+    <SectionCard title="Deposit" description={`Deposit ${STABLECOIN_SYMBOL} to earn yield`}>
       {content}
     </SectionCard>
   )

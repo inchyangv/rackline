@@ -6,6 +6,7 @@ import { KeyValueRow } from '@/components/shared/key-value-row'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useConfigStore } from '@/stores/config-store'
 import { shortAddr } from '@/lib/format'
+import { STABLECOIN_SYMBOL } from '@/lib/constants'
 import type { VaultInfo } from '@/hooks/use-vault-info'
 
 const DECIMALS = 6
@@ -23,7 +24,7 @@ export function PoolStatusCard({ vault }: Props) {
   function fmtAmount(val: bigint | null) {
     if (isLoading) return <Skeleton className="h-4 w-32" />
     if (val === null) return '—'
-    return `${ethers.formatUnits(val, DECIMALS)} mUSDT`
+    return `${ethers.formatUnits(val, DECIMALS)} ${STABLECOIN_SYMBOL}`
   }
 
   function fmtBps(val: bigint | null) {

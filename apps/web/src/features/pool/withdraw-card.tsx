@@ -11,6 +11,7 @@ import { useConfigStore } from '@/stores/config-store'
 import { useVaultRead } from '@/hooks/use-contracts'
 import { sendContractTx } from '@/stores/tx-store'
 import { LendingVaultAbi } from '@/lib/abis'
+import { STABLECOIN_SYMBOL } from '@/lib/constants'
 import { toast } from 'sonner'
 import type { VaultInfo } from '@/hooks/use-vault-info'
 
@@ -109,7 +110,7 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
         />
         <KeyValueRow
           label="Current Value"
-          value={myShareValue === null ? '—' : `${ethers.formatUnits(myShareValue, DECIMALS)} mUSDT`}
+          value={myShareValue === null ? '—' : `${ethers.formatUnits(myShareValue, DECIMALS)} ${STABLECOIN_SYMBOL}`}
           mono
         />
         {requiredShares !== null && (
@@ -151,7 +152,7 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
             disabled={disabled}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
-            mUSDT
+            {STABLECOIN_SYMBOL}
           </span>
         </div>
       </div>
@@ -169,7 +170,7 @@ export function WithdrawCard({ vault, embedded = false }: Props) {
   if (embedded) return content
 
   return (
-    <SectionCard title="Withdraw" description="Redeem shares for mUSDT">
+    <SectionCard title="Withdraw" description={`Redeem shares for ${STABLECOIN_SYMBOL}`}>
       {content}
     </SectionCard>
   )

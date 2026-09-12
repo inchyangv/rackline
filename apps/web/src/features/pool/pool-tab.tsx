@@ -8,6 +8,7 @@ import { useVaultInfo } from '@/hooks/use-vault-info'
 import { PoolStatusCard } from './pool-status-card'
 import { DepositCard } from './deposit-card'
 import { WithdrawCard } from './withdraw-card'
+import { STABLECOIN_SYMBOL } from '@/lib/constants'
 
 const DECIMALS = 6
 
@@ -55,7 +56,7 @@ export function PoolTab() {
               ) : myShareValue === null ? (
                 '—'
               ) : (
-                `${ethers.formatUnits(myShareValue, DECIMALS)} mUSDT`
+                `${ethers.formatUnits(myShareValue, DECIMALS)} ${STABLECOIN_SYMBOL}`
               )
             }
             mono
