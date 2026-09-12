@@ -17,10 +17,10 @@ export function KeyValueRow({ label, value, mono = false, pre = false, className
         className,
       )}
     >
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="text-xs text-muted-foreground leading-relaxed">{label}</div>
       <div
         className={cn(
-          'text-xs leading-relaxed',
+          'text-sm leading-relaxed',
           mono && 'font-mono',
           pre && 'whitespace-pre-wrap break-words',
         )}
