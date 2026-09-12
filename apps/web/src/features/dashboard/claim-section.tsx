@@ -107,14 +107,7 @@ export function ClaimSection() {
     return step2Done ? 'active' : 'pending'
   }
 
-  // Simple controlled expansion: only auto-open the active step
-  // User can still manually open/close done steps
-  const [expandedStep, setExpandedStep] = [
-    activeStep,
-    (n: number) => { void n },  // no-op to simplify; use local override below
-  ]
-
-  // Local override allows toggling done steps
+  // Only the current active step is expanded
   const useLocalExpanded = (n: number) => {
     return n === activeStep
   }
