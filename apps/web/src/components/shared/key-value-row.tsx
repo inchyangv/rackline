@@ -13,7 +13,7 @@ export function KeyValueRow({ label, value, mono = false, pre = false, className
     <div
       className={cn(
         'grid grid-cols-[minmax(122px,150px)_minmax(0,1fr)] gap-2.5 items-start',
-        'rounded-xl border border-border/40 bg-gradient-to-br from-card/80 to-card/60 px-3 py-2.5',
+        'border-b border-border/25 last:border-b-0 py-2.5',
         className,
       )}
     >
