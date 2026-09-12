@@ -45,6 +45,8 @@ function StepHeader({
       )}
       onClick={onToggle}
       disabled={state === 'pending'}
+      aria-expanded={expanded}
+      aria-label={`Step ${num}: ${label}`}
     >
       <span
         className={cn(
