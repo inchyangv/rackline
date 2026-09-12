@@ -1,5 +1,7 @@
 import { ethers } from 'ethers'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { SectionCard } from '@/components/shared/section-card'
+import { cn } from '@/lib/utils'
 import { KeyValueList } from '@/components/shared/key-value-list'
 import { KeyValueRow } from '@/components/shared/key-value-row'
 import { Input } from '@/components/ui/input'
@@ -88,8 +90,56 @@ export function BorrowerCard() {
     }
   }
 
+  const onboardingDone = !!walletAccount && isBtcLinked
+
   return (
     <>
+      {/* Onboarding progress — shown until all steps complete */}
+      {!onboardingDone && (
+        <div className="col-span-full rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+          <p className="text-xs font-semibold text-foreground/80 mb-2.5">Get started</p>
+          <div className="flex items-center gap-2">
+            {[
+              { label: 'Connect Wallet', done: !!walletAccount },
+              { label: 'Link BTC Wallet', done: isBtcLinked },
+              { label: 'Start Borrowing', done: false },
+            ].map((step, i, arr) => (
+              <>
+                <div key={step.label} className="flex flex-col items-center gap-1 min-w-0">
+                  {step.done ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  ) : (
+                    <Circle
+                      className={cn(
+                        'h-4 w-4',
+                        i === arr.findIndex((s) => !s.done)
+                          ? 'text-primary'
+                          : 'text-muted-foreground/40',
+                      )}
+                    />
+                  )}
+                  <span
+                    className={cn(
+                      'text-[10px] text-center leading-tight',
+                      step.done
+                        ? 'text-emerald-400'
+                        : i === arr.findIndex((s) => !s.done)
+                          ? 'text-foreground/80 font-medium'
+                          : 'text-muted-foreground/50',
+                    )}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div key={`line-${i}`} className="flex-1 h-px bg-border/30 mb-4" />
+                )}
+              </>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Credit Overview — read-only */}
       <SectionCard title="Credit Overview">
         <div className="space-y-3">

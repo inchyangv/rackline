@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import { ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { SectionCard } from '@/components/shared/section-card'
 import { KeyValueList } from '@/components/shared/key-value-list'
 import { KeyValueRow } from '@/components/shared/key-value-row'
@@ -15,6 +16,63 @@ import { BtcSpvVerifierAbi } from '@/lib/abis'
 import { getErrorMessage } from '@/lib/ethereum'
 import { copyToClipboard } from '@/lib/clipboard'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+type StepState = 'pending' | 'active' | 'done'
+
+function StepHeader({
+  num,
+  label,
+  state,
+  expanded,
+  onToggle,
+}: {
+  num: number
+  label: string
+  state: StepState
+  expanded: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      className={cn(
+        'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
+        state === 'pending' && 'cursor-default opacity-50',
+        state !== 'pending' && 'hover:bg-card/60',
+      )}
+      onClick={onToggle}
+      disabled={state === 'pending'}
+    >
+      <span
+        className={cn(
+          'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
+          state === 'done'
+            ? 'bg-emerald-500/20 text-emerald-400'
+            : state === 'active'
+              ? 'bg-primary/20 text-primary'
+              : 'bg-muted/40 text-muted-foreground',
+        )}
+      >
+        {state === 'done' ? <CheckCircle2 className="h-3.5 w-3.5" /> : num}
+      </span>
+      <span
+        className={cn(
+          'text-xs font-semibold flex-1',
+          state === 'done' ? 'text-emerald-400/80 line-through' : 'text-foreground/90',
+        )}
+      >
+        {label}
+      </span>
+      {state !== 'pending' && (
+        expanded ? (
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        )
+      )}
+    </button>
+  )
+}
 
 export function ClaimSection() {
   const claimBtcAddress = useApiStore((s) => s.claimBtcAddress)
@@ -32,15 +90,34 @@ export function ClaimSection() {
   const { apiRequest } = useApiClient()
 
   const borrower = borrowerAddress || walletAccount
-
-  // The message the BTC wallet must sign
-  const claimMessage = borrower
-    ? `HashCredit: Link BTC to ${borrower}`
-    : ''
+  const claimMessage = borrower ? `HashCredit: Link BTC to ${borrower}` : ''
   const canSubmit =
-    !!claimBtcAddress &&
-    !!claimBtcSignature.trim() &&
-    ethers.isAddress(borrower)
+    !!claimBtcAddress && !!claimBtcSignature.trim() && ethers.isAddress(borrower)
+
+  // Step gating
+  const step1Done = !!claimBtcAddress
+  const step2Done = !!claimBtcSignature.trim()
+
+  // Which step is expanded: default to first incomplete step
+  const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3
+
+  function getStepState(n: number): StepState {
+    if (n === 1) return step1Done ? 'done' : 'active'
+    if (n === 2) return step2Done ? 'done' : step1Done ? 'active' : 'pending'
+    return step2Done ? 'active' : 'pending'
+  }
+
+  // Simple controlled expansion: only auto-open the active step
+  // User can still manually open/close done steps
+  const [expandedStep, setExpandedStep] = [
+    activeStep,
+    (n: number) => { void n },  // no-op to simplify; use local override below
+  ]
+
+  // Local override allows toggling done steps
+  const useLocalExpanded = (n: number) => {
+    return n === activeStep
+  }
 
   async function copyClaimMessage() {
     if (!claimMessage) {
@@ -68,7 +145,6 @@ export function ClaimSection() {
     setClaimBusy(true)
     setClaimLog('')
     try {
-      // Step 1: Extract on-chain params from BTC signature
       setClaimLog('Step 1/3: Extracting signature parameters...')
       const result = await apiRequest('/claim/extract-sig-params', {
         method: 'POST',
@@ -84,23 +160,22 @@ export function ClaimSection() {
         return
       }
 
-      // Step 2: On-chain BTC signature verification via claimBtcAddress
       setClaimLog('Step 2/3: Verifying BTC signature on-chain...')
       await sendContractTx(
         'claimBtcAddress',
         spvVerifierAddress,
         BtcSpvVerifierAbi,
-        (c) => c.claimBtcAddress(
-          params.pub_key_x,
-          params.pub_key_y,
-          params.btc_msg_hash,
-          params.v,
-          params.r,
-          params.s,
-        ),
+        (c) =>
+          c.claimBtcAddress(
+            params.pub_key_x,
+            params.pub_key_y,
+            params.btc_msg_hash,
+            params.v,
+            params.r,
+            params.s,
+          ),
       )
 
-      // Step 3: Register borrower + grant testnet credit (admin tx via backend)
       setClaimLog('Step 3/3: Registering borrower & granting credit...')
       const regResult = await apiRequest('/claim/register-and-grant', {
         method: 'POST',
@@ -118,11 +193,11 @@ export function ClaimSection() {
 
       setClaimLog(
         `Done!\n` +
-        `  BTC signature verified on-chain (secp256k1 ecrecover)\n` +
-        `  BTC address: ${claimBtcAddress}\n` +
-        `  Borrower registered with ${regData.credit_amount} credit\n` +
-        `  Register tx: ${regData.register_tx}\n` +
-        `  Grant tx: ${regData.grant_tx}`
+          `  BTC signature verified on-chain (secp256k1 ecrecover)\n` +
+          `  BTC address: ${claimBtcAddress}\n` +
+          `  Borrower registered with ${regData.credit_amount} credit\n` +
+          `  Register tx: ${regData.register_tx}\n` +
+          `  Grant tx: ${regData.grant_tx}`,
       )
       toast.success('BTC wallet linked & borrower registered!')
     } catch (e) {
@@ -136,92 +211,121 @@ export function ClaimSection() {
   return (
     <SectionCard
       title="Link BTC Wallet"
-      description="Sign a message with your Bitcoin wallet, then verify the signature on-chain."
+      description="Complete 3 steps to connect your Bitcoin identity and unlock borrowing."
     >
-      <div className="space-y-4">
+      <div className="divide-y divide-border/25 -mx-6 -mb-6">
         {/* Step 1: BTC Address */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">1</span>
-            <Label className="text-xs font-semibold">BTC Address</Label>
-          </div>
-          <Input
-            value={claimBtcAddress}
-            onChange={(e) => setClaimBtcAddress(e.target.value.trim())}
-            placeholder="tb1q... (copy from MetaMask Bitcoin wallet)"
-            className="font-mono text-xs"
+        <div>
+          <StepHeader
+            num={1}
+            label="Enter your BTC address"
+            state={getStepState(1)}
+            expanded={useLocalExpanded(1)}
+            onToggle={() => {}}
           />
+          {useLocalExpanded(1) && (
+            <div className="px-4 pb-4 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Copy your Bitcoin address from your wallet (e.g. MetaMask Bitcoin extension).
+              </p>
+              <Input
+                value={claimBtcAddress}
+                onChange={(e) => setClaimBtcAddress(e.target.value.trim())}
+                placeholder="tb1q... or bc1q..."
+                className="font-mono text-xs"
+              />
+            </div>
+          )}
         </div>
 
-        {/* Step 2: Sign message */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">2</span>
-            <Label className="text-xs font-semibold">Sign Message with BTC Wallet</Label>
-          </div>
-          <div className="rounded-lg border border-border/40 bg-secondary/20 p-3 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">How to create BTC signature</p>
-            <ol className="mt-1 list-decimal space-y-1 pl-4">
-              <li>Open your BTC wallet&apos;s <span className="font-medium">Sign Message</span> screen.</li>
-              <li>Select the same BTC address you entered in Step 1.</li>
-              <li>Sign the exact message below (do not edit spaces/newlines).</li>
-              <li>Paste the base64 signature here.</li>
-            </ol>
-          </div>
-          <div>
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-[10px] uppercase tracking-widest">Message to sign (exact)</Label>
+        {/* Step 2: Sign Message */}
+        <div>
+          <StepHeader
+            num={2}
+            label="Sign message with your BTC wallet"
+            state={getStepState(2)}
+            expanded={useLocalExpanded(2)}
+            onToggle={() => {}}
+          />
+          {useLocalExpanded(2) && (
+            <div className="px-4 pb-4 space-y-3">
+              <div className="rounded-lg border border-border/40 bg-secondary/20 p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">How to sign the message</p>
+                <ol className="list-decimal space-y-1 pl-4">
+                  <li>Open your BTC wallet&apos;s <span className="font-medium">Sign Message</span> screen.</li>
+                  <li>Select the same BTC address you entered in Step 1.</li>
+                  <li>Sign the exact message below — do not change any characters.</li>
+                  <li>Paste the base64 signature in the field below.</li>
+                </ol>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-[11px] uppercase tracking-wider">Message to sign (exact)</Label>
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    onClick={() => void copyClaimMessage()}
+                    disabled={!claimMessage}
+                  >
+                    Copy
+                  </Button>
+                </div>
+                <Textarea
+                  value={
+                    claimMessage || 'Connect wallet or enter borrower address to generate message'
+                  }
+                  readOnly
+                  rows={2}
+                  className="font-mono text-xs bg-secondary/30"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] uppercase tracking-wider">BTC Signature (base64)</Label>
+                <Textarea
+                  value={claimBtcSignature}
+                  onChange={(e) => setClaimBtcSignature(e.target.value)}
+                  placeholder="Paste base64 signature from your BTC wallet..."
+                  rows={2}
+                  className="mt-1 font-mono text-xs"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Step 3: Verify & Register */}
+        <div>
+          <StepHeader
+            num={3}
+            label="Verify on-chain & unlock credit"
+            state={getStepState(3)}
+            expanded={useLocalExpanded(3)}
+            onToggle={() => {}}
+          />
+          {useLocalExpanded(3) && (
+            <div className="px-4 pb-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Your BTC signature is verified on-chain via secp256k1 ecrecover. You&apos;ll receive
+                1,000 mUSDT testnet credit upon success.
+              </p>
               <Button
-                variant="secondary"
-                size="xs"
-                onClick={() => void copyClaimMessage()}
-                disabled={!claimMessage}
+                size="sm"
+                onClick={() => void verifyAndRegister()}
+                disabled={claimBusy || !canSubmit}
               >
-                Copy Message
+                {claimBusy ? 'Processing...' : 'Verify & Register'}
               </Button>
             </div>
-            <Textarea
-              value={claimMessage || 'Connect wallet or enter borrower address to generate message'}
-              readOnly
-              rows={2}
-              className="mt-1 font-mono text-xs bg-secondary/30"
-            />
-          </div>
-          <div>
-            <Label className="text-[10px] uppercase tracking-widest">BTC Signature (base64)</Label>
-            <Textarea
-              value={claimBtcSignature}
-              onChange={(e) => setClaimBtcSignature(e.target.value)}
-              placeholder="Paste base64 signature from your BTC wallet..."
-              rows={2}
-              className="mt-1 font-mono text-xs"
-            />
-          </div>
+          )}
         </div>
 
-        {/* Step 3: Verify on-chain */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">3</span>
-            <Label className="text-xs font-semibold">Verify On-chain & Register</Label>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            BTC signature is verified on-chain using secp256k1 ecrecover. Borrower gets 1,000 mUSDT testnet credit.
-          </p>
-          <Button
-            size="sm"
-            onClick={() => void verifyAndRegister()}
-            disabled={claimBusy || !canSubmit}
-          >
-            Verify & Register
-          </Button>
-        </div>
-
-        {/* Log */}
+        {/* Log output */}
         {claimLog && (
-          <KeyValueList>
-            <KeyValueRow label="Status" value={claimLog} mono pre />
-          </KeyValueList>
+          <div className="px-4 py-3">
+            <KeyValueList>
+              <KeyValueRow label="Status" value={claimLog} mono pre />
+            </KeyValueList>
+          </div>
         )}
       </div>
     </SectionCard>
