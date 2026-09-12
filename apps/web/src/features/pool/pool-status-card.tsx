@@ -39,6 +39,11 @@ export function PoolStatusCard({ vault }: Props) {
 
   return (
     <SectionCard title="Pool Status" description="Current lending pool metrics">
+      <div className="mb-3 rounded-lg border border-border/30 bg-secondary/20 px-3 py-2 text-xs text-muted-foreground">
+        Deposited {STABLECOIN_SYMBOL} is lent to SPV-verified BTC miners at a fixed APR.
+        Depositors earn yield as borrowers repay interest.
+        Share value grows over time as the pool accumulates interest.
+      </div>
       <KeyValueList>
         <KeyValueRow
           label="Vault Contract"
