@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { SectionCard } from '@/components/shared/section-card'
 import { KeyValueList } from '@/components/shared/key-value-list'
@@ -108,7 +109,7 @@ export function ClaimSection() {
   const step1Done = isBtcLinked || !!claimBtcAddress
   const step2Done = isBtcLinked || !!claimBtcSignature.trim()
 
-  // Which step is expanded: default to first incomplete step
+  // Which step is the current active (first incomplete) step
   const activeStep = !step1Done ? 1 : !step2Done ? 2 : 3
 
   function getStepState(n: number): StepState {
@@ -118,10 +119,39 @@ export function ClaimSection() {
     return step2Done ? 'active' : 'pending'
   }
 
-  // Only the current active step is expanded
-  const useLocalExpanded = (n: number) => {
+  // Track which steps are explicitly collapsed by the user
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set())
+
+  // When a new step becomes active, auto-expand it
+  useEffect(() => {
+    setCollapsed((prev) => {
+      if (prev.has(activeStep)) {
+        const next = new Set(prev)
+        next.delete(activeStep)
+        return next
+      }
+      return prev
+    })
+  }, [activeStep])
+
+  function isExpanded(n: number): boolean {
     if (isBtcLinked) return false
-    return n === activeStep
+    const state = getStepState(n)
+    if (state === 'pending') return false
+    return !collapsed.has(n)
+  }
+
+  function handleToggle(n: number) {
+    if (getStepState(n) === 'pending') return
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(n)) {
+        next.delete(n)
+      } else {
+        next.add(n)
+      }
+      return next
+    })
   }
 
   async function copyClaimMessage() {
@@ -237,10 +267,10 @@ export function ClaimSection() {
             num={1}
             label="Enter your BTC address"
             state={getStepState(1)}
-            expanded={useLocalExpanded(1)}
-            onToggle={() => {}}
+            expanded={isExpanded(1)}
+            onToggle={() => handleToggle(1)}
           />
-          {useLocalExpanded(1) && (
+          {isExpanded(1) && (
             <div className="px-4 pb-4 space-y-2">
               <p className="text-xs text-muted-foreground">
                 Copy your Bitcoin address from your wallet (e.g. MetaMask Bitcoin extension).
@@ -262,10 +292,10 @@ export function ClaimSection() {
             num={2}
             label="Sign message with your BTC wallet"
             state={getStepState(2)}
-            expanded={useLocalExpanded(2)}
-            onToggle={() => {}}
+            expanded={isExpanded(2)}
+            onToggle={() => handleToggle(2)}
           />
-          {useLocalExpanded(2) && (
+          {isExpanded(2) && (
             <div className="px-4 pb-4 space-y-3">
               <div className="rounded-lg border border-border/40 bg-secondary/20 p-3 text-xs text-muted-foreground">
                 <p className="font-medium text-foreground mb-1">How to sign the message</p>
@@ -318,10 +348,10 @@ export function ClaimSection() {
             num={3}
             label="Verify on-chain & unlock credit"
             state={getStepState(3)}
-            expanded={useLocalExpanded(3)}
-            onToggle={() => {}}
+            expanded={isExpanded(3)}
+            onToggle={() => handleToggle(3)}
           />
-          {useLocalExpanded(3) && (
+          {isExpanded(3) && (
             <div className="px-4 pb-4 space-y-3">
               <p className="text-xs text-muted-foreground">
                 Your BTC signature is verified on-chain via secp256k1 ecrecover. You&apos;ll receive
