@@ -5,6 +5,17 @@ import { useWalletStore } from '@/stores/wallet-store'
 import { useConfigStore } from '@/stores/config-store'
 import { getEthereum, ensureWalletChain } from '@/lib/ethereum'
 import { shortAddr } from '@/lib/format'
+import { cn } from '@/lib/utils'
+
+const CHAIN_NAMES: Record<number, string> = {
+  133: 'HashKey Testnet',
+  2370: 'Creditcoin Testnet',
+}
+
+function getChainName(id: number | null): string {
+  if (id === null) return '—'
+  return CHAIN_NAMES[id] ?? `Chain ${id}`
+}
 
 export function WalletPanel() {
   const walletAccount = useWalletStore((s) => s.walletAccount)
@@ -17,11 +28,18 @@ export function WalletPanel() {
   const isConnected = Boolean(walletAccount)
   const chainMismatch = walletChainId !== null && walletChainId !== chainId
 
+  const networkName = getChainName(walletChainId ?? chainId)
+  const dotColor = !isConnected
+    ? 'bg-muted-foreground'
+    : chainMismatch
+      ? 'bg-amber-400'
+      : 'bg-emerald-400'
+
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-border/40 bg-gradient-to-b from-[rgba(18,30,61,0.72)] to-[rgba(12,21,45,0.84)] p-3.5 sm:p-4">
       <div className="grid gap-2 min-w-0">
         <div className="flex items-center gap-2.5">
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
             Wallet
           </span>
           <span className="font-mono text-xs">
@@ -29,13 +47,16 @@ export function WalletPanel() {
           </span>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-            Chain
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Network
           </span>
-          <span className="font-mono text-xs">{walletChainId ?? chainId}</span>
+          <span className="flex items-center gap-1.5 text-xs">
+            <span className={cn('h-1.5 w-1.5 rounded-full flex-shrink-0', dotColor)} />
+            <span title={`Chain ID: ${walletChainId ?? chainId}`}>{networkName}</span>
+          </span>
           {chainMismatch && (
             <Badge variant="outline" className="border-warning/40 text-warning text-[10px]">
-              Expected: {chainId}
+              Expected: {getChainName(chainId)}
             </Badge>
           )}
         </div>
@@ -66,7 +87,7 @@ export function WalletPanel() {
           disabled={!hasInjectedWallet}
         >
           <ArrowLeftRight className="mr-1.5 h-3.5 w-3.5" />
-          Chain {chainId}
+          Switch Network
         </Button>
       </div>
     </div>

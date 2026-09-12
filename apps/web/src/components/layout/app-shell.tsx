@@ -10,6 +10,7 @@ import { useWalletStore } from '@/stores/wallet-store'
 import { useApiStore } from '@/stores/api-store'
 import { useManagerReads } from '@/hooks/use-manager-reads'
 import { useBorrowerInfo } from '@/hooks/use-borrower-info'
+import { useVaultInfo } from '@/hooks/use-vault-info'
 import { DashboardTab } from '@/features/dashboard/dashboard-tab'
 import { PoolTab } from '@/features/pool/pool-tab'
 import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
@@ -38,11 +39,14 @@ export function AppShell() {
   }, [walletAccount, borrowerAddress, setBorrowerAddress])
 
   const { stablecoin } = useManagerReads()
-  const { availableCredit, stablecoinBalance, stablecoinDecimals, isLoading } = useBorrowerInfo(
-    borrowerAddress,
-    stablecoin,
-  )
+  const { availableCredit, currentDebt, stablecoinBalance, stablecoinDecimals, isLoading } =
+    useBorrowerInfo(borrowerAddress, stablecoin)
 
+  // Vault info for Pool tab metrics
+  const vault = useVaultInfo()
+  const { totalAssets, borrowAPR: vaultAPR, myShares, myShareValue, isLoading: vaultLoading } = vault
+
+  // Dashboard metrics
   const availableCreditDisplay =
     availableCredit === null
       ? '—'
@@ -51,6 +55,20 @@ export function AppShell() {
     stablecoinBalance === null
       ? '—'
       : `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+  const outstandingDebtDisplay =
+    currentDebt === null
+      ? '—'
+      : `${ethers.formatUnits(currentDebt, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+
+  // Pool tab metrics
+  const poolTvlDisplay =
+    totalAssets === null ? '—' : `${ethers.formatUnits(totalAssets, 6)} ${STABLECOIN_SYMBOL}`
+  const poolAprDisplay =
+    vaultAPR === null ? '—' : `${(Number(vaultAPR) / 100).toFixed(2)}%`
+  const mySharesDisplay =
+    myShares === null ? '—' : ethers.formatUnits(myShares, 6)
+  const myShareValueDisplay =
+    myShareValue === null ? '—' : `${ethers.formatUnits(myShareValue, 6)} ${STABLECOIN_SYMBOL}`
 
   const txOverview =
     txState.status === 'idle'
@@ -86,19 +104,50 @@ export function AppShell() {
           <WalletPanel />
         </div>
 
-        {/* Metrics bar */}
+        {/* Metrics bar — content changes per tab */}
         <MetricsBar>
-          <MetricCard label="Network" value="HashKey Chain Testnet" />
-          <MetricCard
-            label="Available Credit"
-            value={availableCreditDisplay}
-            loading={isLoading}
-          />
-          <MetricCard
-            label="Balance"
-            value={stablecoinBalanceDisplay}
-            loading={isLoading}
-          />
+          {tab === 'dashboard' ? (
+            <>
+              <MetricCard
+                label="Available Credit"
+                value={availableCreditDisplay}
+                loading={isLoading}
+              />
+              <MetricCard
+                label="Balance"
+                value={stablecoinBalanceDisplay}
+                loading={isLoading}
+              />
+              <MetricCard
+                label="Outstanding Debt"
+                value={outstandingDebtDisplay}
+                loading={isLoading}
+              />
+            </>
+          ) : (
+            <>
+              <MetricCard
+                label="My Shares"
+                value={mySharesDisplay}
+                loading={vaultLoading}
+              />
+              <MetricCard
+                label="My Value"
+                value={myShareValueDisplay}
+                loading={vaultLoading}
+              />
+              <MetricCard
+                label="Pool TVL"
+                value={poolTvlDisplay}
+                loading={vaultLoading}
+              />
+              <MetricCard
+                label="Borrow APR"
+                value={poolAprDisplay}
+                loading={vaultLoading}
+              />
+            </>
+          )}
           <MetricCard label="Status" value={txOverview} tone={txOverviewTone} small />
         </MetricsBar>
       </div>
