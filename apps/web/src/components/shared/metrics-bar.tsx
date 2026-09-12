@@ -9,11 +9,13 @@ export function MetricsBar({ children, className }: Props) {
   return (
     <div
       className={cn(
-        'mt-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3',
+        'mt-3.5 overflow-x-auto',
         className,
       )}
     >
-      {children}
+      <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 min-w-max sm:min-w-0">
+        {children}
+      </div>
     </div>
   )
 }
