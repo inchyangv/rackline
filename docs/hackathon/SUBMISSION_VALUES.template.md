@@ -9,7 +9,7 @@ Copy this file to `docs/hackathon/SUBMISSION_VALUES.md` and fill in the blanks.
 | Project name | TODO |
 | Project logo URL (optional) | TODO |
 | Category | TODO (DeFi / RWA / DePIN / Gaming, etc.) |
-| Project description | TODO (2–6 sentences: problem, solution, why Creditcoin) |
+| Project description | TODO (2–6 sentences: problem, solution, why HashKey Chain) |
 | GitHub repo URL | TODO |
 | Deck / whitepaper PDF URL | TODO |
 | Prototype demo video URL | TODO |
@@ -18,9 +18,9 @@ Copy this file to `docs/hackathon/SUBMISSION_VALUES.md` and fill in the blanks.
 
 | Field | Value |
 |-------|-------|
-| Network | Creditcoin EVM Testnet |
-| Chain ID | `102031` |
-| RPC URL | `https://rpc.cc3-testnet.creditcoin.network` |
+| Network | HashKey Chain Testnet |
+| Chain ID | `133` |
+| RPC URL | `https://testnet.hsk.xyz` |
 | Deployment mode | SPV |
 
 ### Contract Addresses

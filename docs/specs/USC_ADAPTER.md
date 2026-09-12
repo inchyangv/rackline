@@ -1,8 +1,12 @@
-# USC Integration Design — HashCredit
+# Cross-Chain Oracle Integration Design — HashCredit
 
-> How HashCredit mirrors Creditcoin's Universal Smart Contract architecture,
+> **Note**: This document was originally written for Creditcoin's USC (Universal Smart Contract) integration.
+> The architectural patterns described here (proof ↔ business separation, `IVerifierAdapter`, modular proof sources)
+> are chain-agnostic and apply equally to HashKey Chain and any future cross-chain oracle integration.
+
+> How HashCredit's modular proof architecture enables integration with cross-chain oracles,
 > why our BTC SPV implementation is a valid instantiation of the same pattern,
-> and how we transition to native USC when it ships.
+> and how future oracle adapters can be added without protocol changes.
 
 ---
 

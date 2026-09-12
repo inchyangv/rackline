@@ -1,6 +1,6 @@
 # HashCredit Web Frontend
 
-React-based dashboard for the HashCredit protocol on Creditcoin EVM.
+React-based dashboard for the HashCredit protocol on HashKey Chain.
 
 ## Stack
 
@@ -38,8 +38,8 @@ npm run preview        # Preview production build
 See `.env.example` for the full list. Key variables:
 
 - `VITE_API_URL` — Backend API URL
-- `VITE_RPC_URL` — Creditcoin EVM RPC endpoint
-- `VITE_CHAIN_ID` — Chain ID (default: `102031` for testnet)
+- `VITE_RPC_URL` — HashKey Chain RPC endpoint
+- `VITE_CHAIN_ID` — Chain ID (default: `133` for testnet)
 
 ## Deployment
 

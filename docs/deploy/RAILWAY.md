@@ -13,7 +13,7 @@ This document describes how to deploy the HashCredit off-chain services to Railw
 
 Production domains:
 - Frontend: `https://hashcredit.studioliq.com`
-- API: `https://api-hashcredit.studioliq.com`
+- API: `https://api-hash.credit`
 
 ## Prerequisites
 
@@ -95,8 +95,8 @@ Set these in Railway → `hashcredit-api` → Variables/Secrets.
 | `BITCOIN_RPC_URL` | Variable | Bitcoin RPC endpoint |
 | `BITCOIN_RPC_USER` | Secret | Optional — for authenticated RPC |
 | `BITCOIN_RPC_PASSWORD` | Secret | Optional — for authenticated RPC |
-| `EVM_RPC_URL` | Variable | Creditcoin EVM RPC |
-| `CHAIN_ID` | Variable | e.g., `102031` |
+| `EVM_RPC_URL` | Variable | HashKey Chain RPC |
+| `CHAIN_ID` | Variable | e.g., `133` |
 
 ### Contract Addresses
 
@@ -130,8 +130,8 @@ Set these in Railway → `hashcredit-prover` → Variables/Secrets.
 |----------|------|-------------|
 | `DATABASE_URL` | Reference | Reference Railway Postgres `DATABASE_URL` |
 | `BITCOIN_RPC_URL` | Variable | Bitcoin RPC endpoint |
-| `EVM_RPC_URL` | Variable | Creditcoin EVM RPC |
-| `CHAIN_ID` | Variable | e.g., `102031` |
+| `EVM_RPC_URL` | Variable | HashKey Chain RPC |
+| `CHAIN_ID` | Variable | e.g., `133` |
 | `PRIVATE_KEY` | Secret | Operator key for proof submission |
 | `HASH_CREDIT_MANAGER` | Variable | Contract address |
 | `CHECKPOINT_MANAGER` | Variable | Contract address |
@@ -170,7 +170,7 @@ The prover does not expose HTTP endpoints. Disable Public Networking in Railway 
 
 1. In Railway, add a custom domain under `hashcredit-api` → Networking/Domain.
 2. Create the DNS record (CNAME or A) as guided by Railway.
-3. Once HTTPS is provisioned, configure the frontend with `VITE_API_URL=https://api-hashcredit.studioliq.com`.
+3. Once HTTPS is provisioned, configure the frontend with `VITE_API_URL=https://api-hash.credit`.
 
 ## 7. Post-Deployment Checklist
 

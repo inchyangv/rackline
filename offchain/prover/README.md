@@ -35,8 +35,8 @@ For Railway deployment, set the same variables in Railway Variables/Secrets inst
 | Variable | Description |
 |----------|-------------|
 | `BITCOIN_RPC_URL` | Bitcoin RPC endpoint (e.g., `https://bitcoin-testnet-rpc.publicnode.com`) |
-| `EVM_RPC_URL` | Creditcoin EVM RPC endpoint |
-| `CHAIN_ID` | Chain ID (default: `102031`) |
+| `EVM_RPC_URL` | HashKey Chain RPC endpoint |
+| `CHAIN_ID` | Chain ID (default: `133`) |
 | `PRIVATE_KEY` | Operator key for signing on-chain transactions |
 | `HASH_CREDIT_MANAGER` | HashCreditManager contract address |
 | `CHECKPOINT_MANAGER` | CheckpointManager contract address |

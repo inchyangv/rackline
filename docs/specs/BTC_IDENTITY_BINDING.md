@@ -103,7 +103,7 @@ BTC and ETH both use **secp256k1** elliptic curve cryptography. This means:
 | pubkey → Hash160 | Derived address matches a real BTC address | `ripemd160(sha256(compressed))` via precompiles |
 | `msg.sender` binding | EVM caller is the one claiming this BTC address | Solidity `msg.sender` |
 
-**No oracle. No bridge. No trusted third party.** The entire proof chain uses EVM precompiles (`ecrecover` at `0x01`, `sha256` at `0x02`, `ripemd160` at `0x03`) — all available on any EVM chain including Creditcoin.
+**No oracle. No bridge. No trusted third party.** The entire proof chain uses EVM precompiles (`ecrecover` at `0x01`, `sha256` at `0x02`, `ripemd160` at `0x03`) — all available on any EVM chain including HashKey Chain.
 
 ### Why BIP-137?
 

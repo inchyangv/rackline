@@ -2,7 +2,7 @@
 
 ## 1. System Scope
 
-HashCredit is a revenue-based credit protocol on Creditcoin EVM.
+HashCredit is a revenue-based credit protocol on HashKey Chain.
 Active verification mode is Bitcoin SPV via `BtcSpvVerifier`.
 
 ### Trust Boundaries

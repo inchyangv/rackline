@@ -2,7 +2,7 @@
 
 ## 0. Definition
 
-HashCredit is a Creditcoin EVM protocol that provides stablecoin revolving credit lines to Bitcoin miners using SPV-verified Bitcoin payout events as credit evidence.
+HashCredit is a HashKey Chain protocol that provides stablecoin revolving credit lines to Bitcoin miners using SPV-verified Bitcoin payout events as credit evidence.
 
 ## 1. Problem
 
@@ -16,7 +16,7 @@ HashCredit addresses this by turning verified Bitcoin payouts into deterministic
 
 1. Represent miner payouts as verifiable revenue events.
 2. Update borrower credit limits deterministically from payout history.
-3. Enable borrow/repay flows in stablecoin on Creditcoin EVM.
+3. Enable borrow/repay flows in stablecoin on HashKey Chain.
 4. Keep verification pluggable through `IVerifierAdapter` while running SPV as the active mode.
 
 ## 3. Core Principles

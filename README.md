@@ -1,6 +1,6 @@
 # HashCredit
 
-**Revenue-Based Financing for Bitcoin Miners on Creditcoin EVM**
+**Revenue-Based Financing for Bitcoin Miners on HashKey Chain**
 
 HashCredit turns real Bitcoin mining payouts into on-chain credit lines. Miners prove their revenue with SPV proofs — no collateral lockup required.
 
@@ -15,7 +15,7 @@ Bitcoin payout (tx) → SPV proof → On-chain credit limit → Borrow / Repay s
 | Frontend  | https://hashcredit.studioliq.com |
 | API       | https://api-hashcredit.studioliq.com |
 
-> Chain: **Creditcoin EVM Testnet** (chainId `102031`)
+> Chain: **HashKey Chain Testnet** (chainId `133`)
 
 ---
 
@@ -31,7 +31,7 @@ The insight: **you can't prove hashrate directly — it's a physical rate. But y
 
 Every pool payout is a Bitcoin transaction proportional to contributed hash power. That transaction is committed to by Bitcoin's proof-of-work and verifiable by anyone with block headers. Payout history *is* the hashrate record. SPV verification turns that record into trustless on-chain evidence — no oracle, no bridge, no trusted third party.
 
-HashCredit bridges Bitcoin mining economics to Creditcoin's programmable credit layer through **mining pools as institutional counterparties**:
+HashCredit bridges Bitcoin mining economics to HashKey Chain's programmable DeFi layer through **mining pools as institutional counterparties**:
 
 1. **Register** — Mining pool agrees to withhold a repayment percentage from miner payouts (withholding at source)
 2. **Prove** — Generate an SPV proof of a real Bitcoin payout transaction
@@ -48,7 +48,7 @@ LP perspective: USDT depositors earn fixed APR (currently 8%) — backed by SPV-
 
 ```
 ┌─────────────────┐     ┌──────────────────────┐     ┌──────────────────────────┐
-│  Bitcoin Network │     │   Off-chain Services  │     │   Creditcoin EVM         │
+│  Bitcoin Network │     │   Off-chain Services  │     │   HashKey Chain         │
 │  (testnet/main)  │     │   (Railway)           │     │   (Contracts)            │
 │                  │     │                       │     │                          │
 │  Mining payouts ─┼────►│  API (FastAPI)        │     │  CheckpointManager       │
@@ -83,7 +83,7 @@ LP perspective: USDT depositors earn fixed APR (currently 8%) — backed by SPV-
 | `PoolRegistry` | Mining pool source eligibility (permissive mode for testnet) |
 | `BitcoinLib` | Pure library — double-SHA256, header parsing, PoW validation, Merkle proof, tx output parsing |
 
-Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierAdapter` interface. This decouples credit logic from verification details, making the protocol portable to new proof sources (e.g., USC).
+Key design: `HashCreditManager` consumes `PayoutEvidence` through an `IVerifierAdapter` interface. This decouples credit logic from verification details, making the protocol portable to new proof sources.
 
 ### Off-chain Services (Python, Railway)
 
@@ -156,41 +156,51 @@ See [`docs/threat-model.md`](docs/threat-model.md) and [`docs/audit-checklist.md
 
 ---
 
-## USC (Universal Smart Contract) Readiness
+## Why HashKey Chain
 
-HashCredit and Creditcoin's USC share the same architectural principle:
+Mining-revenue-based lending isn't a purely DeFi-native activity — it requires compliance infrastructure, institutional partnerships, and full EVM capability. HashKey Chain provides all three.
 
-> **Prove a real-world economic event cryptographically → authorize on-chain financial operations.**
+**1. Compliance infrastructure for institutional lending**
+Mining pools must contractually agree to withhold repayment from payouts. Borrowers and pools need KYC for legal recourse on default. HashKey Chain is operated by HashKey Group (SFC-licensed in Hong Kong) and built compliance-first — identity tooling, policy controls, and auditability at the protocol level. This makes institutional pool partnerships legally viable.
 
-USC does this through distributed attestors + STARK proofs + native precompile verification. HashCredit does it through Bitcoin SPV (PoW header chain + Merkle inclusion + output parsing). The proof mechanism differs; **the architecture is identical**:
+**2. HashKey ecosystem as distribution channel**
+HashCredit needs miners who borrow and LPs who provide liquidity. HashKey Exchange provides fiat on/off-ramps, HashKey Capital provides strategic investment and introductions to mining operators, and HashKey's compliance team enables the legal framework for cross-jurisdictional pool withholding agreements. Hong Kong's position as an Asia-Pacific financial hub — where ~30% of global hashrate operates — is a natural fit.
 
-| Design Principle | USC | HashCredit |
-|---|---|---|
-| Proof ↔ business separation | `INativeQueryVerifier` ↔ Business contract | `IVerifierAdapter` ↔ `HashCreditManager` |
-| Structured evidence | Decoded event data | `PayoutEvidence` struct |
-| Stateless verifier | `0x0FD2` precompile | `BtcSpvVerifier.verifyPayout()` |
-| App-layer replay protection | `processedQueries` mapping | `processedPayouts` mapping |
-| Checkpoint anchor | Attestation chain digests | `CheckpointManager` trusted headers |
+**3. Full EVM precompile support for trustless BTC verification**
+`claimBtcAddress()` proves BTC address ownership on-chain using `ecrecover` (0x01) + `sha256` (0x02) + `ripemd160` (0x03) — all standard EVM precompiles. HashKey Chain (OP Stack) supports these natively. No oracle, no bridge, no custom deployment required.
 
-**BTC identity binding** — `claimBtcAddress()` proves BTC address ownership on-chain using EVM precompiles (`ecrecover` + `sha256` + `rimemd160`). No oracle, no bridge. USC docs leave cross-chain identity as an app-level concern; we solved it with pure cryptography.
+---
 
-USC integration is an **adapter + wiring task**, not a protocol rewrite. Deploy `UscVerifierAdapter`, call `manager.setVerifier()` — credit logic, vault, and risk config remain untouched.
+## Modular Proof Architecture
 
-See [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) and [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) for detailed design documents.
+The protocol separates proof verification from business logic through the `IVerifierAdapter` interface — new proof sources (cross-chain oracles, ZK bridges) can be plugged in without touching credit logic:
+
+```
+HashCreditManager ──→ IVerifierAdapter.verifyPayout(proof) → PayoutEvidence
+                              │
+                  ┌───────────┼───────────┐
+                  │           │           │
+            BtcSpvVerifier  CCIP       ZK Bridge
+            (live now)      Adapter    Adapter
+```
+
+**BTC identity binding** — `claimBtcAddress()` proves BTC address ownership on-chain using EVM precompiles (`ecrecover` + `sha256` + `ripemd160`). No oracle, no bridge — pure cryptography.
+
+See [`TECH.md`](TECH.md) for full technical details and [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) for the identity binding deep-dive.
 
 ---
 
 ## Testnet Contract Addresses
 
-> Creditcoin EVM Testnet · chainId `102031`
+> HashKey Chain Testnet · chainId `133`
 
-| Contract | Address |
-|----------|---------|
-| HashCreditManager | `0x593e140982cDC040d69B7E7623A045C6d6Ca2055` |
-| LendingVault | `0x4d74126369BacB67085a1E70d535cA15515d1AFa` |
-| CheckpointManager | `0x4Ae5418242073cd37CCc69C908957E413a04f6f9` |
-| BtcSpvVerifier | `0x16DEd6a617a911471cd4549C24Ed8C281f096fd2` |
-| Stablecoin (mUSDT) | `0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A` |
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| HashCreditManager | [`0x2716cCD5E6ee2845D79cF30657C215e536Ba0F74`](https://testnet-explorer.hsk.xyz/address/0x2716cCD5E6ee2845D79cF30657C215e536Ba0F74) | [View](https://testnet-explorer.hsk.xyz/address/0x2716cCD5E6ee2845D79cF30657C215e536Ba0F74) |
+| LendingVault | [`0x3517D3a0dDd4455091d89CaB9Be5df3439bd15fb`](https://testnet-explorer.hsk.xyz/address/0x3517D3a0dDd4455091d89CaB9Be5df3439bd15fb) | [View](https://testnet-explorer.hsk.xyz/address/0x3517D3a0dDd4455091d89CaB9Be5df3439bd15fb) |
+| CheckpointManager | [`0xa27281FDFf89A34e842F251224380FC92F4Eb338`](https://testnet-explorer.hsk.xyz/address/0xa27281FDFf89A34e842F251224380FC92F4Eb338) | [View](https://testnet-explorer.hsk.xyz/address/0xa27281FDFf89A34e842F251224380FC92F4Eb338) |
+| BtcSpvVerifier | [`0xa7506A5c1C03EE38EdDE1572c55DB339f5FD05c4`](https://testnet-explorer.hsk.xyz/address/0xa7506A5c1C03EE38EdDE1572c55DB339f5FD05c4) | [View](https://testnet-explorer.hsk.xyz/address/0xa7506A5c1C03EE38EdDE1572c55DB339f5FD05c4) |
+| Stablecoin (mUSDT) | [`0x73840B35612eA8B13825288F0955A3F552645675`](https://testnet-explorer.hsk.xyz/address/0x73840B35612eA8B13825288F0955A3F552645675) | [View](https://testnet-explorer.hsk.xyz/address/0x73840B35612eA8B13825288F0955A3F552645675) |
 
 ---
 
@@ -285,7 +295,7 @@ lib/                   Foundry dependencies (forge-std, openzeppelin)
 | [`docs/audit-checklist.md`](docs/audit-checklist.md) | Security audit checklist |
 | [`docs/gas-limits.md`](docs/gas-limits.md) | Per-operation gas estimates |
 | [`docs/specs/PROJECT.md`](docs/specs/PROJECT.md) | Full protocol specification |
-| [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) | USC integration design, architecture comparison, transition paths |
+| [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) | Cross-chain oracle integration design and transition paths |
 | [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) | BTC wallet binding, SPV revenue verification, credit scoring deep-dive |
 | [`.env.example`](.env.example) | Environment variable reference |
 
