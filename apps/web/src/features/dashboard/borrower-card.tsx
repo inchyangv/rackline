@@ -29,8 +29,15 @@ export function BorrowerCard() {
   const walletAccount = useWalletStore((s) => s.walletAccount)
   const managerAddress = useConfigStore((s) => s.managerAddress)
   const { stablecoin } = useManagerReads()
-  const { availableCredit, borrowerInfo, stablecoinDecimals, stablecoinBalance, currentDebt, accruedInterest, isLoading } =
-    useBorrowerInfo(borrowerAddress, stablecoin)
+  const {
+    availableCredit,
+    borrowerInfo,
+    stablecoinDecimals,
+    stablecoinBalance,
+    currentDebt,
+    accruedInterest,
+    isLoading,
+  } = useBorrowerInfo(borrowerAddress, stablecoin)
   const { borrowAPR } = useVaultInfo()
 
   // Determine if borrow should be disabled (unregistered or no credit)
@@ -41,7 +48,8 @@ export function BorrowerCard() {
 
   // BTC connection status
   const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
-  const btcPayoutKeyHash = typeof borrowerInfo?.btcPayoutKeyHash === 'string' ? borrowerInfo.btcPayoutKeyHash : ZERO_BYTES32
+  const btcPayoutKeyHash =
+    typeof borrowerInfo?.btcPayoutKeyHash === 'string' ? borrowerInfo.btcPayoutKeyHash : ZERO_BYTES32
   const isBtcLinked = btcPayoutKeyHash !== ZERO_BYTES32
 
   async function doBorrow() {
@@ -68,154 +76,230 @@ export function BorrowerCard() {
     )
   }
 
+  function handleMaxBorrow() {
+    if (availableCredit !== null && availableCredit > 0n) {
+      setBorrowAmount(ethers.formatUnits(availableCredit, stablecoinDecimals))
+    }
+  }
+
+  function handleMaxRepay() {
+    if (currentDebt !== null && currentDebt > 0n) {
+      setRepayAmount(ethers.formatUnits(currentDebt, stablecoinDecimals))
+    }
+  }
+
   return (
-    <SectionCard title="My Credit">
-      <div className="space-y-3">
-        <div>
-          <Label className="text-[10px] uppercase tracking-widest">Wallet Address</Label>
-          <Input
-            value={borrowerAddress}
-            onChange={(e) => setBorrowerAddress(e.target.value)}
-            placeholder="0x..."
-            className="mt-1 font-mono text-xs"
-          />
-        </div>
-
-        <KeyValueList>
-          <KeyValueRow
-            label="Available Credit"
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : availableCredit === null ? (
-                '—'
-              ) : (
-                `${ethers.formatUnits(availableCredit, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
-              )
-            }
-            mono
-          />
-          <KeyValueRow
-            label="Balance"
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : stablecoinBalance === null ? (
-                '—'
-              ) : (
-                `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
-              )
-            }
-            mono
-          />
-          <KeyValueRow
-            label="BTC Wallet"
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-24" />
-              ) : !borrowerInfo ? (
-                '—'
-              ) : isBtcLinked ? (
-                <span className="text-emerald-400">Linked</span>
-              ) : (
-                <span className="text-amber-400">Not linked</span>
-              )
-            }
-          />
-          <KeyValueRow
-            label="Borrow APR"
-            value={
-              isLoading ? <Skeleton className="h-4 w-20" /> : aprDisplay
-            }
-            mono
-          />
-          <KeyValueRow
-            label="Accrued Interest"
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : accruedInterest === null ? (
-                '—'
-              ) : (
-                `${ethers.formatUnits(accruedInterest, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
-              )
-            }
-            mono
-          />
-          <KeyValueRow
-            label="Total Repayment"
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : currentDebt === null ? (
-                '—'
-              ) : (
-                `${ethers.formatUnits(currentDebt, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
-              )
-            }
-            mono
-          />
-        </KeyValueList>
-
-        <div className="space-y-2.5 pt-2">
+    <>
+      {/* Credit Overview — read-only */}
+      <SectionCard title="Credit Overview">
+        <div className="space-y-3">
           <div>
-            <Label className="text-[10px] uppercase tracking-widest">Borrow</Label>
-            {isBorrowDisabled ? (
-              <div className="mt-1 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                <p className="text-xs text-amber-200 font-medium">BTC wallet not linked</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Link your BTC wallet in the &quot;Link BTC Wallet&quot; section below to enable borrowing.
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Fixed APR: {aprDisplay}
-                </p>
-                <div className="flex gap-2 mt-1">
-                  <Input
-                    value={borrowAmount}
-                    onChange={(e) => setBorrowAmount(e.target.value)}
-                    placeholder="e.g. 1000"
-                    className="font-mono text-xs"
-                  />
-                  <Button size="sm" onClick={() => void doBorrow()} disabled={!walletAccount}>
-                    Borrow
-                  </Button>
-                </div>
-              </>
-            )}
+            <Label className="text-[11px] uppercase tracking-wider">Wallet Address</Label>
+            <Input
+              value={borrowerAddress}
+              onChange={(e) => setBorrowerAddress(e.target.value)}
+              placeholder="0x..."
+              className="mt-1 font-mono text-xs"
+            />
           </div>
+
+          <KeyValueList>
+            <KeyValueRow
+              label="Available Credit"
+              value={
+                isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : availableCredit === null ? (
+                  '—'
+                ) : (
+                  `${ethers.formatUnits(availableCredit, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+                )
+              }
+              mono
+            />
+            <KeyValueRow
+              label="Balance"
+              value={
+                isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : stablecoinBalance === null ? (
+                  '—'
+                ) : (
+                  `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+                )
+              }
+              mono
+            />
+            <KeyValueRow
+              label="Outstanding Debt"
+              value={
+                isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : currentDebt === null ? (
+                  '—'
+                ) : (
+                  `${ethers.formatUnits(currentDebt, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+                )
+              }
+              mono
+            />
+            <KeyValueRow
+              label="Accrued Interest"
+              value={
+                isLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : accruedInterest === null ? (
+                  '—'
+                ) : (
+                  `${ethers.formatUnits(accruedInterest, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+                )
+              }
+              mono
+            />
+            <KeyValueRow
+              label="Borrow APR"
+              value={isLoading ? <Skeleton className="h-4 w-20" /> : aprDisplay}
+              mono
+            />
+            <KeyValueRow
+              label="BTC Wallet"
+              value={
+                isLoading ? (
+                  <Skeleton className="h-4 w-24" />
+                ) : !borrowerInfo ? (
+                  '—'
+                ) : isBtcLinked ? (
+                  <span className="text-emerald-400">Linked</span>
+                ) : (
+                  <span className="text-amber-400">Not linked</span>
+                )
+              }
+            />
+          </KeyValueList>
+        </div>
+      </SectionCard>
+
+      {/* Actions */}
+      <SectionCard title="Actions" description="Borrow and repay against your credit line">
+        <div className="space-y-4">
+          {isBorrowDisabled && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+              <p className="text-xs text-amber-200 font-medium">BTC wallet not linked</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Link your BTC wallet in the &quot;Link BTC Wallet&quot; section to enable
+                borrowing.
+              </p>
+            </div>
+          )}
+
+          {/* Borrow */}
           <div>
-            <Label className="text-[10px] uppercase tracking-widest">Approve Spending</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-[11px] uppercase tracking-wider">
+                Borrow
+                <span className="ml-2 text-muted-foreground font-normal normal-case tracking-normal">
+                  APR {aprDisplay}
+                </span>
+              </Label>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-[11px] text-primary"
+                onClick={handleMaxBorrow}
+                disabled={!walletAccount || availableCredit === null || availableCredit === 0n}
+              >
+                Max
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  value={borrowAmount}
+                  onChange={(e) => setBorrowAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="font-mono text-xs pr-16"
+                  disabled={isBorrowDisabled}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                  {STABLECOIN_SYMBOL}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => void doBorrow()}
+                disabled={!walletAccount || isBorrowDisabled}
+              >
+                Borrow
+              </Button>
+            </div>
+          </div>
+
+          {/* Approve Spending */}
+          <div>
+            <Label className="text-[11px] uppercase tracking-wider">Approve Spending</Label>
             <div className="flex gap-2 mt-1">
-              <Input
-                value={approveAmount}
-                onChange={(e) => setApproveAmount(e.target.value)}
-                placeholder="e.g. 1000000"
-                className="font-mono text-xs"
-              />
-              <Button variant="secondary" size="sm" onClick={() => void approveStablecoin()} disabled={!walletAccount}>
+              <div className="relative flex-1">
+                <Input
+                  value={approveAmount}
+                  onChange={(e) => setApproveAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="font-mono text-xs pr-16"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                  {STABLECOIN_SYMBOL}
+                </span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void approveStablecoin()}
+                disabled={!walletAccount}
+              >
                 Approve
               </Button>
             </div>
           </div>
+
+          {/* Repay */}
           <div>
-            <Label className="text-[10px] uppercase tracking-widest">Repay</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                value={repayAmount}
-                onChange={(e) => setRepayAmount(e.target.value)}
-                placeholder="e.g. 100"
-                className="font-mono text-xs"
-              />
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-[11px] uppercase tracking-wider">
+                Repay
+                {currentDebt !== null && currentDebt > 0n && (
+                  <span className="ml-2 text-muted-foreground font-normal normal-case tracking-normal">
+                    Debt: {ethers.formatUnits(currentDebt, stablecoinDecimals)} {STABLECOIN_SYMBOL}
+                  </span>
+                )}
+              </Label>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-[11px] text-primary"
+                onClick={handleMaxRepay}
+                disabled={!walletAccount || currentDebt === null || currentDebt === 0n}
+              >
+                Max
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  value={repayAmount}
+                  onChange={(e) => setRepayAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="font-mono text-xs pr-16"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                  {STABLECOIN_SYMBOL}
+                </span>
+              </div>
               <Button size="sm" onClick={() => void doRepay()} disabled={!walletAccount}>
                 Repay
               </Button>
             </div>
           </div>
         </div>
-      </div>
-    </SectionCard>
+      </SectionCard>
+    </>
   )
 }
