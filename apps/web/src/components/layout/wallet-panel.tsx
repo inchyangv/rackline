@@ -42,8 +42,8 @@ export function WalletPanel() {
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
             Wallet
           </span>
-          <span className="font-mono text-xs">
-            {walletAccount ? shortAddr(walletAccount) : 'Disconnected'}
+          <span className={cn('font-mono text-xs', !walletAccount && 'text-muted-foreground italic')}>
+            {walletAccount ? shortAddr(walletAccount) : 'Not connected'}
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -77,7 +77,11 @@ export function WalletPanel() {
           disabled={!hasInjectedWallet}
         >
           <Wallet className="mr-1.5 h-3.5 w-3.5" />
-          {hasInjectedWallet ? (isConnected ? 'Disconnect' : 'Connect') : 'No Wallet'}
+          {hasInjectedWallet
+            ? isConnected
+              ? 'Disconnect'
+              : 'Connect Wallet'
+            : 'Install MetaMask'}
         </Button>
         <Button
           variant="secondary"
