@@ -19,6 +19,51 @@ import { HashCreditManagerAbi, Erc20Abi } from '@/lib/abis'
 import { STABLECOIN_SYMBOL } from '@/lib/constants'
 import { toast } from 'sonner'
 
+type OnboardingStep = { label: string; done: boolean }
+
+function OnboardingBanner({ steps }: { steps: OnboardingStep[] }) {
+  return (
+    <div className="col-span-full rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+      <p className="text-xs font-semibold text-foreground/80 mb-2.5">Get started</p>
+      <div className="flex items-center gap-2">
+        {steps.map((step, i, arr) => (
+          <div key={step.label} className="contents">
+            <div className="flex flex-col items-center gap-1 min-w-0">
+              {step.done ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              ) : (
+                <Circle
+                  className={cn(
+                    'h-4 w-4',
+                    i === arr.findIndex((s) => !s.done)
+                      ? 'text-primary'
+                      : 'text-muted-foreground/40',
+                  )}
+                />
+              )}
+              <span
+                className={cn(
+                  'text-[10px] text-center leading-tight',
+                  step.done
+                    ? 'text-emerald-400'
+                    : i === arr.findIndex((s) => !s.done)
+                      ? 'text-foreground/80 font-medium'
+                      : 'text-muted-foreground/50',
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+            {i < arr.length - 1 && (
+              <div className="flex-1 h-px bg-border/30 mb-4" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function BorrowerCard() {
   const borrowerAddress = useApiStore((s) => s.borrowerAddress)
   const borrowAmount = useApiStore((s) => s.borrowAmount)
@@ -90,16 +135,6 @@ export function BorrowerCard() {
     )
   }
 
-  async function approveStablecoin() {
-    const amount = parsePositiveAmount(approveAmount, 'approve')
-    if (amount === null) return
-
-    toast.promise(
-      sendContractTx('approve', stablecoin, Erc20Abi, (c) => c.approve(managerAddress, amount)),
-      { loading: 'Approving...', success: 'Approval confirmed!', error: 'Approval failed' },
-    )
-  }
-
   async function doRepay() {
     const amount = parsePositiveAmount(repayAmount, 'repay')
     if (amount === null) return
@@ -111,6 +146,16 @@ export function BorrowerCard() {
     toast.promise(
       sendContractTx('repay', managerAddress, HashCreditManagerAbi, (c) => c.repay(amount)),
       { loading: 'Repaying...', success: 'Repay confirmed!', error: 'Repay failed' },
+    )
+  }
+
+  async function approveStablecoin() {
+    const amount = parsePositiveAmount(approveAmount, 'approve')
+    if (amount === null) return
+
+    toast.promise(
+      sendContractTx('approve', stablecoin, Erc20Abi, (c) => c.approve(managerAddress, amount)),
+      { loading: 'Approving...', success: 'Approval confirmed!', error: 'Approval failed' },
     )
   }
 
@@ -126,7 +171,7 @@ export function BorrowerCard() {
     }
   }
 
-  const onboardingSteps = [
+  const onboardingSteps: OnboardingStep[] = [
     { label: 'Connect Wallet', done: !!walletAccount },
     { label: 'Link BTC Wallet', done: isBtcLinked },
     { label: 'Start Borrowing', done: isBorrowerActive && hasCredit },
@@ -135,46 +180,7 @@ export function BorrowerCard() {
 
   return (
     <>
-      {!onboardingDone && (
-        <div className="col-span-full rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <p className="text-xs font-semibold text-foreground/80 mb-2.5">Get started</p>
-          <div className="flex items-center gap-2">
-            {onboardingSteps.map((step, i, arr) => (
-              <div key={step.label} className="contents">
-                <div className="flex flex-col items-center gap-1 min-w-0">
-                  {step.done ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Circle
-                      className={cn(
-                        'h-4 w-4',
-                        i === arr.findIndex((s) => !s.done)
-                          ? 'text-primary'
-                          : 'text-muted-foreground/40',
-                      )}
-                    />
-                  )}
-                  <span
-                    className={cn(
-                      'text-[10px] text-center leading-tight',
-                      step.done
-                        ? 'text-emerald-400'
-                        : i === arr.findIndex((s) => !s.done)
-                          ? 'text-foreground/80 font-medium'
-                          : 'text-muted-foreground/50',
-                    )}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-                {i < arr.length - 1 && (
-                  <div className="flex-1 h-px bg-border/30 mb-4" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {!onboardingDone && <OnboardingBanner steps={onboardingSteps} />}
 
       <SectionCard title="Credit Overview">
         <KeyValueList>
@@ -257,7 +263,7 @@ export function BorrowerCard() {
         </KeyValueList>
       </SectionCard>
 
-      <SectionCard title="Actions" description="Borrow and repay against your credit line">
+      <SectionCard title="Borrow &amp; Repay" description="Borrow and repay against your credit line">
         <div className="space-y-4">
           {!walletAccount && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
@@ -295,6 +301,7 @@ export function BorrowerCard() {
             </div>
           )}
 
+          {/* Borrow */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <Label className="text-[11px] uppercase tracking-wider">
@@ -334,32 +341,7 @@ export function BorrowerCard() {
             </div>
           </div>
 
-          <div>
-            <Label className="text-[11px] uppercase tracking-wider">Approve Spending</Label>
-            <div className="flex gap-2 mt-1">
-              <div className="relative flex-1">
-                <Input
-                  value={approveAmount}
-                  onChange={(e) => setApproveAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="font-mono text-xs pr-16"
-                  disabled={isApproveDisabled}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
-                  {STABLECOIN_SYMBOL}
-                </span>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => void approveStablecoin()}
-                disabled={isApproveDisabled}
-              >
-                Approve
-              </Button>
-            </div>
-          </div>
-
+          {/* Repay */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <Label className="text-[11px] uppercase tracking-wider">
@@ -395,6 +377,35 @@ export function BorrowerCard() {
               </div>
               <Button size="sm" onClick={() => void doRepay()} disabled={isRepayDisabled}>
                 Repay
+              </Button>
+            </div>
+          </div>
+
+          {/* Approve Allowance — needed before first repay */}
+          <div className="pt-2 border-t border-border/25">
+            <p className="text-[11px] text-muted-foreground mb-2">
+              First time repaying? Approve the contract to spend your {STABLECOIN_SYMBOL}.
+            </p>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  value={approveAmount}
+                  onChange={(e) => setApproveAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="font-mono text-xs pr-16"
+                  disabled={isApproveDisabled}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+                  {STABLECOIN_SYMBOL}
+                </span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void approveStablecoin()}
+                disabled={isApproveDisabled}
+              >
+                Approve
               </Button>
             </div>
           </div>
