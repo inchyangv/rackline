@@ -1,10 +1,13 @@
 import { ethers } from 'ethers'
 import { useState } from 'react'
+import { Layers } from 'lucide-react'
 import { SectionCard } from '@/components/shared/section-card'
 import { KeyValueList } from '@/components/shared/key-value-list'
 import { KeyValueRow } from '@/components/shared/key-value-row'
 import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/shared/empty-state'
 import { useVaultInfo } from '@/hooks/use-vault-info'
+import { useWalletStore } from '@/stores/wallet-store'
 import { PoolStatusCard } from './pool-status-card'
 import { DepositCard } from './deposit-card'
 import { WithdrawCard } from './withdraw-card'
@@ -15,6 +18,7 @@ const DECIMALS = 6
 export function PoolTab() {
   const vault = useVaultInfo()
   const { myShares, myShareValue, isLoading } = vault
+  const walletAccount = useWalletStore((s) => s.walletAccount)
   const [actionTab, setActionTab] = useState<'deposit' | 'withdraw'>('deposit')
 
   return (
@@ -24,44 +28,53 @@ export function PoolTab() {
 
       {/* My Position */}
       <SectionCard title="My Position" description="Your current pool position">
-        <KeyValueList>
-          <KeyValueRow
-            label={
-              <span className="flex items-center gap-1">
-                My Shares
-                <span
-                  className="text-[10px] text-muted-foreground cursor-help"
-                  title="Pool ownership tokens. Value grows as the pool earns yield."
-                >
-                  ⓘ
+        {!walletAccount ? (
+          <EmptyState
+            icon={Layers}
+            title="Connect wallet to view position"
+            description="Your pool shares and value will appear here once you connect your wallet."
+          />
+        ) : isLoading ? (
+          <KeyValueList>
+            <KeyValueRow label="My Shares" value={<Skeleton className="h-4 w-32" />} mono />
+            <KeyValueRow label="Current Value" value={<Skeleton className="h-4 w-32" />} mono />
+          </KeyValueList>
+        ) : myShares === null || myShares === 0n ? (
+          <EmptyState
+            icon={Layers}
+            title="No pool position yet"
+            description="Deposit mUSDT below to start earning yield."
+            actionLabel="Deposit"
+            onAction={() => setActionTab('deposit')}
+          />
+        ) : (
+          <KeyValueList>
+            <KeyValueRow
+              label={
+                <span className="flex items-center gap-1">
+                  My Shares
+                  <span
+                    className="text-[10px] text-muted-foreground cursor-help"
+                    title="Pool ownership tokens. Value grows as the pool earns yield."
+                  >
+                    ⓘ
+                  </span>
                 </span>
-              </span>
-            }
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : myShares === null ? (
-                '—'
-              ) : (
-                ethers.formatUnits(myShares, DECIMALS)
-              )
-            }
-            mono
-          />
-          <KeyValueRow
-            label="Current Value"
-            value={
-              isLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : myShareValue === null ? (
-                '—'
-              ) : (
-                `${ethers.formatUnits(myShareValue, DECIMALS)} ${STABLECOIN_SYMBOL}`
-              )
-            }
-            mono
-          />
-        </KeyValueList>
+              }
+              value={ethers.formatUnits(myShares, DECIMALS)}
+              mono
+            />
+            <KeyValueRow
+              label="Current Value"
+              value={
+                myShareValue === null
+                  ? '—'
+                  : `${ethers.formatUnits(myShareValue, DECIMALS)} ${STABLECOIN_SYMBOL}`
+              }
+              mono
+            />
+          </KeyValueList>
+        )}
       </SectionCard>
 
       {/* Deposit / Withdraw — single full-width tabbed card */}
