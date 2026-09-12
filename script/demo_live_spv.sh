@@ -98,7 +98,7 @@ deploy_create() {
 }
 
 deploy_spv_stack_cast() {
-  # NOTE: Creditcoin CC3 testnet RPC may omit block header fields required by `forge script`.
+  # NOTE: HashKey Chain testnet RPC may omit block header fields required by `forge script`.
   # This path deploys by raw bytecode via `cast send --create`.
   log "deploying SPV stack via cast (no forge script)"
 
@@ -178,7 +178,7 @@ require_cmd grep
 
 export RPC_URL="${RPC_URL:-${EVM_RPC_URL:-}}"
 export EVM_RPC_URL="${EVM_RPC_URL:-${RPC_URL:-}}"
-export CHAIN_ID="${CHAIN_ID:-102031}"
+export CHAIN_ID="${CHAIN_ID:-133}"
 export BTC_VOUT="${BTC_VOUT:-0}"
 export INITIAL_LIQUIDITY="${INITIAL_LIQUIDITY:-1000000000000}"
 export SKIP_DEPLOY="${SKIP_DEPLOY:-0}"

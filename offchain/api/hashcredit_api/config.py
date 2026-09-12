@@ -78,9 +78,9 @@ class Settings(BaseSettings):
     # EVM
     evm_rpc_url: str = Field(
         default="http://localhost:8545",
-        description="EVM RPC URL (Creditcoin testnet)"
+        description="EVM RPC URL (HashKey Chain testnet)"
     )
-    chain_id: int = Field(default=102031, description="EVM chain ID")
+    chain_id: int = Field(default=133, description="EVM chain ID")
     # Admin key (owner of HashCreditManager, used for registerBorrower/grantTestnetCredit)
     admin_private_key: str | None = Field(
         default=None,

@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     """Environment-based settings."""
 
     # EVM Network
-    rpc_url: str = "https://rpc.cc3-testnet.creditcoin.network"
-    chain_id: int = 102031
+    rpc_url: str = "https://testnet.hsk.xyz"
+    chain_id: int = 133
     private_key: str = ""
 
     # Contract addresses

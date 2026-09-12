@@ -1,5 +1,5 @@
 """
-EVM utilities for interacting with Creditcoin/Ethereum contracts.
+EVM utilities for interacting with HashKey Chain/Ethereum contracts.
 """
 
 import os
@@ -15,7 +15,7 @@ class EVMConfig(BaseModel):
     """Configuration for EVM connection."""
 
     rpc_url: str = "http://localhost:8545"
-    chain_id: int = 102031  # Creditcoin testnet
+    chain_id: int = 133  # HashKey Chain testnet
     private_key: str = ""
 
 
@@ -295,7 +295,7 @@ def create_evm_client_from_env() -> EVMClient:
     """Create EVM client from environment variables."""
     config = EVMConfig(
         rpc_url=os.getenv("EVM_RPC_URL", os.getenv("RPC_URL", "http://localhost:8545")),
-        chain_id=int(os.getenv("CHAIN_ID", "102031")),
+        chain_id=int(os.getenv("CHAIN_ID", "133")),
         private_key=os.getenv("PRIVATE_KEY", ""),
     )
     return EVMClient(config)

@@ -23,7 +23,7 @@ def mock_settings():
         port=8000,
         bitcoin_rpc_url="http://localhost:18332",
         evm_rpc_url="http://localhost:8545",
-        chain_id=102031,
+        chain_id=133,
     )
 
 

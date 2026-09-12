@@ -39,8 +39,8 @@ export async function ensureWalletChain(
           params: [
             {
               chainId: hexChainId,
-              chainName: 'Creditcoin Testnet',
-              nativeCurrency: { name: 'Creditcoin', symbol: 'CTC', decimals: 18 },
+              chainName: 'HashKey Chain Testnet',
+              nativeCurrency: { name: 'HSK', symbol: 'HSK', decimals: 18 },
               rpcUrls: [rpcUrl].filter(Boolean),
             },
           ],

@@ -14,7 +14,7 @@ import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 /**
  * @title HashCreditManager
  * @notice Core contract managing borrowers, payouts, credit limits, and loan routing
- * @dev Implements Revenue-Based Financing for Bitcoin miners on Creditcoin EVM
+ * @dev Implements Revenue-Based Financing for Bitcoin miners on HashKey Chain
  *
  * Key responsibilities:
  * - Borrower registration with BTC payout key binding

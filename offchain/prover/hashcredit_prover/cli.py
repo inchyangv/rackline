@@ -187,7 +187,7 @@ def set_checkpoint(
     evm_rpc_url: Optional[str] = typer.Option(
         None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
     ),
-    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    chain_id: int = typer.Option(133, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
     private_key: Optional[str] = typer.Option(
         None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
     ),
@@ -314,7 +314,7 @@ def set_borrower_pubkey_hash(
     evm_rpc_url: Optional[str] = typer.Option(
         None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
     ),
-    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    chain_id: int = typer.Option(133, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
     private_key: Optional[str] = typer.Option(
         None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
     ),
@@ -444,7 +444,7 @@ def submit_proof(
     evm_rpc_url: Optional[str] = typer.Option(
         None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
     ),
-    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    chain_id: int = typer.Option(133, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
     private_key: Optional[str] = typer.Option(
         None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
     ),
@@ -609,7 +609,7 @@ def run_relayer(
     evm_rpc_url: Optional[str] = typer.Option(
         None, "--evm-rpc-url", envvar="EVM_RPC_URL", help="EVM RPC URL"
     ),
-    chain_id: int = typer.Option(102031, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
+    chain_id: int = typer.Option(133, "--chain-id", envvar="CHAIN_ID", help="EVM chain ID"),
     private_key: Optional[str] = typer.Option(
         None, "--private-key", envvar="PRIVATE_KEY", help="Private key for signing"
     ),

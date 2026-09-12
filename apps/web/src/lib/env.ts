@@ -11,13 +11,13 @@ export function getEnvNumber(key: string, fallback: number): number {
 }
 
 const defaults = {
-  rpcUrl: 'https://rpc.cc3-testnet.creditcoin.network',
-  chainId: 102031,
-  hashCreditManager: '0x593e140982cDC040d69B7E7623A045C6d6Ca2055',
-  btcSpvVerifier: '0x16DEd6a617a911471cd4549C24Ed8C281f096fd2',
-  checkpointManager: '0x4Ae5418242073cd37CCc69C908957E413a04f6f9',
-  vaultAddress: '0x4d74126369BacB67085a1E70d535cA15515d1AFa',
-  stablecoinAddress: '0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A',
+  rpcUrl: 'https://testnet.hsk.xyz',
+  chainId: 133,
+  hashCreditManager: '',
+  btcSpvVerifier: '',
+  checkpointManager: '',
+  vaultAddress: '',
+  stablecoinAddress: '',
   apiUrl: 'https://api-hashcredit.studioliq.com',
   btcExplorerTxBase: 'https://mempool.space/testnet/tx',
 } as const;

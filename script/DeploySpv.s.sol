@@ -20,8 +20,8 @@ import { TestnetMintableERC20 } from "../contracts/TestnetMintableERC20.sol";
  *   # Local (Anvil)
  *   forge script script/DeploySpv.s.sol --rpc-url http://localhost:8545 --broadcast
  *
- *   # Creditcoin Testnet (chainId 102031)
- *   forge script script/DeploySpv.s.sol --rpc-url $CREDITCOIN_TESTNET_RPC --broadcast
+ *   # HashKey Chain Testnet (chainId 133)
+ *   forge script script/DeploySpv.s.sol --rpc-url https://testnet.hsk.xyz --broadcast
  *
  * Environment Variables:
  *   PRIVATE_KEY         - Deployer private key (required)

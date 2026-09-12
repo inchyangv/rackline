@@ -11,7 +11,7 @@ def test_claim_token_roundtrip() -> None:
         secret=secret,
         borrower="0x0000000000000000000000000000000000000001",
         btc_address="tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx",
-        chain_id=102031,
+        chain_id=133,
         ttl_seconds=120,
     )
 
@@ -31,7 +31,7 @@ def test_claim_token_expired() -> None:
         secret=secret,
         borrower="0x0000000000000000000000000000000000000001",
         btc_address="tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx",
-        chain_id=102031,
+        chain_id=133,
         ttl_seconds=60,
     )
     with pytest.raises(ValueError):

@@ -9,7 +9,7 @@ import { shortAddr } from '@/lib/format'
 import type { VaultInfo } from '@/hooks/use-vault-info'
 
 const DECIMALS = 6
-const EXPLORER_BASE = 'https://creditcoin-testnet.blockscout.com'
+const EXPLORER_BASE = 'https://testnet-explorer.hsk.xyz'
 
 type Props = {
   vault: VaultInfo
