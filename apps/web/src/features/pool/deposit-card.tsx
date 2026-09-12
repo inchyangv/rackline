@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
+import { CheckCircle2 } from 'lucide-react'
 import { SectionCard } from '@/components/shared/section-card'
 import { KeyValueList } from '@/components/shared/key-value-list'
 import { KeyValueRow } from '@/components/shared/key-value-row'
@@ -30,20 +31,27 @@ export function DepositCard({ embedded = false }: Props) {
 
   const [amount, setAmount] = useState('')
   const [balance, setBalance] = useState<bigint | null>(null)
+  const [allowance, setAllowance] = useState<bigint | null>(null)
   const [expectedShares, setExpectedShares] = useState<bigint | null>(null)
 
   const fetchBalance = useCallback(async () => {
     if (!stablecoinContract || !ethers.isAddress(walletAccount)) {
       setBalance(null)
+      setAllowance(null)
       return
     }
     try {
-      const bal = (await stablecoinContract.balanceOf(walletAccount)) as bigint
+      const [bal, allw] = await Promise.all([
+        stablecoinContract.balanceOf(walletAccount) as Promise<bigint>,
+        stablecoinContract.allowance(walletAccount, vaultAddress) as Promise<bigint>,
+      ])
       setBalance(bal)
+      setAllowance(allw)
     } catch {
       setBalance(null)
+      setAllowance(null)
     }
-  }, [stablecoinContract, walletAccount])
+  }, [stablecoinContract, walletAccount, vaultAddress])
 
   useEffect(() => {
     void fetchBalance()
@@ -123,11 +131,20 @@ export function DepositCard({ embedded = false }: Props) {
   const txBusy = txStatus === 'signing' || txStatus === 'pending'
   const disabled = !walletAccount || txBusy
 
+  // Determine if approve step is needed
+  let parsedAmount = 0n
+  try {
+    if (amount.trim()) parsedAmount = ethers.parseUnits(amount.trim(), DECIMALS)
+  } catch { /* ignore */ }
+
+  const needsApprove = parsedAmount > 0n && allowance !== null && allowance < parsedAmount
+  const approveIsDone = parsedAmount > 0n && allowance !== null && allowance >= parsedAmount
+
   const content = (
     <div className="space-y-3">
       <KeyValueList>
         <KeyValueRow
-          label="My mUSDT Balance"
+          label={`My ${STABLECOIN_SYMBOL} Balance`}
           value={balance === null ? '—' : `${ethers.formatUnits(balance, DECIMALS)} ${STABLECOIN_SYMBOL}`}
           mono
         />
@@ -179,19 +196,57 @@ export function DepositCard({ embedded = false }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => void doApprove()}
-          disabled={disabled || !amount.trim()}
-        >
-          Approve
-        </Button>
-        <Button size="sm" onClick={() => void doDeposit()} disabled={disabled || !amount.trim()}>
-          Deposit
-        </Button>
-      </div>
+      {/* Two-step: Approve → Deposit */}
+      {parsedAmount > 0n ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${approveIsDone ? 'bg-emerald-500/20 text-emerald-400' : 'bg-primary/20 text-primary'}`}>
+              {approveIsDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : '1'}
+            </div>
+            <Button
+              variant={needsApprove ? 'default' : 'secondary'}
+              size="sm"
+              className="flex-1"
+              onClick={() => void doApprove()}
+              disabled={disabled || !amount.trim() || approveIsDone}
+            >
+              {approveIsDone ? 'Approved' : 'Step 1: Approve'}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${!approveIsDone ? 'bg-muted/40 text-muted-foreground opacity-50' : 'bg-primary/20 text-primary'}`}>
+              2
+            </div>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => void doDeposit()}
+              disabled={disabled || !amount.trim() || needsApprove}
+            >
+              Step 2: Deposit
+            </Button>
+          </div>
+          {needsApprove && (
+            <p className="text-[11px] text-muted-foreground">
+              Approve the vault to spend your {STABLECOIN_SYMBOL} before depositing.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void doApprove()}
+            disabled={disabled || !amount.trim()}
+          >
+            Approve
+          </Button>
+          <Button size="sm" onClick={() => void doDeposit()} disabled={disabled || !amount.trim()}>
+            Deposit
+          </Button>
+        </div>
+      )}
     </div>
   )
 
