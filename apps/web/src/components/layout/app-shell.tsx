@@ -178,7 +178,7 @@ export function AppShell() {
       </div>
 
       {/* Tab content */}
-      <main className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      <main key={tab} className="grid grid-cols-1 md:grid-cols-2 gap-3.5 animate-in fade-in slide-in-from-bottom-1 duration-300">
         {tab === 'dashboard' && <DashboardTab />}
         {tab === 'pool' && <PoolTab />}
       </main>
