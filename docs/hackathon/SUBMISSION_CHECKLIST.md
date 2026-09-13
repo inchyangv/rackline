@@ -1,70 +1,50 @@
-# BUIDL CTC Hackathon 2026 — Submission Checklist
+# DoraHacks Submission Checklist — BUIDL CTC 2026 Fall (Rackline)
 
-Checklist for completing the BUIDL CTC Hackathon (Creditcoin / Credit Labs) submission form.
+Hackathon page: https://dorahacks.io/hackathon/buidl-ctc-2026-fall/detail
+Requirement this season: **every submission must leverage the Attestcoin Protocol** (we do, via `AttestcoinRevenueVerifier` on `0x0FD2`).
+Deadline shown on DoraHacks: 2026-09-06 04:59, extended to **2026-09-14 03:59** (time zone as displayed; verify on the page before relying on it). Top 3 → CEIP fast track.
 
-**Deadlines (EST):**
-- Submission: 2026-03-07 23:59
-- Results announcement: 2026-03-21
+## 1. Eligibility (self-check)
+- [ ] All team members: no criminal records / pending cases
+- [ ] Not residents of, or subject to, sanctions
+- [ ] Participation permitted under country-of-residence law
 
-## 1. Eligibility (Self-Check)
+## 2. Project information (DoraHacks BUIDL form)
+Source: `DORAHACKS.md` (paste-ready) + `docs/hackathon/SUBMISSION_VALUES.md`.
+- [ ] Project name: Rackline (formerly HashCredit)
+- [ ] Logo URL (`logo/logo.png` hosted publicly)
+- [ ] Track: RWA (mention DePIN / DeFi fit in the description)
+- [ ] Description (One-liner + Problem + Why we pivoted + Solution + Why Creditcoin)
+- [ ] GitHub repo URL with updated `README.md`
+- [ ] Deck PDF URL (export `Rackline_GPU_Deck.pptx` → PDF)
+- [ ] Demo video URL (follow `SCRIPT.md`)
+- [ ] Attestcoin usage paragraph (from `DORAHACKS.md` → "Attestcoin Protocol integration")
 
-- [ ] All team members: No criminal records
-- [ ] All team members: No pending criminal cases
-- [ ] All team members: Not residents of sanctioned countries
-- [ ] All team members: Not individuals subject to sanctions
-- [ ] All team members: Participation permitted under their country of residence laws
+## 3. Team information (per member)
+Use `docs/hackathon/TEAM_INFO.template.md`.
+- [ ] Full name, email, role, short bio, residence, citizenship (Telegram / X / LinkedIn / resume optional)
+- [ ] Team size
 
-## 2. Project Information (Required)
+## 4. Project requirements
+- [ ] New work during the hackathon period is identifiable: tag `v1-spring-2026` (before) and `v2-fall-2026` (submission); list in `DORAHACKS.md` → "What is new this hackathon vs. Spring"
+- [ ] Testnet deployment: Creditcoin CC3 testnet (102031) v2 addresses + Sepolia source contracts filled in `DORAHACKS.md`, `TECH.md`, `README.md`
+- [ ] Attestcoin: at least one `RevenueRecorded` tx on Blockscout that references a verified Sepolia tx (link it in the submission)
+- [ ] No third-party IP infringement (logo, fonts, screenshots)
 
-Fill in `docs/hackathon/SUBMISSION_VALUES.md` first, then paste into the submission form.
+## 5. Honesty checks before submitting
+- [ ] Every simulated component is labeled (network payout, settlement leg)
+- [ ] No partnership claimed with Aethir / GPU.net; they are "targets"
+- [ ] No fixed LP yield quoted
+- [ ] "Trustless" used only for evidence, never for enforcement
+- [ ] v1 addresses labeled legacy
+- [ ] Brand consistent: UI (`apps/web/src/lib/brand.ts`), deck, video and submission text all say Rackline; legacy `HashCredit*` identifiers unchanged
 
-- [ ] Project name
-- [ ] Project logo URL (PNG/SVG/AI) — optional
-- [ ] Category (DeFi / RWA / DePIN / Gaming, etc.)
-- [ ] Project description
-- [ ] GitHub repo URL (with README)
-- [ ] Deck / whitepaper PDF URL
-- [ ] Prototype demo video URL
+## 6. Repo hygiene
+- [ ] `README.md` reflects v2 + legacy v1
+- [ ] `.env.example` has v2 variables (prover URL, chain keys, keeper key placeholder) and no secrets
+- [ ] `forge test` green; web build green
+- [ ] Local-only files (`DORAHACKS.md`, `DECK.md`, scripts, keys) not committed
 
-## 3. Team Information (Required Per Member)
-
-Use `docs/hackathon/TEAM_INFO.template.md` as a starting point.
-
-Per member:
-- [ ] Full name
-- [ ] Email
-- [ ] Telegram ID — optional
-- [ ] X / Twitter — optional
-- [ ] LinkedIn — optional
-- [ ] Resume PDF URL — optional
-- [ ] Short bio
-- [ ] Role within the team
-- [ ] Country of residence
-- [ ] Country of citizenship
-
-Additionally:
-- [ ] Team size (minimum 1)
-
-## 4. Project Requirements (Required)
-
-- [ ] Can demonstrate this is new work / development during the hackathon period
-- [ ] Testnet deployment completed
-- [ ] No third-party IP infringement
-
-## 5. Terms and Conditions (Agreement Required)
-
-- [ ] All submitted information is accurate and true
-- [ ] Team has the right to use all submitted code, content, and materials
-
-## 6. Already Prepared in Repo
-
-- [ ] `README.md` exists
-- [ ] Deployment guide exists (`DEPLOY.md` or `docs/deploy/`)
-- [ ] `.env.example` template exists
-
-## 7. Team Must Prepare Separately
-
-- [ ] Deck / whitepaper PDF (public URL)
-- [ ] Demo video (public URL)
-- [ ] Logo (public URL) — optional
-- [ ] Team member profile information for the submission form
+## 7. After submission
+- [ ] Post `TECH_DISCORD.md` in the Creditcoin Discord builders channel
+- [ ] Prepare CEIP follow-up: `docs/hackathon/CEIP.md`, `CEIP_EMAIL.md` (update for v2)

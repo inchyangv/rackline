@@ -1,232 +1,192 @@
-# HashCredit — Technical Note
+# Rackline — Technical Note
 
-> SPV-First, USC-Ready, Portable by Design
-
----
-
-## The Core Insight: Hashrate Is Not a Number, It's a Record
-
-You cannot prove your Bitcoin hashrate directly on-chain. Hashrate is a physical rate — joules per second applied to SHA-256. No contract can observe it directly.
-
-What you *can* prove is the output of hashrate: **pool payouts**.
-
-Every mining pool distributes revenue proportional to contributed hash power. Those distributions are Bitcoin transactions — timestamped, immutable, and verifiable by anyone who has the block headers. Accumulated payout history *is* the observable footprint of hashrate over time.
-
-HashCredit's insight: **prove the payout record, infer the hashrate, issue credit against it.**
-
-This reframes the problem from "prove a rate" to "prove a transaction" — which Bitcoin's own SPV model already solves.
+> Rackline, formerly HashCredit. GPU NFT credit on Creditcoin: Attestcoin-proven revenue, on-chain payment control, self-repaying facilities.
+> v1 (Bitcoin SPV) technical note is archived in git history and under `archive/v1-btc/` (local).
 
 ---
 
-## How Hashrate Gets Proven on Creditcoin
+## 1. The core idea
 
-The proof chain is a straight line from mining activity to on-chain credit:
+A lender needs three things from an asset: to identify it, to route its cash, and to reclaim it. Bitcoin hashrate offered none of these without a mining pool's cooperation. A GPU deployment on a DePIN network offers all three:
+
+- **Identify** — hardware UUID / serial, host and group ids, SKU and count.
+- **Route** — the network pays a receiver address it records on-chain.
+- **Reclaim** — revenue rights are assignable; hardware is a serialized machine with a resale market.
+
+Rackline wraps those three properties in one on-chain object, the **GPU NFT**, and lends against the revenue that flows through it.
 
 ```
-Miner contributes hashrate
-        ↓
-Mining pool issues payout (Bitcoin tx)
-        ↓
-Payout is included in a Bitcoin block (PoW commits to it)
-        ↓
-Off-chain worker builds SPV proof:
-  - headers: checkpoint → tip (each PoW-validated)
-  - merkle branch: tx inclusion in target block
-  - raw tx + output index: identifies which output pays the miner
-        ↓
-SPV proof submitted to Creditcoin EVM
-        ↓
-BtcSpvVerifier checks on-chain (trustless):
-  1. Header chain connects from trusted checkpoint
-  2. Each header satisfies PoW (hash ≤ target derived from bits)
-  3. Target block's Merkle root includes the payout tx
-  4. Specified output pays to borrower's registered pubkeyHash
-  5. Minimum 6 confirmations enforced
-        ↓
-PayoutEvidence returned to HashCreditManager
-        ↓
-Manager records payout (replay-protected), updates trailing credit limit
-        ↓
-Miner borrows stablecoins
+Register deployment → mint GpuNodeNFT (Creditcoin)
+Network pays the NFT's NodeAccount (source chain: Ethereum / Sepolia)
+Attestcoin proves the payout on Creditcoin → RevenueEvidence → credit limit
+Operator draws stablecoin → NFT locked (lien)
+Next payout → NodeAccount.sweep() → repayFor(tokenId) → debt falls
+Sustained default → GpuNodeNFT forecloses to the vault
 ```
-
-No oracle. No bridge. No custodian. The same verification model Bitcoin light clients have used since 2009 — now running inside a Creditcoin EVM contract.
-
-### What the Verifier Actually Checks
-
-| Check | What It Proves |
-|-------|---------------|
-| Checkpoint anchor | Header chain is rooted in a known, trusted Bitcoin state |
-| prev-hash linkage | Headers form a continuous chain from checkpoint to target |
-| PoW per header | Each block is genuine Bitcoin work (can't be fabricated cheaply) |
-| Retarget boundary | Difficulty didn't change mid-proof in an unexpected way |
-| Merkle inclusion | Payout tx is committed to in the target block |
-| Output script | Output pays specifically to this borrower's address (P2WPKH / P2PKH) |
-| Confirmation depth | Target block is buried ≥ 6 blocks deep (finality assumption) |
-
-All of this runs in `BtcSpvVerifier` and `BitcoinLib`. The result is a `PayoutEvidence` struct: verified amount, verified recipient, verified block height. Nothing else crosses the boundary into the credit layer.
 
 ---
 
-## Why This Is the Same Principle as USC
+## 2. Components
 
-USC (Universal Smart Contract) is Creditcoin's cross-chain oracle infrastructure. It enables smart contracts to query, verify, and act on transaction data from any external blockchain through a pipeline of distributed attestors, competitive provers, STARK zero-knowledge proofs, and a native verifier precompile at `0x0FD2`.
+### 2.1 Creditcoin CC3 (credit layer)
 
-HashCredit follows the **exact same architectural pattern**, using Bitcoin SPV as the proof mechanism:
+| Contract | Responsibility |
+|---|---|
+| `GpuNodeNFT` (ERC-721) | One token per registered deployment. Stores `provider`, `sku`, `unitCount`, `hardwareHash`, `sourceChainKey`, `nodeAccount`, `status`. `lock(tokenId)` / `unlock(tokenId)` callable only by the credit manager; transfers revert while locked; `foreclose(tokenId, to)` moves a defaulted token to the vault. Duplicate `hardwareHash` mints revert. |
+| `IRevenueVerifier` | `verifyRevenue(bytes proof) returns (RevenueEvidence)`. Successor of v1's `IVerifierAdapter`; provider- and chain-neutral. |
+| `AttestcoinRevenueVerifier` | Implements `IRevenueVerifier` over the BlockProver precompile. See §3. |
+| `RelayerSigVerifier` (v1, retained) | EIP-712 attested evidence for chains Attestcoin does not cover yet. Evidence from this adapter is labeled *attested*, never *proven*, and gets a lower advance rate in `RiskConfig`. |
+| `GpuCreditManager` | Facilities keyed by `tokenId`. Records evidence (replay-protected), maintains trailing net revenue, computes the limit, executes `borrow`, `repay`, `repayFor`, draw freeze, default and foreclosure. Separate `pauseDraws()` and `pauseRepayments()`; the latter is never used in normal incidents. |
+| `LendingVault` (v2) | Stablecoin LP pool. Single ledger for principal / accrued interest / fees per facility; partial interest payments preserve the unpaid balance; APR changes never apply retroactively; first-loss `reserve`; `recognizeLoss` / `recordRecovery`; withdrawals limited to available cash. |
+| `RiskConfig` (v2) | `advanceRateBps` (per evidence class), `trailingWindow`, `evidenceMaxAge`, `perNodeCap`, `perProviderCap`, `globalCap`, `reserveBps`, `sweepBps`, `defaultGraceSeconds`. |
 
-> **Prove a real-world economic event cryptographically → use that proof to authorize on-chain financial operations.**
+### 2.2 Source chain (Ethereum / Sepolia)
 
-### Precise Architectural Mapping
+| Contract | Responsibility |
+|---|---|
+| `NodeAccount` | Per-NFT escrow deployed through a registry (ERC-6551-style: `(chainId, GpuNodeNFT, tokenId)` → deterministic address). Accepts ERC-20 / native payouts, emits `PayoutReceived(uint256 indexed tokenId, address indexed token, uint256 amount)`. `sweep()` splits by `policy` (repayment share → settlement route, remainder → operator). `setPolicy` / `setReceiver` are callable only by the protocol `controller`; while the Creditcoin lien is active the controller refuses operator-initiated changes. |
+| `MockDePINPayout` | Testnet stand-in for the network's payout contract. Not deployed on mainnet. |
 
-| Design Principle | USC | HashCredit |
-|---|---|---|
-| **Proof ↔ business separation** | `INativeQueryVerifier` ↔ Business contract | `IVerifierAdapter` ↔ `HashCreditManager` |
-| **Structured evidence output** | Decoded event data from `encodedTransaction` | `PayoutEvidence` struct |
-| **Stateless verifier** | `0x0FD2` precompile (pure function) | `BtcSpvVerifier.verifyPayout()` (no state writes) |
-| **App-layer replay protection** | `processedQueries[hash(chain,height,index)]` | `processedPayouts[keccak256(txid,vout)]` |
-| **Checkpoint / anchor** | Attestation chain digests (attestor consensus) | `CheckpointManager` trusted headers |
-| **Chain continuity proof** | STARK zero-knowledge proof | PoW header chain verification |
-| **Transaction inclusion** | Merkle proof (Keccak-256) | Merkle proof (SHA-256d) |
-| **Event / output extraction** | `EvmV1Decoder` extracts logs | `BitcoinLib` parses tx outputs, matches pubkeyHash |
+Following Attestcoin's source-chain guidance, the source contracts stay minimal: hold funds and emit events; business logic lives on Creditcoin.
 
-This alignment is deliberate. USC mainnet was not live during development. We implemented the same architecture ourselves — so the protocol works now and transitions to native USC via a single adapter swap.
+### 2.3 Off-chain
 
----
-
-## BTC Identity Binding: What USC Doesn't Cover
-
-USC documentation does not specify how to bind a source-chain address to an EVM address. This is left as an application-level concern. HashCredit solves it **on-chain with pure cryptography**:
-
-```
-BTC wallet signs message (BIP-137)
-    → ecrecover(btcMsgHash, v, r, s)                  // verify signature
-    → compressed = [0x02|0x03 || pubKeyX]              // compress pubkey
-    → ripemd160(sha256(compressed))                     // derive BTC address
-    → borrowerPubkeyHash[msg.sender] = pubkeyHash      // store binding
-```
-
-This works because BTC and ETH share **secp256k1**. EVM precompiles (`ecrecover` at `0x01`, `sha256` at `0x02`, `ripemd160` at `0x03`) natively validate BTC signatures and derive BTC addresses. No oracle, no bridge, no trusted third party.
-
-During SPV proof verification, the output script's pubkeyHash must match the stored `borrowerPubkeyHash` — ensuring that only the registered miner can claim payouts to their BTC address.
-
-See [`docs/specs/BTC_IDENTITY_BINDING.md`](docs/specs/BTC_IDENTITY_BINDING.md) for the full deep-dive.
+| Service | Responsibility |
+|---|---|
+| `keeper` | Watches `PayoutReceived` on the source chain → `GET {prover}/proof-by-tx/{chainKey}/{txHash}` → `GpuCreditManager.recordRevenue(proof)` → schedules `sweep()` → executes the settlement leg → `repayFor(tokenId)`. Durable job queue, idempotency keys, nonce dispatcher. |
+| `api` | Provider connectors (Aethir Cloud Host statements, GPU.net supplier statements) for underwriting, receivable reconciliation, and control-state monitoring. Read-only credentials; never holds owner keys. |
+| `web` | React 19 / Vite / ethers v6. Operator (register, mint, credit, draw), Node (evidence, sweeps, lien state), Pool (LP). |
 
 ---
 
-## Our Implementation vs USC: The Portability Design
+## 3. Attestcoin integration
 
-### The Key Abstraction: `IVerifierAdapter`
+Attestcoin proves that a transaction is included in a finalized block of a supported source chain, then lets a Creditcoin contract decode it synchronously.
 
 ```
-┌──────────────────────────────┐
-│        HashCreditManager     │
-│  - Credit limit engine       │
-│  - Replay protection         │
-│  - Borrow / repay routing    │
-│                              │
-│  calls:  IVerifierAdapter    │ ← this is the seam
-└──────────────┬───────────────┘
-               │
-       ┌───────┴────────┐
-       │                │
-┌──────▼──────┐  ┌──────▼──────┐
-│ BtcSpv      │  │ USC         │
-│ Verifier    │  │ Adapter     │ ← plug in when ready
-│ (live now)  │  │ (future)    │
-└─────────────┘  └─────────────┘
+Source chain               Keeper                              Creditcoin
+────────────────────────   ─────────────────────────────────   ────────────────────────────────────────
+NodeAccount emits          GET prover.cc3-testnet              AttestcoinRevenueVerifier.verifyRevenue
+PayoutReceived(...)   →    .creditcoin.network/          →       INativeQueryVerifier(0x0FD2)
+in tx T, block B           proof-by-tx/{chainKey}/{T}            .verifyAndEmit(chainKey, B, encodedTx,
+                           → encodedTx, merkleProof,                            merkleProof, continuityProof)
+                             continuityProof                     EvmV1Decoder.decodeReceiptFields(encodedTx)
+                                                                 require(receipt.receiptStatus == 1)
+                                                                 logs = getLogsByEventSignature(receipt, PAYOUT_RECEIVED)
+                                                                 require(log.emitter == nodeAccount[tokenId])
+                                                                 evidence = RevenueEvidence{...}
+                                                                 processedQueries[keccak(chainKey, B, txIndex)] = true
 ```
-
-`HashCreditManager` is entirely unaware of Bitcoin internals. It only consumes `PayoutEvidence`:
 
 ```solidity
-struct PayoutEvidence {
-    address borrower;      // EVM address of the miner
-    bytes32 txid;          // Bitcoin transaction ID
-    uint32  vout;          // Output index
-    uint64  amountSats;    // Payout amount in satoshis
-    uint32  blockHeight;   // Confirmation block height
-    uint32  blockTimestamp; // Block timestamp
+struct RevenueEvidence {
+    uint256 tokenId;        // GpuNodeNFT
+    address token;          // payout asset on the source chain
+    uint256 amount;         // base units
+    uint64  chainKey;       // Attestcoin chain key (Sepolia = 1 on CC3 testnet)
+    uint64  blockHeight;
+    uint32  txIndex;
+    uint64  timestamp;      // source block timestamp
+    uint8   evidenceClass;  // 0 = Attestcoin-proven, 1 = relayer-attested
 }
 ```
 
-This struct is the contract between the proof layer and the credit layer. Swap the proof source, keep the credit logic intact.
+Rules enforced in the verifier:
+- The precompile does not check transaction success; `receiptStatus == 1` is mandatory.
+- The `PayoutReceived` log must be emitted by the `NodeAccount` registered for that `tokenId` on that `chainKey`. Logs from other emitters are ignored.
+- Replay key = `keccak256(chainKey, blockHeight, txIndex)` at the verifier; the manager additionally keys on `(tokenId, chainKey, blockHeight, txIndex)`.
+- Token allow-list per provider (`RiskConfig`); unknown payout tokens are recorded but excluded from the borrowing base.
 
-### Three Integration Paths to USC
-
-**Path A — Swap the settlement asset**
-- Deploy `LendingVault` with USC stablecoin address instead of mUSDT.
-- Keep `BtcSpvVerifier` and `HashCreditManager` unchanged.
-- Miners prove BTC payouts, borrow USC-native stablecoin.
-- Zero changes to proof or credit logic.
-
-**Path B — Add a USC verification adapter**
-- Implement `UscVerifierAdapter` that calls `0x0FD2` precompile.
-- Maps verified BTC transaction data to `PayoutEvidence`.
-- Call `manager.setVerifier(uscAdapterAddress)`.
-- Credit logic, vault, risk config — all untouched.
-
-**Path C — Multi-verifier mode**
-- Keep `BtcSpvVerifier` as adapter #1.
-- Add `UscVerifierAdapter` as adapter #2.
-- Credit limit incorporates evidence from both proof sources.
-
-See [`docs/specs/USC_ADAPTER.md`](docs/specs/USC_ADAPTER.md) for detailed integration design.
+Environments (from Attestcoin docs, 2026-09): CC3 testnet sources are Ethereum Sepolia (chainkey 1) and Ethereum mainnet (chainkey 3); CC3 mainnet source is Ethereum mainnet (chainkey 1). Precompiles: BlockProver `0x...0FD2`, ChainInfo `0x...0FD3`. SDK: `@gluwa/usc-sdk`. Chains not yet supported (e.g. Arbitrum) fall back to the attested adapter with a lower advance rate.
 
 ---
 
-## Credit Scoring from Mining Records
-
-### Mainnet: SPV-Driven Credit
-
-Each `submitPayout()` call triggers the following credit pipeline:
+## 4. Credit model
 
 ```
-SPV-verified payout
-    → Heuristics applied (large-payout discount, new-borrower cap)
-    → Added to trailing window (30 days)
-    → trailingRevenueSats × btcPriceUsd / SATS_PER_BTC = btcValueUsd
-    → btcValueUsd × advanceRateBps / 10000 = creditLimit
-    → More mining = higher credit limit
+EligibleRevenue   = Σ verified net payouts in trailingWindow, per evidence class
+                  − provider deductions / disputes / refunds known to the connector
+                  − staleness / concentration / token-liquidity haircuts
+ReceivableLimit   = EligibleRevenue × advanceRateBps[class] / 10_000
+FacilityLimit     = min(ReceivableLimit, approvedCap[tokenId])
+FacilityRoom      = FacilityLimit − principal − accruedInterest − reservedDraws
+AvailableDraw     = max(0, min(FacilityRoom, perProviderHeadroom, globalHeadroom, vault.availableCash()))
 ```
 
-Risk parameters (configurable via `RiskConfig`):
-- Advance rate: 50% (borrow up to half of trailing revenue value)
-- Window: 30 days (only recent payouts count)
-- New borrower cap: $10,000 (first 30 days)
-- Large payout discount: 50% (single payouts > 0.1 BTC counted at half)
-- Min payout threshold: 10,000 sats (dust payouts ignored)
+Every `borrow` re-evaluates the formula with current evidence (must be younger than `evidenceMaxAge`) and current control state (`NodeAccount` policy version matches the one recorded at facility open). A stale "locked" observation does not authorize a draw.
 
-### Testnet: Auto-Grant
-
-Real mining cannot be reproduced on testnet. `registerBorrower` auto-grants a flat 1,000 mUSDT credit per borrower (via `autoGrantCreditAmount`). The full SPV proof pipeline remains functional and is demonstrated separately.
+Credit is never derived from nominal GPU count, FLOPS, advertised utilization, or token price appreciation. Testnet auto-grant credit does not exist in v2.
 
 ---
 
-## Current State
+## 5. Payment control and default
 
-Everything below runs today on Creditcoin EVM testnet (chainId `102031`):
+| Level | State | Lending |
+|---|---|---|
+| E0 | Read-only API, signatures, payout history | Observe |
+| E1 | `NodeAccount` set as receiver, operator can still change it at the network | Observe + control experiments |
+| E2 | Network / contract recognizes the assignment; operator cannot change the receiver alone while debt is open | Funded facilities |
+| E3 | E2 + physical lien, custodian consent, removal restrictions | Equipment purchase financing |
 
-| Component | Status |
-|-----------|--------|
-| `CheckpointManager` — trusted BTC header anchors | Live |
-| `BtcSpvVerifier` — full SPV verification + on-chain BTC address claim (`claimBtcAddress`) | Live |
-| `HashCreditManager` — credit limit engine, replay protection, borrow/repay | Live |
-| `LendingVault` — stablecoin pool, debt accounting | Live |
-| `RiskConfig` — advance rate, trailing window, payout thresholds | Live |
-| Off-chain prover worker — auto-detects payouts, builds + submits proofs | Live |
-| Off-chain API — checkpoint ops, borrower mapping, SPV proof builder, BTC sig param extraction | Live |
-| Frontend — dashboard, pool (user-facing; checkpoint/proof are operator functions via off-chain worker) | Live |
+State machine per facility: `Draft → UnderReview → ControlPending → Active → Repaid → Released`, with the recovery branch `Active → DrawFrozen → Delinquent → Defaulted → Recovery → ClosedWithLoss`.
 
-USC integration is an **adapter + wiring task**. The proof system, credit engine, and vault do not need to change.
+On default: draws freeze immediately; sweeps continue and `sweepBps` rises to the default ratio; after `defaultGraceSeconds` the manager calls `GpuNodeNFT.foreclose(tokenId, vault)`. Loss is recognized against `reserve` first, then LP NAV. Write-off keeps the recovery record open.
+
+What is not on-chain: legal assignment of receivables, the operator agreement, and any hardware lien. These are prerequisites tracked per facility (`controlAgreementHash`, `agreementVersion`) and verified off-chain before `ControlPending → Active`.
 
 ---
 
-## Contracts (Creditcoin EVM Testnet)
+## 6. Accounting invariants (v2 ledger)
+
+- `principal + accruedInterest + fees` per facility reconciles to the vault's per-facility ledger at every state change.
+- Partial interest payment reduces `accruedInterest` only; it never resets the accrual timestamp.
+- Rate changes create a new accrual segment; prior segments are frozen at their rate.
+- Source-chain receipt, in-flight settlement, and vault receipt are three states; only the last reduces debt.
+- `Σ LP claims + reserve + protocol fees = vault cash + outstanding principal − recognized losses`.
+- Draw pause never blocks `repay` / `repayFor`.
+
+Regression vectors from the v1 review (e.g. $5,000 at 10% for one year, $250 partial interest → remaining $5,250, not $5,000) are fixtures in the v2 test suite.
+
+---
+
+## 7. What is reused from v1
+
+| v1 | v2 |
+|---|---|
+| `IVerifierAdapter` / `PayoutEvidence` | `IRevenueVerifier` / `RevenueEvidence` (same seam, new ABI) |
+| `HashCreditManager` | `GpuCreditManager` (facility-per-NFT, `repayFor`, lien, separate pauses) |
+| `LendingVault` | `LendingVault` v2 (corrected accounting, reserve, loss recognition) |
+| `RiskConfig` | `RiskConfig` v2 (GPU policy, evidence classes, freshness) |
+| `RelayerSigVerifier` | retained as the attested adapter |
+| `BtcSpvVerifier`, `CheckpointManager`, `BitcoinLib`, prover worker | legacy; not deployed on the v2 path |
+| Wallet UX, Zustand stores, shared UI, Foundry invariants, Railway / Vercel | reused |
+
+---
+
+## 8. Testnet substitutions (stated for judges)
+
+| Real system | Demo |
+|---|---|
+| Aethir / GPU.net payout contract | `MockDePINPayout` on Sepolia |
+| Sepolia → Creditcoin settlement (bridge / partner) | Keeper executes the leg with a mock bridge |
+| Partner receiver lock (E2) | Enforced at the `NodeAccount` controller only; partner-level lock is the Phase 1 PoC |
+| Provider statements | Fixture data in the API |
+
+Everything else — mint, Attestcoin verification, limit computation, draw, lien, sweep, `repayFor`, LP accounting — runs as real contracts on Creditcoin CC3 testnet.
+
+---
+
+## 9. Contracts (Creditcoin CC3 testnet, chainId 102031)
 
 | Contract | Address |
-|----------|---------|
-| HashCreditManager | `0x593e140982cDC040d69B7E7623A045C6d6Ca2055` |
-| LendingVault | `0x4d74126369BacB67085a1E70d535cA15515d1AFa` |
-| CheckpointManager | `0x4Ae5418242073cd37CCc69C908957E413a04f6f9` |
-| BtcSpvVerifier | `0x16DEd6a617a911471cd4549C24Ed8C281f096fd2` |
+|---|---|
+| GpuNodeNFT | `<TODO>` |
+| AttestcoinRevenueVerifier | `<TODO>` |
+| GpuCreditManager | `<TODO>` |
+| LendingVault v2 | `<TODO>` |
+| RiskConfig v2 | `<TODO>` |
 | Stablecoin (mUSDT) | `0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A` |
+
+Sepolia: NodeAccount registry `<TODO>`, MockDePINPayout `<TODO>`.
+
+Legacy v1 (still live): HashCreditManager `0x593e140982cDC040d69B7E7623A045C6d6Ca2055`, LendingVault `0x4d74126369BacB67085a1E70d535cA15515d1AFa`, BtcSpvVerifier `0x16DEd6a617a911471cd4549C24Ed8C281f096fd2`, CheckpointManager `0x4Ae5418242073cd37CCc69C908957E413a04f6f9`.

@@ -1,29 +1,19 @@
-## HashCredit Technical Summary (Discord)
+## Rackline (formerly HashCredit) — Technical Summary (Discord)
 
-USC testnet exists, but USC mainnet was not live when we built this flow.  
-So we built the full BTC-proof credit stack using the same architecture pattern USC would use.
+HashCredit is now **Rackline**: we pivoted from Bitcoin hashrate to **GPU NFTs**. Reason: v1 could prove mining payouts (SPV on Creditcoin) but could not collect on them — enforcement needed mining pools to withhold payouts, and no pool had a reason to. v2 lends against an asset you can identify, route, and reclaim.
 
-It already works now:
-- BTC payouts are proven with SPV (`checkpoint + header chain + merkle proof + tx output check`).
-- Verified payout evidence updates borrower credit on-chain.
-- Borrow/repay already runs on Creditcoin testnet.
+**What v2 is**
+- `GpuNodeNFT` (ERC-721 on Creditcoin) = one registered GPU deployment (provider, SKU, hardware hash).
+- Each NFT has a `NodeAccount` on the payout chain (ERC-6551-style escrow). The DePIN network pays *that* account.
+- `AttestcoinRevenueVerifier` proves each payout on Creditcoin via the BlockProver precompile `0x0FD2` (`verifyAndEmit` + `EvmV1Decoder`, `receiptStatus == 1`, replay key `keccak(chainKey, blockHeight, txIndex)`).
+- `GpuCreditManager` turns trailing verified net revenue into a facility limit; `borrow` locks the NFT; each payout is swept and repaid through `repayFor(tokenId)` — no borrower signature.
+- Default: draw freeze → sweep ratio up → NFT foreclosure to the vault. Draw pause never blocks repayment.
+- `LendingVault` v2: single principal/interest ledger, partial interest preserved, no retroactive APR, first-loss reserve.
 
-Why this matters:
-- The protocol is modular (`verifier adapter` vs `credit manager` vs `vault asset`).
-- USC integration is a wiring/deployment step (token/vault or settlement adapter), not a redesign.
+**Same seam as spring:** `IVerifierAdapter` → `IRevenueVerifier`. Swapped `BtcSpvVerifier` for Attestcoin; credit logic untouched.
 
-Current demo scope (already running):
-- SPV verification path with checkpoints and merkle inclusion.
-- Manager credit updates from verified payout evidence.
-- Borrow/repay execution through vault.
-- Replay protection and risk-config driven policy.
-- Checkpoint registration, borrower mapping, and proof submission.
+**Testnet demo (CC3 testnet + Sepolia):** register → mint NFT → mock network payout on Sepolia → Attestcoin proof → credit up → borrow → second payout → sweep → `repayFor` → debt down → LP pool. Simulated parts: the network (`MockDePINPayout`) and the Sepolia→Creditcoin settlement leg (keeper mock bridge). Everything else is real contracts.
 
-What you can try right now:
-1. Register checkpoint.
-2. Register borrower pubkey-hash + borrower.
-3. Build and submit SPV proof.
-4. Confirm credit limit update on-chain.
-5. Execute borrow/repay.
+**Honesty notes:** evidence is trustless; enforcement is graded E0–E3 and only E2+ (partner-recognized receiver lock) gets funded loans. No fixed LP yield. No partnerships claimed.
 
-In short: we implemented the USC-shaped architecture now, proved it end-to-end with real BTC proof flow, and left a clean path to attach USC by wiring adapters.
+Repo: https://github.com/inchyangv/ctc-hashcredit · Pivot write-up: `docs/hackathon/WHY_WE_PIVOTED.md`
