@@ -1,0 +1,202 @@
+{
+  "kind": "DEIDENTIFIED_PROVIDER_FIXTURE",
+  "note": "GPU-019 LOCAL harness. No real partner, account, wallet or statement. Amounts are integer base-unit strings. All facts are provider-API assertions (OFFCHAIN_ASSERTION), never native proofs.",
+  "providerSlug": "mockdepin-testonly",
+  "executionProfile": "LOCAL_MOCK",
+  "partnerRevenue": "SIMULATED",
+  "observedAt": "2026-09-14T10:00:00Z",
+  "sourceChainIds": [
+    11155111
+  ],
+  "supportedAssets": [
+    {
+      "chain_id": 11155111,
+      "address": "0x00000000000000000000000000000000000000c0",
+      "symbol": "TEST-USDC",
+      "decimals": 6
+    }
+  ],
+  "capabilities": {
+    "list_assets": "SUPPORTED",
+    "fetch_revenue": "SUPPORTED",
+    "fetch_settlements": "SUPPORTED",
+    "get_control_state": "SUPPORTED",
+    "claim_revenue": "UNSUPPORTED",
+    "request_control_change": "UNKNOWN",
+    "source_support": "SUPPORTED"
+  },
+  "assets": {
+    "acct-A": [
+      {
+        "externalAssetId": "gpu-0001",
+        "kind": "PHYSICAL_GPU",
+        "asOf": "2026-09-01T00:00:00Z",
+        "attributes": {
+          "model": "H100-80G"
+        }
+      },
+      {
+        "externalAssetId": "gpu-0001-mig-1",
+        "kind": "MIG_PARTITION",
+        "parentExternalId": "gpu-0001",
+        "asOf": "2026-09-01T00:00:00Z"
+      },
+      {
+        "externalAssetId": "gpu-0002",
+        "kind": "PHYSICAL_GPU",
+        "asOf": "2026-09-01T00:00:00Z"
+      },
+      {
+        "externalAssetId": "grp-1",
+        "kind": "STAKING_GROUP",
+        "asOf": "2026-09-01T00:00:00Z"
+      },
+      {
+        "externalAssetId": "gpu-0003",
+        "kind": "PHYSICAL_GPU",
+        "asOf": "2026-09-01T00:00:00Z"
+      }
+    ]
+  },
+  "revenue": {
+    "acct-A": [
+      {
+        "providerEventRef": "inv-2026-08-A",
+        "revision": 1,
+        "asOf": "2026-09-05T00:00:00Z",
+        "periodStart": "2026-08-01T00:00:00Z",
+        "periodEnd": "2026-08-31T23:59:59Z",
+        "gross": {
+          "amount": "12500000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "deductions": {
+          "amount": "500000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "net": {
+          "amount": "12000000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "earningsProvenance": "SIMULATED"
+      },
+      {
+        "providerEventRef": "inv-2026-08-B",
+        "revision": 1,
+        "asOf": "2026-09-05T00:00:00Z",
+        "periodStart": "2026-08-01T00:00:00Z",
+        "periodEnd": "2026-08-31T23:59:59Z",
+        "gross": {
+          "amount": "9000000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "deductions": {
+          "amount": "0",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "net": {
+          "amount": "9000000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "earningsProvenance": "SIMULATED"
+      },
+      {
+        "providerEventRef": "inv-2026-08-A",
+        "revision": 2,
+        "asOf": "2026-09-07T00:00:00Z",
+        "periodStart": "2026-08-01T00:00:00Z",
+        "periodEnd": "2026-08-31T23:59:59Z",
+        "gross": {
+          "amount": "12500000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "deductions": {
+          "amount": "1500000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "net": {
+          "amount": "11000000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "earningsProvenance": "SIMULATED"
+      }
+    ]
+  },
+  "settlements": {
+    "acct-A": [
+      {
+        "settlementRef": "stl-2026-09-01",
+        "revision": 1,
+        "asOf": "2026-09-10T00:00:00Z",
+        "amount": {
+          "amount": "9000000000",
+          "asset": {
+            "chainId": 11155111,
+            "address": "0x00000000000000000000000000000000000000c0",
+            "symbol": "TEST-USDC",
+            "decimals": 6
+          }
+        },
+        "payer": "0x00000000000000000000000000000000000000fa",
+        "payee": "0x00000000000000000000000000000000000000e1",
+        "paidAt": "2026-09-10T00:00:00Z",
+        "status": "PAID",
+        "txRef": null
+      }
+    ]
+  },
+  "controlState": {
+    "acct-A": {
+      "asOf": "2026-09-10T00:00:00Z",
+      "receiver": "0x00000000000000000000000000000000000000e1",
+      "receiverChainId": 11155111,
+      "borrowerCanChangeReceiver": true,
+      "observedGrade": "E1"
+    }
+  }
+}
