@@ -20,6 +20,8 @@ const defaults = {
   stablecoinAddress: '0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A',
   apiUrl: 'https://api-hashcredit.studioliq.com',
   btcExplorerTxBase: 'https://mempool.space/testnet/tx',
+  explorerBase: 'https://creditcoin-testnet.blockscout.com',
+  explorerApiBase: 'https://creditcoin-testnet.blockscout.com/api',
 } as const;
 
 export const env = {
@@ -32,4 +34,6 @@ export const env = {
   stablecoinAddress: getEnvString('VITE_STABLECOIN_ADDRESS', defaults.stablecoinAddress),
   apiUrl: getEnvString('VITE_API_URL', defaults.apiUrl),
   btcExplorerTxBase: getEnvString('VITE_BTC_EXPLORER_TX_BASE', defaults.btcExplorerTxBase),
+  explorerBase: getEnvString('VITE_EXPLORER_BASE', defaults.explorerBase),
+  explorerApiBase: getEnvString('VITE_EXPLORER_API_BASE', defaults.explorerApiBase),
 } as const;

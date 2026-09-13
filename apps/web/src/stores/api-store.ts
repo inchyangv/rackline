@@ -9,6 +9,8 @@ type ApiState = {
   apiProofCheckpointHeight: string
   apiTargetHeight: string
   borrowerAddress: string
+  /** True while the viewed address should track the connected wallet. */
+  following: boolean
   adminBorrower: string
   adminBtcAddr: string
   adminBtcKeyHash: string
@@ -33,6 +35,8 @@ type ApiState = {
   setApiProofCheckpointHeight: (v: string) => void
   setApiTargetHeight: (v: string) => void
   setBorrowerAddress: (v: string) => void
+  /** Set the viewed borrower address and whether it follows the wallet. */
+  setViewed: (address: string, following: boolean) => void
   setAdminBorrower: (v: string) => void
   setAdminBtcAddr: (v: string) => void
   setAdminBtcKeyHash: (v: string) => void
@@ -60,6 +64,7 @@ export const useApiStore = create<ApiState>((set) => ({
   apiProofCheckpointHeight: '',
   apiTargetHeight: '',
   borrowerAddress: '',
+  following: true,
   adminBorrower: '',
   adminBtcAddr: '',
   adminBtcKeyHash: '',
@@ -84,6 +89,7 @@ export const useApiStore = create<ApiState>((set) => ({
   setApiProofCheckpointHeight: (v) => set({ apiProofCheckpointHeight: v }),
   setApiTargetHeight: (v) => set({ apiTargetHeight: v }),
   setBorrowerAddress: (v) => set({ borrowerAddress: v }),
+  setViewed: (address, following) => set({ borrowerAddress: address, following }),
   setAdminBorrower: (v) => set({ adminBorrower: v }),
   setAdminBtcAddr: (v) => set({ adminBtcAddr: v }),
   setAdminBtcKeyHash: (v) => set({ adminBtcKeyHash: v }),

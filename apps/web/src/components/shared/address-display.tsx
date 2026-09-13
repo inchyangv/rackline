@@ -1,18 +1,30 @@
-import { Copy, Check } from 'lucide-react'
+import { Check, Copy, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
-import { shortAddr } from '@/lib/format'
-import { copyToClipboard } from '@/lib/clipboard'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { copyToClipboard } from '@/lib/clipboard'
+import { getAddressExplorerUrl } from '@/lib/explorer'
+import { shortAddr } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 type Props = {
   address: string
   short?: boolean
   mono?: boolean
+  explorer?: boolean
+  /** What the address is, for accessible names: "Copy Vault address". */
+  label?: string
   className?: string
 }
 
-export function AddressDisplay({ address, short = true, mono = true, className }: Props) {
+export function AddressDisplay({
+  address,
+  short = true,
+  mono = true,
+  explorer = false,
+  label,
+  className,
+}: Props) {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
@@ -21,28 +33,50 @@ export function AddressDisplay({ address, short = true, mono = true, className }
     setTimeout(() => setCopied(false), 1500)
   }
 
-  if (!address) return <span className="text-muted-foreground">—</span>
+  if (!address) return <span className="text-bone-3">—</span>
+
+  const explorerUrl = explorer ? getAddressExplorerUrl(address) : ''
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className={`inline-flex items-center gap-1.5 ${className ?? ''}`}>
-          <span className={mono ? 'font-mono text-xs' : 'text-xs'}>
+    <span className={cn('inline-flex items-center gap-1.5', className)}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className={cn('text-[13px] break-all', mono && 'num')}>
             {short ? shortAddr(address) : address}
           </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5 shrink-0"
-            onClick={handleCopy}
-          >
-            {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p className="font-mono text-xs break-all max-w-[320px]">{address}</p>
-      </TooltipContent>
-    </Tooltip>
+        </TooltipTrigger>
+        <TooltipContent>
+          <span className="num break-all">{address}</span>
+        </TooltipContent>
+      </Tooltip>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
+        aria-label={label ? `Copy ${label} address` : 'Copy address'}
+        onClick={handleCopy}
+      >
+        {copied ? (
+          <Check aria-hidden="true" className="size-3.5 text-ok" strokeWidth={1.5} />
+        ) : (
+          <Copy aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
+        )}
+      </Button>
+      <span role="status" className="sr-only">
+        {copied ? 'Address copied' : ''}
+      </span>
+      {explorerUrl ? (
+        <a
+          href={explorerUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={label ? `View ${label} address on explorer` : 'View address on explorer'}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-bone-2 hover:bg-ink-2 hover:text-bone"
+        >
+          <ExternalLink aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
+        </a>
+      ) : null}
+    </span>
   )
 }

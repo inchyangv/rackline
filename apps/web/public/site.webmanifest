@@ -1,7 +1,18 @@
 {
   "name": "HashCredit",
   "short_name": "HashCredit",
+  "description": "Working capital for GPU operators on Creditcoin.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#161719",
+  "background_color": "#161719",
   "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
     {
       "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
@@ -12,8 +23,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "theme_color": "#0a0f1c",
-  "background_color": "#0a0f1c",
-  "display": "standalone"
+  ]
 }

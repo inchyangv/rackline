@@ -1,143 +1,74 @@
-import { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
-import type { TabId } from '@/types'
-import { Header } from './header'
-import { WalletPanel } from './wallet-panel'
-import { Footer } from './footer'
-import { MetricsBar } from '@/components/shared/metrics-bar'
-import { MetricCard } from '@/components/shared/metric-card'
-import { TxStatusPill } from '@/components/shared/tx-status-pill'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { useWalletStore } from '@/stores/wallet-store'
-import { useApiStore } from '@/stores/api-store'
-import { useManagerReads } from '@/hooks/use-manager-reads'
-import { useBorrowerInfo } from '@/hooks/use-borrower-info'
-import { DashboardTab } from '@/features/dashboard/dashboard-tab'
-import { PoolTab } from '@/features/pool/pool-tab'
+import { useEffect, useState } from 'react'
+import { TxStrip } from '@/components/shared/tx-strip'
+import { BorrowPage } from '@/features/borrow/borrow-page'
+import { LendPage } from '@/features/lend/lend-page'
+import { STORAGE_KEYS } from '@/lib/brand'
+import { getEthereum } from '@/lib/ethereum'
 import { getLocalStorageString, setLocalStorageString } from '@/lib/storage'
-import { STABLECOIN_SYMBOL } from '@/lib/constants'
+import { useApiStore } from '@/stores/api-store'
+import { useWalletStore } from '@/stores/wallet-store'
+import type { TabId } from '@/types'
+import { ChainBanner } from './chain-banner'
+import { Footer } from './footer'
+import { TopBar } from './top-bar'
+
+/** How often to look again for a wallet that injects after first paint. */
+const PROVIDER_POLL_MS = 500
+
+function readTab(): TabId {
+  const stored = getLocalStorageString(STORAGE_KEYS.tab, 'borrow')
+  return stored === 'lend' ? 'lend' : 'borrow'
+}
 
 export function AppShell() {
-  const [tab, setTab] = useState<TabId>(() => {
-    const v = getLocalStorageString('hashcredit_tab', 'dashboard')
-    return v === 'dashboard' || v === 'pool'
-      ? v
-      : 'dashboard'
-  })
+  const [tab, setTab] = useState<TabId>(readTab)
 
   useEffect(() => {
-    setLocalStorageString('hashcredit_tab', tab)
+    setLocalStorageString(STORAGE_KEYS.tab, tab)
   }, [tab])
 
-  const walletAccount = useWalletStore((s) => s.walletAccount)
-  const txState = useWalletStore((s) => s.txState)
-  const borrowerAddress = useApiStore((s) => s.borrowerAddress)
-  const setBorrowerAddress = useApiStore((s) => s.setBorrowerAddress)
-
-  // Set default borrower from wallet
+  // Wallet chain/account events drive the whole shell. `subscribeWalletEvents`
+  // resolves the provider immediately, so subscribing before the extension has
+  // injected would leave the shell deaf for the session: keep looking until a
+  // provider appears, then subscribe for real.
   useEffect(() => {
-    if (walletAccount && !borrowerAddress) setBorrowerAddress(walletAccount)
-  }, [walletAccount, borrowerAddress, setBorrowerAddress])
+    let unsub = useWalletStore.getState().initWalletListeners()
+    if (getEthereum()) return unsub
 
-  const { stablecoin } = useManagerReads()
-  const { availableCredit, stablecoinBalance, stablecoinDecimals, isLoading } = useBorrowerInfo(
-    borrowerAddress,
-    stablecoin,
-  )
+    const id = window.setInterval(() => {
+      if (!getEthereum()) return
+      window.clearInterval(id)
+      unsub = useWalletStore.getState().initWalletListeners()
+    }, PROVIDER_POLL_MS)
 
-  const availableCreditDisplay =
-    availableCredit === null
-      ? '—'
-      : `${ethers.formatUnits(availableCredit, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
-  const stablecoinBalanceDisplay =
-    stablecoinBalance === null
-      ? '—'
-      : `${ethers.formatUnits(stablecoinBalance, stablecoinDecimals)} ${STABLECOIN_SYMBOL}`
+    return () => {
+      window.clearInterval(id)
+      unsub()
+    }
+  }, [])
 
-  const txOverview =
-    txState.status === 'idle'
-      ? 'No transactions yet'
-      : txState.status === 'signing'
-        ? `Signing: ${txState.label}`
-        : txState.status === 'pending'
-          ? `Pending: ${txState.label}`
-          : txState.status === 'confirmed'
-            ? `Confirmed: ${txState.label}`
-            : `Error: ${txState.label} — ${txState.message}`
+  const walletAccount = useWalletStore((s) => s.walletAccount)
 
-  const txOverviewTone =
-    txState.status === 'confirmed'
-      ? ('ok' as const)
-      : txState.status === 'error'
-        ? ('err' as const)
-        : txState.status === 'pending'
-          ? ('warn' as const)
-          : ('' as const)
+  // The viewed address follows the wallet until the reader pins another one.
+  // On disconnect `walletAccount` is '' and the view clears with it.
+  useEffect(() => {
+    const { following, setViewed } = useApiStore.getState()
+    if (following) setViewed(walletAccount, true)
+  }, [walletAccount])
+
+  // The mark's bottom rule reports the number the current section is about.
+  // The page that already holds that read publishes it, so the shell does not
+  // mount a second copy of every facility and vault call.
+  const gauge = useWalletStore((s) => s.gauge)
 
   return (
-    <div className="mx-auto max-w-[1320px] px-4 py-5 sm:px-6 lg:px-8 relative z-[1]">
-      {/* Chrome panel */}
-      <div className="relative rounded-2xl border border-border/50 bg-gradient-to-br from-[rgba(12,19,41,0.94)] via-[rgba(14,24,54,0.85)] to-[rgba(16,34,52,0.9)] p-4 sm:p-5 shadow-[0_22px_44px_rgba(3,6,20,0.52),inset_0_1px_0_rgba(190,216,255,0.06)] overflow-hidden mb-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        {/* Top accent line */}
-        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/20 via-[rgba(88,122,232,0.9)] to-primary/20" />
-        {/* Glow orb */}
-        <div className="absolute -top-[120px] -right-[110px] w-[320px] h-[320px] rounded-full bg-[radial-gradient(circle,rgba(79,167,154,0.22)_0%,rgba(79,167,154,0)_68%)] pointer-events-none" />
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4 items-stretch">
-          <Header tab={tab} onTabChange={setTab} />
-          <WalletPanel />
-        </div>
-
-        {/* Borrower search strip */}
-        <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2.5">
-          <Input
-            value={borrowerAddress}
-            onChange={(e) => setBorrowerAddress(e.target.value)}
-            placeholder="Enter wallet address"
-            className="font-mono text-xs"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setBorrowerAddress(walletAccount)}
-            disabled={!walletAccount}
-          >
-            Use Connected Wallet
-          </Button>
-        </div>
-
-        {/* Metrics bar */}
-        <MetricsBar>
-          <MetricCard label="Network" value="Creditcoin Testnet" />
-          <MetricCard
-            label="Available Credit"
-            value={availableCreditDisplay}
-            loading={isLoading}
-          />
-          <MetricCard
-            label="Balance"
-            value={stablecoinBalanceDisplay}
-            loading={isLoading}
-          />
-          <MetricCard label="Status" value={txOverview} tone={txOverviewTone} small />
-        </MetricsBar>
-      </div>
-
-      {/* Tab content */}
-      <main className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        {tab === 'dashboard' && <DashboardTab />}
-        {tab === 'pool' && <PoolTab />}
-
-        {/* Tx Status always visible */}
-        <div className="col-span-full">
-          <div className="rounded-xl border border-border/40 bg-gradient-to-br from-card/80 to-card/60 p-4">
-            <h2 className="text-sm font-semibold text-foreground/90 mb-2">Transaction Status</h2>
-            <TxStatusPill txState={txState} />
-          </div>
-        </div>
+    <div className="flex min-h-screen flex-col">
+      <TopBar tab={tab} onTabChange={setTab} gauge={gauge} />
+      <ChainBanner />
+      <TxStrip />
+      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 sm:px-6">
+        {tab === 'borrow' ? <BorrowPage /> : <LendPage />}
       </main>
-
       <Footer />
     </div>
   )

@@ -1,9 +1,81 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/chivo-mono";
 
-@custom-variant dark (&:is(.dark *));
+/* Single dark theme: `dark:` variants are always on. */
+@custom-variant dark (&);
 
+/* ------------------------------------------------------------------ */
+/* Raw brand tokens                                                    */
+/* ------------------------------------------------------------------ */
+:root {
+  --ink-0: oklch(0.205 0.004 250);
+  --ink-1: oklch(0.24 0.004 250);
+  --ink-2: oklch(0.285 0.004 250);
+  --ink-3: oklch(0.34 0.004 250);
+  --rule: oklch(1 0 0 / 0.14);
+  --rule-strong: oklch(1 0 0 / 0.22);
+  --bone: oklch(0.93 0.005 90);
+  --bone-2: oklch(0.76 0.006 90);
+  --bone-3: oklch(0.64 0.006 90);
+  --signal: oklch(0.7 0.19 45);
+  --ok: oklch(0.78 0.16 150);
+  --warn: oklch(0.85 0.16 95);
+  --err: oklch(0.66 0.21 15);
+
+  /* shadcn / Radix contract — aliased onto the brand tokens */
+  --background: var(--ink-0);
+  --foreground: var(--bone);
+  --card: var(--ink-1);
+  --card-foreground: var(--bone);
+  --popover: var(--ink-1);
+  --popover-foreground: var(--bone);
+  --primary: var(--bone);
+  --primary-foreground: var(--ink-0);
+  --secondary: var(--ink-2);
+  --secondary-foreground: var(--bone);
+  --muted: var(--ink-2);
+  --muted-foreground: var(--bone-3);
+  --accent: var(--ink-2);
+  --accent-foreground: var(--bone);
+  --destructive: var(--err);
+  --destructive-foreground: var(--bone);
+  --success: var(--ok);
+  --success-foreground: var(--ink-0);
+  --warning: var(--warn);
+  --warning-foreground: var(--ink-0);
+  --border: var(--rule);
+  --input: var(--rule-strong);
+  --ring: var(--signal);
+  --radius: 4px;
+  --chart-1: var(--signal);
+  --chart-2: var(--bone-2);
+  --chart-3: var(--ok);
+  --chart-4: var(--warn);
+  --chart-5: var(--err);
+  --sidebar: var(--ink-1);
+  --sidebar-foreground: var(--bone);
+  --sidebar-primary: var(--bone);
+  --sidebar-primary-foreground: var(--ink-0);
+  --sidebar-accent: var(--ink-2);
+  --sidebar-accent-foreground: var(--bone);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: var(--signal);
+
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tailwind theme                                                      */
+/* ------------------------------------------------------------------ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -41,111 +113,151 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --font-sans: 'Space Grotesk', 'Trebuchet MS', 'Avenir Next', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', ui-monospace, monospace;
+
+  /* brand utilities: bg-ink-1, border-rule, text-bone-2, text-signal, bg-signal/10 … */
+  --color-ink-0: var(--ink-0);
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-bone: var(--bone);
+  --color-bone-2: var(--bone-2);
+  --color-bone-3: var(--bone-3);
+  --color-signal: var(--signal);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-err: var(--err);
+
+  /* radius: literal, not derived */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+  --radius-4xl: 4px;
+
+  --font-sans: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Chivo Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* motion */
+  --default-transition-duration: 120ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  --ease-rack: cubic-bezier(0.2, 0, 0, 1);
+  --animate-pulse: pulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-sweep: sweep 1.2s linear infinite;
+  --animate-flash-err: flash-err 600ms ease-out 1;
+
+  @keyframes sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes flash-err {
+    0% { fill: var(--err); }
+    100% { fill: var(--signal); }
+  }
 }
 
-:root {
-  /* Always-dark theme — matching HashCredit dark palette */
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0.008 280);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0.008 280);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.72 0.12 175);
-  --primary-foreground: oklch(0.15 0.01 280);
-  --secondary: oklch(0.35 0.04 260);
-  --secondary-foreground: oklch(0.92 0.01 280);
-  --muted: oklch(0.24 0.008 280);
-  --muted-foreground: oklch(0.65 0.02 270);
-  --accent: oklch(0.24 0.008 280);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.65 0.2 25);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.72 0.19 150);
-  --success-foreground: oklch(0.15 0.03 150);
-  --warning: oklch(0.80 0.15 80);
-  --warning-foreground: oklch(0.15 0.03 80);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.12 175);
-  --radius: 0.75rem;
-  --chart-1: oklch(0.72 0.12 175);
-  --chart-2: oklch(0.55 0.18 260);
-  --chart-3: oklch(0.72 0.19 150);
-  --chart-4: oklch(0.80 0.15 80);
-  --chart-5: oklch(0.65 0.2 25);
-  --sidebar: oklch(0.18 0.008 280);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.72 0.12 175);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.24 0.008 280);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.72 0.12 175);
-
-  color-scheme: dark;
-  font-family: var(--font-sans);
-  line-height: 1.45;
-  font-weight: 450;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 8% -4%, rgba(79, 167, 154, 0.22), transparent 34%),
-    radial-gradient(circle at 93% 6%, rgba(76, 101, 189, 0.28), transparent 38%),
-    linear-gradient(180deg, #080b14 0%, #0a1020 54%, #0a0f1c 100%);
-}
-
-#root {
-  position: relative;
-  isolation: isolate;
-}
-
-#root::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background-image:
-    linear-gradient(rgba(149, 177, 242, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(149, 177, 242, 0.038) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at 50% 10%, #000 48%, transparent 88%);
-}
-
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--rule);
   }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: var(--ink-0);
+    color: var(--bone);
+    font-size: 14px;
   }
+
+  /* Focus: a solid signal outline in the gutter, never alpha, never a fat ring. */
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 0;
+  }
+
+  ::selection {
+    background: var(--bone);
+    color: var(--ink-0);
+  }
+
+  ::placeholder {
+    color: var(--bone-3);
+    opacity: 1;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Brand utilities                                                     */
+/* ------------------------------------------------------------------ */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chivo Mono gives ',' and '.' a full digit advance; pull separators back so a
+   grouped figure reads as one number. Digits stay tabular. See <Figure>. */
+.num .sep {
+  margin-inline: -0.18em;
+}
+
+@utility wordmark {
+  font-family: var(--font-sans);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-stretch: 75%;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bone-3);
+}
+
+@utility condensed {
+  font-stretch: 75%;
 }

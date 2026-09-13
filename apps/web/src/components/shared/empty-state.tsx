@@ -11,19 +11,28 @@ type Props = {
   className?: string
 }
 
-export function EmptyState({ icon: Icon, title, description, actionLabel, onAction, className }: Props) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  className,
+}: Props) {
   return (
-    <div className={cn('flex flex-col items-center justify-center py-8 text-center', className)}>
-      {Icon && <Icon className="h-10 w-10 text-muted-foreground/50 mb-3" />}
-      <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
-      {description && (
-        <p className="mt-1 text-xs text-muted-foreground/70 max-w-[280px]">{description}</p>
-      )}
-      {actionLabel && onAction && (
-        <Button variant="secondary" size="sm" className="mt-4" onClick={onAction}>
+    <div className={cn('py-6', className)}>
+      {Icon ? (
+        <Icon aria-hidden="true" className="mb-2 size-4 text-bone-3" strokeWidth={1.5} />
+      ) : null}
+      <p className="text-[13px] text-bone-2">{title}</p>
+      {description ? (
+        <p className="mt-1 max-w-prose text-xs leading-relaxed text-bone-3">{description}</p>
+      ) : null}
+      {actionLabel && onAction ? (
+        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onAction}>
           {actionLabel}
         </Button>
-      )}
+      ) : null}
     </div>
   )
 }

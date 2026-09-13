@@ -1,29 +1,42 @@
 import { ExternalLink } from 'lucide-react'
-import { getBtcTxExplorerUrl } from '@/lib/explorer'
-import { shortAddr } from '@/lib/format'
+import { getBtcTxExplorerUrl, getTxExplorerUrl } from '@/lib/explorer'
+import { shortHash } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
-type Props = {
-  txid: string
-  className?: string
-}
+const linkClass =
+  'num inline-flex items-center gap-1 text-bone-2 underline decoration-rule-strong underline-offset-2 hover:text-bone hover:decoration-bone'
 
-export function ExplorerLink({ txid, className }: Props) {
+/** Bitcoin testnet transaction. */
+export function ExplorerLink({ txid, className }: { txid: string; className?: string }) {
   const txidHex = txid.replace(/^0x/, '')
   const url = getBtcTxExplorerUrl(txidHex)
 
-  if (!url) {
-    return <span className={`font-mono text-xs ${className ?? ''}`}>{txid}</span>
-  }
+  if (!url) return <span className={cn('num break-all', className)}>{txid}</span>
+
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className={cn(linkClass, className)}>
+      {shortHash(`0x${txidHex}`)}
+      <ExternalLink aria-hidden="true" className="size-3" strokeWidth={1.5} />
+    </a>
+  )
+}
+
+/** Creditcoin (EVM) transaction. */
+export function TxLink({ hash, className }: { hash: string; className?: string }) {
+  const url = getTxExplorerUrl(hash)
+
+  if (!url) return <span className={cn('num break-all', className)}>{shortHash(hash)}</span>
 
   return (
     <a
       href={url}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex items-center gap-1 font-mono text-xs text-primary hover:text-primary/80 underline underline-offset-2 ${className ?? ''}`}
+      title={hash}
+      className={cn(linkClass, className)}
     >
-      {shortAddr(`0x${txidHex}`)}
-      <ExternalLink className="h-3 w-3" />
+      {shortHash(hash)}
+      <ExternalLink aria-hidden="true" className="size-3" strokeWidth={1.5} />
     </a>
   )
 }

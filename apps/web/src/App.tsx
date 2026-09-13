@@ -6,7 +6,7 @@ function App() {
   return (
     <TooltipProvider>
       <AppShell />
-      <Toaster position="bottom-right" richColors closeButton />
+      <Toaster position="bottom-right" closeButton />
     </TooltipProvider>
   )
 }

@@ -121,6 +121,56 @@ export const HashCreditManagerAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'paused',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  // ---- events ----
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'borrower', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { indexed: false, internalType: 'uint128', name: 'newDebt', type: 'uint128' },
+    ],
+    name: 'Borrowed',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'borrower', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { indexed: false, internalType: 'uint128', name: 'newDebt', type: 'uint128' },
+    ],
+    name: 'Repaid',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'borrower', type: 'address' },
+      { indexed: true, internalType: 'bytes32', name: 'btcPayoutKeyHash', type: 'bytes32' },
+      { indexed: false, internalType: 'uint64', name: 'timestamp', type: 'uint64' },
+    ],
+    name: 'BorrowerRegistered',
+    type: 'event',
+  },
+  // ---- errors ----
+  { inputs: [], name: 'BorrowerAlreadyRegistered', type: 'error' },
+  { inputs: [], name: 'BorrowerNotRegistered', type: 'error' },
+  { inputs: [], name: 'BorrowerNotActive', type: 'error' },
+  { inputs: [], name: 'ExceedsCreditLimit', type: 'error' },
+  { inputs: [], name: 'ZeroAmount', type: 'error' },
+  { inputs: [], name: 'InvalidAddress', type: 'error' },
+  { inputs: [], name: 'Unauthorized', type: 'error' },
+  { inputs: [], name: 'BorrowerMismatch', type: 'error' },
+  { inputs: [], name: 'IneligiblePayoutSource', type: 'error' },
+  { inputs: [], name: 'EnforcedPause', type: 'error' },
+  { inputs: [], name: 'ExpectedPause', type: 'error' },
 ] as const;
 
 export const BtcSpvVerifierAbi = [
@@ -169,6 +219,12 @@ export const BtcSpvVerifierAbi = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  // ---- errors ----
+  { inputs: [], name: 'InvalidBtcSignature', type: 'error' },
+  { inputs: [], name: 'PubkeyHashMismatch', type: 'error' },
+  { inputs: [], name: 'BorrowerNotRegistered', type: 'error' },
+  { inputs: [], name: 'Unauthorized', type: 'error' },
+  { inputs: [], name: 'InvalidAddress', type: 'error' },
 ] as const;
 
 export const CheckpointManagerAbi = [
@@ -326,6 +382,33 @@ export const LendingVaultAbi = [
     stateMutability: 'view',
     type: 'function',
   },
+  // ---- events ----
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'depositor', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { indexed: false, internalType: 'uint256', name: 'shares', type: 'uint256' },
+    ],
+    name: 'Deposited',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: 'address', name: 'depositor', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { indexed: false, internalType: 'uint256', name: 'shares', type: 'uint256' },
+    ],
+    name: 'Withdrawn',
+    type: 'event',
+  },
+  // ---- errors ----
+  { inputs: [], name: 'OnlyManager', type: 'error' },
+  { inputs: [], name: 'InsufficientLiquidity', type: 'error' },
+  { inputs: [], name: 'InsufficientShares', type: 'error' },
+  { inputs: [], name: 'ZeroAmount', type: 'error' },
+  { inputs: [], name: 'InvalidAddress', type: 'error' },
 ] as const;
 
 export const Erc20Abi = [
@@ -351,6 +434,16 @@ export const Erc20Abi = [
     name: 'approve',
     outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
     stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'owner', type: 'address' },
+      { internalType: 'address', name: 'spender', type: 'address' },
+    ],
+    name: 'allowance',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'view',
     type: 'function',
   },
 ] as const;

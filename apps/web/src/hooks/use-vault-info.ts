@@ -4,6 +4,8 @@ import { useWalletStore } from '@/stores/wallet-store'
 import { ethers } from 'ethers'
 
 export type VaultInfo = {
+  /** The token the vault actually settles in, per `asset()`. Null until read. */
+  asset: string | null
   totalAssets: bigint | null
   totalBorrowed: bigint | null
   availableLiquidity: bigint | null
@@ -13,12 +15,15 @@ export type VaultInfo = {
   myShares: bigint | null
   myShareValue: bigint | null
   isLoading: boolean
+  error: string | null
 }
 
 export function useVaultInfo(): VaultInfo {
   const vault = useVaultRead()
   const walletAccount = useWalletStore((s) => s.walletAccount)
+  const refreshKey = useWalletStore((s) => s.refreshKey)
 
+  const [asset, setAsset] = useState<string | null>(null)
   const [totalAssets, setTotalAssets] = useState<bigint | null>(null)
   const [totalBorrowed, setTotalBorrowed] = useState<bigint | null>(null)
   const [availableLiquidity, setAvailableLiquidity] = useState<bigint | null>(null)
@@ -28,30 +33,35 @@ export function useVaultInfo(): VaultInfo {
   const [myShares, setMyShares] = useState<bigint | null>(null)
   const [myShareValue, setMyShareValue] = useState<bigint | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchVaultInfo = useCallback(async () => {
     if (!vault) {
-      console.warn('[useVaultInfo] vault contract not ready')
       setIsLoading(false)
       return
     }
 
     try {
-      const [ta, tb, al, ts, ur, apr] = await Promise.all([
+      const [ta, tb, al, ts, ur, apr, token] = await Promise.all([
         vault.totalAssets() as Promise<bigint>,
         vault.totalBorrowed() as Promise<bigint>,
         vault.availableLiquidity() as Promise<bigint>,
         vault.totalShares() as Promise<bigint>,
         vault.utilizationRate() as Promise<bigint>,
         vault.borrowAPR() as Promise<bigint>,
+        // The authoritative token for balances, allowances and approvals. Read
+        // on its own terms: a vault that cannot answer must not blank the pool.
+        (vault.asset() as Promise<string>).catch(() => null),
       ])
 
+      setAsset(token !== null && ethers.isAddress(token) ? token : null)
       setTotalAssets(ta)
       setTotalBorrowed(tb)
       setAvailableLiquidity(al)
       setTotalShares(ts)
       setUtilizationRate(ur)
       setBorrowAPR(apr)
+      setError(null)
 
       if (ethers.isAddress(walletAccount)) {
         const shares = (await vault.sharesOf(walletAccount)) as bigint
@@ -68,6 +78,7 @@ export function useVaultInfo(): VaultInfo {
       }
     } catch (err) {
       console.error('[useVaultInfo] fetch failed:', err)
+      setAsset(null)
       setTotalAssets(null)
       setTotalBorrowed(null)
       setAvailableLiquidity(null)
@@ -76,6 +87,7 @@ export function useVaultInfo(): VaultInfo {
       setBorrowAPR(null)
       setMyShares(null)
       setMyShareValue(null)
+      setError(err instanceof Error ? err.message : 'Failed to read pool.')
     } finally {
       setIsLoading(false)
     }
@@ -83,9 +95,10 @@ export function useVaultInfo(): VaultInfo {
 
   useEffect(() => {
     void fetchVaultInfo()
-  }, [vault, fetchVaultInfo])
+  }, [fetchVaultInfo, refreshKey])
 
   return {
+    asset,
     totalAssets,
     totalBorrowed,
     availableLiquidity,
@@ -95,5 +108,6 @@ export function useVaultInfo(): VaultInfo {
     myShares,
     myShareValue,
     isLoading,
+    error,
   }
 }

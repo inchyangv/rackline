@@ -1,10 +1,12 @@
-import { cn } from '@/lib/utils'
+import type { ReactNode } from 'react'
+import { Ledger } from './ledger'
 
 type Props = {
-  children: React.ReactNode
+  children: ReactNode
   className?: string
 }
 
+/** Legacy alias for `Ledger` (kept for the unrouted admin/operations/proof tabs). */
 export function KeyValueList({ children, className }: Props) {
-  return <div className={cn('grid gap-2', className)}>{children}</div>
+  return <Ledger className={className}>{children}</Ledger>
 }
