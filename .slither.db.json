@@ -1,0 +1,178 @@
+[
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "cea29a28b5620d8130565c3636705c4868c5d52d43d11ca15000115d98511ba1",
+    "description": "Reviewed exact finding cea29a28b5620d8130565c3636705c4868c5d52d43d11ca15000115d98511ba1",
+    "check": "arbitrary-send-eth",
+    "function": "GovernanceTimelock.execute",
+    "source": "contracts/gpu/GovernanceTimelock.sol",
+    "sourceSha256": "f5781f5a885d7cd82d27c6650670bdbb7ebc6131a9b674828a9a04b00de30381",
+    "justification": "Permissionless execution is intentional, not permissionless scheduling. Only immutable GOVERNOR can schedule operationId(chainId,this,target,value,data,salt); execute requires that exact scheduled hash after immutable delay and marks used before the external call. Arbitrary changed recipient/value/calldata or replay cannot use the approval.",
+    "tests": [
+      "test/gpu/GPU043DeploymentTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "6a263c045249820e7a0094b4412d2125091ae435a8cd552f7b50bf42d5319a8d",
+    "description": "Reviewed exact finding 6a263c045249820e7a0094b4412d2125091ae435a8cd552f7b50bf42d5319a8d",
+    "check": "uninitialized-state",
+    "function": "AccountRegistry._accountHistory",
+    "source": "contracts/gpu/AccountRegistry.sol",
+    "sourceSha256": "6cc3061eca5878557ddf9c3f634015404629efb7a35ec32924bb1047899f98da",
+    "justification": "Mapping values are empty storage arrays by Solidity initialization. linkAccount aliases _accountHistory[key] as hist and hist.push writes the same storage; unlinkAccount updates hist[last].to. The detector misses writes through the storage-array alias. The history lookup, length and duplicate/relink paths are exercised.",
+    "tests": [
+      "test/gpu/GPU030RegistryTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "04559edeccfa067cbbd9ff5934206f60bfd3216ddae9c8c0891bf052d56dd2b4",
+    "description": "Reviewed exact finding 04559edeccfa067cbbd9ff5934206f60bfd3216ddae9c8c0891bf052d56dd2b4",
+    "check": "reentrancy-balance",
+    "function": "CreditFacilityManager._execute",
+    "source": "contracts/gpu/CreditFacilityManager.sol",
+    "sourceSha256": "03f864a154addf42c9a358ee90cee49d48c1cf009a5baeb3795c893d163db33f",
+    "justification": "Only borrow and executeReservedDraw reach this internal function, both holding the manager _lock=2 mutex. Vault.lend separately holds its mutex and validates exact outgoing and recipient deltas. Reentrant borrowing cannot create debt; a recipient shortfall rolls back reservation, ledger, vault and token changes atomically.",
+    "tests": [
+      "test/gpu/GPU036DrawTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "3f69b1ff0b71e80da631a1fcea4dd7167cad439cf2eaffa6d50bab7ce3c584f9",
+    "description": "Reviewed exact finding 3f69b1ff0b71e80da631a1fcea4dd7167cad439cf2eaffa6d50bab7ce3c584f9",
+    "check": "reentrancy-balance",
+    "function": "CreditFacilityManager.repayFor",
+    "source": "contracts/gpu/CreditFacilityManager.sol",
+    "sourceSha256": "03f864a154addf42c9a358ee90cee49d48c1cf009a5baeb3795c893d163db33f",
+    "justification": "repayFor holds the manager mutex before transferFrom. It freshly measures actual vault balance after transfer, allocates that delta once and Vault.onRepayment independently validates the unaccounted arrival delta. Same-manager reentry is blocked; cross-router nested accounting cannot pass the outer tracked-delta check twice.",
+    "tests": [
+      "test/gpu/GPU036DrawTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "39c00033e8db28c3d9b2acb736fcaf8b06104c71b99f6b88a1fa89f46d828e68",
+    "description": "Reviewed exact finding 39c00033e8db28c3d9b2acb736fcaf8b06104c71b99f6b88a1fa89f46d828e68",
+    "check": "reentrancy-balance",
+    "function": "RecoveryManager.fundReserve",
+    "source": "contracts/gpu/RecoveryManager.sol",
+    "sourceSha256": "e5f4c2d08b72b2434c5668f9df5f5942bb2aa640af20e321a075eab5bfc94bbc",
+    "justification": "fundReserve holds _lock=1 before transferFrom. All reserve funding, application, return and writeOff cash paths hold the same mutex. Fresh after-minus-before must equal requested amount before pledgedReserve increases. Role-free funding grants no ability to apply/withdraw someone else's reserve; balances remain outside LP NAV.",
+    "tests": [
+      "test/gpu/GPU041RecoveryTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "540b6391b3e7f4f3112a9cb9bb820c15c9d8b1cff8ef862233c7b11f86a7cbfc",
+    "description": "Reviewed exact finding 540b6391b3e7f4f3112a9cb9bb820c15c9d8b1cff8ef862233c7b11f86a7cbfc",
+    "check": "reentrancy-balance",
+    "function": "RepaymentRouter._pullToVault",
+    "source": "contracts/gpu/RepaymentRouter.sol",
+    "sourceSha256": "780f1e98d5445aed869be757eebcab4d6809a70c7f008579f032c2bb835ce21c",
+    "justification": "Internal helper is only called by repayFor and repayExact, both nonReentrant. The saved balance is intentionally the pre-transfer baseline and is compared with a new balance read. Vault.onRepayment adds an independent tracked-cash check; callback regression proves exactly one allocation.",
+    "tests": [
+      "test/gpu/GPU039RepaymentTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "e09b7ab4e398303cb303588fe0a5807f4892dda93d113eb2cfd21db628e65f38",
+    "description": "Reviewed exact finding e09b7ab4e398303cb303588fe0a5807f4892dda93d113eb2cfd21db628e65f38",
+    "check": "reentrancy-balance",
+    "function": "RepaymentRouter._record",
+    "source": "contracts/gpu/RepaymentRouter.sol",
+    "sourceSha256": "780f1e98d5445aed869be757eebcab4d6809a70c7f008579f032c2bb835ce21c",
+    "justification": "Internal helper is only called from role-gated recordDestinationReceipt or receiveSettlement under the same router mutex. The fresh delta is recorded as pending custody, never debt repayment or LP NAV. Duplicate settlement IDs are rejected; token callbacks cannot reenter another router cash path.",
+    "tests": [
+      "test/gpu/GPU039RepaymentTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "f83a3df4a3d178680c4ed2061fe51c48d315b692a8ba9eb115a5657d5eea0394",
+    "description": "Reviewed exact finding f83a3df4a3d178680c4ed2061fe51c48d315b692a8ba9eb115a5657d5eea0394",
+    "check": "reentrancy-balance",
+    "function": "RepaymentRouter._allocateFromReceipt",
+    "source": "contracts/gpu/RepaymentRouter.sol",
+    "sourceSha256": "780f1e98d5445aed869be757eebcab4d6809a70c7f008579f032c2bb835ce21c",
+    "justification": "Internal helper is only called by role-gated allocate or receiveSettlement under the router mutex. Receipt allocated and totalPending are updated before transfer. Fresh vault receipt delta must exactly equal allocated amount, then vault tracked-delta check prevents double accounting. Failure restores receipt and ledger atomically.",
+    "tests": [
+      "test/gpu/GPU039RepaymentTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "7c9f88f6faefacd8475206c6fa961a77cecb4cdbc513f58e05be2ad9daed5e88",
+    "description": "Reviewed exact finding 7c9f88f6faefacd8475206c6fa961a77cecb4cdbc513f58e05be2ad9daed5e88",
+    "check": "reentrancy-balance",
+    "function": "RevenueEscrow._pullFromSource",
+    "source": "contracts/gpu/RevenueEscrow.sol",
+    "sourceSha256": "4028c195593ba0b3f64bf11a9cf867d014652c77abbb9ac38f29e91866590f12",
+    "justification": "Only servicer-gated sweep reaches this helper while holding the escrow mutex. isSwept is committed before Source.withdraw; all escrow claim/sweep/refund/release cash paths share the mutex. A fresh received balance delta must equal the classified payout; fee-on-transfer and reentry regressions reject ambiguous delivery.",
+    "tests": [
+      "test/gpu/GPU037EscrowTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "8633c5c57f74d70d8f20fd81e4cfaa72ec9ff6c30136fa8e38bfa92527331fab",
+    "description": "Reviewed exact finding 8633c5c57f74d70d8f20fd81e4cfaa72ec9ff6c30136fa8e38bfa92527331fab",
+    "check": "reentrancy-balance",
+    "function": "SettlementReceiver.receiveSettlement",
+    "source": "contracts/gpu/SettlementReceiver.sol",
+    "sourceSha256": "99e531eba01806587c3bb3b3f12751a16ca6fa4accdeb4c2de8ef3ecc36f3e58",
+    "justification": "Function explicitly checks _lock and sets it to 1 before any external calls, clearing only on success. Route adapter, destination token/chain, deadline and minReceived are validated and settlement ID marked first. Only fresh received delta is approved to the mutex-protected router; no balance baseline is reused in a nested receive.",
+    "tests": [
+      "test/gpu/GPU040SettlementTest.t.sol"
+    ]
+  },
+  {
+    "reviewedAt": "2026-09-14",
+    "reviewer": "Rackline security review",
+    "slitherVersion": "0.11.6",
+    "disposition": "FALSE_POSITIVE",
+    "id": "b59e6644bb0e971590353ec74dbae67e3ec298098854c09a0ed3a19ae349f0d0",
+    "description": "Reviewed exact finding b59e6644bb0e971590353ec74dbae67e3ec298098854c09a0ed3a19ae349f0d0",
+    "check": "reentrancy-balance",
+    "function": "LendingVaultV2._push",
+    "source": "contracts/gpu/LendingVaultV2.sol",
+    "sourceSha256": "cce823cd172f1046416735d9854a34605bf883185729690a258a7e2dccb8e7fa",
+    "justification": "Every caller (withdraw, claimWithdrawal, claimEpochRecovery, lend, refundExcess) holds the shared vault mutex. State/liability and share debits precede transfer; both vault outgoing and recipient incoming balances are freshly re-read and must equal the expected transfer. Callback and outgoing-transfer-fee tests show no reserved-claim consumption or second withdrawal.",
+    "tests": [
+      "test/gpu/GPU042WithdrawalsTest.t.sol"
+    ]
+  }
+]

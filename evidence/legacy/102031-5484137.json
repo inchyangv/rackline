@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "kind": "LEGACY_READ_ONLY_INVENTORY",
+  "chainId": 102031,
+  "rpcHost": "rpc.cc3-testnet.creditcoin.network",
+  "blockNumber": 5484137,
+  "blockHash": "0x265175b3b84b8d8d9cc8e6ca3c166f31fffb2280877f920b066bea5c7e782dcb",
+  "timestamp": 1789353495,
+  "contracts": [
+    {
+      "name": "HashCreditManager",
+      "addressCandidate": "0x593e140982cDC040d69B7E7623A045C6d6Ca2055",
+      "candidateSource": "apps/web/src/lib/env.ts legacy defaults",
+      "status": "liveConfirmed",
+      "codeSize": 11611,
+      "codeKeccak256": "0x7d591b56ffa3d6d1c9581883f01d7b7e3f524815ec5ede5c1d74bd5a9265305d",
+      "reads": {
+        "owner": "0x8b05d473158913a034376d749ecdebd48040d6aa",
+        "paused": false,
+        "verifier": "0x16ded6a617a911471cd4549c24ed8c281f096fd2",
+        "vault": "0x4d74126369bacb67085a1e70d535ca15515d1afa",
+        "riskConfig": "0x22b0de27ca4fee800a3bc86d92eb1f62b6050ad7",
+        "poolRegistry": "0xdc784de44a28d59c881eae6e64668eab15057584",
+        "stablecoin": "0xb9d6e174c8e0267fb0cc3f2ac34130d680151b6a",
+        "totalGlobalDebt": "400000000",
+        "autoGrantCreditAmount": "1000000000"
+      },
+      "readErrors": {}
+    },
+    {
+      "name": "LendingVault",
+      "addressCandidate": "0x4d74126369BacB67085a1E70d535cA15515d1AFa",
+      "candidateSource": "apps/web/src/lib/env.ts legacy defaults",
+      "status": "liveConfirmed",
+      "codeSize": 3830,
+      "codeKeccak256": "0x77cd0a6231e0884201c9aa55f43a1f28d3eb4f9fd3bc59e200abaf34c425548a",
+      "reads": {
+        "owner": "0x8b05d473158913a034376d749ecdebd48040d6aa",
+        "manager": "0x593e140982cdc040d69b7e7623a045c6d6ca2055",
+        "asset": "0xb9d6e174c8e0267fb0cc3f2ac34130d680151b6a",
+        "totalShares": "2000000000000",
+        "totalBorrowed": "400000000",
+        "totalAssets": "2000016651704",
+        "availableLiquidity": "1999600000000",
+        "accumulatedInterest": "0",
+        "lastAccrualTimestamp": "1772943240",
+        "fixedBorrowAPRBps": "800"
+      },
+      "readErrors": {}
+    },
+    {
+      "name": "CheckpointManager",
+      "addressCandidate": "0x4Ae5418242073cd37CCc69C908957E413a04f6f9",
+      "candidateSource": "archived DeploySpv artifact",
+      "status": "liveConfirmed",
+      "codeSize": 1658,
+      "codeKeccak256": "0x96f3fab1f85f469d69275e56ccb0adac3d553b09af0343e955c499601e0d7981",
+      "reads": {
+        "owner": "0x8b05d473158913a034376d749ecdebd48040d6aa",
+        "latestCheckpointHeight": "0"
+      },
+      "readErrors": {}
+    },
+    {
+      "name": "BtcSpvVerifier",
+      "addressCandidate": "0x16DEd6a617a911471cd4549C24Ed8C281f096fd2",
+      "candidateSource": "apps/web/src/lib/env.ts legacy defaults",
+      "status": "liveConfirmed",
+      "codeSize": 7433,
+      "codeKeccak256": "0xdfdf2c087d58caf35e8a516b9811fdee7b354229c397d4b515959700dd8ad49b",
+      "reads": {
+        "owner": "0x8b05d473158913a034376d749ecdebd48040d6aa"
+      },
+      "readErrors": {}
+    },
+    {
+      "name": "TestnetMintableERC20",
+      "addressCandidate": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+      "candidateSource": "apps/web/src/lib/env.ts legacy defaults",
+      "status": "liveConfirmed",
+      "codeSize": 2362,
+      "codeKeccak256": "0x1fd843d9072552eed3c17531a1c52cdeb3819559136c4b332ba4715ff1a973db",
+      "reads": {
+        "totalSupply": "2000000000000",
+        "decimals": "6",
+        "symbol": "mUSDT"
+      },
+      "readErrors": {}
+    },
+    {
+      "name": "RiskConfig",
+      "addressCandidate": "0x22B0dE27CA4FeE800A3Bc86d92eb1f62B6050AD7",
+      "candidateSource": "archived DeploySpv artifact",
+      "status": "liveConfirmed",
+      "codeSize": 3960,
+      "codeKeccak256": "0xbe11ef1690cfe24a5f7bc4a0056746f7fa454a9d7fcaacb3d689c5dcf34471bb",
+      "reads": {
+        "owner": "0x8b05d473158913a034376d749ecdebd48040d6aa",
+        "globalCap": "0",
+        "advanceRateBps": "5000",
+        "windowSeconds": "2592000"
+      },
+      "readErrors": {}
+    },
+    {
+      "name": "PoolRegistry",
+      "addressCandidate": "0xDC784De44A28d59c881EAE6E64668eab15057584",
+      "candidateSource": "archived DeploySpv artifact",
+      "status": "liveConfirmed",
+      "codeSize": 2186,
+      "codeKeccak256": "0xfb6149a61e7b79dacac0f0ef906b4aae4287e678d5382d692f5fc896eadbc440",
+      "reads": {},
+      "readErrors": {}
+    }
+  ],
+  "borrowers": [
+    {
+      "borrower": "0x0000000000000000000000000000000000000001",
+      "provenanceOfInterestValues": "v1-reported, known AR defects apply (AR-01, AR-02, AR-03, AR-04)",
+      "status": "Active",
+      "btcPayoutKeyHash": "0x187bbbd27985e445100952191c0cb433d8bf6fabeef578a2e7033f13d38c1c1e",
+      "totalRevenueSats": "0",
+      "trailingRevenueSats": "0",
+      "creditLimit": "1000000000",
+      "currentDebt(principal, v1)": "0",
+      "lastPayoutTimestamp": "0",
+      "registeredAt": "1772941800",
+      "payoutCount": "0",
+      "lastDebtUpdateTimestamp": "0",
+      "getCurrentDebt(v1)": "0",
+      "getAccruedInterest(v1)": "0",
+      "payoutHistoryCount": "0",
+      "events": {
+        "borrowed": 0,
+        "repaid": 0,
+        "payoutRecorded": 0
+      }
+    },
+    {
+      "borrower": "0xA20Eb21DE5AE396E9c8Cc6DE719E9593bF6705cE",
+      "provenanceOfInterestValues": "v1-reported, known AR defects apply (AR-01, AR-02, AR-03, AR-04)",
+      "status": "Active",
+      "btcPayoutKeyHash": "0x8062e830e8ffeb127306dc484107c9de2f756320b1bb7057b9db7a1b70c5fd6f",
+      "totalRevenueSats": "0",
+      "trailingRevenueSats": "0",
+      "creditLimit": "1000000000",
+      "currentDebt(principal, v1)": "400000000",
+      "lastPayoutTimestamp": "0",
+      "registeredAt": "1772943195",
+      "payoutCount": "0",
+      "lastDebtUpdateTimestamp": "1772943240",
+      "getCurrentDebt(v1)": "416651704",
+      "getAccruedInterest(v1)": "16651704",
+      "payoutHistoryCount": "0",
+      "events": {
+        "borrowed": 1,
+        "repaid": 0,
+        "payoutRecorded": 0
+      }
+    }
+  ],
+  "lp": {
+    "totalShares": "2000000000000",
+    "totalAssets(v1)": "2000016651704",
+    "totalBorrowed(v1)": "400000000",
+    "accumulatedInterest(v1)": "0",
+    "availableLiquidity(v1)": "1999600000000",
+    "vaultTokenBalance": "1999600000000",
+    "depositEvents": 2,
+    "withdrawEvents": 0,
+    "shareHolders": {
+      "0x8B05D473158913a034376D749ECdEbd48040d6Aa": "2000000000000"
+    }
+  },
+  "processedEvidence": {
+    "payoutRecordedEvents": 0,
+    "distinctTxids": 0,
+    "provenance": "LEGACY_BTC_SPV",
+    "btcAddressLinkProvenance": "LEGACY_RELAYER_SIG",
+    "nativeStatus": "NOT_APPLICABLE_LEGACY",
+    "scannedFromBlock": 4390740
+  },
+  "sumChecks": [
+    {
+      "check": "sum(borrower currentDebt) == manager.totalGlobalDebt",
+      "lhs": "400000000",
+      "rhs": "400000000",
+      "ok": true,
+      "note": "discrepancy is reported, not corrected"
+    },
+    {
+      "check": "sum(sharesOf(event holders)) == vault.totalShares",
+      "lhs": "2000000000000",
+      "rhs": "2000000000000",
+      "ok": true,
+      "note": "holders enumerated from Deposited/Withdrawn logs; a mismatch means transfers/unknown holders, reported only"
+    },
+    {
+      "check": "token.balanceOf(vault) + totalBorrowed + accumulatedInterest == vault.totalAssets (v1 definition)",
+      "lhs": "2000000000000",
+      "rhs": "2000016651704",
+      "ok": false,
+      "note": "v1 totalAssets definition; AR-02 applies to totalBorrowed"
+    }
+  ],
+  "notes": [
+    "Values are as reported by the v1 contracts at the pinned block; nothing is corrected.",
+    "Interest-bearing values are tainted by known v1 defects AR-01, AR-02, AR-03, AR-04.",
+    "Legacy evidence provenance is LEGACY_BTC_SPV / LEGACY_RELAYER_SIG and is never reclassified as native."
+  ],
+  "snapshotSha256": "6116d10226904100d2c815603fb3e381a2c586786245b0771d6e35a1ac4b9ab5"
+}

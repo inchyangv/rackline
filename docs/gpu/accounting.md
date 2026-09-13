@@ -1,11 +1,9 @@
-# Financial accounting specification and reference model (GPU-012, v1)
+# Financial accounting specification and reference model
 
-Status: SPEC v1 (2026-09-14). Reference model: `offchain/gpu/hashcredit_gpu/accounting/reference.py`
+Reference model: `offchain/gpu/hashcredit_gpu/accounting/reference.py`
 (pure integers). Vectors: `test/fixtures/gpu/accounting.json` (hand-derived expectations, 13 vectors) run
-by `offchain/gpu/tests/test_accounting_reference.py`. Basis: PIVOT §2.2, §5–§7, §12; term sheet §4–§8;
-`accounting-regressions.md` (AR-01…08 correct values); R2-D06/D07/D12. The v2 contracts (GPU-034/036/037/
-039/041/042) must reproduce these vectors exactly; the Solidity acceptance run is the RED mode of
-`test/diagnostic/AccountingRegressions.t.sol` plus the vectors below ported to `test/gpu/`.
+by `offchain/gpu/tests/test_accounting_reference.py`. The contracts and Python ledgers must reproduce
+these vectors exactly; the Solidity suites under `test/gpu/` exercise the same invariants.
 
 ## 1. Ledgers and what they mean
 
@@ -17,7 +15,7 @@ by `offchain/gpu/tests/test_accounting_reference.py`. Basis: PIVOT §2.2, §5–
 | **Collection pipeline** | servicer | `source_escrow[settlement]`, `in_flight[settlement]` | debt or NAV effects |
 
 Legal debt ≠ NAV book value: write-off and impairment change the vault's book, never the borrower's
-obligation. Borrower receivables are the borrowing base, never a vault asset (PIVOT §7).
+obligation. Borrower receivables are the borrowing base, never a vault asset.
 
 ## 2. Interest
 

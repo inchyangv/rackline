@@ -1,6 +1,6 @@
 # @rackline/attestcoin-tools
 
-Narrow TypeScript package for the GPU lending pivot (TICKET.md GPU-075). It pins the **official**
+TypeScript tooling for the GPU lending evidence path. It pins the **official**
 Attestcoin (ex-USC) SDK, ABIs and Solidity artifacts by version and hash, validates environment manifests
 under `config/attestcoin/`, and runs a **read-only** environment probe. It never signs, broadcasts, or
 holds keys. It is not a proof worker (GPU-079) and not a verifier (GPU-078).
@@ -13,7 +13,7 @@ npm --prefix offchain/attestcoin run probe -- --manifest config/attestcoin/cc3-t
 ```
 
 Facts, versions, hashes and probe results: `docs/gpu/attestcoin/environment.md`.
-Decisions this package enforces: `docs/gpu/decisions/attestcoin-first.md` (R2-D02, R2-D03, R2-D11, R2-D12).
+The package fails closed on unpinned artifacts, mismatched manifests, unsupported profiles, and malformed proof responses.
 
 Layout: `src/artifacts.ts` (pins), `src/abi.ts` (ABI loading/signature sets), `src/manifest.ts`
 (schema + fail-closed validation + canonical hash), `src/probe.ts` (read-only checks, injectable transport),

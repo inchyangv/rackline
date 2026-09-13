@@ -17,8 +17,8 @@ import { PayoutEvidence } from "../../contracts/interfaces/IVerifierAdapter.sol"
 
 /**
  * @title AccountingRegressionsTest (GPU-002)
- * @notice Minimal reproduction vectors for the v1 accounting / attribution defects listed in
- *         PIVOT.md §2.2 and docs/gpu/accounting-regressions.md. Each vector records BOTH the value
+ * @notice Minimal reproduction vectors for known v1 accounting / attribution defects. Each vector records BOTH the
+ * value
  *         v1 produces today (`observed`) and the value a correct ledger must produce (`correct`).
  *
  *         Default run (CI): asserts `observed == V1_OBSERVED` and `observed != CORRECT`, i.e. it pins

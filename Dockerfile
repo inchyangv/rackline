@@ -1,31 +1,28 @@
-FROM python:3.11-slim
+FROM node:24-bookworm-slim AS attestcoin
+WORKDIR /opt/attestcoin
+COPY offchain/attestcoin/package*.json ./
+RUN npm ci
+COPY offchain/attestcoin/ ./
+RUN npm run build
 
-# Root-level Dockerfile (Railway friendly for isolated monorepo):
-# - If someone accidentally deploys from repo root, Railway/Railpack should still be able to build.
-# - This image runs the offchain API by default.
-
+FROM python:3.11-slim-bookworm
 WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    GPU_ABI_DIRECTORY=/opt/hashcredit_gpu/hashcredit_gpu/projections/abi \
+    GPU_ATTESTCOIN_MANIFEST=/app/config/attestcoin/cc3-testnet.sepolia.json \
+    ATTESTCOIN_REPO_ROOT=/app ATTESTCOIN_CONFIG_DIR=/app/config/attestcoin \
+    ATTESTCOIN_CLI=/opt/attestcoin/dist/src/cli.js
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    HOST=0.0.0.0
-
-RUN pip install --no-cache-dir --upgrade pip
-
-# The API depends on the shared local package `hashcredit-gpu` (offchain/gpu, GPU-015), which is not on
-# PyPI. Install it from the monorepo first, then the API itself. This Dockerfile must therefore be built
-# with the repository root as the build context (root `railway.toml` / `docker-compose.yml` do that).
+COPY --from=attestcoin /usr/local/bin/node /usr/local/bin/node
+COPY --from=attestcoin /opt/attestcoin /opt/attestcoin
 COPY offchain/gpu/ /opt/hashcredit_gpu/
-RUN pip install --no-cache-dir /opt/hashcredit_gpu
-
-# Copy only the API package from the monorepo.
-COPY offchain/api/ ./
-COPY config/attestcoin/ /app/config/attestcoin/
-
-RUN pip install --no-cache-dir -e .
-
+RUN pip install --no-cache-dir -e /opt/hashcredit_gpu \
+    'fastapi>=0.109' 'uvicorn[standard]>=0.27' 'pydantic-settings>=2' \
+    'web3>=6' 'httpx>=0.25' 'python-dotenv>=1'
+COPY offchain/api/ /app/
+COPY offchain/prover/ /opt/prover/
+RUN pip install --no-cache-dir --no-deps -e /app -e /opt/prover
+COPY config/ /app/config/
+RUN python -c "import sys; from hashcredit_api.gpu.app import create_app; create_app(); assert not any(m.startswith(('coincurve','hashcredit_api.bitcoin','hashcredit_api.btc_signmessage')) for m in sys.modules)"
 EXPOSE 8000
-
-# Use ENTRYPOINT so accidental platform-level start command overrides
-# (e.g. `npm start`) are treated as extra args and do not break API startup.
-ENTRYPOINT ["python", "-m", "hashcredit_api.main"]
+ENTRYPOINT ["python", "-m", "hashcredit_api.gpu.server"]

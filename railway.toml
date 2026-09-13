@@ -1,9 +1,10 @@
-# Rackline API service (Railway). The Python package/entry point keeps its legacy name `hashcredit_api`;
-# the Railway service should be named `rackline-api`. Set API_PROFILE=production and never an admin key.
+# Shared GPU image: GPU_SERVICE selects api, indexer, proof, or monitor.
+# Deployment/profile bindings are explicit; the API never receives a signing key.
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "python -m hashcredit_api.main"
+preDeployCommand = "python -m hashcredit_api.gpu.server --initialize"
+startCommand = "python -m hashcredit_api.gpu.server"
 healthcheckPath = "/health"

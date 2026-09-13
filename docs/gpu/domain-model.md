@@ -1,17 +1,15 @@
-# Domain model, identifiers, units, paths, and API contract (GPU-011, v1)
+# Domain model, identifiers, units, paths, and API contract
 
-Status: SPEC v1 (2026-09-14). Machine-readable form: `config/gpu/schema/domain-v1.schema.json`; sample:
+Machine-readable form: `config/gpu/schema/domain-v1.schema.json`; sample:
 `test/fixtures/gpu/domain/sample-v1.json`; validator: `script/gpu/validate_domain_fixture.py`.
-Basis: PIVOT §6.1–6.2, §7–9; TICKET §0.2/§0.5/§0.9; `docs/gpu/product-term-sheet.md`;
-`docs/gpu/decisions/attestcoin-first.md` (R2-D02/D05/D06/D07/D12). Field-level evidence semantics
-(proof-bound vs. claimed fields, freshness checkpoints, consumption keys) are finalized by GPU-076; this
-document fixes names, shapes, enums, and ownership so GPU-015/016/029/045 can build against them.
+Field-level evidence semantics distinguish proof-bound values, claimed values, freshness checkpoints,
+and consumption keys. This document fixes names, shapes, enums, and ownership across contracts and services.
 
 ## 1. Principles
 
 1. **One economic fact, one economic ID.** Technical observations (API rows, webhooks, chain logs, proofs)
    are separate records that *point at* an economic ID; changing an adapter, SDK, ABI, or proof bytes never
-   creates a new economic fact (PIVOT §6.2, R2-D06).
+   creates a new economic fact.
 2. **Money is exact.** Amounts are integer base units serialized as decimal strings, always with an asset
    reference (chain, contract, decimals). No floats, no implicit unit, no cross-asset sums.
 3. **Every time value says what it means and where it came from.** `occurredAt` / `confirmedAt` /
@@ -21,7 +19,7 @@ document fixes names, shapes, enums, and ownership so GPU-015/016/029/045 can bu
    provenance (`earningsProvenance`), unpaid receivable (`Receivable.state` + `unpaidAmount`), payment
    control (`controlGrade`), cash (`cashState`) (R2-D05).
 5. **Corrections are new rows.** A correction references the original by ID and carries a signed delta or a
-   reversal; original rows are never overwritten (PIVOT §8.2).
+   reversal; original rows are never overwritten.
 6. **Missing upstream data is `null` + provenance**, never a fabricated value; every externally sourced
    field carries a `Provenance`.
 7. **Test data cannot leak into production.** Every evidence-bearing record carries `executionProfile`;
@@ -157,7 +155,7 @@ labeled `CLAIMED`/`OBSERVED` and policy uses the proven height plus a checkpoint
 | API DTOs | scoped projections (see §11) with `schemaVersion` | credential refs, raw payloads, other borrowers' data |
 | Browser | public chain state + the caller's own scoped DTOs | anything else |
 
-## 10. Path table (TICKET §0.5 — confirmed with additions)
+## 10. Path table
 
 | Purpose | Path | Status |
 | --- | --- | --- |
@@ -170,9 +168,9 @@ labeled `CLAIMED`/`OBSERVED` and policy uses the proven height plus a checkpoint
 | **Domain schemas** | `config/gpu/schema/` | added by this ticket |
 | **Domain / settlement fixtures** | `test/fixtures/gpu/domain/`, `test/fixtures/gpu/settlements/` | added / GPU-014 |
 | **Repo scripts** | `script/gpu/` | added (validator); e2e scripts later (GPU-057/080) |
-| Design / decisions / partners / execution | `docs/gpu/`, `docs/gpu/decisions/`, `docs/gpu/partners/`, `docs/gpu/execution/` | exist |
+| Public technical documentation | `README.md`, `TECH.md`, `docs/gpu/` | exists |
 
-## 11. Product API v1 (contract only; implementation GPU-045)
+## 11. Product API v1
 
 Base: `/v1`. Every response: `{ "schemaVersion": "1.0", "data": …, "meta": { "executionProfile": … } }`.
 Errors: `{ "error": { "code": ErrorCode, "message": str, "details": {...}, "requestId": str } }`.

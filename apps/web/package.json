@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/demo-store.test.mjs"
+    "test:unit": "node --test tests/*.test.mjs",
+    "test": "node scripts/test.mjs",
+    "generate:gpu": "node scripts/generate-gpu.mjs",
+    "check:generated": "node scripts/generate-gpu.mjs --check"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

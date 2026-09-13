@@ -99,6 +99,17 @@ interface ISourceEscrow {
         uint256 paidCumulative
     );
 
+    /// @notice v2 binds the denomination before the first payment. v1 remains an audit/history event only.
+    event ObligationRecognizedV2(
+        bytes32 indexed accountKey, bytes32 indexed obligationRef, address indexed issuer,
+        address payer, address payee, address token, uint256 amount, uint64 dueAt, uint32 revision
+    );
+    /// @notice Source time and a non-revocable reservation bound the current-unpaid claim through draw execution.
+    event SourceCheckpointV2(
+        bytes32 indexed accountKey, uint64 checkpointSeq, uint32 latestRevision, uint256 openAmount,
+        uint256 paidCumulative, uint64 observedAt, uint64 protectedUntil
+    );
+
     // ------------------------------------------------------------------ escrow-internal events (never revenue)
 
     /// @notice Measured deposit that is not a registered-payer settlement. Never a PAYOUT.
@@ -138,6 +149,8 @@ interface ISourceEscrow {
     error ZeroAmount();
     error Reentrancy();
     error TransferFailed();
+    error AccountReserved(bytes32 accountKey, uint64 protectedUntil);
+    error InvalidReservationWindow();
 
     // ------------------------------------------------------------------ views
 

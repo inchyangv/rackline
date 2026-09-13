@@ -74,7 +74,7 @@ contract ShortfallToken {
  *         anyone, state machine parity with GPU-013. LOCAL_MOCK only: MockBlockProver + synthetic wire fixture;
  *         funded draws for real customers/LPs need GPU-010/063 (출시 조건). G-ASC is GPU-080.
  */
-contract GPU036DrawTest is Test {
+abstract contract GPU036Fixture is Test {
     // actors
     address admin = address(0xAD);
     address registrar = address(0x4E6);
@@ -134,12 +134,13 @@ contract GPU036DrawTest is Test {
     uint256 constant LP_CASH = 100_000e6;
 
     bytes32 constant T_RECOGNIZED =
-        keccak256("ObligationRecognized(bytes32,bytes32,address,address,address,uint256,uint64,uint32)");
+        keccak256("ObligationRecognizedV2(bytes32,bytes32,address,address,address,address,uint256,uint64,uint32)");
     bytes32 constant T_ASSIGNED = keccak256("ObligationAssigned(bytes32,bytes32,bytes32,uint32)");
     bytes32 constant T_CORRECTED = keccak256("ObligationCorrected(bytes32,bytes32,int256,uint32,uint8)");
     bytes32 constant T_PAYOUT = keccak256("PayoutReceived(bytes32,bytes32,address,address,uint256,uint64)");
     bytes32 constant T_CANCELLED = keccak256("PayoutCancelled(bytes32,bytes32,uint64,uint256)");
-    bytes32 constant T_CHECKPOINT = keccak256("SourceCheckpoint(bytes32,uint64,uint32,uint256,uint256)");
+    bytes32 constant T_CHECKPOINT =
+        keccak256("SourceCheckpointV2(bytes32,uint64,uint32,uint256,uint256,uint64,uint64)");
 
     struct Log {
         address addr;
@@ -157,7 +158,7 @@ contract GPU036DrawTest is Test {
 
     // ================================================================== setup
 
-    function setUp() public {
+    function setUp() public virtual {
         vm.warp(T0);
         wireJson = vm.readFile("test/fixtures/gpu/attestcoin/wire/synthetic-obligation-v1.json");
         transitionsJson = vm.readFile("test/fixtures/gpu/facility-transitions-v1.json");
@@ -245,6 +246,7 @@ contract GPU036DrawTest is Test {
         providers.registerEmitter(MOCK, ESCROW, T_PAYOUT, GpuTypes.EvidenceMeaning.PAYOUT, 0, address(0));
         providers.registerEmitter(MOCK, ESCROW, T_CANCELLED, GpuTypes.EvidenceMeaning.PAYMENT_CANCELLED, 0, address(0));
         providers.registerEmitter(MOCK, ESCROW, T_CHECKPOINT, GpuTypes.EvidenceMeaning.CORRECTION, 0, address(0));
+        providers.setIssuer(MOCK, ISSUER, true);
         providers.admitToken(MOCK, SEPOLIA, USDC, 6);
         vm.stopPrank();
     }
@@ -335,9 +337,9 @@ contract GPU036DrawTest is Test {
         accounts.linkWallet(borrowerId, a);
     }
 
-    function _terms(uint64 maturity) internal pure returns (IDebtLedger.Terms memory) {
+    function _terms(uint64 maturity) internal view returns (IDebtLedger.Terms memory) {
         return IDebtLedger.Terms({
-            loanAsset: GpuTypes.AssetRef({ chainId: 102_031, token: address(0x10A4), decimals: 6 }),
+            loanAsset: GpuTypes.AssetRef({ chainId: uint64(block.chainid), token: address(loan), decimals: 6 }),
             rateBps: 1000,
             maturityAt: maturity,
             termsVersionId: keccak256("terms-v1"),
@@ -484,20 +486,35 @@ contract GPU036DrawTest is Test {
     }
 
     function _recognizeFixture() internal {
-        bytes memory txBytes = vm.parseJsonBytes(wireJson, ".cases.obligation2Logs.txBytes");
+        bytes memory txBytes = _fixtureTxBytes();
         IReceivableBook.ReceivableClaim[] memory cs = new IReceivableBook.ReceivableClaim[](2);
         cs[0] = _claim(
             0,
             ACCOUNT_A,
             REF_A,
             bytes32(uint256(uint160(ISSUER))),
-            abi.encode(PAYER, ESCROW, 12_000e6, DUE_AT, uint32(1))
+            abi.encode(PAYER, ESCROW, USDC, 12_000e6, DUE_AT, uint32(1))
         );
         cs[1] = _claim(
-            1, ACCOUNT_A, REF_B, bytes32(uint256(uint160(ISSUER))), abi.encode(PAYER, ESCROW, 9000e6, DUE_AT, uint32(1))
+            1,
+            ACCOUNT_A,
+            REF_B,
+            bytes32(uint256(uint160(ISSUER))),
+            abi.encode(PAYER, ESCROW, USDC, 9000e6, DUE_AT, uint32(1))
         );
         vm.prank(relayer);
         book.ingest(MOCK, _envelope(txBytes, HEIGHT, 17), ESCROW, _topics(T_RECOGNIZED), cs);
+    }
+
+    function _fixtureTxBytes() internal view returns (bytes memory) {
+        Log[] memory logs = new Log[](2);
+        bytes32 issuer = bytes32(uint256(uint160(ISSUER)));
+        logs[0] = _log(
+            T_RECOGNIZED, ACCOUNT_A, REF_A, issuer, 4, abi.encode(PAYER, ESCROW, USDC, 12_000e6, DUE_AT, uint32(1))
+        );
+        logs[1] =
+            _log(T_RECOGNIZED, ACCOUNT_A, REF_B, issuer, 4, abi.encode(PAYER, ESCROW, USDC, 9000e6, DUE_AT, uint32(1)));
+        return _txBytes(1, logs);
     }
 
     function _assign(bytes32 ref, GpuTypes.FacilityId f, uint32 rev) internal {
@@ -509,7 +526,9 @@ contract GPU036DrawTest is Test {
     function _checkpoint(GpuTypes.AccountKey acct, uint64 seq, uint32 latestRev, uint256 open, uint256 paidCum)
         internal
     {
-        bytes memory data = abi.encode(seq, latestRev, open, paidCum);
+        bytes memory data = abi.encode(
+            seq, latestRev, open, paidCum, uint64(block.timestamp), uint64(block.timestamp + 15 minutes)
+        );
         _ingestOne(T_CHECKPOINT, _log(T_CHECKPOINT, acct, 0, 0, 2, data), _claim(0, acct, 0, 0, data));
     }
 
@@ -517,7 +536,9 @@ contract GPU036DrawTest is Test {
         vm.prank(borrowerWallet);
         mgr.borrow(FA, amount, amount);
     }
+}
 
+contract GPU036DrawTest is GPU036Fixture {
     // ================================================================== positive path
 
     function test_happyPath_drawWithNativelyProvenBase() public {
@@ -690,7 +711,7 @@ contract GPU036DrawTest is Test {
         );
         vm.prank(underwriter);
         vm.expectRevert(
-            abi.encodeWithSelector(CreditFacilityManager.ExposureAuthorizationMismatch.selector, FB, "limit")
+            abi.encodeWithSelector(CreditFacilityManager.ExposureAuthorizationMismatch.selector, FB, bytes32("limit"))
         );
         mgr.anchorAuthorization(a, s);
     }
@@ -732,7 +753,7 @@ contract GPU036DrawTest is Test {
         _readyA();
         loan.setShortfall(1); // vault "sends" 5000, wallet receives 5000 - 1
         vm.prank(borrowerWallet);
-        vm.expectRevert(abi.encodeWithSelector(CreditFacilityManager.InsufficientReceived.selector, 5000e6, 5000e6 - 1));
+        vm.expectRevert(abi.encodeWithSelector(LendingVaultV2.CashNotReceived.selector, 5000e6, 5000e6 - 1));
         mgr.borrow(FA, 5000e6, 5000e6);
         assertEq(ledger.view_(FA).principal, 0, "ledger draw rolled back");
         assertEq(ctl.reservedOf(FA), 0, "reservation rolled back");
@@ -847,6 +868,8 @@ contract GPU036DrawTest is Test {
         assertEq(r.principalPaid, 1000e6);
         assertEq(ledger.view_(FA).principal, 1000e6);
         // per-facility freeze by guardian also blocks draws but not repayment
+        vm.prank(underwriter);
+        mgr.approveDrawResume();
         vm.prank(guardian);
         mgr.pauseDraws(false);
         vm.prank(guardian);

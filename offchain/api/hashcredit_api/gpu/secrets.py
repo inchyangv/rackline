@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 import os
 import re
+import traceback
+from collections.abc import Iterable
 from typing import Protocol
 
 SECRET_REF_RE = re.compile(r"^(env|vault|kms)://[A-Za-z0-9_./-]{1,200}$")
@@ -68,19 +70,40 @@ class Redactor:
 
 
 class RedactingFilter(logging.Filter):
-    """stdlib logging filter: rewrites the formatted message and args of every record."""
+    """Mask messages, exception chains and stack traces before any handler formats them."""
 
     def __init__(self, redactor: Redactor) -> None:
         super().__init__()
         self._redactor = redactor
 
     def filter(self, record: logging.LogRecord) -> bool:
-        try:
-            record.msg = self._redactor.redact(str(record.getMessage()))
-            record.args = ()
-        except Exception:  # pragma: no cover - never break logging
-            pass
+        _redact_record(record, (self._redactor,))
         return True
+
+
+def _redact_record(record: logging.LogRecord, redactors: Iterable[Redactor]) -> None:
+    def masked(value: str) -> str:
+        for redactor in redactors:
+            value = redactor.redact(value)
+        return value
+
+    try:
+        record.msg = masked(record.getMessage())
+        # Format without locals, retaining file/line locations and chained exception types.
+        # Keeping exc_info would let another handler format the original secret-bearing object.
+        if record.exc_info:
+            record.exc_text = masked("".join(traceback.format_exception(*record.exc_info)))
+        elif record.exc_text:
+            record.exc_text = masked(record.exc_text)
+        if record.stack_info:
+            record.stack_info = masked(record.stack_info)
+    except Exception:  # noqa: BLE001 - redaction must fail closed even for broken formatters
+        record.msg = "log details unavailable after redaction"
+        record.exc_text = None
+        record.stack_info = None
+    finally:
+        record.args = ()
+        record.exc_info = None
 
 
 _FACTORY_INSTALLED: list[Redactor] = []
@@ -96,14 +119,7 @@ def install_record_redaction(redactor: Redactor) -> None:
 
     def factory(*args, **kwargs):
         record = previous(*args, **kwargs)
-        try:
-            text = record.getMessage()
-            for r in _FACTORY_INSTALLED:
-                text = r.redact(text)
-            record.msg = text
-            record.args = ()
-        except Exception:  # pragma: no cover
-            pass
+        _redact_record(record, _FACTORY_INSTALLED)
         return record
 
     logging.setLogRecordFactory(factory)

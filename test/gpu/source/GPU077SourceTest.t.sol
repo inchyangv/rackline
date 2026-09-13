@@ -108,6 +108,47 @@ contract GPU077SourceTest is Test {
 
     string abiJson;
 
+    function test_checkpointV2CannotBeShortenedAndProtectsAllReceivableMutations() public {
+        vm.warp(1_800_000_000);
+        vm.startPrank(issuer);
+        escrow.recognizeObligation(ACCT, REF_A, address(depin), address(usdc), 100e6, uint64(block.timestamp + 1 days));
+        uint64 until = uint64(block.timestamp + 10 minutes);
+        vm.expectEmit(true, false, false, true);
+        emit ISourceEscrow.SourceCheckpointV2(ACCT, 1, 1, 100e6, 0, uint64(block.timestamp), until);
+        escrow.reserveCheckpoint(ACCT, until);
+        bytes memory error_ = abi.encodeWithSelector(ISourceEscrow.AccountReserved.selector, ACCT, until);
+        vm.expectRevert(error_);
+        escrow.reserveCheckpoint(ACCT, until - 1);
+        vm.expectRevert(error_);
+        escrow.correctObligation(ACCT, REF_A, -int256(100e6), ISourceEscrow.CorrectionReason.CANCEL);
+        vm.expectRevert(error_);
+        escrow.assignObligation(ACCT, REF_A, FACILITY);
+        vm.stopPrank();
+        vm.prank(address(depin));
+        vm.expectRevert(error_);
+        escrow.settle(ACCT, REF_A, address(usdc), 1e6, bytes32("reserved"));
+        vm.warp(until);
+        vm.prank(issuer);
+        escrow.correctObligation(ACCT, REF_A, -int256(100e6), ISourceEscrow.CorrectionReason.CANCEL);
+        assertEq(escrow.accountOpenAmount(ACCT), 0);
+    }
+
+    function test_checkpointV2RejectsUnboundedReservationAndMixedAccountTokens() public {
+        vm.startPrank(issuer);
+        vm.expectRevert(ISourceEscrow.InvalidReservationWindow.selector);
+        escrow.reserveCheckpoint(ACCT, uint64(block.timestamp + 15 minutes + 1));
+        escrow.recognizeObligation(ACCT, REF_A, address(depin), address(usdc), 1e6, DUE);
+        vm.stopPrank();
+        MockERC20 other = new MockERC20("Other", "OTHER", 6);
+        vm.prank(owner);
+        escrow.admitToken(address(other), 6, false);
+        vm.prank(issuer);
+        vm.expectRevert(
+            abi.encodeWithSelector(ISourceEscrow.ObligationTokenMismatch.selector, address(usdc), address(other))
+        );
+        escrow.recognizeObligation(ACCT, REF_B, address(depin), address(other), 1e6, DUE);
+    }
+
     function setUp() public {
         abiJson = vm.readFile("test/fixtures/gpu/attestcoin/source-events-v1.abi.json");
         usdc = new MockERC20("USD Coin", "USDC", 6);

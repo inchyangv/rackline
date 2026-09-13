@@ -38,7 +38,8 @@ interface IReceivableBook {
         GpuTypes.AccountKey accountKey;
         bytes32 obligationRef;
         address payer;
-        address token; // learned from the first attributed payout; address(0) until then
+        address token; // v2 recognition binds this before any payment; v1 remains ineligible
+        bool denominationProven;
         uint256 net;
         uint256 paid;
         uint32 revision; // mirrors SourceEscrow.Obligation.revision
@@ -55,6 +56,8 @@ interface IReceivableBook {
         uint256 openAmount;
         uint256 paidCumulative;
         uint64 provenAt; // destination block time of consumption
+        uint64 observedAt; // source contract block.timestamp, never destination submission time
+        uint64 protectedUntil; // immutable source reservation prevents intervening paid/cancel changes
         bool exists;
     }
 

@@ -493,3 +493,5 @@ TRIGGER_NAMES = (
 from . import ledgers as _ledgers  # noqa: E402,F401
 # GPU-017 account-link history and asset review flags (migration 0003).
 from . import assets_models as _assets_models  # noqa: E402,F401
+from . import projections_models as _projections_models  # noqa: E402,F401
+from . import product_models as _product_models  # noqa: E402,F401

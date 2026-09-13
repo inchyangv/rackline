@@ -1,0 +1,265 @@
+[
+  {
+    "type": "function",
+    "name": "evaluate",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "eligibleUnpaid",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "approvedCap",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "debt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reserved",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "headroom",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "vaultCash",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.DrawEvaluation",
+        "components": [
+          {
+            "name": "eligibleReceivables",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "receivableLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "facilityLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "facilityRoom",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "headroom",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "vaultCash",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "availableDraw",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "evidenceValidUntil",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "checkpointAge",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isTestOnly",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "params",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IRiskPolicy.Params",
+        "components": [
+          {
+            "name": "advanceRateBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "overdueHaircutBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "concentrationHaircutBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "collectabilityHaircutBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "evidenceValidityWindow",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "checkpointMaxAge",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "controlObservationMaxAge",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "decisionValidity",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxTenor",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "reserveBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "dscrMinBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "perBorrowerCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "perGroupCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "perProviderCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "globalCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "testOnly",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "PolicyVersionPublished",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "approvedBy",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "testOnly",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "PolicyUnknown",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TestOnlyPolicyInProduction",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  }
+]

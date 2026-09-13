@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "scope": "LP_ACCOUNTING_AND_WALLET_UX",
+  "chainId": 102031,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "checkedAt": "2026-09-14T04:03:57.302Z",
+  "checkedBlock": 5484479,
+  "wallet": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+  "asset": {
+    "chainId": 102031,
+    "address": "0x03115387f28660088faa6a9b00aa21cc2ad1ade5",
+    "decimals": 6,
+    "symbol": "tUSD",
+    "testOnly": true
+  },
+  "vault": "0x864f7ca37a640766d6e0a662c0a356d9b5813e75",
+  "transactions": [
+    {
+      "action": "faucet",
+      "txHash": "0x444f277cf8c2db087a853e9d4dec91e52f61ac85636337a0df9b87a1b5916240",
+      "to": "0x03115387f28660088FAa6A9b00aA21Cc2AD1aDe5",
+      "args": [],
+      "blockNumber": 5484313,
+      "blockHash": "0x07ce2274ccb0e84e65666d95e93299dace6a985038ba747006c17c4c570c5879",
+      "status": 1,
+      "confirmationsAtCheck": 167
+    },
+    {
+      "action": "approve",
+      "txHash": "0xa1139d1d6f939ad72194ceb0d7b424725ccbc663aa993215894aeccac128a8d9",
+      "to": "0x03115387f28660088FAa6A9b00aA21Cc2AD1aDe5",
+      "args": [
+        "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+        "1000000"
+      ],
+      "blockNumber": 5484323,
+      "blockHash": "0x8dd6afd7947b94a8af843d3d9a74c3e96656899b875a838d8adb3182aca04a17",
+      "status": 1,
+      "confirmationsAtCheck": 157
+    },
+    {
+      "action": "deposit",
+      "txHash": "0xfc21ec540e1e40441d111b9335eb8e5bb4d0e3c44e3d2b0afacc85763bbc3cf6",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "1000000",
+        "995000000"
+      ],
+      "blockNumber": 5484325,
+      "blockHash": "0xd87e372e53025dd1477e29f6464dfe71d9e8ed15d26cc9172f4314077c9d3892",
+      "status": 1,
+      "confirmationsAtCheck": 155
+    },
+    {
+      "action": "requestWithdrawal",
+      "txHash": "0xe0d4c12083c9278617634318b3daa6199bf6366bcda778dcb12b253894de9a66",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "250000000",
+        "248750"
+      ],
+      "blockNumber": 5484335,
+      "blockHash": "0x838ee31524d14f46f17a4628b4b2a11a31db52005b0768e273453b05b4403f5a",
+      "status": 1,
+      "confirmationsAtCheck": 145
+    },
+    {
+      "action": "cancelWithdrawal",
+      "txHash": "0x8fc710b113c088a313a800b35a20ba9ad44356df2bda28bd62cf9878c5281717",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "1"
+      ],
+      "blockNumber": 5484345,
+      "blockHash": "0x9a105e60c2d9f1c43dd17c7c7de5f53ec5ae8bd8fcfb22ab0cb5d170051ff318",
+      "status": 1,
+      "confirmationsAtCheck": 135
+    },
+    {
+      "action": "requestWithdrawal",
+      "txHash": "0xb48f18e040f95aa29759ec484d7efbe980f2dc742454c7f42e2676e19c8af137",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "250000000",
+        "248750"
+      ],
+      "blockNumber": 5484388,
+      "blockHash": "0x9ecd7d84e03050638a5bdd99804b7b37d417ff8b10f4115bfebfa432f7309911",
+      "status": 1,
+      "confirmationsAtCheck": 92
+    },
+    {
+      "action": "processWithdrawals",
+      "txHash": "0x93817b78b42840e8e193ac0e9151dfbefd86a7a63ff678c89c758e033d6a232f",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "20"
+      ],
+      "blockNumber": 5484423,
+      "blockHash": "0x54ee5d4e2be50bc9c13217879d4b41e5a7c0acf10b9f76c03d9c6ea45484abbe",
+      "status": 1,
+      "confirmationsAtCheck": 57
+    },
+    {
+      "action": "claimWithdrawal",
+      "txHash": "0x586072082ead746cf13264c14c75f5929129661ad5faff495c6903561144bdeb",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "2"
+      ],
+      "blockNumber": 5484432,
+      "blockHash": "0x693bfcb0773a0395dc4eb2960e052a7c2815be9b015507340dcb973ea8e8143b",
+      "status": 1,
+      "confirmationsAtCheck": 48
+    },
+    {
+      "action": "withdraw",
+      "txHash": "0x658233c98f54da8f8d9863a8a6136f79d0769abc8c2a3e24500b0ab4aab7cbc4",
+      "to": "0x864f7ca37A640766d6E0A662c0a356D9b5813E75",
+      "args": [
+        "750000000",
+        "746250"
+      ],
+      "blockNumber": 5484441,
+      "blockHash": "0x52c0dd6b04137efe3a984c8f2d1c045687bfa84231aa872a71314237cd740b3b",
+      "status": 1,
+      "confirmationsAtCheck": 39
+    }
+  ],
+  "finalState": {
+    "shares": "0",
+    "walletTokenBalance": "10000000000",
+    "withdrawals": [
+      {
+        "requestId": "1",
+        "sharesRemaining": "0",
+        "assetsReserved": "0",
+        "assetsClaimed": "0",
+        "cancelled": true
+      },
+      {
+        "requestId": "2",
+        "sharesRemaining": "0",
+        "assetsReserved": "250000",
+        "assetsClaimed": "250000",
+        "cancelled": false
+      }
+    ]
+  },
+  "checks": {
+    "allReceiptsSuccessful": true,
+    "allRecordedBlocksCanonical": true,
+    "atLeastSixConfirmations": true,
+    "exactApprovalCap": true,
+    "priorTransactionsNotRepeated": true,
+    "desktopAndMobileReadback": true,
+    "uiReadbackFinalizedBlock": 5484451
+  },
+  "automation": {
+    "completedWithExactStateResumes": true,
+    "betweenStepRefreshTimeouts": 2
+  },
+  "nativeProofAcceptance": "NOT_ASSERTED_BY_LP_FLOW",
+  "partnerRevenue": "SIMULATED"
+}

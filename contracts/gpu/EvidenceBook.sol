@@ -40,6 +40,13 @@ contract EvidenceBook is IEvidenceBook {
 
     error NotAdmin(address caller);
     error ZeroAddress();
+    error WiringFinalized();
+    error EvidencePaused();
+    error InvalidVerifierBinding();
+    bool public wiringFinalized;
+    bool public evidencePaused;
+    event WiringSealed();
+    event EvidenceIntakePaused(bool paused);
 
     constructor(IProtocolRoles roles, IProviderRegistry providers, bytes32 envIdHash_, uint64 maxValidity_) {
         if (address(roles) == address(0) || address(providers) == address(0)) revert ZeroAddress();
@@ -60,14 +67,29 @@ contract EvidenceBook is IEvidenceBook {
     /// @notice Bind (or replace) the verifier for a provider. The verifier must serve this book's environment and
     ///         the same provider; ids are environment-scoped, so a replacement replays into `AlreadyConsumed`.
     function bindVerifier(GpuTypes.ProviderId providerId, IRevenueVerifier verifier) external onlyAdmin {
+        if (wiringFinalized) revert WiringFinalized();
         if (address(verifier) == address(0)) revert ZeroAddress();
         GpuTypes.SourceChainRef memory src = verifier.sourceChain();
         if (src.envIdHash != _ENV_ID_HASH) revert VerifierEnvMismatch(_ENV_ID_HASH, src.envIdHash);
+        IProviderRegistry.ProviderConfig memory config = PROVIDERS.provider(providerId);
+        if (
+            GpuTypes.ProviderId.unwrap(verifier.providerId()) != GpuTypes.ProviderId.unwrap(providerId)
+                || verifier.executionProfile() != config.executionProfile
+                || src.manifestHash != config.sourceChain.manifestHash || src.chainKey != config.sourceChain.chainKey
+                || src.chainId != config.sourceChain.chainId || src.encoding != config.sourceChain.encoding
+        ) revert InvalidVerifierBinding();
+        if (
+            config.executionProfile != GpuTypes.ExecutionProfile.LOCAL_MOCK
+                && verifier.verificationMethod() != GpuTypes.VerificationMethod.ATTESTCOIN_NATIVE
+        ) {
+            revert InvalidVerifierBinding();
+        }
         _verifiers[providerId] = verifier;
         emit VerifierBound(providerId, address(verifier), src.manifestHash);
     }
 
     function setConsumer(address consumer, bool allowed) external onlyAdmin {
+        if (wiringFinalized) revert WiringFinalized();
         if (consumer == address(0)) revert ZeroAddress();
         _consumers[consumer] = allowed;
         emit ConsumerSet(consumer, allowed);
@@ -78,8 +100,21 @@ contract EvidenceBook is IEvidenceBook {
         external
         onlyAdmin
     {
+        if (wiringFinalized) revert WiringFinalized();
         _selfAsserted[providerId][emitter] = selfAsserted;
         emit SelfAssertedEmitterSet(providerId, emitter, selfAsserted);
+    }
+
+    function finalizeWiring() external onlyAdmin {
+        if (wiringFinalized) revert WiringFinalized();
+        wiringFinalized = true;
+        emit WiringSealed();
+    }
+
+    function pauseEvidenceIntake(bool paused) external {
+        if (!ROLES.hasRole(ROLES.GUARDIAN(), msg.sender)) revert NotAdmin(msg.sender);
+        evidencePaused = paused;
+        emit EvidenceIntakePaused(paused);
     }
 
     // ------------------------------------------------------------------ views
@@ -134,6 +169,7 @@ contract EvidenceBook is IEvidenceBook {
         bytes32[] calldata topic0s,
         ConsumeInstruction[] calldata instructions
     ) external override returns (EvidenceRecord[] memory records) {
+        if (evidencePaused) revert EvidencePaused();
         if (!_consumers[msg.sender]) revert ConsumerNotAllowed(msg.sender);
         IRevenueVerifier verifier = _verifiers[providerId];
         if (address(verifier) == address(0)) revert VerifierNotBound(providerId);

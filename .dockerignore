@@ -8,14 +8,24 @@
 .env
 .env.*
 keys
+.artifacts
 docs/guides
+docs/video
+script/video
 DEPLOY.md
 DEMO.md
 DORAHACKS.md
+AGENT.md
+CLAUDE.md
+PIVOT.md
+TICKET.md
+TECH_DISCORD.md
 
 # Foundry artifacts
 out
 cache
+out-*
+cache-*
 broadcast
 
 # Python
@@ -24,10 +34,10 @@ broadcast
 **/.mypy_cache
 **/.ruff_cache
 **/.venv
+**/.venv-*
 **/venv
 **/*.pyc
 
 # Node
 **/node_modules
 **/dist
-

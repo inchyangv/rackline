@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 31, [f.name for f in files]  # 16 interfaces + 4 GPU-030 + GPU-078/031/033/032/077/034/037/036 + 3 GPU-035 impls
+    assert len(files) == 36, [f.name for f in files]  # Initial 31 + repayment, settlement, recovery, timelock, test token.
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()
@@ -113,3 +113,12 @@ def test_enum_fixture_matches_domain_schema():
     for name in ("ExecutionProfile", "VerificationMethod", "NativeStatus", "EarningsProvenance", "ControlGrade", "CashState", "FacilityState", "Trust", "EvidenceMeaning"):
         assert enums[name] == defs[name]["enum"], name
     assert enums["AssertionPurpose"] == ["WALLET_LINK", "AGREEMENT_CONSENT", "CREDIT_APPROVAL", "CONTROL_ATTESTATION", "RELAY", "TREASURY_OP"]
+
+
+def test_worker_packaged_abis_match_exported_contract_snapshots():
+    runtime = REPO / "offchain" / "gpu" / "hashcredit_gpu" / "projections" / "abi"
+    assert {p.name for p in runtime.glob("*.json")} == {p.name for p in ABI_DIR.glob("*.json")}
+    for fixture in ABI_DIR.glob("*.json"):
+        assert (runtime / fixture.name).read_bytes() == fixture.read_bytes(), fixture.name
+    for name in ("EvidenceBook", "ReceivableBook"):
+        assert (REPO / "offchain" / "attestcoin" / "abi" / f"{name}.json").read_bytes() == (ABI_DIR / f"{name}.json").read_bytes()

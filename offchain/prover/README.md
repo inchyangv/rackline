@@ -1,131 +1,35 @@
-# Rackline Prover (`offchain/prover`)
+# Rackline workers
 
-CLI tool and background worker that builds Bitcoin SPV proofs (header chain + Merkle inclusion) and submits them on-chain to the Rackline protocol.
+`hashcredit_prover.gpu` contains the Rackline v2 background services:
 
-> Package, CLI, contract and environment-variable identifiers keep their legacy `hashcredit*` / `HashCredit*` / `HASH_CREDIT_*` names; the product is Rackline (formerly HashCredit).
+- `chain_indexer` projects finalized deployment logs and reconciles reorgs;
+- `attestcoin_worker` fetches official proof artifacts, prepares pinned calldata, dispatches approved transactions, confirms native acceptance, and consumes evidence;
+- `ingestion` and `backfill_native` collect and reconstruct bounded source history;
+- `control_monitor` and `control_executor` observe payment-control state without granting authority;
+- `reconcile_cash` compares source, in-flight, destination and allocated cash.
 
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `build-proof` | Generate an SPV proof for a given txid/vout/height |
-| `submit-proof` | Build proof and submit to `HashCreditManager.submitPayout` |
-| `set-checkpoint` | Register a block header checkpoint in `CheckpointManager` |
-| `set-borrower-pubkey-hash` | Register borrower (EVM) ↔ BTC address mapping in `BtcSpvVerifier` |
-| `run-relayer` | Poll watched addresses and auto-build/submit proofs (worker mode) |
-
-## Installation
+Install and run with the shared GPU package and PostgreSQL:
 
 ```bash
-cd offchain/prover
-pip install -e .
+python -m pip install -e "offchain/gpu[dev]" -e "offchain/prover[dev]"
 
-# With dev dependencies
-pip install -e ".[dev]"
+python -m hashcredit_prover.gpu.chain_indexer \
+  --manifest config/attestcoin/cc3-testnet.sepolia.release.json \
+  --deployment-id DEPLOYMENT_ULID --once
+
+python -m hashcredit_prover.gpu.attestcoin_worker \
+  --manifest config/attestcoin/cc3-testnet.sepolia.release.json \
+  --deployment-id DEPLOYMENT_ULID \
+  --sdk-cli offchain/attestcoin/dist/src/cli.js \
+  --artifact-dir .artifacts/proofs --once
 ```
 
-## Configuration
+The proof service response is untrusted input. SDK readiness, transaction submission, native acceptance, economic consumption and destination cash are separate durable states. Without an operator-reviewed submission plan, the worker only fetches proof artifacts and has no signing credential.
+
+`hashcredit_prover.cli` and the Bitcoin modules are retained as legacy prototype code. They are not an evidence path for Rackline v2.
+
+## Tests
 
 ```bash
-cp .env.example .env
+python -m pytest offchain/prover/tests offchain/gpu/tests/test_attestcoin_worker.py -q
 ```
-
-For Railway deployment, set the same variables in Railway Variables/Secrets instead of `.env`.
-
-### Required Variables
-
-| Variable | Description |
-|----------|-------------|
-| `BITCOIN_RPC_URL` | Bitcoin RPC endpoint (e.g., `https://bitcoin-testnet-rpc.publicnode.com`) |
-| `EVM_RPC_URL` | Creditcoin EVM RPC endpoint |
-| `CHAIN_ID` | Chain ID (default: `102031`) |
-| `PRIVATE_KEY` | Operator key for signing on-chain transactions |
-| `HASH_CREDIT_MANAGER` | HashCreditManager contract address |
-| `CHECKPOINT_MANAGER` | CheckpointManager contract address |
-
-### Worker-Specific Variables
-
-| Variable | Description |
-|----------|-------------|
-| `ADDRESSES_JSON_B64` | Base64-encoded JSON of watched addresses (recommended) |
-| `ADDRESSES_JSON` | Raw JSON string of watched addresses (alternative) |
-| `ADDRESSES_FILE` | Path to addresses JSON file (not recommended for containers) |
-| `SPV_CONFIRMATIONS` | Required confirmations (default: `6`) |
-| `SPV_POLL_INTERVAL` | Poll interval in seconds (default: `60`) |
-| `SPV_RUN_ONCE` | Run one cycle and exit (default: `false`) |
-
-## SPV Proof Constraints
-
-For gas efficiency, the header chain length in each proof is limited. Keep the difference between `checkpoint_height` and `target_height` within **1–144 blocks**.
-
-## Usage
-
-### Register a checkpoint
-
-```bash
-hashcredit-prover set-checkpoint <height> \
-  --checkpoint-manager $CHECKPOINT_MANAGER
-```
-
-### Register borrower BTC address
-
-```bash
-hashcredit-prover set-borrower-pubkey-hash \
-  <borrower_evm> <btc_address> \
-  --spv-verifier $BTC_SPV_VERIFIER
-```
-
-Supported address formats:
-- Bech32 P2WPKH: testnet `tb1q...`, mainnet `bc1q...`
-- Base58 P2PKH: testnet `m.../n...`, mainnet `1...`
-
-### Build proof (hex output)
-
-```bash
-hashcredit-prover build-proof \
-  <txid> <output_index> <checkpoint_height> <target_height> <borrower_evm> \
-  --hex
-```
-
-### Build and submit proof
-
-```bash
-hashcredit-prover submit-proof \
-  <txid> <output_index> <borrower_evm> \
-  --checkpoint <checkpoint_height> \
-  --target <target_height> \
-  --manager $HASH_CREDIT_MANAGER
-```
-
-Options:
-- `--dry-run` — Build proof without submitting
-- `--hex-only` — Print proof hex without submitting
-
-### Run worker (auto-detect and submit)
-
-Prepare a JSON file of watched addresses:
-
-```json
-[
-  {"btc_address": "tb1q...", "borrower": "0x1234...", "enabled": true}
-]
-```
-
-Run locally:
-
-```bash
-hashcredit-prover run-relayer addresses.json \
-  --manager $HASH_CREDIT_MANAGER \
-  --checkpoint-manager $CHECKPOINT_MANAGER
-```
-
-For Railway, encode the address list as base64 and set `ADDRESSES_JSON_B64`:
-
-```bash
-base64 < addresses.json | tr -d '\n'
-```
-
-## Requirements
-
-- Python 3.11+
-- Bitcoin RPC access (`txindex=1` recommended for arbitrary txid lookups)

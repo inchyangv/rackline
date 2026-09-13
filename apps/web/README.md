@@ -1,70 +1,39 @@
-# Rackline Web Frontend
+# Rackline GPU web
 
-React app for Rackline (formerly HashCredit) on Creditcoin EVM — stablecoin working capital for GPU operators, funded by liquidity providers.
-This is the v2 visual system running on the v1 (Bitcoin-payout) testnet contracts; every number shown is a live
-on-chain read and every step that is not available in this deployment is labelled as such.
+The application connects to the GPU API and deployment manifest. The separate `/demo` route is a browser-only interactive preview with synthetic balances and no wallet/API/RPC calls. Legacy BTC components and storage remain isolated from GPU routes.
 
-## Stack
+## Run and configure
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | React 19 + TypeScript |
-| Build | Vite 7 |
-| Styling | Tailwind CSS v4 + shadcn/ui (Radix) |
-| Fonts | Archivo Variable + Chivo Mono Variable, self-hosted via `@fontsource-variable` |
-| State | Zustand 5 |
-| Chain | ethers.js v6 (public RPC reads, injected wallet for writes) |
-| History | Blockscout logs API (`Borrowed` / `Repaid` events → Statement) |
-
-## Pages
-
-- **Borrow** — facility header (viewed address, status tag), one hero number (drawable now), terms ledger,
-  on-chain statement, Draw / Repay action block, facility setup stepper, repayment disclosure.
-- **Lend** — pool header, cash in pool, utilization meter, pool ledger, connected-wallet position,
-  Deposit / Withdraw action block (withdraw is denominated in mUSDT), funding disclosure.
-
-## Design system
-
-Tokens live in `src/index.css` (`--ink-*`, `--bone*`, `--signal`, `--ok/--warn/--err`, `--rule*`) and are aliased
-onto the shadcn variables so Radix primitives inherit them. Utilities: `num` (mono + tabular), `wordmark`,
-`eyebrow`, `condensed`. Rules: one hero number per page, hairlines instead of boxed cards, signal orange only for
-the mark rule / active underline / focus / gauge, no shadows or gradients, every disabled action shows a prose
-reason, all money via `<Money/>` (truncated, grouped, kerned, exact value in the tooltip).
-
-Brand strings (name, wordmark, descriptor, legal line) are in `src/lib/brand.ts`; contract, env and API identifiers
-keep their legacy `HashCredit*` names.
-
-## Setup
-
-```bash
-npm install
-npm run dev            # http://localhost:5173
+```sh
+npm ci --prefix apps/web
+VITE_GPU_API_URL=http://127.0.0.1:8000 npm --prefix apps/web run dev
 ```
 
-## Build
+`VITE_GPU_API_URL` is the only GPU deployment setting in the browser build. `/v1/config` supplies chain ID, loan token/decimals, contract addresses, explorer, execution profile, and manifest identity. `/` opens the connected application when this variable is configured. `/app` explicitly opens connected mode; `/demo` always opens the local preview. Without an API setting, `/` preserves the preview.
 
-```bash
-npm run lint
-npm run build          # tsc -b && vite build → dist/
-npm run preview
+The API must allow the exact frontend origin through CORS. A missing or invalid deployment fails closed. Production refuses a test-only loan token; native profiles require official Attestcoin verification. A native profile setting is not proof that any native event has been accepted.
+
+## User flows
+
+- Wallet: EIP-712 login is bound to the API domain, chain, wallet, purpose, and expiration. Sessions stay in memory and account/network changes invalidate pending reads and login state.
+- Providers: submit a borrower profile and document reference, reconnect for borrower scope, submit a durable provider connection review, inspect actual account/control status, and request an official source proof for a linked account. Submission is not approval, E2, or native acceptance.
+- Borrow: read recorded accounting separately from current chain debt. Each borrow/repayment uses a fresh authoritative facility ID binding. The router's `repayExact` keeps direct repayment available during proof outages and caps transfers at current debt.
+- Earn: faucet for explicitly test-only native-testnet assets, deposit, immediate withdrawal, queued withdrawal, cancellation, permissionless queue processing, funded claim, and prior epoch recovery. Available shares exclude locked requests; reserves and in-flight cash do not inflate liquidity.
+- Operations: role-gated cases, version-checked reasoned assignment/acknowledgment/retry/resolution and audit history. The API enforces authority independently of visible controls.
+
+Wallet transactions verify chain/account, deployed code, vault asset and decimals, then simulate before submission. Token approvals are for the entered amount. Deposit/withdrawal review freezes a two-minute quote with a 0.5% minimum-output bound. A transaction succeeds in the UI only after two confirmations; rejection, revert, and cancellation preserve the error state. A changed-call replacement is not accepted as the original action.
+
+## Generation and checks
+
+```sh
+npm --prefix apps/web run generate:gpu
+npm --prefix apps/web run check:generated
+npm --prefix apps/web run lint
+npm --prefix apps/web run build
+npm --prefix apps/web run test -- --run
+npm --prefix apps/web run test:e2e
 ```
 
-## Environment variables
+`scripts/generate-gpu.mjs` reads actual `forge inspect` ABIs and the GPU app's OpenAPI schema. It writes only `src/features/gpu/generated/`; never edit generated files manually. Install the shared GPU/API Python packages first. Locally the generator uses `.venv-py313/bin/python`; CI sets `GPU_TYPES_PYTHON=python`. Sources are Solidity interfaces plus `GpuTestToken` and `hashcredit_api.gpu.app:create_app`.
 
-All optional; defaults target Creditcoin Testnet (chainId `102031`).
-
-- `VITE_RPC_URL`, `VITE_CHAIN_ID`
-- `VITE_HASH_CREDIT_MANAGER`, `VITE_VAULT_ADDRESS`, `VITE_STABLECOIN_ADDRESS`, `VITE_BTC_SPV_VERIFIER`
-- `VITE_API_URL` — backend API (payout-address verification)
-- `VITE_EXPLORER_BASE` — Blockscout UI base (address / tx links)
-- `VITE_EXPLORER_API_BASE` — Blockscout API base (statement events)
-
-The footer shows the build commit (`__APP_COMMIT__`, injected in `vite.config.ts`; Vercel's
-`VERCEL_GIT_COMMIT_SHA` is used when present).
-
-## Deployment
-
-Vercel project `rackline`, root `apps/web` (repo `github.com/inchyangv/rackline`). The previous deployment at
-`hashcredit.studioliq.com` was taken down on 2026-09-14; the Rackline domain, DNS and env are set up per
-`docs/deploy/RAILWAY.md` §9. `VITE_API_URL` has no baked-in default — set it per deployment. The local
-`apps/web/.vercel/` link (if present) points at the retired `ctc-hashcredit` project and should be re-linked.
+The static build is `apps/web/dist`. Configure the hosting fallback to `index.html` for `/app` and `/demo`. Build provenance appears in the footer. See [tests/README.md](tests/README.md) for evidence boundaries and real API interoperability checks.

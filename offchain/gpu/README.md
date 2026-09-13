@@ -1,6 +1,6 @@
 # hashcredit_gpu
 
-Shared Python package for the Rackline GPU lending pivot (TICKET.md GPU-015): domain enums and exact
+Shared Python package for Rackline's GPU lending system: domain enums and exact
 money types mirroring `config/gpu/schema/domain-v1.schema.json`, SQLAlchemy 2.0 models, and Alembic
 migrations for PostgreSQL. `offchain/api` and `offchain/prover` depend on it; install it first.
 

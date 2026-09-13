@@ -65,6 +65,7 @@ class Worker:
         handler = self.handlers[job.kind]
         try:
             with self.engine.begin() as cx:
+                self._before_handler(cx, job)
                 handler(cx, job)
                 self.queue.complete(job, cx=cx)  # same transaction as the effect
             return "SUCCEEDED"
@@ -72,11 +73,19 @@ class Worker:
             log.warning("job %s: lease lost during handling (attempt %s); not recording outcome", job.job_id, job.attempt)
             return "LEASE_LOST"
         except TerminalError as e:
-            return self._fail(job, FailureKind.TERMINAL, str(e))
+            return self._fail_exception(job, FailureKind.TERMINAL, e)
         except TransientError as e:
-            return self._fail(job, FailureKind.TRANSIENT, str(e))
+            return self._fail_exception(job, FailureKind.TRANSIENT, e)
         except Exception as e:  # noqa: BLE001 - never drop a failure on the floor
-            return self._fail(job, FailureKind.TRANSIENT, f"{type(e).__name__}: {e}")
+            return self._fail_exception(job, FailureKind.TRANSIENT, e)
+
+    def _before_handler(self, cx, job: ClaimedJob) -> None:
+        """Optional domain lock-order/fencing guard, before the handler touches business rows."""
+
+    def _fail_exception(self, job: ClaimedJob, kind: FailureKind, error: Exception) -> str:
+        """Allow a domain worker to persist structured failure facts inside its fenced outcome."""
+        reason = str(error) if isinstance(error, (TerminalError, TransientError)) else f"{type(error).__name__}: {error}"
+        return self._fail(job, kind, reason)
 
     def _fail(self, job: ClaimedJob, kind: FailureKind, reason: str) -> str:
         try:

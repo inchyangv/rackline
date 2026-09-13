@@ -1,0 +1,468 @@
+[
+  {
+    "type": "function",
+    "name": "emitterMeaning",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.EvidenceMeaning"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isAdmitted",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "manifestHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isEmitterRegistered",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isIssuer",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "issuer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isTokenAdmitted",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "chainId",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "provider",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IProviderRegistry.ProviderConfig",
+        "components": [
+          {
+            "name": "sourceChain",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.SourceChainRef",
+            "components": [
+              {
+                "name": "envIdHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "chainKey",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "chainId",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "encoding",
+                "type": "uint8",
+                "internalType": "uint8"
+              },
+              {
+                "name": "manifestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "executionProfile",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.ExecutionProfile"
+          },
+          {
+            "name": "testOnly",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "policyVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "admissionEnabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AdmissionChanged",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "enabled",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EmitterRegistered",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "meaning",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.EvidenceMeaning"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EmitterRevoked",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "IssuerSet",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "issuer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "enabled",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ProviderRegistered",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "manifestHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "profile",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      },
+      {
+        "name": "testOnly",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenAdmitted",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "chainId",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "decimals",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AdmissionDisabled",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ProfileMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      },
+      {
+        "name": "actual",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TokenNotAdmitted",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "chainId",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnregisteredEmitter",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedSource",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "chainKey",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "envIdHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  }
+]

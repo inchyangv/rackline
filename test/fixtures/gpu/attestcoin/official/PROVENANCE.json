@@ -1,6 +1,6 @@
 {
   "capturedAt": "2026-09-13T22:00:00Z",
-  "capturedBy": "GPU-075 (docs/gpu/execution/GPU-075.md)",
+  "capturedBy": "Rackline Attestcoin integration",
   "kind": "OFFICIAL_ARTIFACT_COPY",
   "note": "Byte-identical copies of ABI JSON files shipped inside the official npm tarball. Not proofs, not chain captures. Drift against node_modules is checked by offchain/attestcoin/test/fixtures.test.ts.",
   "files": {

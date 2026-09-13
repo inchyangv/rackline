@@ -100,7 +100,12 @@ async def verify(body: VerifyRequest, request: Request) -> VerifyResponse:
         raise validation("wallet must be an EVM address")
     wallet = to_checksum_address(body.wallet)
     nonce = _hex_bytes(body.nonce, 32, "nonce")
-    signature = bytes.fromhex(body.signature[2:] if body.signature.startswith("0x") else body.signature)
+    try:
+        signature = bytes.fromhex(body.signature[2:] if body.signature.startswith("0x") else body.signature)
+    except ValueError:
+        raise validation("signature must be hex") from None
+    if not signature or (body.walletKind == "eoa" and len(signature) != 65):
+        raise validation("signature has an invalid length")
     ch = rt.challenges.take(nonce)  # single use: a replay finds nothing
     if ch is None:
         raise unauthenticated("unknown or already used challenge")

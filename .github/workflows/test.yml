@@ -56,13 +56,19 @@ jobs:
       - name: Build contracts
         run: forge build
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate exact reviewed findings and source hashes
+        run: node script/gpu/check-slither-triage.mjs
+
       - name: Run Slither
         uses: crytic/slither-action@v0.4.0
         with:
           target: contracts/
           slither-config: slither.config.json
           fail-on: high
-        continue-on-error: true
         id: slither
 
       - name: Upload Slither Report
@@ -130,6 +136,9 @@ jobs:
         run: |
           python -m pytest offchain/gpu/tests -v
 
+      - name: Replay read-only legacy inventory
+        run: python -m pytest script/gpu/test_inventory_legacy.py -q
+
       - name: Run relayer tests
         run: |
           cd offchain/relayer
@@ -144,3 +153,59 @@ jobs:
         run: |
           cd offchain/api
           python -m pytest tests/ -v
+
+  web:
+    name: Web lint, build, unit and browser regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install GPU API for generated schema parity
+        run: pip install -e ./offchain/gpu -e ./offchain/api
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --prefix apps/web
+      - run: npm --prefix apps/web run lint
+      - run: npm --prefix apps/web run build
+      - run: npm --prefix apps/web run check:generated
+        env:
+          GPU_TYPES_PYTHON: python
+      - run: npm --prefix apps/web run test:unit
+      - name: Install browser and required system libraries
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - run: npm --prefix apps/web run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: web-browser-failure-evidence
+          path: apps/web/node_modules/.cache/playwright/test-results/
+          retention-days: 7
+
+  attestcoin-local:
+    name: Official Attestcoin artifacts and LOCAL conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: offchain/attestcoin/package-lock.json
+      - run: npm ci --prefix offchain/attestcoin
+      - run: npm --prefix offchain/attestcoin run check
+      - run: npm --prefix offchain/attestcoin run gen-wire -- --check
+      - run: npm --prefix offchain/attestcoin run test -- --run
+      - run: node --test script/gpu/consume-native.test.mjs
+      # Local conformance is separate from the curated public native-testnet evidence.

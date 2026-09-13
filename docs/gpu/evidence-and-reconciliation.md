@@ -1,10 +1,10 @@
-# Evidence and settlement reconciliation — golden fixtures (GPU-014, v1)
+# Evidence and settlement reconciliation — golden fixtures
 
-Status: SPEC v1 (2026-09-14). Reference reconciler: `offchain/gpu/hashcredit_gpu/reconciliation/reference.py`.
+Reference reconciler: `offchain/gpu/hashcredit_gpu/reconciliation/reference.py`.
 Golden fixtures: `test/fixtures/gpu/settlements/s-01…s-05.json` (executed by
-`offchain/gpu/tests/test_settlement_fixtures.py`). Basis: PIVOT §6.2, §8.2–8.3, §10.3;
+`offchain/gpu/tests/test_settlement_fixtures.py`), together with
 `domain-model.md` (ids), `accounting.md` (AC-07 pipeline), `attestcoin/evidence-contract.md` (EV vectors).
-The production reconciler (GPU-024) and the ledger DB (GPU-016) must reproduce these fixtures exactly.
+The production reconciler and ledger database must reproduce these fixtures exactly.
 
 ## 1. Identifiers and how they link
 

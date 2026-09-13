@@ -17,7 +17,8 @@ fs_permissions = [{ access = "read", path = "./test/fixtures" }]
 
 [fmt]
 # Vendored official Attestcoin files are byte-pinned (contracts/gpu/vendor/attestcoin/VENDORED.md).
-ignore = ["contracts/gpu/vendor/**"]
+# These four files also preserve the source metadata of the confirmed Sepolia release.
+ignore = ["contracts/gpu/vendor/**", "contracts/gpu/mocks/GpuTestToken.sol", "contracts/gpu/source/ISourceEscrow.sol", "contracts/gpu/source/SourceEscrow.sol", "script/gpu/DeployGpuSource.s.sol"]
 bracket_spacing = true
 int_types = "long"
 line_length = 120

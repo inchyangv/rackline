@@ -1,9 +1,7 @@
-# Permissions, control agreements, and state transitions (GPU-013, v1)
+# Permissions, control agreements, and state transitions
 
-Status: SPEC v1 (2026-09-14). Basis: PIVOT §4–5, §7–8; `docs/gpu/domain-model.md` (entities, enums);
-`docs/gpu/product-term-sheet.md`; `docs/gpu/decisions/attestcoin-first.md` R2-D02/D03/D04/D07/D09.
-Real partner authority, control PoC results, and legal effect are established by GPU-009/010; this
-document fixes **who may do what in our system**, how those actions are authenticated, and which state
+This document complements `docs/gpu/domain-model.md` and fixes **who may do what in our system**,
+how those actions are authenticated, and which state
 transitions are legal. Nothing here grants a partner-side right.
 
 ## 1. Actors

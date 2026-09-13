@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "executionProfile": "NATIVE_TESTNET",
+  "verificationMethod": "ATTESTCOIN_NATIVE",
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "facilityId": "0x2515ccdafaee79ff908308cb41af249ed0b88f5baf64d187d28d7eebf0e76bc3",
+  "partnerRevenue": "SIMULATED",
+  "partnerSourceBinding": "UNCONFIGURED",
+  "controlProvenance": "SIMULATED_NOT_PARTNER_E2",
+  "nativeAccepted": true,
+  "transactions": [
+    {
+      "step": "reserveCheckpoint",
+      "sourceTxHash": "0xb37b48c749fc372b577e2263caaf82525585483223bd8f5f01e1664b5c5bca64",
+      "sourceEventId": "0x1a6ca5d14bf270f93325dc208ad11c14bb2a035beac3d6a2f438746bacb67f2f",
+      "logOrdinal": 0,
+      "protection": {
+        "observedAt": 1789358556,
+        "protectedUntil": 1789359394,
+        "checkpointSeq": "3"
+      },
+      "protectionExpired": false,
+      "nativeAccepted": true,
+      "status": "NATIVE_CONSUMED",
+      "destinationTxHash": "0x39dadbd7f24581069d40d5dee2d9f8148191c61ad95affbdd68c7bee0c77bba6",
+      "destinationBlock": 5484511,
+      "destinationBlockHash": "0xa0b5bea69ed2fdf520f14705831f7ec187c276444f7a3e36a32f42a3394a84da",
+      "financialAuditStatus": "PASSED",
+      "financialAudit": {
+        "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+        "debtMutationEvents": 0,
+        "vaultMutationEvents": 0,
+        "vaultAssetTransfers": 0,
+        "cash": {
+          "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+          "beforeBlock": 5484510,
+          "afterBlock": 5484511,
+          "blockHash": "0xa0b5bea69ed2fdf520f14705831f7ec187c276444f7a3e36a32f42a3394a84da",
+          "cashBefore": "1000000000",
+          "cashAfter": "1000000000",
+          "externalTransactionCashDelta": "0",
+          "proofTransactionCashDelta": "0",
+          "externalTransfers": []
+        }
+      },
+      "proofOnlyDebtAndCashUnchanged": true
+    }
+  ],
+  "financialAuditPassed": true,
+  "eligibleUnpaid": "75000000",
+  "legalDebt": "0",
+  "vaultNav": "1000000000"
+}

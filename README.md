@@ -1,216 +1,182 @@
 # Rackline
 
-**Working capital for GPU operators, secured by revenue they have already earned — on Creditcoin.**
+**Working capital for GPU operators, secured by confirmed receivables.**
 
-_Formerly HashCredit (v1, 2nd place at BUIDL CTC Spring 2026)._
+Rackline finances revenue that GPU operators have already earned but have not yet received. A controlled source escrow records settlement events, Creditcoin verifies those events through the official Attestcoin native path, and the lending system turns eligible unpaid receivables into a borrowing base. Debt only falls after loan currency reaches the destination vault.
 
-Rackline (v2) lends stablecoin working capital to operators supplying GPUs to DePIN compute networks, secured by **confirmed, unpaid receivables** assigned to a **controlled payment path**. Source-chain settlement events are verified on Creditcoin through the **official Attestcoin Protocol** (native BlockProver verification, no substitutes), and debt is reduced only when actual settlement cash reaches the vault.
+> Rackline is a hackathon prototype. The repository contains a complete implementation, a browser demo, and a TEST_ONLY deployment on Creditcoin CC3 Testnet. The native technical path has been exercised with simulated source revenue; this is not a production launch, live lending pool, partner integration, or proof of real GPU revenue.
 
+[TEST_ONLY application](https://rackline.studioliq.com/app) · [Fixture demo](https://rackline.studioliq.com/demo) · [API health](https://api-rackline.studioliq.com/health) · [Indexer readiness](https://api-rackline.studioliq.com/ready)
+
+![Rackline flow](docs/hackathon/assets/rackline-flow.png)
+
+## How it works
+
+1. An operator and provider account are reviewed and linked.
+2. Confirmed unpaid receivables are assigned to a facility with payment control.
+3. A source-chain event is proven with the official Attestcoin SDK and verified by Creditcoin's native BlockProver.
+4. The evidence ledger consumes the verified event once.
+5. The risk engine calculates an eligible borrowing base and reserves exposure atomically for a draw.
+6. Source cash moves through a settlement record to the destination vault.
+7. Only measured destination cash allocated through `RepaymentRouter` reduces debt.
+
+The system deliberately keeps five claims separate: native event verification, GPU-revenue provenance, current unpaid status, payment-control strength, and destination cash receipt. Proving one never silently proves the others.
+
+## What is implemented
+
+| Area | Included in this repository |
+| --- | --- |
+| Smart contracts | Source escrow, native verifier, evidence and receivable books, role/control registries, debt ledger, risk and exposure controls, facility manager, lending vault, repayment router, settlement receiver, recovery manager, and governance timelock |
+| Attestcoin integration | Pinned `@gluwa/usc-sdk@0.18.0` and `@gluwa/asc-contracts@0.2.1`, checked ABIs/source hashes, manifest validation, proof retrieval and submission encoding |
+| Off-chain services | PostgreSQL migrations, ingestion, projections, reconciliation, durable jobs/outbox, transaction dispatch, proof worker, chain indexer, control monitor, and a wallet-authenticated FastAPI product API |
+| Web application | Borrower, LP, provider, activity, and operations views; wallet-side deposit, withdrawal, draw, repayment, and test faucet flows |
+| Verification | Foundry unit/invariant tests, Python service and migration tests, TypeScript conformance tests, generated ABI/OpenAPI parity, and Playwright browser coverage |
+
+The committed [deployment manifest](config/gpu/deployments/cc3-testnet.json) records the TEST_ONLY contract suite deployed on Creditcoin CC3 Testnet at block `5,484,231`; the [Attestcoin release manifest](config/attestcoin/cc3-testnet.sepolia.release.json) binds it to the TEST_ONLY Sepolia source escrow. Its `nativeStatus=CONSUMED` is backed by four source transitions plus a refreshed checkpoint, with [packaged official proof artifacts and SHA-256 checksums](config/gpu/evidence/native-20260914/index.json). The [native evidence record](evidence/native-testnet-2026-09-14.json) retains `partnerRevenue=SIMULATED` and `partnerSourceBinding=UNCONFIGURED`.
+
+## Testnet deployment
+
+Creditcoin CC3 Testnet (`102031`), deployment block **5,484,231**. These contracts use a faucet token with no monetary value. Full addresses and runtime hashes are pinned in the [deployment manifest](config/gpu/deployments/cc3-testnet.json).
+
+| Contract | Creditcoin CC3 Testnet address |
+| --- | --- |
+| ProtocolRoles | [0x421b075c3713339f57daf4c4564bc991cbeedb20](https://creditcoin-testnet.blockscout.com/address/0x421b075c3713339f57daf4c4564bc991cbeedb20) |
+| ProviderRegistry | [0x4837767785fec906bd1cca409d21461ad1f7f952](https://creditcoin-testnet.blockscout.com/address/0x4837767785fec906bd1cca409d21461ad1f7f952) |
+| AuthorizationVerifier | [0x1d4ceb59077b127e23cc36afa04a12cc9dcbde6c](https://creditcoin-testnet.blockscout.com/address/0x1d4ceb59077b127e23cc36afa04a12cc9dcbde6c) |
+| AccountRegistry | [0x8942aac90466841d2663ff5259841a0e5455665e](https://creditcoin-testnet.blockscout.com/address/0x8942aac90466841d2663ff5259841a0e5455665e) |
+| AttestcoinRevenueVerifier | [0x96fdb10d5247e5827c60ab5ce42bed71eb6411ab](https://creditcoin-testnet.blockscout.com/address/0x96fdb10d5247e5827c60ab5ce42bed71eb6411ab) |
+| EvidenceBook | [0x1a5c5b66df9a125d778302dcec1483d597cd7207](https://creditcoin-testnet.blockscout.com/address/0x1a5c5b66df9a125d778302dcec1483d597cd7207) |
+| ReceivableBook | [0xd22acb2e404d79a96d8e6bf815a8b3fd786d0d4d](https://creditcoin-testnet.blockscout.com/address/0xd22acb2e404d79a96d8e6bf815a8b3fd786d0d4d) |
+| ControlRegistry | [0x2328e94f07e75a665e8c64bce7b917aa543866b9](https://creditcoin-testnet.blockscout.com/address/0x2328e94f07e75a665e8c64bce7b917aa543866b9) |
+| DebtLedger | [0xe045da25b405f994802d7b5a32ed4331a3db1ecb](https://creditcoin-testnet.blockscout.com/address/0xe045da25b405f994802d7b5a32ed4331a3db1ecb) |
+| GpuRiskPolicy | [0x0937cd639d744daeb21cdce22f97ebaea0850fde](https://creditcoin-testnet.blockscout.com/address/0x0937cd639d744daeb21cdce22f97ebaea0850fde) |
+| ExposureController | [0xc312b9a9690b1c9dd95d409cb9a70628efcd41d8](https://creditcoin-testnet.blockscout.com/address/0xc312b9a9690b1c9dd95d409cb9a70628efcd41d8) |
+| CreditFacilityManager | [0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d](https://creditcoin-testnet.blockscout.com/address/0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d) |
+| LendingVaultV2 | [0x864f7ca37a640766d6e0a662c0a356d9b5813e75](https://creditcoin-testnet.blockscout.com/address/0x864f7ca37a640766d6e0a662c0a356d9b5813e75) |
+| RepaymentRouter | [0xd4dcecfbb505a428e3c99363c23e58bfdb37949b](https://creditcoin-testnet.blockscout.com/address/0xd4dcecfbb505a428e3c99363c23e58bfdb37949b) |
+| RecoveryManager | [0xb9cc16695203d1a63ebba0010cb8d46defa62489](https://creditcoin-testnet.blockscout.com/address/0xb9cc16695203d1a63ebba0010cb8d46defa62489) |
+| SettlementReceiver | [0xcf5d03ecb4298577018c7162c62d97697f775ad8](https://creditcoin-testnet.blockscout.com/address/0xcf5d03ecb4298577018c7162c62d97697f775ad8) |
+| GovernanceTimelock | [0xb067226e4afff044e6294888c61d2bad11a7c9b8](https://creditcoin-testnet.blockscout.com/address/0xb067226e4afff044e6294888c61d2bad11a7c9b8) |
+| TreasuryTimelock | [0xe6e2c5a7c6c5066ad7d3f593ab2cc6f8810eea26](https://creditcoin-testnet.blockscout.com/address/0xe6e2c5a7c6c5066ad7d3f593ab2cc6f8810eea26) |
+| GpuTestToken (tUSD, 6 decimals) | [0x03115387f28660088faa6a9b00aa21cc2ad1ade5](https://creditcoin-testnet.blockscout.com/address/0x03115387f28660088faa6a9b00aa21cc2ad1ade5) |
+
+Source contracts are on **Ethereum Sepolia (`11155111`)**:
+
+| Contract | Sepolia address |
+| --- | --- |
+| SourceEscrow | [0x9e00a3a453704e6948689eb68a4f65649af30a97](https://sepolia.etherscan.io/address/0x9e00a3a453704e6948689eb68a4f65649af30a97) |
+| Source GpuTestToken | [0x43d76b878f6b154e1ac351daad354767fad769eb](https://sepolia.etherscan.io/address/0x43d76b878f6b154e1ac351daad354767fad769eb) |
+
+The source and destination tokens are different assets. Source payouts never repay destination debt by themselves. Governance uses a **60-second testnet timelock with an EOA governor**, not a production multisig. Deployment alone is not native-proof evidence.
+
+## Native testnet evidence
+
+Four real Sepolia transactions were proven through the official Attestcoin path and consumed by the Rackline contracts on Creditcoin CC3 Testnet:
+
+| Event | Source transaction | Creditcoin consumption |
+| --- | --- | --- |
+| Obligation recognized | [Sepolia receipt](https://sepolia.etherscan.io/tx/0x629bc722e9c893c3ce0982398d7322b8aa63c27f85ae0ea2ac9ff8853e503d90) | [block 5,484,320](https://creditcoin-testnet.blockscout.com/tx/0x704358f1f1e1a0495c42d52504a6676e0fbc00782a74e5b8e5a5f9d8f02d6f10) |
+| Obligation assigned | [Sepolia receipt](https://sepolia.etherscan.io/tx/0x5294eb9ba7a9bdeda76e2ca958871ce9bad8ccf2b88cf777e962d9d8becb13c2) | [block 5,484,358](https://creditcoin-testnet.blockscout.com/tx/0x22f1d0342c3b972daec1b4c449f1dabc517187e71d41299f7f9aa1f82c86a496) |
+| Payout received | [Sepolia receipt](https://sepolia.etherscan.io/tx/0x1b6811812773c2cd9f5a842ecaa8c1ab36bff4304e5c27334ea1ec425609952c) | [block 5,484,364](https://creditcoin-testnet.blockscout.com/tx/0x7d2a24a3d54a5a53826079af333f7c2369b95865d1ec69f8024fa5ecb1d4aae2) |
+| Protected checkpoint | [Sepolia receipt](https://sepolia.etherscan.io/tx/0x1819a0b1ac28b351bb5edc710b38e4316246fac6978fa5af160929a1cd7c66fa) | [block 5,484,370](https://creditcoin-testnet.blockscout.com/tx/0xb810b3dbad479c59b62f3bfcf25ae6091444d7ebda362eb83398cd02acc794b0) |
+
+Each proof-only transaction produced zero debt mutation events, zero vault mutation events, and zero vault-token transfer delta. This demonstrates the intended boundary: verified source evidence changes evidence/receivable state, never destination debt or cash by itself. The checkpoint had expired by the audit snapshot, so eligible unpaid collateral correctly evaluated to zero.
+
+The [live LP browser audit](evidence/native-testnet/lp-browser-20260914.json) covers nine successful testnet transactions: faucet, approval, deposit, queue, cancellation, replacement queue, processing, claim, and final withdrawal. Final LP shares are zero; desktop and mobile views agree with the canonical chain.
+
+A [fresh native checkpoint](https://creditcoin-testnet.blockscout.com/tx/0x39dadbd7f24581069d40d5dee2d9f8148191c61ad95affbdd68c7bee0c77bba6) enabled the [live borrower browser audit](evidence/native-testnet/borrower-browser-20260914.json): [borrow 1 tUSD](https://creditcoin-testnet.blockscout.com/tx/0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee), then [repay 1.000002 tUSD](https://creditcoin-testnet.blockscout.com/tx/0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78). The 1.001 tUSD cap transferred only principal plus execution-time interest. Final legal debt is **zero**, verified on-chain and in the desktop/mobile application; repayment succeeded after source protection expired.
+
+## Architecture
+
+```text
+Sepolia / supported source chain
+  SourceEscrow -> settlement event
+                      |
+                      v
+Official Attestcoin proof service + SDK
+                      |
+                      v
+Creditcoin native BlockProver -> AttestcoinRevenueVerifier
+                      |
+                      v
+EvidenceBook -> ReceivableBook -> risk/exposure -> CreditFacilityManager
+                                                     |
+LPs -> LendingVaultV2 <------------------------------+
+          ^
+          |
+SettlementReceiver -> RepaymentRouter -> DebtLedger
 ```
-Operator onboards → confirmed unpaid settlements assigned → payer pays a controlled escrow (E2, tested)
-Settlement event on the source chain → official Attestcoin native verification on Creditcoin
-Borrowing base = eligible unpaid receivables × advance rate → operator draws stablecoin
-Escrow receipt → approved settlement rail → vault receives loan currency → repayFor → debt falls
-```
 
-> **Pivot notice (Sep 2026).** Rackline v1 (then HashCredit) — credit against SPV-proven Bitcoin mining payouts — placed 2nd at BUIDL CTC Spring 2026 (top-3 → CEIP fast track). We deliberately did not commercialize v1: it could prove revenue but could not collect on it, because collection depended on Bitcoin mining pools that had no reason to integrate a lender. We pivoted to GPU receivables — where the payer is a named DePIN network with published settlement rules, on-chain payouts and an assignable receivable — and renamed the protocol Rackline. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the design is in [`TECH.md`](TECH.md); the product basis is `PIVOT.md`; the execution ledger is `TICKET.md` (R2); the fixed decisions are in [`docs/gpu/decisions/attestcoin-first.md`](docs/gpu/decisions/attestcoin-first.md). The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
->
-> An earlier v2 draft ("GPU NFT credit": tokenized deployments, NFT lien / foreclosure, trailing-payout limits) was retired on 2026-09-14 (R2-D10/D14). NFT-collateral products are a separate, deferred decision.
+The browser never receives a keeper key. Financial transactions are signed in the connected wallet; the API serves deployment-bound reads, authenticated projections, review requests, and idempotent operational commands.
 
-## Status (as of 2026-09-14)
+## Run the interactive demo
 
-| Layer | v2 Rackline (GPU receivables, R2) | v1 HashCredit (Bitcoin SPV, legacy) |
-|---|---|---|
-| Official Attestcoin artifacts | **Pinned** — `@gluwa/usc-sdk` 0.18.0, `@gluwa/asc-contracts` 0.2.1, ABI / source hashes, CC3 testnet manifest, read-only probe (`offchain/attestcoin/`, `config/attestcoin/`, `test/fixtures/gpu/attestcoin/`; GPU-075) | — |
-| Native verifier / evidence ledger | `AttestcoinRevenueVerifier`, `EvidenceBook` — *planned* (GPU-078, GPU-031) | `BtcSpvVerifier`, `CheckpointManager` — deployed Spring 2026 |
-| Credit / vault contracts | debt ledger, facility manager, `LendingVault` v2, `RiskConfig` v2, `repayFor` router — *planned* (GPU-029~043, 081) | `HashCreditManager`, `LendingVault`, `RiskConfig`, `PoolRegistry` |
-| Source chain | controlled escrow / source event contract, TEST_ONLY `MockDePINSettlement` — *planned* (GPU-077, GPU-080) | — |
-| Off-chain | official-SDK proof worker, provider connectors, receivable / cash ledgers, settlement adapter — *planned* (GPU-079, 015~028, 040) | FastAPI proof builder, SPV prover worker, EIP-712 relayer |
-| Frontend | operator facility / LP / operator console — *planned* (GPU-047~052) | Rackline-branded Borrow / Lend on the v1 contracts — live at https://rackline.studioliq.com |
-| Native proof evidence | **none yet** — G-ASC (GPU-080) is the first real public-testnet native verification | n/a |
-
-Implementation inventory and doc-conflict register: [`docs/gpu/execution/ATTESTCOIN_GAP.md`](docs/gpu/execution/ATTESTCOIN_GAP.md). Status ledger: each ticket's `상태` in `TICKET.md`.
-
-Repo: https://github.com/inchyangv/rackline (renamed from `ctc-hashcredit` / `hashcredit` on 2026-09-14; old URLs redirect) · Chain: Creditcoin CC3 Testnet (`102031`) · Web: https://rackline.studioliq.com (Vercel, v1 contracts, Rackline UI) · API: https://api-rackline.studioliq.com (Railway, `API_PROFILE=production`; `GET /health`) — both checked live 2026-09-14 (`docs/gpu/execution/GPU-066.md`). The previous `hashcredit.studioliq.com` deployment was retired the same day.
-
----
-
-## Problem
-
-GPU operators supplying compute to DePIN networks (Aethir Cloud Hosts, GPU.net providers, io.net / Render / Akash suppliers) earn today and get paid in 45–180 days: on Aethir, service fees are claimable after 45 days and rewards vest 30% now / 30% at 90 days / 40% at 180 days. Electricity, hosting and hardware leases are due monthly. Traditional finance lends more than $20B against GPUs — to CoreWeave, Lambda, Crusoe, Fluidstack — but only to companies with hundreds of millions in hardware and audited financials. The long tail has the same asset, the same gap, and no lender.
-
-## Solution
-
-1. **Onboard** — the operator's entity, provider account and GPU rights are verified; existing financing and duplicate assignments are checked.
-2. **Assign + control** — confirmed, unpaid settlements are assigned to the facility; the payer's receiver is set to a controlled escrow; bypass attempts are tested with a real payment before any funded loan (E2).
-3. **Verify** — each source-chain settlement event is proven on Creditcoin through the official Attestcoin native path: `INativeQueryVerifier` (BlockProver precompile `0x…0FD2`) + `EvmV1Decoder` over the verified bytes. Proofs come from the official SDK and are untrusted input.
-4. **Base** — eligible unpaid receivables − disputes / refunds / SLA deductions − haircuts, × advance rate. Freshness is bound to a source-authority checkpoint; a past payout is never new borrowing base.
-5. **Draw** — the operator borrows stablecoin from the vault; every draw re-checks base, control validity, exposure headroom and vault cash.
-6. **Collect** — the payer settles into escrow; funds move to the vault's currency on an approved rail under one settlement ID.
-7. **Repay** — only actual receipt at the vault, allocated to the facility (`repayFor`), reduces debt. No repay button. Draw pause never blocks repayment.
-8. **Default** — draws freeze → escrow collection continues → grace / cure → reserve, agreed recovery, loss recognition.
-
-Enforcement is graded E0 (read-only) → E1 (escrow set, revocable) → E2 (payer recognizes the assignment; operator cannot change it alone) → E3 (physical lien). Only E2+ receives funded loans. Evidence is natively verified; enforcement is contractual plus payment control.
-
-**Five judgments stay separate** (R2-D05): official proof → *this event occurred on this source*; GPU revenue provenance; current unpaid receivable; E2 control; actual destination cash receipt. Each has its own recorded state (`nativeStatus`, `earningsProvenance`, `controlGrade`, `cashState`).
-
----
-
-## Architecture (v2, R2 — planned unless marked otherwise)
-
-```
-┌─────────────────────────────┐   ┌───────────────────────────────┐   ┌──────────────────────────────────────┐
-│ Source chain (Sepolia /     │   │ Off-chain                     │   │ Creditcoin CC3                       │
-│ Ethereum; Attestcoin-       │   │                               │   │                                      │
-│ supported only)             │   │  proof worker (official SDK)  │   │  AttestcoinRevenueVerifier           │
-│                             │   │  ├─ watch settlement events   │──▶│  ├─ INativeQueryVerifier (0x…0FD2)   │
-│  approved payer ──▶ escrow ─┼──▶│  ├─ fetch proof (untrusted)   │   │  └─ EvmV1Decoder on verified bytes   │
-│  (controlled receiver, E2)  │   │  └─ submit to verifier        │   │  EvidenceBook (canonical events,     │
-│  emits atomic receipt event │   │                               │   │    log-level consumption key)        │
-│                             │   │  connectors / ledgers (Python)│   │  control registry · debt ledger ·    │
-│  settlement rail ───────────┼──▶│  ├─ provider statements       │──▶│  facility manager · borrowing base   │
-│  (approved conversion)      │   │  ├─ receivable + cash ledgers │   │  LendingVault v2 · RiskConfig v2     │
-│                             │   │  └─ reconciliation, control   │   │  repayFor router (destination cash)  │
-└─────────────────────────────┘   │     monitor, settlement adapter│  └──────────────────────────────────────┘
-                                  └───────────────────────────────┘                    ▲
-                                  ┌───────────────────────────────┐                    │
-                                  │ web: facility · LP · operator │────────────────────┘
-                                  │ console (React 19, ethers 6)  │
-                                  └───────────────────────────────┘
-```
-
-### Attestcoin integration (official path only)
-
-Pinned facts: [`docs/gpu/attestcoin/environment.md`](docs/gpu/attestcoin/environment.md) (GPU-075).
-
-- SDK `@gluwa/usc-sdk` 0.18.0; contracts `@gluwa/asc-contracts` 0.2.1; ABI / source sha256 recorded in `config/attestcoin/cc3-testnet.sepolia.json`; `ASC-CHECK` fails on drift.
-- CC3 testnet: `INativeQueryVerifier` (BlockProver precompile) `0x0000000000000000000000000000000000000FD2`, ChainInfo `0x…0fd3`, decoder `0x731c345d…9F9f` (code hash pinned). Supported sources by read-only probe (2026-09-13): Sepolia chainKey 1, Ethereum mainnet chainKey 3. CC3 mainnet: Ethereum mainnet chainKey 1 (docs only; no manifest yet).
-- Proof service: `GET /api/v1/proof-by-tx/{chainKey}/{txHash}` (primary `proof-gen-api.cc3-testnet…`, alternate `prover.cc3-testnet…`). The response is untrusted input; only the precompile result counts.
-- Verification (GPU-078): `verifyAndEmit(chainKey, height, encodedTransaction, merkleProof, continuityProof)` → `EvmV1Decoder.decodeReceiptFields` → `receiptStatus == 1` → expected event from the expected emitter → `EvidenceBook` consumes once (key includes the receipt log ordinal, not just the transaction).
-- No fallback: unsupported source ⇒ `UNSUPPORTED_SOURCE`, admission off. Self-signed EIP-712, admin approval, BTC SPV or mock verifiers never produce `nativeStatus=VERIFIED`; there is no lower-advance-rate "attested" class (R2-D02/D03/D08). Writability is not assumed (R2-D09).
-- Evidence levels LOCAL / SANDBOX / NATIVE_TESTNET / LIVE / ACCEPTED are never promoted by local passes; the environment is `PROBED`, no native proof has been submitted yet (G-ASC, GPU-080).
-
-Details: [`TECH.md`](TECH.md).
-
-### Credit model (PIVOT §6.3)
-
-```
-EligibleReceivables = recognized unpaid receivables
-                    − disputes / refunds / SLA / senior deductions
-                    − overdue, concentration, FX, recovery-uncertainty haircuts
-ReceivableLimit     = EligibleReceivables × advanceRate
-FacilityLimit       = min(ReceivableLimit, approved facility cap)
-FacilityRoom        = FacilityLimit − principal − unpaid interest − reserved draws
-Headroom[category]  = cap − all open exposure in that category − all reservations
-AvailableDraw       = max(0, min(FacilityRoom, Headroom[borrower/group/partner/region/global], vault lendable cash))
-```
-
-Every draw re-checks fresh evidence and valid control state. Credit is never derived from GPU count, FLOPS, advertised utilization, token price, or past payouts. There is no testnet auto-grant or public owner-key API on the GPU path. GPU-001 (done) isolated the v1 API's register-and-grant route behind a `testnet_demo` profile — the `production` profile holds no admin key and returns 404 — and gated the deploy script's auto-grant to TEST_ONLY tokens on demo chains; the v1 contract's owner-only `grantTestnetCredit` remains as legacy.
-
-### What v2 reuses from v1
-
-| v1 | v2 |
-|---|---|
-| proof ↔ credit ↔ vault separation (`IVerifierAdapter` seam) | kept as a pattern; new ABI (`IRevenueVerifier` / evidence types, GPU-029) |
-| `HashCreditManager` | rewritten: debt ledger + facility manager (`repayFor`, receivables base, separate draw / repayment pauses) |
-| `LendingVault` | `LendingVault` v2 (single principal / interest ledger, partial interest preserved, reserve, loss recognition, withdrawal queue) |
-| `RiskConfig` | `RiskConfig` v2 |
-| `RelayerSigVerifier` + `offchain/relayer` | legacy — not a v2 evidence path (auxiliary signatures only; retire / repurpose is R2-O07) |
-| `BtcSpvVerifier`, `CheckpointManager`, `BitcoinLib`, SPV prover | legacy — not on the v2 path |
-| wallet UX, design system, Foundry invariant discipline, Railway / Vercel | reused |
-
----
-
-## Testnet demo path (planned; G-ASC)
-
-| Real system | Public-testnet demo (GPU-080 approval scope required) |
-|---|---|
-| Aethir / GPU.net settlement | TEST_ONLY `MockDePINSettlement` on Sepolia paying the controlled escrow — `partnerRevenue=SIMULATED` |
-| Attestcoin native verification | **real** — official SDK proof + `0x…0FD2` on CC3 testnet |
-| Sepolia → Creditcoin settlement rail | mock rail executed by the worker, labelled `Mock settlement` |
-| Partner receiver lock (E2) | not demonstrable with a mock payer; real E2 is GPU-009/038 with a real partner |
-
-A public-testnet native proof pass is technical evidence only; it is never partner, E2, cash or business approval evidence. Nothing in this table is implemented as of 2026-09-14.
-
----
-
-## Contract addresses
-
-_Contract, package and service identifiers keep their legacy `HashCredit*` names; the product is Rackline._
-
-**v2 — Creditcoin CC3 Testnet (`102031`)**: not deployed as of 2026-09-14 (`AttestcoinRevenueVerifier`, `EvidenceBook`, debt ledger / facility manager, `LendingVault` v2, `RiskConfig` v2 — all `<TODO>`). **Sepolia**: controlled escrow / source event contract, TEST_ONLY `MockDePINSettlement` — `<TODO>`.
-
-**v1 — legacy (Creditcoin CC3 Testnet, deployed Spring 2026, not re-verified here)**
-
-| Contract | Address |
-|---|---|
-| HashCreditManager | `0x593e140982cDC040d69B7E7623A045C6d6Ca2055` |
-| LendingVault | `0x4d74126369BacB67085a1E70d535cA15515d1AFa` |
-| CheckpointManager | `0x4Ae5418242073cd37CCc69C908957E413a04f6f9` |
-| BtcSpvVerifier | `0x16DEd6a617a911471cd4549C24Ed8C281f096fd2` |
-| Stablecoin (mUSDT, test) | `0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A` |
-
----
-
-## Local development
-
-Prerequisites: [Foundry](https://getfoundry.sh/), Python 3.11+ (3.13 verified; `.venv-py313`), Node 22+. Reproducible setup and baseline results: [`docs/gpu/execution/BASELINE.md`](docs/gpu/execution/BASELINE.md).
+The demo uses browser-only fixtures and makes no wallet, API, RPC, or proof-service calls.
 
 ```bash
-# contracts (v1 today; contracts/gpu/ + test/gpu/ planned)
-forge install && forge build && forge test -vvv
+npm ci --prefix apps/web
+npm --prefix apps/web run dev
+```
 
-# official Attestcoin artifacts / read-only probe (GPU-075)
+Open `http://localhost:5173/demo`. The connected application lives at `/app` and requires a configured GPU API.
+
+## Validate the repository
+
+Prerequisites: Foundry, Node.js 22.12+ (CI uses 24), Python 3.11+, and PostgreSQL 16 for the database suite.
+
+```bash
+# Solidity
+forge build --sizes
+forge test
+forge fmt --check
+
+# Attestcoin tooling
 npm ci --prefix offchain/attestcoin
 npm --prefix offchain/attestcoin run check
 npm --prefix offchain/attestcoin run test -- --run
-npm --prefix offchain/attestcoin run probe -- --manifest config/attestcoin/cc3-testnet.sepolia.json
 
-# v1 api / prover (legacy)
-cd offchain/api && pip install -e . && hashcredit-api            # CLI / package names stay legacy
-cd offchain/prover && pip install -e . && hashcredit-prover --help
+# Web
+npm ci --prefix apps/web
+npm --prefix apps/web run lint
+npm --prefix apps/web run build
+npm --prefix apps/web run test:unit
+npm --prefix apps/web run test:e2e
 
-# frontend
-cd apps/web && cp .env.example .env && npm install && npm run dev
-
-# full local stack (v1)
-docker compose up
+# Python
+python -m pip install -e "offchain/gpu[dev]" -e "offchain/api[dev]" -e "offchain/prover[dev]"
+(cd offchain/gpu && python -m pytest tests -q)
+(cd offchain/api && python -m pytest tests -q)
+(cd offchain/prover && python -m pytest tests -q)
 ```
 
-## Project structure
+The Python migration tests use `HASHCREDIT_GPU_TEST_DATABASE_URL` when provided and can start an ephemeral local PostgreSQL cluster when the required binaries are installed.
 
+## Repository map
+
+```text
+contracts/gpu/       Rackline v2 contracts
+test/gpu/            Foundry unit and invariant tests
+offchain/gpu/        shared domain, database, ingestion, and reconciliation
+offchain/attestcoin/ pinned official SDK artifacts and proof tooling
+offchain/api/        GPU product API plus isolated legacy API modules
+offchain/prover/     GPU workers plus isolated legacy SPV modules
+apps/web/            connected application and fixture-only demo
+config/              domain schemas and Attestcoin manifests
+evidence/            curated public testnet evidence
+script/gpu/          deployment, setup, ABI export, and native-proof tools
 ```
-contracts/             v1 contracts (legacy) · contracts/gpu/ planned for v2 (GPU-029+, not present yet)
-test/                  Foundry tests · test/gpu/ planned · test/fixtures/gpu/attestcoin/ official ABI copies + probe report
-script/                deploy scripts (v1)
-config/attestcoin/     official environment manifests (cc3-testnet.sepolia, local-mock) + schema
-offchain/
-  attestcoin/          official SDK pins, manifest validation, read-only probe (TypeScript; GPU-075)
-  api/                 FastAPI (v1 proof builder; v2 connectors planned)
-  prover/              v1 SPV worker (legacy)
-  relayer/             v1 EIP-712 relayer (legacy; not a v2 evidence path)
-apps/web/              React 19 frontend (Rackline UI on v1 contracts)
-docs/
-  gpu/                 decisions/ (R2 ledger) · execution/ (per-ticket records, gap inventory, baseline) · attestcoin/ (environment ledger)
-  hackathon/           WHY_WE_PIVOTED, HACKATHON_MVP_SCOPE (demo slice), submission checklist & templates, v1 history
-  specs/, adr/, *.md   v1 specifications and security docs (legacy)
-PIVOT.md / TICKET.md   product basis and execution tickets (R2)
-```
+
+The original Bitcoin-SPV prototype remains in the repository as legacy code and is not an evidence path for Rackline v2. A [pinned read-only inventory](evidence/legacy/102031-5484137.json) preserves its open TEST_ONLY positions without mixing them into v2 claims.
 
 ## Documentation
 
-| Document | Description |
-|---|---|
-| [`TECH.md`](TECH.md) | v2 technical note: R2 architecture, Attestcoin integration, credit model, control levels, accounting invariants, status |
-| [`docs/gpu/decisions/attestcoin-first.md`](docs/gpu/decisions/attestcoin-first.md) | Fixed R2 decisions (R2-D01…D14) and open items |
-| [`docs/gpu/execution/ATTESTCOIN_GAP.md`](docs/gpu/execution/ATTESTCOIN_GAP.md) | Implementation inventory and doc-conflict register |
-| [`docs/gpu/attestcoin/environment.md`](docs/gpu/attestcoin/environment.md) | Pinned official artifacts, native interface facts, environments |
-| [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md) | Why we moved from Bitcoin hashrate to GPU receivables |
-| [`docs/hackathon/HACKATHON_MVP_SCOPE.md`](docs/hackathon/HACKATHON_MVP_SCOPE.md) | Demo slice (R2-aligned), simulation labels, build order |
-| [`docs/hackathon/SUBMISSION_CHECKLIST.md`](docs/hackathon/SUBMISSION_CHECKLIST.md) | DoraHacks / BUIDL CTC 2026 Fall checklist |
-| `PIVOT.md`, `TICKET.md` | Product basis and execution tickets (partner due diligence, E2 control PoC, financial core, audit) |
-| [`docs/threat-model.md`](docs/threat-model.md), [`docs/audit-checklist.md`](docs/audit-checklist.md) | v1 security docs (legacy; v2 rewrite is GPU-058/065) |
-| [`docs/specs/`](docs/specs/) | v1 specifications (legacy) |
+- [Technical design](TECH.md)
+- [Attestcoin environment and artifact pins](docs/gpu/attestcoin/environment.md)
+- [Native evidence semantics](docs/gpu/attestcoin/evidence-contract.md)
+- [Proof-to-business mapping](docs/gpu/attestcoin/proof-to-business-mapping.md)
+- [GPU domain model](docs/gpu/domain-model.md)
+- [Accounting model](docs/gpu/accounting.md)
+- [Permissions and state transitions](docs/gpu/permissions-and-states.md)
 
 ## License
 

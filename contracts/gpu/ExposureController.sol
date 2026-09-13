@@ -52,6 +52,9 @@ contract ExposureController is IExposureController {
     mapping(address => bool) public isManager;
 
     event ManagerSet(address indexed manager, bool enabled);
+    bool public wiringFinalized;
+    event WiringSealed();
+    error WiringFinalized();
 
     error NotRole(bytes32 role, address caller);
     error ZeroAddress();
@@ -89,9 +92,16 @@ contract ExposureController is IExposureController {
     // ------------------------------------------------------------------ wiring / authority
 
     function setManager(address manager, bool enabled) external onlyRole(ADMIN_ROLE) {
+        if (wiringFinalized) revert WiringFinalized();
         if (manager == address(0)) revert ZeroAddress();
         isManager[manager] = enabled;
         emit ManagerSet(manager, enabled);
+    }
+
+    function finalizeWiring() external onlyRole(ADMIN_ROLE) {
+        if (wiringFinalized) revert WiringFinalized();
+        wiringFinalized = true;
+        emit WiringSealed();
     }
 
     /// @notice Enroll a facility in its concentration categories. Requires the ReceivableBook binding and an opened
@@ -261,6 +271,12 @@ contract ExposureController is IExposureController {
         if (!_controlUsable(a, p, uint64(block.timestamp))) revert ReservationInvalidated(id, "control changed");
         r.state = ReservationState.CONSUMED;
         _reserved[r.facilityId] -= r.amount;
+        // Re-evaluate after removing THIS reservation, while all other reservations remain counted. Time,
+        // payments, corrections and LP withdrawals may have changed the limit since it was reserved.
+        GpuTypes.DrawEvaluation memory evaluation = evaluateDraw(r.facilityId);
+        if (evaluation.evidenceValidUntil <= block.timestamp || evaluation.availableDraw < r.amount) {
+            revert InsufficientHeadroom(r.amount, evaluation.availableDraw);
+        }
         LEDGER.recordDraw(r.facilityId, r.amount);
         emit ReservationConsumed(id, r.facilityId, r.amount);
     }

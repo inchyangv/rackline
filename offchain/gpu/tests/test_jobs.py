@@ -111,6 +111,18 @@ def test_two_workers_compete_exactly_one_claims(migrated_db_url, engine, queue):
     assert _state(engine, job_id)[0] == "LEASED"
 
 
+def test_claim_explicit_ids_preserves_kind_filter_and_empty_selection(engine, queue):
+    excluded_id = queue.enqueue("K", {}, "k:excluded")
+    selected_id = queue.enqueue("K", {}, "k:selected")
+    assert queue.claim("worker-a", ["K"], job_ids=[]) is None
+    assert queue.claim("worker-a", ["OTHER"], job_ids=[selected_id]) is None
+    selected = queue.claim("worker-a", ["K"], job_ids=[selected_id])
+    assert selected is not None and selected.job_id == selected_id
+    assert _state(engine, excluded_id)[0] == "PENDING"
+    unrestricted = queue.claim("worker-b", ["K"])
+    assert unrestricted is not None and unrestricted.job_id == excluded_id
+
+
 def test_lease_expiry_allows_reclaim_and_stale_worker_cannot_complete_or_fail(engine, queue):
     job_id = queue.enqueue("K", {}, "k:2", max_attempts=5)
     a = queue.claim("worker-a", ["K"], lease_seconds=60)
@@ -222,13 +234,15 @@ def test_resume_requires_actor_role_reason_and_writes_audit(engine, queue):
     assert _state(engine, job_id)[0] == "DEAD"
     queue.resume(job_id, actor="ops-1", actor_role="operator", reason="upstream outage resolved, ticket OPS-42")
     st = _state(engine, job_id)
-    assert st[0] == "PENDING" and st[1] == 0
+    assert st[0] == "PENDING" and st[1] == 1
+    assert queue.get(job_id).max_attempts == 2
     with engine.connect() as c:
         row = c.execute(
             text("SELECT actor, actor_role, action, entity_table, entity_id, before, after, entry_hash FROM audit_log ORDER BY id DESC LIMIT 1")
         ).one()
     assert (row.actor, row.actor_role, row.action, row.entity_table, row.entity_id) == ("ops-1", "operator", "job.resume", "jobs", job_id)
     assert row.before["state"] == "DEAD" and row.after["reason"].startswith("upstream outage")
+    assert row.after["attempt"] == 1 and row.after["max_attempts"] == 2
     assert row.entry_hash.startswith("0x")
     # a second resume on a non-DEAD job is refused; audit rows are immutable
     with pytest.raises(ValueError):
@@ -237,6 +251,30 @@ def test_resume_requires_actor_role_reason_and_writes_audit(engine, queue):
         c.execute(text("DELETE FROM audit_log"))
     # resumed job is claimable again
     assert queue.claim("w", ["K"]) is not None
+
+
+def test_resume_never_reuses_stale_lease_token_for_same_worker(engine, queue):
+    job_id = queue.enqueue("K", {}, "k:resume-fence", max_attempts=5)
+    stale = queue.claim("worker-a", ["K"])
+    assert stale is not None and stale.attempt == 1
+    _expire_lease(engine, job_id)
+    replacement = queue.claim("worker-b", ["K"])
+    assert replacement is not None and replacement.attempt == 2
+    queue.fail(replacement, FailureKind.TERMINAL, "upstream configuration rejected")
+
+    queue.resume(job_id, actor="ops-1", actor_role="operator", reason="upstream configuration corrected")
+    current = queue.claim("worker-a", ["K"])
+    assert current is not None and current.attempt == 3 and current.max_attempts == 7
+    with pytest.raises(LeaseLost):
+        queue.complete(stale)
+    with pytest.raises(LeaseLost):
+        queue.fail(stale, FailureKind.TERMINAL, "late failure")
+    with pytest.raises(LeaseLost):
+        queue.renew_lease(stale)
+    assert _state(engine, job_id)[:3] == ("LEASED", 3, "worker-a")
+    queue.renew_lease(current, 120)
+    queue.complete(current)
+    assert _state(engine, job_id)[0] == "SUCCEEDED"
 
 
 # ---------------------------------------------------------------- outbox

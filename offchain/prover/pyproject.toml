@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hashcredit-prover"
 version = "0.1.0"
-description = "Rackline Bitcoin SPV Proof Builder - generates Merkle proofs for payout verification"
+description = "Rackline Attestcoin proof, indexing, control and reconciliation workers"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
     {name = "Rackline Team"}
 ]
-keywords = ["bitcoin", "spv", "merkle", "proof", "hashcredit"]
+keywords = ["gpu", "receivables", "attestcoin", "proof", "creditcoin"]
 
 dependencies = [
     "web3>=6.0.0",

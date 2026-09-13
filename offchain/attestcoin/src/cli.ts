@@ -16,9 +16,11 @@ import { type Manifest, computeManifestHash, validateManifest } from "./manifest
 import { probeManifest } from "./probe";
 import { renderWireFixtures } from "./wire-fixtures";
 import { loadRail, railManifestDir, validateRail } from "./rails";
+import { proofJson, type ProofRequest } from "./proof";
+import { encodeSubmission } from "./submission";
 
-const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
-const MANIFEST_DIR = path.join(REPO_ROOT, "config", "attestcoin");
+const REPO_ROOT = process.env.ATTESTCOIN_REPO_ROOT ?? path.resolve(__dirname, "..", "..", "..");
+const MANIFEST_DIR = process.env.ATTESTCOIN_CONFIG_DIR ?? path.join(REPO_ROOT, "config", "attestcoin");
 const WIRE_FIXTURE = path.join(REPO_ROOT, "test", "fixtures", "gpu", "attestcoin", "wire", "synthetic-obligation-v1.json");
 /** `npm --prefix <pkg> run …` sets cwd to the package; resolve user paths against where npm was invoked. */
 const USER_CWD = process.env.INIT_CWD ?? process.cwd();
@@ -176,8 +178,25 @@ async function main(): Promise<number> {
       return cmdHash(rest);
     case "gen-wire":
       return cmdGenWire(rest);
+    case "proof": {
+      const mp = argValue(rest, "--manifest");
+      if (!mp) return 2;
+      const input = readFileSync(0, "utf8");
+      if (Buffer.byteLength(input) > 16_384) return 2;
+      const result = await proofJson(readManifest(userPath(mp)), JSON.parse(input) as ProofRequest);
+      console.log(result);
+      return 0;
+    }
+    case "encode-submission": {
+      const mp = argValue(rest, "--manifest");
+      if (!mp) return 2;
+      const input = readFileSync(0, "utf8");
+      if (Buffer.byteLength(input) > 4_194_304) return 2;
+      console.log(JSON.stringify(encodeSubmission(readManifest(userPath(mp)), JSON.parse(input))));
+      return 0;
+    }
     default:
-      console.error("usage: cli <check|probe|hash|gen-wire> ...");
+      console.error("usage: cli <check|probe|hash|gen-wire|proof> ...");
       return 2;
   }
 }

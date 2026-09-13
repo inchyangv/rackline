@@ -35,6 +35,10 @@ interface IERC20Minimal {
     function balanceOf(address) external view returns (uint256);
 }
 
+interface IRecoveryObserver {
+    function observeAllocation(GpuTypes.FacilityId facilityId, uint256 amount) external;
+}
+
 /**
  * @title CreditFacilityManager
  * @notice Facility lifecycle, credit-authorization anchoring, atomic draws and `repayFor` (GPU-036, PIVOT §5/§7).
@@ -93,6 +97,8 @@ contract CreditFacilityManager is ICreditFacilityManager {
         address signer;
         uint64 epoch;
         uint64 anchoredAt;
+        uint64 signerEpoch;
+        uint64 exposureEpoch;
         bool exists;
     }
 
@@ -101,6 +107,10 @@ contract CreditFacilityManager is ICreditFacilityManager {
     mapping(GpuTypes.FacilityId => uint64) private _drawNonce;
     mapping(bytes32 reservationId => GpuTypes.FacilityId) private _reservationFacility;
     bool private _drawsPaused;
+    address public recoveryManager;
+    bool public resumeApproved;
+    event RecoveryManagerBound(address indexed manager);
+    event DrawResumeApproved(address indexed underwriter);
     uint256 private _lock = 1;
 
     event FacilityFrozen(GpuTypes.FacilityId indexed facilityId, address indexed by, bytes32 trigger);
@@ -121,11 +131,14 @@ contract CreditFacilityManager is ICreditFacilityManager {
     error ControlAgreementMismatch(bytes32 agreementId, bytes32 borrowerId);
     error AuthorizationFacilityMismatch(GpuTypes.FacilityId expected, GpuTypes.FacilityId actual);
     error PolicyVersionStale(bytes32 policyVersionId);
-    error ExposureAuthorizationMismatch(GpuTypes.FacilityId facilityId, string field);
+    error ExposureAuthorizationMismatch(GpuTypes.FacilityId facilityId, bytes32 field);
     error InsufficientReceived(uint256 minReceived, uint256 received);
     error ReservationUnknown(bytes32 reservationId);
     error TransferFailed();
     error NothingToRefund(GpuTypes.FacilityId facilityId);
+    error RecoveryAlreadyBound();
+    error ResumeNotApproved();
+    error LoanAssetMismatch();
 
     constructor(
         IProtocolRoles roles,
@@ -165,7 +178,7 @@ contract CreditFacilityManager is ICreditFacilityManager {
     }
 
     modifier onlyRole(bytes32 role) {
-        if (!ROLES.hasRole(role, msg.sender)) revert NotRole(role, msg.sender);
+        if (!_hasRole(role, msg.sender)) revert NotRole(role, msg.sender);
         _;
     }
 
@@ -186,7 +199,10 @@ contract CreditFacilityManager is ICreditFacilityManager {
         IDebtLedger.Terms calldata terms,
         bytes32 controlAgreementId,
         uint32 controlVersion
-    ) external onlyRole(ROLES.UNDERWRITER()) {
+    ) external onlyRole(keccak256("UNDERWRITER")) {
+        if (terms.loanAsset.token != VAULT.asset() || terms.loanAsset.chainId != block.chainid) {
+            revert LoanAssetMismatch();
+        }
         if (_facilities[facilityId].exists) revert FacilityExists(facilityId);
         if (!ACCOUNTS.isWalletOf(borrowerId, wallet)) revert WalletNotLinked(borrowerId, wallet);
         IReceivableBook.Facility memory bf = BOOK.facility(facilityId);
@@ -231,7 +247,7 @@ contract CreditFacilityManager is ICreditFacilityManager {
     function freezeDraws(GpuTypes.FacilityId facilityId, bytes32 trigger)
         external
         exists(facilityId)
-        onlyRole(ROLES.GUARDIAN())
+        onlyRole(keccak256("GUARDIAN"))
     {
         Facility storage f = _facilities[facilityId];
         if (f.state != GpuTypes.FacilityState.ACTIVE) {
@@ -241,9 +257,48 @@ contract CreditFacilityManager is ICreditFacilityManager {
         emit FacilityFrozen(facilityId, msg.sender, trigger);
     }
 
-    function pauseDraws(bool paused) external override onlyRole(ROLES.GUARDIAN()) {
+    function pauseDraws(bool paused) external override onlyRole(keccak256("GUARDIAN")) {
+        if (!paused && !resumeApproved) revert ResumeNotApproved();
+        resumeApproved = false;
         _drawsPaused = paused;
         emit DrawsPaused(msg.sender, paused);
+    }
+
+    function approveDrawResume() external onlyRole(keccak256("UNDERWRITER")) {
+        resumeApproved = true;
+        emit DrawResumeApproved(msg.sender);
+    }
+
+    function bindRecoveryManager(address manager) external onlyRole(ADMIN_ROLE) {
+        if (recoveryManager != address(0)) revert RecoveryAlreadyBound();
+        if (manager.code.length == 0) revert ZeroAddress();
+        recoveryManager = manager;
+        emit RecoveryManagerBound(manager);
+    }
+
+    /// @notice No proof, signer or operational role is needed to observe an already-zero legal balance.
+    function syncRepaid(GpuTypes.FacilityId facilityId) external exists(facilityId) {
+        Facility storage f = _facilities[facilityId];
+        uint256 debt = LEDGER.legalDebtAt(facilityId, uint64(block.timestamp));
+        if (debt != 0) revert DebtOutstanding(facilityId, debt);
+        if (
+            f.state == GpuTypes.FacilityState.ACTIVE || f.state == GpuTypes.FacilityState.DRAW_FROZEN
+                || f.state == GpuTypes.FacilityState.DELINQUENT || f.state == GpuTypes.FacilityState.DEFAULTED
+                || f.state == GpuTypes.FacilityState.RECOVERY || f.state == GpuTypes.FacilityState.CLOSED_WITH_LOSS
+        ) {
+            _setState(facilityId, f, GpuTypes.FacilityState.REPAID, "debt_zero", msg.sender);
+        }
+    }
+
+    function recoveryTransition(GpuTypes.FacilityId facilityId, GpuTypes.FacilityState to, bytes32 reason)
+        external
+        exists(facilityId)
+    {
+        if (msg.sender != recoveryManager) revert NotRole(keccak256("RECOVERY_MANAGER"), msg.sender);
+        Facility storage f = _facilities[facilityId];
+        if (!isTransitionAllowed(f.state, to)) revert IllegalTransition(f.state, to);
+        _guard(facilityId, f, f.state, to);
+        _setState(facilityId, f, to, reason, msg.sender);
     }
 
     // ------------------------------------------------------------------ authorization anchoring
@@ -273,6 +328,8 @@ contract CreditFacilityManager is ICreditFacilityManager {
         a.signer = underwriterApproval.signer;
         a.epoch += 1;
         a.anchoredAt = uint64(block.timestamp);
+        a.signerEpoch = underwriterApproval.keyEpoch;
+        a.exposureEpoch = EXPOSURE.authorization(auth.facilityId).epoch;
         a.exists = true;
         emit AuthorizationAnchored(auth.facilityId, auth.decisionHash, auth.limit, auth.validUntil, auth.manifestHash);
     }
@@ -370,9 +427,23 @@ contract CreditFacilityManager is ICreditFacilityManager {
     /// @dev Common draw gates: pause, state, anchored authorization (fresh, manifest, policy, control), E2 usable.
     function _checkDrawable(GpuTypes.FacilityId facilityId, Facility storage f) internal view {
         if (_drawsPaused) revert DrawsArePaused();
+        if (!ACCOUNTS.isWalletOf(f.borrowerId, f.wallet)) revert WalletNotLinked(f.borrowerId, f.wallet);
         if (f.state != GpuTypes.FacilityState.ACTIVE) revert FacilityNotActive(facilityId, f.state);
         Anchor storage a = _anchors[facilityId];
         if (!a.exists || a.auth.validUntil <= block.timestamp) revert AuthorizationMissingOrExpired(facilityId);
+        if (
+            !_hasRole(keccak256("UNDERWRITER"), a.signer)
+                || !ROLES.isEpochValid(keccak256("UNDERWRITER"), a.signerEpoch)
+        ) revert AuthorizationMissingOrExpired(facilityId);
+        IRevenueVerifier verifier = EVIDENCE.verifierOf(f.providerId);
+        if (verifier.executionProfile() != f.profile) revert ProfileMismatch(f.profile, verifier.executionProfile());
+        if (
+            f.profile != GpuTypes.ExecutionProfile.LOCAL_MOCK
+                && verifier.verificationMethod() != GpuTypes.VerificationMethod.ATTESTCOIN_NATIVE
+        ) revert NativeEvidenceRequired(facilityId);
+        if (a.exposureEpoch != EXPOSURE.authorization(facilityId).epoch) {
+            revert AuthorizationMissingOrExpired(facilityId);
+        }
         bytes32 expectedManifest = EVIDENCE.verifierOf(f.providerId).manifestHash();
         if (a.auth.manifestHash != expectedManifest) {
             revert AuthorizationManifestMismatch(expectedManifest, a.auth.manifestHash);
@@ -429,6 +500,7 @@ contract CreditFacilityManager is ICreditFacilityManager {
         if (received == 0) revert TransferFailed();
         r = LEDGER.allocate(facilityId, received);
         VAULT.onRepayment(facilityId, r);
+        if (recoveryManager != address(0)) IRecoveryObserver(recoveryManager).observeAllocation(facilityId, r.applied);
         emit Repaid(facilityId, msg.sender, amount, received, r.applied, r.excess, r.newDebt);
         Facility storage f = _facilities[facilityId];
         if (r.newDebt == 0 && isTransitionAllowed(f.state, GpuTypes.FacilityState.REPAID)) {
@@ -512,14 +584,14 @@ contract CreditFacilityManager is ICreditFacilityManager {
         view
         returns (bool)
     {
-        if (from == GpuTypes.FacilityState.DRAFT) return ROLES.hasRole(ROLES.REGISTRAR(), who);
-        if (from == GpuTypes.FacilityState.UNDER_REVIEW) return ROLES.hasRole(ROLES.UNDERWRITER(), who);
+        if (from == GpuTypes.FacilityState.DRAFT) return _hasRole(keccak256("REGISTRAR"), who);
+        if (from == GpuTypes.FacilityState.UNDER_REVIEW) return _hasRole(keccak256("UNDERWRITER"), who);
         if (from == GpuTypes.FacilityState.CONTROL_PENDING) {
-            return ROLES.hasRole(ROLES.UNDERWRITER(), who) || ROLES.hasRole(ROLES.SERVICER(), who);
+            return _hasRole(keccak256("UNDERWRITER"), who) || _hasRole(keccak256("SERVICER"), who);
         }
-        if (to == GpuTypes.FacilityState.DRAW_FROZEN) return ROLES.hasRole(ROLES.GUARDIAN(), who);
+        if (to == GpuTypes.FacilityState.DRAW_FROZEN) return _hasRole(keccak256("GUARDIAN"), who);
         if (from == GpuTypes.FacilityState.DRAW_FROZEN && to == GpuTypes.FacilityState.ACTIVE) {
-            return ROLES.hasRole(ROLES.UNDERWRITER(), who);
+            return _hasRole(keccak256("UNDERWRITER"), who);
         }
         if (
             to == GpuTypes.FacilityState.DELINQUENT
@@ -527,14 +599,14 @@ contract CreditFacilityManager is ICreditFacilityManager {
         ) {
             return who == address(this); // system (GPU-041 monitor) — not externally callable yet
         }
-        if (to == GpuTypes.FacilityState.DEFAULTED) return ROLES.hasRole(ADMIN_ROLE, who);
-        if (to == GpuTypes.FacilityState.RECOVERY) return ROLES.hasRole(ROLES.SERVICER(), who);
+        if (to == GpuTypes.FacilityState.DEFAULTED) return who == recoveryManager;
+        if (to == GpuTypes.FacilityState.RECOVERY) return _hasRole(keccak256("SERVICER"), who);
         if (to == GpuTypes.FacilityState.CLOSED_WITH_LOSS) {
-            return ROLES.hasRole(ADMIN_ROLE, who) || ROLES.hasRole(ROLES.TREASURY(), who);
+            return who == recoveryManager;
         }
         if (to == GpuTypes.FacilityState.REPAID) return who == address(this); // system: debt_zero via repayFor
         if (to == GpuTypes.FacilityState.RELEASED) {
-            return ROLES.hasRole(ROLES.SERVICER(), who) || ROLES.hasRole(ROLES.TREASURY(), who);
+            return _hasRole(keccak256("SERVICER"), who) || _hasRole(keccak256("TREASURY"), who);
         }
         f;
         return false;
@@ -584,6 +656,10 @@ contract CreditFacilityManager is ICreditFacilityManager {
     }
 
     // ------------------------------------------------------------------ token helper
+
+    function _hasRole(bytes32 role, address who) internal view returns (bool) {
+        return ROLES.hasRole(role, who);
+    }
 
     /// @dev transferFrom(msg.sender -> vault); tolerates non-returning tokens, reverts on `false` or revert.
     function _pullToVault(address asset, address from, uint256 amount) internal {

@@ -30,8 +30,8 @@ interface ISourceEscrowOwner is ISourceEscrow {
  * @notice Controlled account for ONE control agreement (GPU-037): it owns the account's `SourceEscrow` (GPU-077),
  *         sweeps only payouts that the SourceEscrow classified as provider settlements, and distributes them through
  *         a fixed waterfall — operating allowance → borrower-owned reserve → debt sweep to the settlement leg (by
- *         facility seniority) → residual to the borrower. It is leg 1→2 of the settlement path
- *         (docs/gpu/decisions/settlement-rails.md §3): funds handed to the settlement leg carry a `settlementId`;
+ *         facility seniority) → residual to the borrower. It is leg 1→2 of the settlement path:
+ *         funds handed to the settlement leg carry a `settlementId`;
  *         **debt is never changed here** (R2-D07 / SR-D03) — there is no ledger call in this contract.
  * @dev Composition with GPU-077: this contract is the `owner` of the SourceEscrow (so it can `withdraw`) and may be
  *      a registered payer (to forward upstream claim proceeds through the same measured path). It reads only

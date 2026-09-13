@@ -1,0 +1,17 @@
+# Upload only the standalone frontend build inputs. Repository keys, native
+# artifacts, backend services, environments and documents stay local.
+/*
+!/apps
+/apps/*
+!/apps/web
+/apps/web/*
+!/apps/web/src
+!/apps/web/public
+!/apps/web/index.html
+!/apps/web/package.json
+!/apps/web/package-lock.json
+!/apps/web/tsconfig.json
+!/apps/web/tsconfig.app.json
+!/apps/web/tsconfig.node.json
+!/apps/web/vite.config.ts
+!/apps/web/vercel.json

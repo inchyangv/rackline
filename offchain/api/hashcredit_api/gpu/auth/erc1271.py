@@ -17,6 +17,33 @@ class RejectAllErc1271Checker:
         return False
 
 
+class RpcErc1271Checker:
+    """Only the deployed contract wallet on this API's chain can authorize its login digest."""
+
+    def __init__(self, web3, chain_id):
+        self.web3, self.chain_id = web3, chain_id
+
+    async def is_valid_signature(self, wallet: str, digest: bytes, signature: bytes) -> bool:
+        from starlette.concurrency import run_in_threadpool
+        from eth_abi import encode
+        from web3 import Web3
+
+        def check():
+            try:
+                if self.web3.eth.chain_id != self.chain_id:
+                    return False
+                address = Web3.to_checksum_address(wallet)
+                block = self.web3.eth.get_block("latest")
+                if not self.web3.eth.get_code(address, block_identifier=block.number):
+                    return False
+                calldata = bytes.fromhex("1626ba7e") + encode(["bytes32", "bytes"], [digest, signature])
+                result = self.web3.eth.call({"to": address, "data": calldata, "gas": 100000}, block_identifier=block.number)
+                return len(result) >= 32 and result[:4] == bytes.fromhex("1626ba7e")
+            except Exception:
+                return False
+        return await run_in_threadpool(check)
+
+
 class FakeErc1271Checker:
     """TEST_ONLY: accepts exactly the (wallet, digest, signature) triples registered in advance."""
 

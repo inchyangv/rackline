@@ -61,6 +61,9 @@ contract SourceEscrow is ISourceEscrow {
     mapping(bytes32 => uint256) private _openAmount;
     mapping(bytes32 => uint256) private _paidCumulative;
     mapping(bytes32 => uint64) public checkpointSeq;
+    mapping(bytes32 => uint64) public protectedUntil;
+    mapping(bytes32 => address) public accountToken;
+    uint64 public constant MAX_RESERVATION = 15 minutes;
 
     mapping(address => mapping(bytes32 => bool)) private _settlementUsed; // payer => settlementId
     mapping(uint64 => Payout) private _payouts;
@@ -165,9 +168,14 @@ contract SourceEscrow is ISourceEscrow {
         uint256 amount,
         uint64 dueAt
     ) external onlyIssuer {
+        _requireUnreserved(accountKey);
         if (_borrowerWallet[accountKey] == address(0)) revert AccountUnknown(accountKey);
         if (!tokenInfo[token].admitted) revert TokenNotAdmitted(token);
         if (amount == 0) revert ZeroAmount();
+        if (accountToken[accountKey] != address(0) && accountToken[accountKey] != token) {
+            revert ObligationTokenMismatch(accountToken[accountKey], token);
+        }
+        accountToken[accountKey] = token;
         Obligation storage o = _obligations[accountKey][obligationRef];
         if (o.status != ObligationStatus.NONE) revert ObligationExists(accountKey, obligationRef);
         o.accountKey = accountKey;
@@ -180,9 +188,11 @@ contract SourceEscrow is ISourceEscrow {
         _openAmount[accountKey] += amount;
         _bumpAccountRevision(accountKey, 1);
         emit ObligationRecognized(accountKey, obligationRef, msg.sender, payer, address(this), amount, dueAt, 1);
+        emit ObligationRecognizedV2(accountKey, obligationRef, msg.sender, payer, address(this), token, amount, dueAt, 1);
     }
 
     function assignObligation(bytes32 accountKey, bytes32 obligationRef, bytes32 facilityKey) external {
+        _requireUnreserved(accountKey);
         if (!_issuers[msg.sender] && !_controllers[msg.sender]) revert NotIssuerOrController(msg.sender);
         Obligation storage o = _obligations[accountKey][obligationRef];
         if (o.status != ObligationStatus.OPEN) revert ObligationNotOpen(accountKey, obligationRef, o.status);
@@ -200,6 +210,7 @@ contract SourceEscrow is ISourceEscrow {
         external
         onlyIssuer
     {
+        _requireUnreserved(accountKey);
         Obligation storage o = _obligations[accountKey][obligationRef];
         if (o.status != ObligationStatus.OPEN) revert ObligationNotOpen(accountKey, obligationRef, o.status);
         uint256 newNet;
@@ -232,6 +243,22 @@ contract SourceEscrow is ISourceEscrow {
         );
     }
 
+    /// @notice Freeze changes to this source account for a bounded proof-and-draw window. Anyone may still repay
+    ///         at the destination; only source receivable mutations wait for expiry. No role can shorten the lock.
+    function reserveCheckpoint(bytes32 accountKey, uint64 until) external onlyIssuer {
+        _requireUnreserved(accountKey);
+        if (_borrowerWallet[accountKey] == address(0)) revert AccountUnknown(accountKey);
+        if (until <= block.timestamp || until > block.timestamp + MAX_RESERVATION) revert InvalidReservationWindow();
+        protectedUntil[accountKey] = until;
+        uint64 seq = ++checkpointSeq[accountKey];
+        emit SourceCheckpointV2(accountKey, seq, _latestRevision[accountKey], _openAmount[accountKey],
+            _paidCumulative[accountKey], uint64(block.timestamp), until);
+    }
+
+    function _requireUnreserved(bytes32 accountKey) internal view {
+        if (block.timestamp < protectedUntil[accountKey]) revert AccountReserved(accountKey, protectedUntil[accountKey]);
+    }
+
     /// @notice Our own server's statement hash. Explicit assertion; changes no obligation state.
     function anchorStatement(bytes32 accountKey, bytes32 statementHash) external {
         if (!_anchors[msg.sender]) revert NotAnchor(msg.sender);
@@ -250,6 +277,7 @@ contract SourceEscrow is ISourceEscrow {
         nonReentrant
         returns (uint64 seq, uint256 measured)
     {
+        _requireUnreserved(accountKey);
         if (!_payers[msg.sender]) revert NotRegisteredPayer(msg.sender);
         if (_borrowerWallet[accountKey] == address(0)) revert AccountUnknown(accountKey);
         TokenInfo memory t = tokenInfo[token];
@@ -291,6 +319,7 @@ contract SourceEscrow is ISourceEscrow {
     /// @notice Reverse a prior payout (chargeback/clawback). Tokens actually leave the escrow back to the payer.
     function cancelPayout(uint64 seq) external onlyIssuer nonReentrant {
         Payout storage p = _payouts[seq];
+        _requireUnreserved(p.accountKey);
         if (p.payer == address(0)) revert PayoutUnknown(seq);
         if (p.cancelled) revert PayoutAlreadyCancelled(seq);
         p.cancelled = true;

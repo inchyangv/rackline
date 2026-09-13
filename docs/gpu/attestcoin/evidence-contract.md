@@ -1,10 +1,10 @@
-# Native evidence contract: proof scope, source financial events, receivable semantics (GPU-076, v1)
+# Native evidence contract: proof scope, source financial events, receivable semantics
 
-Status: SPEC v1 (2026-09-14). Partner-specific parts are **DRAFT/OPEN** until GPU-004/005/008 supply real
-source-contract facts. Basis: TICKET §0.9, PIVOT §5/§6/§10, `attestcoin-first.md` R2-D02…D08,
-`environment.md` (official artifacts, GPU-075), `domain-model.md` (records, enums), `accounting.md`.
+Partner-specific parts remain **DRAFT/OPEN** until a real provider supplies source-contract facts.
+This specification builds on `environment.md` (official artifacts), `domain-model.md` (records and enums),
+and `accounting.md`.
 Companion: `proof-to-business-mapping.md`; fixtures `test/fixtures/gpu/attestcoin/{source-events-v1.abi,
-evidence-vectors-v1,canonical-id-vectors-v1}.json`. Consumers: GPU-014, 029, 031, 077, 078, 079, 081, 082.
+evidence-vectors-v1,canonical-id-vectors-v1}.json`.
 
 ## 1. The chain and what each stage proves
 

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "scope": "BORROWER_ACCOUNTING_AND_WALLET_UX",
+  "chainId": 102031,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "checkedAt": "2026-09-14T04:29:24.003Z",
+  "checkedBlock": 5484581,
+  "wallet": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+  "asset": {
+    "chainId": 102031,
+    "address": "0x03115387f28660088faa6a9b00aa21cc2ad1ade5",
+    "decimals": 6,
+    "symbol": "tUSD",
+    "testOnly": true
+  },
+  "facilityId": "5DCNY1D03WP51EAK4V024YB60F",
+  "canonicalFacilityId": "0x2515ccdafaee79ff908308cb41af249ed0b88f5baf64d187d28d7eebf0e76bc3",
+  "manager": "0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d",
+  "repaymentRouter": "0xd4dcecfbb505a428e3c99363c23e58bfdb37949b",
+  "amountEncoding": "base-unit decimal strings",
+  "transactions": [
+    {
+      "action": "borrow",
+      "txHash": "0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee",
+      "assets": "1000000",
+      "minimumReceived": "1000000",
+      "blockNumber": 5484522,
+      "blockHash": "0x62e6aa7f21f4daca82bdf63de474f4f37f8de93c3c71aff0291ef8497c208935",
+      "status": 1,
+      "confirmationsAtCheck": 60
+    },
+    {
+      "action": "approve",
+      "txHash": "0x649813a3a7e99497bf7bf56e93073f984281a1689e840921a80304bc6eb8cf75",
+      "spender": "0xd4dcecfbb505a428e3c99363c23e58bfdb37949b",
+      "maximum": "1001000",
+      "blockNumber": 5484563,
+      "blockHash": "0xc996c6d640baba7eece629e07eaba5c5b3ec427b1340cada43b062bc6c424eae",
+      "status": 1,
+      "confirmationsAtCheck": 19
+    },
+    {
+      "action": "repayExact",
+      "txHash": "0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78",
+      "maximum": "1001000",
+      "blockNumber": 5484565,
+      "blockHash": "0xc1092a04084c2deef0c205272154a3e711b0beb89e578dafc6d28e39f9f3939e",
+      "status": 1,
+      "confirmationsAtCheck": 17
+    }
+  ],
+  "repaid": {
+    "logIndex": 13,
+    "emitter": "RepaymentRouter",
+    "requested": "1000002",
+    "received": "1000002",
+    "applied": "1000002",
+    "feePaid": "0",
+    "interestPaid": "2",
+    "principalPaid": "1000000",
+    "excess": "0",
+    "newDebt": "0"
+  },
+  "finalState": {
+    "legalDebt": "0",
+    "walletTokenBalance": "9999999998"
+  },
+  "checks": {
+    "allReceiptsSuccessful": true,
+    "allRecordedBlocksCanonical": true,
+    "atLeastSixConfirmations": true,
+    "repaymentCapAboveExecutionDebt": true,
+    "noExcessTransferred": true,
+    "priorBorrowNotRepeated": true,
+    "desktopAndMobileCanonicalZeroDebtReadback": true
+  },
+  "automation": {
+    "completedWithRepaymentOnlyResume": true,
+    "intermediateFailures": [
+      "Indexer watermark stalled after successful borrow",
+      "Wallet RPC error before approval; nonce and allowance proved no submission",
+      "RPC timeout before browser initialization"
+    ],
+    "readOnlyTransportRetry": "12-second timeout; at most 3 read attempts; never retries transaction broadcasts"
+  },
+  "nativeProofAcceptance": "NOT_ASSERTED_BY_BORROWER_FLOW",
+  "partnerRevenue": "SIMULATED"
+}

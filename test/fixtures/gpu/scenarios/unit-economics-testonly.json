@@ -1,6 +1,6 @@
 {
   "testOnly": true,
-  "note": "GPU-007 illustration only. Every number is a placeholder for the sensitivity/stress model; approved values are recorded in docs/gpu/decisions/REGISTER.md (TS-O04..O08) before any pilot. Amounts are 6-dp base units; rates are basis points.",
+  "note": "TEST_ONLY illustration. Every number is a placeholder for sensitivity and stress testing, not an approved pilot term. Amounts are 6-decimal base units; rates are basis points.",
   "borrowingBase": {
     "unpaidReceivables": "20000000000",
     "deductions": { "disputes": "500000000", "platformFees": "1000000000", "sla": "0", "senior": "0" },

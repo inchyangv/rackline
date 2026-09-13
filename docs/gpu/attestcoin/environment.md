@@ -1,10 +1,8 @@
-# Attestcoin environment ledger (GPU-075)
+# Attestcoin environment and artifact ledger
 
 Pinned on 2026-09-13/14 from the official docs and the actual npm artifacts. This is the artifact/version/
-environment source of truth for GPU-076~082. "Probed" means a read-only RPC/HTTP check succeeded at the
-stated time; it is **not** a native proof result (that is GPU-080) and not partner/E2/cash evidence.
-
-Decision references: `docs/gpu/decisions/attestcoin-first.md` R2-D02, R2-D11, R2-D12.
+environment source of truth. "Probed" means a read-only RPC/HTTP check succeeded at the stated time; it is
+**not** a native proof result and not partner, payment-control, or cash evidence.
 
 ## 1. Official artifacts (pinned, hashed)
 

@@ -97,12 +97,13 @@ contract GPU035RiskTest is Test {
     uint64 constant T0 = 1_750_000_000; // before DUE_AT (2025-10-31): baseline receivables are not overdue
 
     bytes32 constant T_RECOGNIZED =
-        keccak256("ObligationRecognized(bytes32,bytes32,address,address,address,uint256,uint64,uint32)");
+        keccak256("ObligationRecognizedV2(bytes32,bytes32,address,address,address,address,uint256,uint64,uint32)");
     bytes32 constant T_ASSIGNED = keccak256("ObligationAssigned(bytes32,bytes32,bytes32,uint32)");
     bytes32 constant T_CORRECTED = keccak256("ObligationCorrected(bytes32,bytes32,int256,uint32,uint8)");
     bytes32 constant T_PAYOUT = keccak256("PayoutReceived(bytes32,bytes32,address,address,uint256,uint64)");
     bytes32 constant T_CANCELLED = keccak256("PayoutCancelled(bytes32,bytes32,uint64,uint256)");
-    bytes32 constant T_CHECKPOINT = keccak256("SourceCheckpoint(bytes32,uint64,uint32,uint256,uint256)");
+    bytes32 constant T_CHECKPOINT =
+        keccak256("SourceCheckpointV2(bytes32,uint64,uint32,uint256,uint256,uint64,uint64)");
 
     struct Log {
         address addr;
@@ -208,6 +209,7 @@ contract GPU035RiskTest is Test {
         // EvidenceMeaning has no CHECKPOINT member (GPU-029 enum); the book keys checkpoints on topic0 and ignores
         // the registered meaning for them. Registered here as CORRECTION only to satisfy emitter registration.
         providers.registerEmitter(MOCK, ESCROW, T_CHECKPOINT, GpuTypes.EvidenceMeaning.CORRECTION, 0, address(0));
+        providers.setIssuer(MOCK, ISSUER, true);
         providers.admitToken(MOCK, SEPOLIA, USDC, 6);
         vm.stopPrank();
     }
@@ -309,7 +311,7 @@ contract GPU035RiskTest is Test {
         l.topics[1] = GpuTypes.AccountKey.unwrap(GpuTypes.AccountKey.wrap(keccak256("mockdepin-testonly:acct-A")));
         l.topics[2] = ref;
         l.topics[3] = bytes32(uint256(uint160(ISSUER)));
-        l.data = abi.encode(PAYER, ESCROW, amount, DUE_AT, rev);
+        l.data = abi.encode(PAYER, ESCROW, USDC, amount, DUE_AT, rev);
     }
 
     function _log(bytes32 topic0, GpuTypes.AccountKey acct, bytes32 t2, bytes32 t3, uint256 n, bytes memory data)
@@ -404,20 +406,31 @@ contract GPU035RiskTest is Test {
 
     /// @dev Recognize inv-A (12,000) and inv-B (9,000) for account A from the committed fixture bytes.
     function _recognizeFixture() internal {
-        bytes memory txBytes = vm.parseJsonBytes(wireJson, ".cases.obligation2Logs.txBytes");
+        bytes memory txBytes = _fixtureTxBytes();
         IReceivableBook.ReceivableClaim[] memory cs = new IReceivableBook.ReceivableClaim[](2);
         cs[0] = _claim(
             0,
             ACCOUNT_A,
             REF_A,
             bytes32(uint256(uint160(ISSUER))),
-            abi.encode(PAYER, ESCROW, 12_000e6, DUE_AT, uint32(1))
+            abi.encode(PAYER, ESCROW, USDC, 12_000e6, DUE_AT, uint32(1))
         );
         cs[1] = _claim(
-            1, ACCOUNT_A, REF_B, bytes32(uint256(uint160(ISSUER))), abi.encode(PAYER, ESCROW, 9000e6, DUE_AT, uint32(1))
+            1,
+            ACCOUNT_A,
+            REF_B,
+            bytes32(uint256(uint160(ISSUER))),
+            abi.encode(PAYER, ESCROW, USDC, 9000e6, DUE_AT, uint32(1))
         );
         vm.prank(relayer);
         book.ingest(MOCK, _envelope(txBytes, HEIGHT, 17), ESCROW, _topics(T_RECOGNIZED), cs);
+    }
+
+    function _fixtureTxBytes() internal view returns (bytes memory) {
+        Log[] memory logs = new Log[](2);
+        logs[0] = _obligationLog(REF_A, 12_000e6, 1);
+        logs[1] = _obligationLog(REF_B, 9000e6, 1);
+        return _txBytes(1, logs);
     }
 
     function _assign(bytes32 ref, GpuTypes.FacilityId f, uint32 rev) internal {
@@ -435,7 +448,9 @@ contract GPU035RiskTest is Test {
     function _checkpoint(GpuTypes.AccountKey acct, uint64 seq, uint32 latestRev, uint256 open, uint256 paidCum)
         internal
     {
-        bytes memory data = abi.encode(seq, latestRev, open, paidCum);
+        bytes memory data = abi.encode(
+            seq, latestRev, open, paidCum, uint64(block.timestamp), uint64(block.timestamp + 15 minutes)
+        );
         _ingestOne(T_CHECKPOINT, _log(T_CHECKPOINT, acct, 0, 0, 2, data), _claim(0, acct, 0, 0, data));
     }
 
@@ -484,12 +499,15 @@ contract GPU035RiskTest is Test {
         Log[] memory logs = new Log[](2);
         logs[0] = _obligationLog(REF_A, 12_000e6, 1);
         logs[1] = _obligationLog(REF_B, 9000e6, 1);
+        // The pinned SDK v1 fixture remains immutable. v2 business events use the same official wire encoder.
+        logs[0].topics[0] =
+            keccak256("ObligationRecognized(bytes32,bytes32,address,address,address,uint256,uint64,uint32)");
+        logs[1].topics[0] = logs[0].topics[0];
+        logs[0].data = abi.encode(PAYER, ESCROW, 12_000e6, DUE_AT, uint32(1));
+        logs[1].data = abi.encode(PAYER, ESCROW, 9000e6, DUE_AT, uint32(1));
         bytes memory expected = vm.parseJsonBytes(wireJson, ".cases.obligation2Logs.txBytes");
         assertEq(_txBytes(1, logs), expected, "Solidity replica of the SDK V1 encoder must match the fixture");
-        assertEq(
-            _txBytes(0, _one(_obligationLog(REF_A, 12_000e6, 1))),
-            vm.parseJsonBytes(wireJson, ".cases.receiptFailed.txBytes")
-        );
+        assertEq(_txBytes(0, _one(logs[0])), vm.parseJsonBytes(wireJson, ".cases.receiptFailed.txBytes"));
     }
 
     // ================================================================== GPU-035.a receivables + checkpoint gate
@@ -504,7 +522,7 @@ contract GPU035RiskTest is Test {
         _checkpoint(ACCOUNT_A, 1, 3, 21_000e6, 0);
         (uint256 e2, uint64 validUntil, uint64 age) = book.eligibleUnpaid(FA, 7 days, 0, 500, uint64(block.timestamp));
         assertEq(e2, 12_000e6);
-        assertEq(validUntil, uint64(block.timestamp + 7 days));
+        assertEq(validUntil, uint64(block.timestamp + 15 minutes));
         assertEq(age, 0);
         GpuTypes.DrawEvaluation memory ev = _ev(FA);
         assertEq(ev.eligibleReceivables, 12_000e6);
@@ -546,7 +564,9 @@ contract GPU035RiskTest is Test {
         // a checkpoint seq cannot go backwards (seq 3 then seq 2); a replay of seq 1 is the same economic fact and
         // is refused by the EvidenceBook before the book sees it
         _checkpoint(ACCOUNT_A, 3, 3, 21_000e6, 0);
-        bytes memory data = abi.encode(uint64(2), uint32(3), 21_000e6, uint256(0));
+        bytes memory data = abi.encode(
+            uint64(2), uint32(3), 21_000e6, uint256(0), uint64(block.timestamp), uint64(block.timestamp + 15 minutes)
+        );
         _ingestOneRev(
             T_CHECKPOINT,
             _log(T_CHECKPOINT, ACCOUNT_A, 0, 0, 2, data),
@@ -579,7 +599,7 @@ contract GPU035RiskTest is Test {
         assertEq(e, 0, "paid receivable contributes nothing");
         // a fresh "recognition" of the same obligation ref is not new base: a second proof of revision 1 is the same
         // economic fact (EvidenceBook dedup), and a recognition log at any other revision hits the book's guard
-        bytes memory data = abi.encode(PAYER, ESCROW, uint256(12_000e6), DUE_AT, uint32(1));
+        bytes memory data = abi.encode(PAYER, ESCROW, USDC, uint256(12_000e6), DUE_AT, uint32(1));
         vm.prank(relayer);
         vm.expectRevert(); // EconomicEventAlreadyRecorded
         book.ingest(
@@ -589,7 +609,7 @@ contract GPU035RiskTest is Test {
             _topics(T_RECOGNIZED),
             _single(_claim(0, ACCOUNT_A, REF_A, bytes32(uint256(uint160(ISSUER))), data))
         );
-        bytes memory data4 = abi.encode(PAYER, ESCROW, uint256(12_000e6), DUE_AT, uint32(4));
+        bytes memory data4 = abi.encode(PAYER, ESCROW, USDC, uint256(12_000e6), DUE_AT, uint32(4));
         _ingestOneRev(
             T_RECOGNIZED,
             _obligationLog(REF_A, 12_000e6, 4),
@@ -625,17 +645,21 @@ contract GPU035RiskTest is Test {
     }
 
     function test_claimedAmountDifferentFromVerifiedLog_reverts_nothingConsumed() public {
-        bytes memory txBytes = vm.parseJsonBytes(wireJson, ".cases.obligation2Logs.txBytes");
+        bytes memory txBytes = _fixtureTxBytes();
         IReceivableBook.ReceivableClaim[] memory cs = new IReceivableBook.ReceivableClaim[](2);
         cs[0] = _claim(
             0,
             ACCOUNT_A,
             REF_A,
             bytes32(uint256(uint160(ISSUER))),
-            abi.encode(PAYER, ESCROW, uint256(99_000e6), DUE_AT, uint32(1))
+            abi.encode(PAYER, ESCROW, USDC, uint256(99_000e6), DUE_AT, uint32(1))
         );
         cs[1] = _claim(
-            1, ACCOUNT_A, REF_B, bytes32(uint256(uint160(ISSUER))), abi.encode(PAYER, ESCROW, 9000e6, DUE_AT, uint32(1))
+            1,
+            ACCOUNT_A,
+            REF_B,
+            bytes32(uint256(uint160(ISSUER))),
+            abi.encode(PAYER, ESCROW, USDC, 9000e6, DUE_AT, uint32(1))
         );
         vm.prank(relayer);
         vm.expectRevert(); // ClaimMismatch(expected, claimed)
@@ -706,6 +730,7 @@ contract GPU035RiskTest is Test {
         assertEq(s.paidCumulative, 777e6);
         assertEq(s.openAmount, 21_000e6);
         assertEq(s.eventsConsumed, 3, "unattributed payouts do not bump the obligation counter");
+        _checkpoint(ACCOUNT_A, 2, 3, 21_000e6, 777e6); // paid cumulative must reconcile too
         (uint256 e,,) = book.eligibleUnpaid(FA, 7 days, 0, 500, uint64(block.timestamp));
         assertEq(e, 12_000e6);
     }
@@ -742,14 +767,14 @@ contract GPU035RiskTest is Test {
     }
 
     function test_ingest_roleGated_andNoDirectRegistration() public {
-        bytes memory txBytes = vm.parseJsonBytes(wireJson, ".cases.obligation2Logs.txBytes");
+        bytes memory txBytes = _fixtureTxBytes();
         IReceivableBook.ReceivableClaim[] memory cs = new IReceivableBook.ReceivableClaim[](1);
         cs[0] = _claim(
             0,
             ACCOUNT_A,
             REF_A,
             bytes32(uint256(uint160(ISSUER))),
-            abi.encode(PAYER, ESCROW, 12_000e6, DUE_AT, uint32(1))
+            abi.encode(PAYER, ESCROW, USDC, 12_000e6, DUE_AT, uint32(1))
         );
         bytes32 relayerRole = roles.RELAYER();
         GpuTypes.NativeProofEnvelope memory env = _envelope(txBytes, HEIGHT, 17);
@@ -822,6 +847,7 @@ contract GPU035RiskTest is Test {
         ctl.expireReservation(r1);
         assertEq(ctl.reservedOf(FA), 0);
         // cancel path (manager or underwriter), not mallory
+        _checkpoint(ACCOUNT_A, 2, 3, 21_000e6, 0);
         vm.prank(manager);
         bytes32 r2 = ctl.reserve(FA, 1000e6, 2, uint64(block.timestamp + 1 hours));
         vm.prank(mallory);
@@ -877,6 +903,7 @@ contract GPU035RiskTest is Test {
         ctl.reserve(FA, 1, 1, uint64(block.timestamp + 1 hours));
         vm.prank(servicer);
         control.observe(AGR_A, GpuTypes.ControlGrade.E2, ESCROW);
+        _checkpoint(ACCOUNT_A, 2, 3, 21_000e6, 0);
         assertEq(_ev(FA).availableDraw, 6000e6);
         // new agreement version invalidates the pinned version 1
         vm.prank(underwriter);
@@ -1022,7 +1049,7 @@ contract GPU035RiskTest is Test {
         _recognizeFixture();
         // a 1e12 USDC obligation (1e18 base units) through the same proven path
         bytes32 refBig = keccak256("inv-big");
-        bytes memory data = abi.encode(PAYER, ESCROW, uint256(1e18), DUE_AT, uint32(1));
+        bytes memory data = abi.encode(PAYER, ESCROW, USDC, uint256(1e18), DUE_AT, uint32(1));
         _ingestOne(
             T_RECOGNIZED,
             _log(T_RECOGNIZED, ACCOUNT_A, refBig, bytes32(uint256(uint160(ISSUER))), 4, data),

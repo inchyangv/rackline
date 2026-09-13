@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "nativeStatus": "CONSUMED",
+  "partnerRevenue": "SIMULATED",
+  "partnerSourceBinding": "UNCONFIGURED",
+  "files": {
+    "recognizeObligation.proof.json": "sha256:186ae691c48c24efda32b8cb9b85131584ebef6f357ccd230dce79aae8663339",
+    "assignObligation.proof.json": "sha256:5bd3b14019a39b4ffd6d2b4ecbc4fcd82ab9eb774fed0b8d80e438371c9ce928",
+    "settle.proof.json": "sha256:3ebce9f2d5f7901b2bb5e9d314c00e918ab8747d21273717ea6528b669acbaf0",
+    "reserveCheckpoint.proof.json": "sha256:57b99b4628815a3dd2e59f3714b1151043c1edaa172c64ddfee027ac1ae2e8a1",
+    "checkpoint-refresh.proof.json": "sha256:316163809528e10033919d1db58d848bf1b52021c8796da14821c52585cba58e",
+    "checkpoint-consumption.json": "sha256:48d8f66a84da5879dc93cdcb74afb0b60994eeb331501f8a7d16b80744e58307",
+    "setup-receipt.json": "sha256:cdc8831f2d3e2afe96644e0c21ccab5816398d35894481845031facfeaacf02e",
+    "consumption-audited.json": "sha256:7d011e340b94f3d3f111eab4a858fef12744291526d3fac18c090cc0ab61ea72"
+  }
+}

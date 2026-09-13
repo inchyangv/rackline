@@ -54,6 +54,9 @@ contract DebtLedger is IDebtLedger {
     mapping(address => bool) public isWriter;
 
     event WriterSet(address indexed writer, bool enabled);
+    bool public wiringFinalized;
+    event WiringSealed();
+    error WiringFinalized();
     event StateSet(GpuTypes.FacilityId indexed facilityId, GpuTypes.FacilityState state);
 
     error NotAdmin(address caller);
@@ -81,8 +84,15 @@ contract DebtLedger is IDebtLedger {
     // ------------------------------------------------------------------ admin
 
     function setWriter(address writer, bool enabled) external onlyAdmin {
+        if (wiringFinalized) revert WiringFinalized();
         isWriter[writer] = enabled;
         emit WriterSet(writer, enabled);
+    }
+
+    function finalizeWiring() external onlyAdmin {
+        if (wiringFinalized) revert WiringFinalized();
+        wiringFinalized = true;
+        emit WiringSealed();
     }
 
     // ------------------------------------------------------------------ writer operations

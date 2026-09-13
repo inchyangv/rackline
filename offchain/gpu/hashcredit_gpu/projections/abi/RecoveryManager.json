@@ -1,0 +1,714 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "roles",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      },
+      {
+        "name": "ledger",
+        "type": "address",
+        "internalType": "contract IDebtLedger"
+      },
+      {
+        "name": "manager",
+        "type": "address",
+        "internalType": "contract CreditFacilityManager"
+      },
+      {
+        "name": "vault",
+        "type": "address",
+        "internalType": "contract LendingVaultV2"
+      },
+      {
+        "name": "router",
+        "type": "address",
+        "internalType": "contract IRepaymentRouter"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ASSET",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "LEDGER",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IDebtLedger"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MANAGER",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract CreditFacilityManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROLES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROUTER",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IRepaymentRouter"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "VAULT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract LendingVaultV2"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "applyReserve",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "approveDefault",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "reason",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "approveWriteOff",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "lossId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "beginRecovery",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "cure",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "declareDefault",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "fundReserve",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "impair",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "lossId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "installmentPaid",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "lossUsed",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "markDelinquent",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "observeAllocation",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "returnReserve",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "reverseImpairment",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "schedule",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct RecoveryManager.Schedule",
+        "components": [
+          {
+            "name": "dueAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "graceSeconds",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "disputeUntil",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "dueAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "paidAtSchedule",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "paidSinceSchedule",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "pledgedReserve",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reserveOwner",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "defaultApproved",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "disputed",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "writtenOff",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "defaultReason",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "writeOffApproval",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setDispute",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "disputed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSchedule",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "dueAt",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "grace",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "disputeWindow",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "dueAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "totalAllocated",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "writeOff",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "lossId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "DefaultApproved",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "reason",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DisputeSet",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "disputed",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "disputeUntil",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LossApplied",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "lossId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "writeOff",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReserveApplied",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReserveFunded",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ScheduleSet",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "dueAt",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "graceSeconds",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "dueAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "DisputeOpen",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DuplicateLoss",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidSchedule",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotApproved",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotDue",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotReserveOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotRole",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OutstandingDebt",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "Reentrancy",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TransferFailed",
+    "inputs": []
+  }
+]

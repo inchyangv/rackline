@@ -34,6 +34,10 @@ contract ReceivableBook is IReceivableBook {
     bytes32 public constant TOPIC_PAYOUT_CANCELLED = keccak256("PayoutCancelled(bytes32,bytes32,uint64,uint256)");
     bytes32 public constant TOPIC_SOURCE_CHECKPOINT =
         keccak256("SourceCheckpoint(bytes32,uint64,uint32,uint256,uint256)");
+    bytes32 public constant TOPIC_OBLIGATION_RECOGNIZED_V2 =
+        keccak256("ObligationRecognizedV2(bytes32,bytes32,address,address,address,address,uint256,uint64,uint32)");
+    bytes32 public constant TOPIC_SOURCE_CHECKPOINT_V2 =
+        keccak256("SourceCheckpointV2(bytes32,uint64,uint32,uint256,uint256,uint64,uint64)");
     uint8 public constant CORRECTION_REASON_CANCEL = 3; // ISourceEscrow.CorrectionReason.CANCEL
 
     IProtocolRoles public immutable ROLES;
@@ -52,10 +56,20 @@ contract ReceivableBook is IReceivableBook {
     }
 
     struct Settlement {
+        GpuTypes.AccountKey accountKey;
         bytes32 receivableId; // 0 for unattributed
         uint256 amount;
         bool exists;
         bool cancelled;
+    }
+
+    struct Recognition {
+        address payer;
+        address payee;
+        address token;
+        uint256 amount;
+        uint64 dueAt;
+        uint32 revision;
     }
 
     mapping(GpuTypes.FacilityId => Facility) private _facilities;
@@ -68,6 +82,8 @@ contract ReceivableBook is IReceivableBook {
 
     error NotRole(bytes32 role, address caller);
     error ZeroAddress();
+    error UntrustedEvidence();
+    error InvalidCheckpointTime();
 
     constructor(IProtocolRoles roles, IEvidenceBook evidence, IProviderRegistry providers, IAccountRegistry accounts) {
         if (
@@ -96,6 +112,9 @@ contract ReceivableBook is IReceivableBook {
     ) external onlyRole(ROLES.UNDERWRITER()) {
         if (_facilities[facilityId].exists) revert FacilityExists(facilityId);
         if (borrowerId == bytes32(0)) revert ZeroAddress();
+        if (sourceAsset.chainId != PROVIDERS.provider(providerId).sourceChain.chainId) {
+            revert PilotValuationUnsupported("source chain");
+        }
         if (!PROVIDERS.isTokenAdmitted(providerId, sourceAsset.chainId, sourceAsset.token)) {
             revert IProviderRegistry.TokenNotAdmitted(providerId, sourceAsset.chainId, sourceAsset.token);
         }
@@ -177,6 +196,9 @@ contract ReceivableBook is IReceivableBook {
     ) external view override returns (uint256 eligible, uint64 evidenceValidUntil, uint64 checkpointAge) {
         Facility storage f = _facilities[facilityId];
         if (!f.exists) revert FacilityUnknown(facilityId);
+        if (!PROVIDERS.isAdmitted(f.providerId, PROVIDERS.provider(f.providerId).sourceChain.manifestHash)) {
+            return (0, 0, 0);
+        }
         bytes32[] storage ids = _facilityReceivables[facilityId];
         evidenceValidUntil = type(uint64).max;
         for (uint256 i = 0; i < ids.length; i++) {
@@ -184,7 +206,7 @@ contract ReceivableBook is IReceivableBook {
             if (r.state != ReceivableState.ASSIGNED || r.disputed) continue;
             if (GpuTypes.FacilityId.unwrap(r.facilityId) != GpuTypes.FacilityId.unwrap(facilityId)) continue;
             if (r.evidenceValidUntil <= at) continue;
-            if (r.token != address(0) && r.token != f.sourceAsset.token) continue;
+            if (!r.denominationProven || r.token != f.sourceAsset.token) continue;
             (bool fresh, uint64 age) =
                 _checkpointOk(_accountId(f.providerId, r.accountKey), checkpointMaxAge, checkpointToleranceBps, at);
             if (!fresh) continue;
@@ -192,6 +214,8 @@ contract ReceivableBook is IReceivableBook {
             if (r.dueAt != 0 && r.dueAt < at) unpaid = unpaid * (10_000 - overdueHaircutBps) / 10_000;
             eligible += unpaid;
             if (r.evidenceValidUntil < evidenceValidUntil) evidenceValidUntil = r.evidenceValidUntil;
+            uint64 until = _checkpoints[_accountId(f.providerId, r.accountKey)].protectedUntil;
+            if (until < evidenceValidUntil) evidenceValidUntil = until;
             if (age > checkpointAge) checkpointAge = age;
         }
         if (eligible == 0) evidenceValidUntil = 0;
@@ -205,11 +229,12 @@ contract ReceivableBook is IReceivableBook {
         returns (bool ok, uint64 age)
     {
         Checkpoint storage c = _checkpoints[accountId];
-        if (!c.exists || at < c.provenAt) return (false, 0);
-        age = at - c.provenAt;
+        if (!c.exists || c.observedAt == 0 || at < c.observedAt || at >= c.protectedUntil) return (false, 0);
+        age = at - c.observedAt;
         if (age > maxAge) return (false, age);
         AccountStats storage s = _stats[accountId];
         if (c.latestRevision != s.eventsConsumed) return (false, age);
+        if (c.paidCumulative != s.paidCumulative) return (false, age);
         uint256 hi = c.openAmount > s.openAmount ? c.openAmount : s.openAmount;
         uint256 lo = c.openAmount > s.openAmount ? s.openAmount : c.openAmount;
         if (hi - lo > s.openAmount * toleranceBps / 10_000) return (false, age);
@@ -256,12 +281,12 @@ contract ReceivableBook is IReceivableBook {
     }
 
     function _kindOf(bytes32 topic0) internal pure returns (Kind) {
-        if (topic0 == TOPIC_OBLIGATION_RECOGNIZED) return Kind.RECOGNIZED;
+        if (topic0 == TOPIC_OBLIGATION_RECOGNIZED || topic0 == TOPIC_OBLIGATION_RECOGNIZED_V2) return Kind.RECOGNIZED;
         if (topic0 == TOPIC_OBLIGATION_ASSIGNED) return Kind.ASSIGNED;
         if (topic0 == TOPIC_OBLIGATION_CORRECTED) return Kind.CORRECTED;
         if (topic0 == TOPIC_PAYOUT_RECEIVED) return Kind.PAYOUT;
         if (topic0 == TOPIC_PAYOUT_CANCELLED) return Kind.PAYOUT_CANCELLED;
-        if (topic0 == TOPIC_SOURCE_CHECKPOINT) return Kind.CHECKPOINT;
+        if (topic0 == TOPIC_SOURCE_CHECKPOINT || topic0 == TOPIC_SOURCE_CHECKPOINT_V2) return Kind.CHECKPOINT;
         revert UnknownTopic(topic0);
     }
 
@@ -277,6 +302,8 @@ contract ReceivableBook is IReceivableBook {
         if (k == Kind.ASSIGNED) return GpuTypes.EvidenceMeaning.ASSIGNMENT_RECOGNIZED;
         if (k == Kind.CORRECTED) return GpuTypes.EvidenceMeaning.CORRECTION;
         if (k == Kind.PAYOUT) return GpuTypes.EvidenceMeaning.PAYOUT;
+        if (k == Kind.CHECKPOINT) return GpuTypes.EvidenceMeaning.CORRECTION; // v1 enum: explicit checkpoint topic
+            // mapping
         return GpuTypes.EvidenceMeaning.PAYMENT_CANCELLED;
     }
 
@@ -289,7 +316,12 @@ contract ReceivableBook is IReceivableBook {
     {
         uint256 seqOrRev;
         if (k == Kind.RECOGNIZED) {
-            (,,,, uint32 rev) = abi.decode(c.data, (address, address, uint256, uint64, uint32));
+            uint32 rev;
+            if (c.data.length == 192) {
+                (,,,,, rev) = abi.decode(c.data, (address, address, address, uint256, uint64, uint32));
+            } else {
+                (,,,, rev) = abi.decode(c.data, (address, address, uint256, uint64, uint32));
+            }
             seqOrRev = rev;
         } else if (k == Kind.ASSIGNED) {
             seqOrRev = abi.decode(c.data, (uint32));
@@ -325,7 +357,13 @@ contract ReceivableBook is IReceivableBook {
         ReceivableClaim calldata c
     ) internal {
         Kind k = _kindOf(rec.topic0);
-        if (k != Kind.CHECKPOINT && rec.meaning != _expectedMeaning(k)) {
+        IProviderRegistry.ProviderConfig memory cfg = PROVIDERS.provider(providerId);
+        if (
+            rec.trust != GpuTypes.Trust.PROVEN || rec.method == GpuTypes.VerificationMethod.OFFCHAIN_ASSERTION
+                || (cfg.executionProfile != GpuTypes.ExecutionProfile.LOCAL_MOCK
+                    && rec.method != GpuTypes.VerificationMethod.ATTESTCOIN_NATIVE)
+        ) revert UntrustedEvidence();
+        if (rec.meaning != _expectedMeaning(k)) {
             revert MeaningMismatch(_expectedMeaning(k), rec.meaning);
         }
         bytes32 claimed = keccak256(abi.encode(_topicsFor(k, rec.topic0, c), c.data));
@@ -344,28 +382,50 @@ contract ReceivableBook is IReceivableBook {
         IEvidenceBook.EvidenceRecord memory rec,
         ReceivableClaim calldata c
     ) internal {
-        (address payer, address payee, uint256 amount, uint64 dueAt, uint32 rev) =
-            abi.decode(c.data, (address, address, uint256, uint64, uint32));
+        Recognition memory v;
+        bool v2 = rec.topic0 == TOPIC_OBLIGATION_RECOGNIZED_V2;
+        if (v2) {
+            v = abi.decode(c.data, (Recognition));
+        } else {
+            (v.payer, v.payee, v.amount, v.dueAt, v.revision) =
+                abi.decode(c.data, (address, address, uint256, uint64, uint32));
+        }
         bytes32 id = receivableId(providerId, c.accountKey, c.topic2);
         Receivable storage r = _receivables[id];
         if (r.state != ReceivableState.NONE) revert ReceivableExists(id);
-        if (rev != 1) revert RevisionGap(id, 1, rev);
-        if (payee != rec.emitter) {
-            revert ClaimMismatch(bytes32(uint256(uint160(rec.emitter))), bytes32(uint256(uint160(payee))));
+        if (v.revision != 1) revert RevisionGap(id, 1, v.revision);
+        address issuer = address(uint160(uint256(c.topic3)));
+        if (!PROVIDERS.isIssuer(providerId, issuer) || v.payer == address(0) || v.amount == 0) {
+            revert UntrustedEvidence();
+        }
+        if (ACCOUNTS.borrowerOfWallet(v.payer) != bytes32(0)) revert UntrustedEvidence();
+        if (
+            v2
+                && (v.token == address(0)
+                    || !PROVIDERS.isTokenAdmitted(
+                        providerId, PROVIDERS.provider(providerId).sourceChain.chainId, v.token
+                    ))
+        ) {
+            revert TokenMismatch(address(0), v.token);
+        }
+        if (v.payee != rec.emitter) {
+            revert ClaimMismatch(bytes32(uint256(uint160(rec.emitter))), bytes32(uint256(uint160(v.payee))));
         }
         r.providerId = providerId;
         r.accountKey = c.accountKey;
         r.obligationRef = c.topic2;
-        r.payer = payer;
-        r.net = amount;
+        r.payer = v.payer;
+        r.token = v.token;
+        r.denominationProven = v2;
+        r.net = v.amount;
         r.revision = 1;
-        r.dueAt = dueAt;
+        r.dueAt = v.dueAt;
         r.evidenceValidUntil = rec.validUntil;
         r.state = ReceivableState.OPEN;
         AccountStats storage s = _stats[_accountId(providerId, c.accountKey)];
         s.eventsConsumed += 1;
-        s.openAmount += amount;
-        emit ReceivableRecognized(id, c.accountKey, c.topic2, amount);
+        s.openAmount += v.amount;
+        emit ReceivableRecognized(id, c.accountKey, c.topic2, v.amount);
     }
 
     function _assign(
@@ -387,6 +447,7 @@ contract ReceivableBook is IReceivableBook {
         if (ACCOUNTS.borrowerOfAccount(c.accountKey) != f.borrowerId) {
             revert AccountNotOfBorrower(c.accountKey, f.borrowerId);
         }
+        if (r.denominationProven && r.token != f.sourceAsset.token) revert TokenMismatch(f.sourceAsset.token, r.token);
         bytes32 current = GpuTypes.FacilityId.unwrap(r.facilityId);
         if (current != bytes32(0) && current != GpuTypes.FacilityId.unwrap(fid)) {
             revert AlreadyAssigned(id, r.facilityId);
@@ -440,8 +501,9 @@ contract ReceivableBook is IReceivableBook {
         if (st.exists) revert SettlementSeen(seq);
         AccountStats storage s = _stats[_accountId(providerId, c.accountKey)];
         if (c.topic2 == bytes32(0)) {
-            _settlements[providerId][seq] =
-                Settlement({ receivableId: 0, amount: amount, exists: true, cancelled: false });
+            _settlements[providerId][seq] = Settlement({
+                accountKey: c.accountKey, receivableId: 0, amount: amount, exists: true, cancelled: false
+            });
             s.paidCumulative += amount;
             emit UnattributedPayoutRecorded(c.accountKey, amount, seq);
             return;
@@ -460,7 +522,8 @@ contract ReceivableBook is IReceivableBook {
         r.paid += amount;
         r.revision += 1; // the escrow bumps the obligation revision on an attributed payout (no revision in the log)
         if (r.paid == r.net) r.state = ReceivableState.PAID;
-        _settlements[providerId][seq] = Settlement({ receivableId: id, amount: amount, exists: true, cancelled: false });
+        _settlements[providerId][seq] =
+            Settlement({ accountKey: c.accountKey, receivableId: id, amount: amount, exists: true, cancelled: false });
         s.openAmount -= amount;
         s.paidCumulative += amount;
         s.eventsConsumed += 1;
@@ -471,6 +534,12 @@ contract ReceivableBook is IReceivableBook {
         (uint64 seq, uint256 amount) = abi.decode(c.data, (uint64, uint256));
         Settlement storage st = _settlements[providerId][seq];
         if (!st.exists) revert SettlementUnknown(seq);
+        if (GpuTypes.AccountKey.unwrap(st.accountKey) != GpuTypes.AccountKey.unwrap(c.accountKey)) {
+            revert SettlementUnknown(seq);
+        }
+        if (st.receivableId != 0 && st.receivableId != receivableId(providerId, c.accountKey, c.topic2)) {
+            revert SettlementUnknown(seq);
+        }
         if (st.cancelled) revert SettlementSeen(seq);
         if (st.amount != amount) revert ClaimMismatch(bytes32(st.amount), bytes32(amount));
         st.cancelled = true;
@@ -497,6 +566,17 @@ contract ReceivableBook is IReceivableBook {
     ) internal {
         (uint64 seq, uint32 latestRevision, uint256 openAmount, uint256 paidCumulative) =
             abi.decode(c.data, (uint64, uint32, uint256, uint256));
+        uint64 observedAt;
+        uint64 until;
+        if (rec.topic0 == TOPIC_SOURCE_CHECKPOINT_V2) {
+            (,,,, observedAt, until) = abi.decode(c.data, (uint64, uint32, uint256, uint256, uint64, uint64));
+            if (
+                observedAt == 0 || observedAt > block.timestamp || until <= observedAt
+                    || until > observedAt + 15 minutes
+            ) {
+                revert InvalidCheckpointTime();
+            }
+        }
         bytes32 accountId = _accountId(providerId, c.accountKey);
         Checkpoint storage cp = _checkpoints[accountId];
         if (cp.exists && seq <= cp.checkpointSeq) revert CheckpointNotNewer(cp.checkpointSeq, seq);
@@ -506,6 +586,8 @@ contract ReceivableBook is IReceivableBook {
             openAmount: openAmount,
             paidCumulative: paidCumulative,
             provenAt: rec.provenAt,
+            observedAt: observedAt,
+            protectedUntil: until,
             exists: true
         });
         emit CheckpointRecorded(c.accountKey, seq, latestRevision);

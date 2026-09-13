@@ -1,4 +1,4 @@
-# Proof → business mapping (GPU-076, v1)
+# Proof → business mapping
 
 Field-by-field mapping from the official Attestcoin artifacts (SDK 0.18.0 / `asc-contracts` 0.2.1, pinned
 in `environment.md`) to the records in `domain-model.md`, with the trust class of every value. Rule of

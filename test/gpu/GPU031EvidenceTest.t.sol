@@ -447,9 +447,9 @@ contract GPU031EvidenceTest is Test {
         providers.registerProvider(pid, _cfg(MANIFEST, ENV_ID_HASH));
         AttestcoinRevenueVerifier v2 = _verifier(pid, ENV_ID_HASH);
         vm.prank(admin);
-        book.bindVerifier(MOCK, v2); // misconfiguration: provider MOCK now points at a verifier bound to `pid`
-        vm.expectRevert(abi.encodeWithSelector(IEvidenceBook.VerifierNotBound.selector, MOCK));
-        _consume(_both());
+        vm.expectRevert(EvidenceBook.InvalidVerifierBinding.selector);
+        book.bindVerifier(MOCK, v2); // reject misconfiguration at binding, before evidence can be consumed
+        assertEq(address(book.verifierOf(MOCK)), address(verifier));
     }
 
     function test_wrongChainKey_rejectedByVerifier_nothingRecorded() public {

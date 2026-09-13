@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hashcredit-gpu"
 version = "0.1.0"
-description = "Rackline GPU lending - shared domain types, PostgreSQL schema and migrations (GPU-015)"
+description = "Rackline GPU lending domain, PostgreSQL schema and migrations"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
@@ -18,6 +18,8 @@ dependencies = [
     "pydantic>=2.0.0",
     "structlog>=23.0.0",
     "jsonschema>=4.20.0",
+    "eth-abi>=5.0.0,<6",
+    "eth-account>=0.13.0,<0.14",
 ]
 
 [project.optional-dependencies]
@@ -36,7 +38,7 @@ where = ["."]
 include = ["hashcredit_gpu*"]
 
 [tool.setuptools.package-data]
-hashcredit_gpu = ["py.typed"]
+hashcredit_gpu = ["py.typed", "projections/abi/*.json"]
 
 [tool.black]
 line-length = 100

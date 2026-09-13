@@ -216,18 +216,26 @@ class JobQueue:
 
     # ------------------------------------------------------------------ claim / lease
 
-    def claim(self, worker_id: str, kinds: Sequence[str], lease_seconds: int = 60, candidates: int = 8) -> ClaimedJob | None:
-        """Lease one runnable job of the given kinds, or None. Safe under concurrent workers."""
-        if not kinds:
+    def claim(
+        self, worker_id: str, kinds: Sequence[str], lease_seconds: int = 60, candidates: int = 8,
+        *, job_ids: Sequence[str] | None = None,
+    ) -> ClaimedJob | None:
+        """Lease a runnable job, optionally restricted to explicit IDs. Safe under concurrent workers."""
+        if not kinds or (job_ids is not None and not job_ids):
             return None
+        job_filter = "AND job_id = ANY(:job_ids) " if job_ids is not None else ""
+        params: dict[str, Any] = {"kinds": list(kinds), "n": candidates}
+        if job_ids is not None:
+            params["job_ids"] = list(job_ids)
         with self.engine.begin() as c:
             rows = c.execute(
                 text(
                     "SELECT job_id FROM jobs WHERE state IN ('PENDING','LEASED') AND kind = ANY(:kinds) "
+                    f"{job_filter}"
                     "AND next_run_at <= now() AND attempt < max_attempts "
                     "AND (lease_until IS NULL OR lease_until < now()) ORDER BY next_run_at, job_id LIMIT :n"
                 ),
-                {"kinds": list(kinds), "n": candidates},
+                params,
             ).all()
             for (job_id,) in rows:
                 won = c.execute(
@@ -316,7 +324,7 @@ class JobQueue:
     # ------------------------------------------------------------------ dead-letter administration
 
     def resume(self, job_id: str, *, actor: str, actor_role: E.Role | str, reason: str, cx: Connection | None = None) -> None:
-        """Move a DEAD job back to PENDING. Requires actor, role and a non-empty reason; writes an audit row."""
+        """Resume a DEAD job with a fresh retry budget and a monotonic fencing token; audit the actor and reason."""
         if not actor or not str(actor_role) or not (reason and reason.strip()):
             raise ResumeRequiresReason("resume needs actor, actor_role and a non-empty reason")
         role = str(actor_role)
@@ -331,12 +339,15 @@ class JobQueue:
                 raise LookupError(f"job {job_id} not found")
             if before["state"] != "DEAD":
                 raise ValueError(f"job {job_id} is {before['state']}, only DEAD jobs can be resumed")
+            # Resetting attempt would let a delayed worker match a new lease when its
+            # worker_id is reused. Preserve the token and extend the retry budget instead.
+            max_attempts = before["max_attempts"] + before["attempt"]
             c.execute(
                 text(
-                    "UPDATE jobs SET state = 'PENDING', attempt = 0, lease_until = NULL, leased_by = NULL, "
+                    "UPDATE jobs SET state = 'PENDING', max_attempts = :max_attempts, lease_until = NULL, leased_by = NULL, "
                     "next_run_at = now(), updated_at = now() WHERE job_id = :id"
                 ),
-                {"id": job_id},
+                {"id": job_id, "max_attempts": max_attempts},
             )
             write_audit(
                 c,
@@ -346,7 +357,8 @@ class JobQueue:
                 entity_table="jobs",
                 entity_id=job_id,
                 before=dict(before),
-                after={"state": "PENDING", "attempt": 0, "reason": reason.strip(), "previous_error": before["last_error"]},
+                after={"state": "PENDING", "attempt": before["attempt"], "max_attempts": max_attempts,
+                       "reason": reason.strip(), "previous_error": before["last_error"]},
             )
 
         if cx is not None:

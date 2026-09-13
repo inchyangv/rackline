@@ -173,14 +173,9 @@ contract BtcSpvVerifier is IVerifierAdapter {
      *  2. Compress pubkey → ripemd160(sha256(compressed)) = BTC pubkeyHash
      *  3. Store mapping: msg.sender → pubkeyHash
      */
-    function claimBtcAddress(
-        bytes32 pubKeyX,
-        bytes32 pubKeyY,
-        bytes32 btcMsgHash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
+    function claimBtcAddress(bytes32 pubKeyX, bytes32 pubKeyY, bytes32 btcMsgHash, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
         // 1. Verify signature was made by this public key
         address ethDerived = address(uint160(uint256(keccak256(abi.encodePacked(pubKeyX, pubKeyY)))));
         address recovered = ecrecover(btcMsgHash, v, r, s);

@@ -1,0 +1,325 @@
+[
+  {
+    "type": "function",
+    "name": "agreement",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IControlRegistry.Agreement",
+        "components": [
+          {
+            "name": "agreementId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "borrowerId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "accountKey",
+            "type": "bytes32",
+            "internalType": "GpuTypes.AccountKey"
+          },
+          {
+            "name": "grade",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.ControlGrade"
+          },
+          {
+            "name": "version",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "receiver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "receiverChainId",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "agreementHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "effectiveFrom",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "effectiveTo",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "lastObservedAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "pocRef",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "controlObservationMaxAge",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isEffective",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "version",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isFresh",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "maxAge",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AgreementVersioned",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "version",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "grade",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.ControlGrade"
+      },
+      {
+        "name": "agreementHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ControlObserved",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "observedGrade",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.ControlGrade"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ControlReleased",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ControlRevoked",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AgreementNotEffective",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "version",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "E2RequiresPoc",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "GradeInsufficient",
+    "inputs": [
+      {
+        "name": "required",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ControlGrade"
+      },
+      {
+        "name": "actual",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ControlGrade"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ObservationStale",
+    "inputs": [
+      {
+        "name": "lastObservedAt",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "maxAge",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ReleaseBlocked",
+    "inputs": [
+      {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  }
+]

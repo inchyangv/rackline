@@ -1,0 +1,103 @@
+{
+  "manifestVersion": 1,
+  "manifestId": "cc3-testnet.sepolia.release-20260914",
+  "executionProfile": "NATIVE_TESTNET",
+  "requiredVerification": "ATTESTCOIN_NATIVE",
+  "verificationMethod": "ATTESTCOIN_NATIVE",
+  "environmentStatus": "PROBED",
+  "mock": false,
+  "destination": {
+    "name": "Creditcoin CC3 Testnet",
+    "chainId": 102031,
+    "rpcUrls": [
+      "https://rpc.cc3-testnet.creditcoin.network"
+    ],
+    "blockProver": {
+      "address": "0x0000000000000000000000000000000000000FD2"
+    },
+    "chainInfo": {
+      "address": "0x0000000000000000000000000000000000000fd3"
+    },
+    "decoder": {
+      "address": "0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f",
+      "codeKeccak256": "0xb549c9d8eaf7d361192f8e363fe98717464441e2dd26e2b3bd1e0725df73a065",
+      "sourcePackage": "@gluwa/asc-contracts@0.2.1",
+      "sourceFile": "contracts/common/EvmV1Decoder.sol",
+      "sourceSha256": "2de1a8faf7b203c33a08db73e7a79e0523c4a84580c9c75ce209df0d5bf2e692"
+    }
+  },
+  "source": {
+    "name": "Ethereum Sepolia",
+    "chainId": 11155111,
+    "chainKey": 1,
+    "encoding": 1,
+    "genesisBlock": 0,
+    "supportConfirmedAt": "2026-09-13T22:13:31.722Z",
+    "supportConfirmedBy": "PROBE",
+    "rpcUrls": [
+      "https://ethereum-sepolia-rpc.publicnode.com"
+    ],
+    "emitters": [
+      {
+        "address": "0x9e00a3a453704e6948689eb68a4f65649af30a97",
+        "kind": "TEST_ONLY_SOURCE_ESCROW",
+        "deploymentBlock": 11700007,
+        "note": "Real Sepolia transactions; partnerRevenue=SIMULATED, partnerSourceBinding=UNCONFIGURED"
+      }
+    ],
+    "tokens": [
+      {
+        "address": "0x43d76b878f6b154e1ac351daad354767fad769eb",
+        "symbol": "tUSD",
+        "decimals": 6
+      }
+    ]
+  },
+  "proofService": {
+    "baseUrl": "https://proof-gen-api.cc3-testnet.creditcoin.network",
+    "alternateBaseUrls": [
+      "https://prover.cc3-testnet.creditcoin.network"
+    ],
+    "paths": {
+      "proofByTx": "/api/v1/proof-by-tx",
+      "proofBatchByTx": "/api/v1/proof-batch-by-tx",
+      "attestedHeight": "/api/v1/attested-height"
+    },
+    "responseSchema": "@gluwa/usc-sdk@0.18.0 ProofResult{success,data:ContinuityResponse{chainKey,headerNumber,txIndex,txHash,txBytes,continuityProof{lowerEndpointDigest,roots[]},merkleProof{root,siblings[{hash,isLeft}]},cached,generatedAt},error}; attested-height → {attestedHeight:number}"
+  },
+  "sdk": {
+    "package": "@gluwa/usc-sdk",
+    "version": "0.18.0",
+    "integrity": "sha512-iUEXPAp1gB/HDYkXad+StVJvs0Yz2ZIbzijc8SaBflGJ95hPnVahyY+tsP2PApswSQaX2uIBM7Cb0jpZ+KBzTQ==",
+    "abiSha256": {
+      "blockProverAbi": "cf796a38fa5b2ebfab7d25755256139652755c71eed935675d88458244e0cd5c",
+      "chainInfoAbi": "1c93aab8f029bd0b25594753729e61c70dfa8f5d99b203745b77d6e7baa14f77",
+      "evmV1DecoderAbi": "bd07dc76f8ab1505d6eec373da990de7fab624e878a206ed1a2618c4667c829a"
+    }
+  },
+  "contracts": {
+    "package": "@gluwa/asc-contracts",
+    "version": "0.2.1",
+    "files": {
+      "contracts/common/EvmV1Decoder.sol": "2de1a8faf7b203c33a08db73e7a79e0523c4a84580c9c75ce209df0d5bf2e692",
+      "contracts/write-ability/common/INativeQueryVerifier.sol": "bc81982eb4070d3a5519346c868c73eff177b7c514ef2befae6cadfe9cddd1ed",
+      "contracts/write-ability/INativeQueryVerifier.sol": "330e2039911731e2bfede78c28b498f51bda5704a8634abb26325487fe0ba3e2",
+      "contracts/readability/ASCBase.sol": "ff24791a29b1b5477088ec2e36a4960768ec79178817458c6e77c2a4ce3b9f3c",
+      "contracts/write-ability/common/BlockProverTypes.sol": "7f2f5aecf619566a154341c75481fc2a6b3e749e021070d59bc26112c8a47b43"
+    }
+  },
+  "deploymentBlock": null,
+  "secretRefs": {
+    "sourceRpcUrlKeyed": "ATTESTCOIN_SOURCE_RPC_URL",
+    "destinationRpcUrlKeyed": "ATTESTCOIN_DESTINATION_RPC_URL"
+  },
+  "notes": [
+    "Values from https://docs.attestcoin.org/attestcoin-protocol/attestcoin-protocol-chains-environments.md (read 2026-09-13) and the pinned npm artifacts.",
+    "TEST_ONLY environment: NATIVE_TESTNET evidence never counts as partner LIVE, E2, or ACCEPTED (R2-D12/D14).",
+    "Emitters/tokens stay empty until GPU-077/GPU-080 register TEST_ONLY source contracts under an approved testnet scope.",
+    "Public RPC/API hosts listed here are read-only allowlist entries; keyed providers are referenced via secretRefs only.",
+    "Probed read-only on 2026-09-13T22:13:31.722Z (finalized block 5483080): chainKey 1 = Sepolia (11155111, encoding 1) in ChainInfo; latest attestation 11698710; decoder code keccak256 pinned; BlockProver verify() reverts 'Merkle proof validation failed' on invalid input. See test/fixtures/gpu/attestcoin/probe/.",
+    "Dedicated source technical integration authorized 2026-09-14. No actual partner or production financial approval."
+  ],
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2"
+}

@@ -493,19 +493,33 @@ contract GPU034VaultTest is Test {
         vm.prank(guardian);
         vm.expectRevert(abi.encodeWithSelector(LendingVaultV2.FacilityWrittenOff.selector, F1));
         vault.recognizeImpairment(F1, 1);
-        // new LP enters at the post-loss price and is not diluted
+        // GPU-042: explicit epoch rollover preserves old recovery rights instead of selling them to new LPs.
+        vm.startPrank(lp2);
+        usdc.approve(address(vault), 5000e6);
+        vm.expectRevert(LendingVaultV2.EpochRecapitalizationRequired.selector);
+        vault.deposit(5000e6, 0);
+        vm.stopPrank();
+        vm.prank(guardian);
+        vault.rollLossEpoch();
         uint256 s2 = _deposit(lp2, 5000e6);
         assertEq(vault.nav(), 5000e6);
         assertGe(vault.previewWithdraw(s2), 4999e6);
-        assertLe(vault.previewWithdraw(s1), 1e6);
-        // recovery: manager transfers 400 then records it; NAV += 400, legal debt reduced by the ledger
+        assertEq(vault.balanceOf(lp1), 0, "old shares are not current-epoch shares");
+        assertEq(vault.sharesOfEpoch(1, lp1), s1, "old ownership remains intact");
+        // The recovery reduces legal debt but belongs to old LPs, not the new epoch's NAV.
         vm.prank(borrower);
         usdc.transfer(address(vault), 400e6);
         vm.startPrank(manager);
         ledger.allocate(F1, 400e6);
         vault.recordRecovery(F1, 400e6);
         vm.stopPrank();
-        assertEq(vault.nav(), 5400e6);
+        assertEq(vault.nav(), 5000e6);
+        assertEq(vault.totalRecoveryReserved(), 400e6);
+        assertEq(vault.recoveryClaimable(1, lp1), 400e6);
+        assertEq(vault.recoveryClaimable(1, lp2), 0);
+        vm.prank(lp1);
+        assertEq(vault.claimEpochRecovery(1), 400e6);
+        assertEq(vault.nav(), 5000e6, "old recovery claim cannot drain new LP assets");
         assertEq(ledger.legalDebtAt(F1, uint64(block.timestamp)), 10_600e6);
         vm.prank(manager);
         vm.expectRevert(abi.encodeWithSelector(LendingVaultV2.FacilityNotWrittenOff.selector, F2));

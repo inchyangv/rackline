@@ -7,10 +7,7 @@
   "exclude_low": false,
   "exclude_medium": false,
   "exclude_high": false,
-  "filter_paths": [
-    "lib/",
-    "test/",
-    "script/"
-  ],
+  "filter_paths": "lib/,test/,script/",
+  "triage_database": ".slither.db.json",
   "compile_force_framework": "foundry"
 }
