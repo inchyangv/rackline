@@ -211,7 +211,7 @@ Decision (owner, 2026-09-14): reuse the `studioliq.com` zone (GoDaddy DNS, `ns23
 | Surface | Domain | Platform | State (2026-09-14) |
 | --- | --- | --- | --- |
 | Web | `rackline.studioliq.com` | Vercel team `elouanics-projects`, project `rackline`, root `apps/web`, framework Vite, GitHub `inchyangv/rackline` connected (production branch `main`) | **Live** (2026-09-14 08:56 KST): DNS A record set, Let's Encrypt cert issued (`vercel certs issue` forced it), HTTP 200, title `Rackline` |
-| API | `api-rackline.studioliq.com` | Railway workspace "Incheol Yang's Projects", project `rackline`, service `rackline-api` (root `railway.toml` → root `Dockerfile`, `API_PROFILE=production`, no admin key) | **Live** (2026-09-14 08:50 KST): CNAME + TXT set, cert issued, `GET /health` → `api_profile: production`, CORS allows `https://rackline.studioliq.com`, `/claim/register-and-grant` → 404. Deployed from the local checkout (`railway up`); GitHub auto-deploy not connected (Railway app could not see the renamed repo — attach in the Railway UI) |
+| API | `api-rackline.studioliq.com` | Railway workspace "Incheol Yang's Projects", project `rackline`, service `rackline-api` (root `railway.toml` → root `Dockerfile`, `API_PROFILE=production`, no admin key) | **Live** (2026-09-14 08:50 KST): CNAME + TXT set, cert issued, `GET /health` → `api_profile: production`, CORS allows `https://rackline.studioliq.com`, `/claim/register-and-grant` → 404. GitHub auto-deploy connected (`inchyangv/rackline` @ `main`, verified with commit `eec5ba4` → SUCCESS) |
 
 DNS records to create at GoDaddy (zone `studioliq.com`):
 
