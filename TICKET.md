@@ -1206,7 +1206,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-075 — 공식 SDK·native ABI·decoder·환경 manifest와 read-only probe
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, docs/gpu/execution/GPU-075.md; environmentStatus=PROBED for CC3 testnet, LOCAL tool completion; native proof PASS remains GPU-080)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-000
 - 근거/읽기: §0.9 공식 문서와 공식 Gluwa 예제/선택 package의 소스·license·release/commit. 기존 USC_ADAPTER.md는 참조일 뿐 공식 ABI 원장이 아니다.

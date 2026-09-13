@@ -32,12 +32,13 @@ Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.
 
 ## Where to start (R2)
 
-GPU-000 and GPU-074 are done (`docs/gpu/execution/GPU-000.md`, `GPU-074.md`, `BASELINE.md`). Next:
-**GPU-075** (official SDK/ABI/manifest + read-only probe), GPU-001/002, then tickets whose `선행` are
-actually satisfied. Status ledger = each ticket's `상태` field in `TICKET.md`.
+GPU-000, GPU-074, GPU-075 are done (`docs/gpu/execution/GPU-000.md`, `GPU-074.md`, `GPU-075.md`,
+`BASELINE.md`). Next: GPU-001/002 (prereq GPU-000), GPU-003 (SPEC), then GPU-011~013 → GPU-076; follow each
+ticket's `선행`. Status ledger = each ticket's `상태` field in `TICKET.md`.
 
-Current code has **no** Attestcoin/USC implementation (`AttestcoinRevenueVerifier`, `offchain/attestcoin/`,
-`config/attestcoin/` do not exist). README/TECH present-tense claims are planned/unverified.
+Current code has **no** native verifier/proof worker yet (`AttestcoinRevenueVerifier`, `contracts/gpu/`,
+keeper do not exist). `offchain/attestcoin/` + `config/attestcoin/` hold only pinned official artifacts,
+manifest validation and a read-only probe (GPU-075). README/TECH present-tense claims are planned/unverified.
 
 ## Verification commands (existing today)
 
@@ -48,8 +49,11 @@ Current code has **no** Attestcoin/USC implementation (`AttestcoinRevenueVerifie
 | SOL-FULL | `forge build --sizes && forge test --summary && forge fmt --check` | baseline: fmt drift in `contracts/BtcSpvVerifier.sol` |
 | PY-API / PY-PROVER / PY-RELAYER | `cd offchain/<api|prover|relayer> && ../../.venv-py313/bin/python -m pytest tests/ -q` | use `.venv-py313` (3.13); `.venv` (3.14) cannot install `coincurve` |
 | WEB | `npm ci --prefix apps/web && npm --prefix apps/web run lint && npm --prefix apps/web run build` | web is not in the root workspace |
+| ASC-CHECK | `npm --prefix offchain/attestcoin run check` | pins/ABI/manifests; no network |
+| ASC-TEST | `npm --prefix offchain/attestcoin run test -- --run` | offline, fake transport |
+| ASC-PROBE | `npm --prefix offchain/attestcoin run probe -- --manifest config/attestcoin/<m>.json --out <report>` | read-only RPC/HTTP only; refuses mock manifests |
 
-ASC-CHECK/ASC-TEST/ASC-PROBE/ASC-NATIVE, PY-GPU, WEB-TEST, V2-E2E **do not exist yet** (GPU-075/015/052/057/080).
+ASC-NATIVE, PY-GPU, WEB-TEST, V2-E2E **do not exist yet** (GPU-080/015/052/057). Official artifact facts: `docs/gpu/attestcoin/environment.md`.
 Root `Makefile` sources `.env` — avoid `make` targets when diagnosing to prevent accidental env load/broadcast.
 
 ## Evidence & handover rules

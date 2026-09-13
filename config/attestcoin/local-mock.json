@@ -1,0 +1,78 @@
+{
+  "manifestVersion": 1,
+  "manifestId": "local-mock.anvil.v1",
+  "executionProfile": "LOCAL_MOCK",
+  "requiredVerification": "ATTESTCOIN_NATIVE",
+  "verificationMethod": "LOCAL_MOCK",
+  "environmentStatus": "UNCONFIRMED",
+  "mock": true,
+  "destination": {
+    "name": "Anvil (LOCAL_MOCK test double — never a native environment)",
+    "chainId": 31337,
+    "rpcUrls": [
+      "http://127.0.0.1:8545"
+    ],
+    "blockProver": {
+      "address": "0x0000000000000000000000000000000000000FD2"
+    },
+    "chainInfo": {
+      "address": "0x0000000000000000000000000000000000000fd3"
+    },
+    "decoder": {
+      "address": null,
+      "codeKeccak256": null,
+      "sourcePackage": "@gluwa/asc-contracts@0.2.1",
+      "sourceFile": "contracts/common/EvmV1Decoder.sol",
+      "sourceSha256": "2de1a8faf7b203c33a08db73e7a79e0523c4a84580c9c75ce209df0d5bf2e692"
+    }
+  },
+  "source": {
+    "name": "Anvil source double",
+    "chainId": 31338,
+    "chainKey": 1,
+    "encoding": 1,
+    "genesisBlock": 0,
+    "supportConfirmedAt": null,
+    "supportConfirmedBy": null,
+    "rpcUrls": [
+      "http://127.0.0.1:8546"
+    ],
+    "emitters": [],
+    "tokens": []
+  },
+  "proofService": {
+    "baseUrl": "http://127.0.0.1:3999",
+    "alternateBaseUrls": [],
+    "paths": {
+      "proofByTx": "/api/v1/proof-by-tx",
+      "proofBatchByTx": "/api/v1/proof-batch-by-tx",
+      "attestedHeight": "/api/v1/attested-height"
+    },
+    "responseSchema": "same shape as @gluwa/usc-sdk@0.18.0 ProofResult; served by a local fixture server in tests only"
+  },
+  "sdk": {
+    "package": "@gluwa/usc-sdk",
+    "version": "0.18.0",
+    "integrity": "sha512-iUEXPAp1gB/HDYkXad+StVJvs0Yz2ZIbzijc8SaBflGJ95hPnVahyY+tsP2PApswSQaX2uIBM7Cb0jpZ+KBzTQ==",
+    "abiSha256": {
+      "blockProverAbi": "cf796a38fa5b2ebfab7d25755256139652755c71eed935675d88458244e0cd5c",
+      "chainInfoAbi": "1c93aab8f029bd0b25594753729e61c70dfa8f5d99b203745b77d6e7baa14f77",
+      "evmV1DecoderAbi": "bd07dc76f8ab1505d6eec373da990de7fab624e878a206ed1a2618c4667c829a"
+    }
+  },
+  "contracts": {
+    "package": "@gluwa/asc-contracts",
+    "version": "0.2.1",
+    "files": {
+      "contracts/common/EvmV1Decoder.sol": "2de1a8faf7b203c33a08db73e7a79e0523c4a84580c9c75ce209df0d5bf2e692",
+      "contracts/write-ability/common/INativeQueryVerifier.sol": "bc81982eb4070d3a5519346c868c73eff177b7c514ef2befae6cadfe9cddd1ed"
+    }
+  },
+  "deploymentBlock": null,
+  "secretRefs": {},
+  "notes": [
+    "LOCAL_MOCK: the precompile addresses are etched with a test double in Foundry/Anvil (GPU-078). This manifest can never be used for NATIVE_TESTNET/PRODUCTION and its results are never nativeStatus=VERIFIED.",
+    "Local http URLs are permitted only because executionProfile=LOCAL_MOCK; the same URLs are rejected in native profiles."
+  ],
+  "manifestHash": "sha256:04b40e029f45f103f195e048215f0f7a56d09f5af2d0db63fd11a232a4b4d9bf"
+}

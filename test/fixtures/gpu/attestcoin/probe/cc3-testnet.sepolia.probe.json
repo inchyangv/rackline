@@ -1,0 +1,175 @@
+{
+  "probeVersion": 1,
+  "probedAt": "2026-09-13T22:14:25.739Z",
+  "manifestId": "cc3-testnet.sepolia.v1",
+  "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb",
+  "executionProfile": "NATIVE_TESTNET",
+  "environmentStatus": "PROBED",
+  "checks": [
+    {
+      "id": "destination.chainId",
+      "status": "PASS",
+      "target": "https://rpc.cc3-testnet.creditcoin.network",
+      "detail": "eth_chainId=102031, manifest=102031",
+      "data": {
+        "observed": 102031,
+        "expected": 102031
+      }
+    },
+    {
+      "id": "destination.finalizedBlock",
+      "status": "INFO",
+      "target": "https://rpc.cc3-testnet.creditcoin.network",
+      "detail": "finalized=5483084",
+      "data": {
+        "finalized": 5483084
+      }
+    },
+    {
+      "id": "chainInfo.sourceSupported",
+      "status": "PASS",
+      "target": "chainKey=1",
+      "detail": "onchain chainId=11155111 (manifest 11155111), encoding=1 (manifest 1), name=\"Sepolia ethereum\"",
+      "data": {
+        "match": {
+          "chainKey": 1,
+          "chainId": 11155111,
+          "chainName": "Sepolia ethereum",
+          "chainEncoding": 1
+        },
+        "supported": [
+          {
+            "chainKey": 3,
+            "chainId": 1,
+            "chainName": "Ethereum",
+            "chainEncoding": 1
+          },
+          {
+            "chainKey": 1,
+            "chainId": 11155111,
+            "chainName": "Sepolia ethereum",
+            "chainEncoding": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "chainInfo.latestAttestation",
+      "status": "PASS",
+      "target": "chainKey=1",
+      "detail": "height=11698720 isAttestation=true",
+      "data": {
+        "height": 11698720,
+        "hash": "0x039d118bab5d7f75d94972301a067b628f52467df78ab65b39d8632e2c12b655",
+        "isAttestation": true,
+        "exists": true
+      }
+    },
+    {
+      "id": "chainInfo.genesisHeight",
+      "status": "PASS",
+      "target": "chainKey=1",
+      "detail": "onchain=0 manifest=0",
+      "data": {
+        "onchain": 0,
+        "manifest": 0
+      }
+    },
+    {
+      "id": "decoder.code",
+      "status": "PASS",
+      "target": "0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f",
+      "detail": "codeBytes=9598 keccak256=0xb549c9d8eaf7d361192f8e363fe98717464441e2dd26e2b3bd1e0725df73a065 (matches manifest)",
+      "data": {
+        "codeBytes": 9598,
+        "codeKeccak256": "0xb549c9d8eaf7d361192f8e363fe98717464441e2dd26e2b3bd1e0725df73a065",
+        "pinned": "0xb549c9d8eaf7d361192f8e363fe98717464441e2dd26e2b3bd1e0725df73a065"
+      }
+    },
+    {
+      "id": "precompile.bytecode.blockProver",
+      "status": "INFO",
+      "target": "0x0000000000000000000000000000000000000FD2",
+      "detail": "codeBytes=0 (0 is expected for native precompiles; not a deployment judgement)"
+    },
+    {
+      "id": "precompile.bytecode.chainInfo",
+      "status": "INFO",
+      "target": "0x0000000000000000000000000000000000000fd3",
+      "detail": "codeBytes=0 (0 is expected for native precompiles; not a deployment judgement)"
+    },
+    {
+      "id": "precompile.calculateTxIndex",
+      "status": "PASS",
+      "target": "0x0000000000000000000000000000000000000FD2",
+      "detail": "siblings.isLeft=[] → 0 (expected 0)"
+    },
+    {
+      "id": "precompile.calculateTxIndex",
+      "status": "PASS",
+      "target": "0x0000000000000000000000000000000000000FD2",
+      "detail": "siblings.isLeft=[true,false] → 1 (expected 1)"
+    },
+    {
+      "id": "precompile.calculateTxIndex",
+      "status": "PASS",
+      "target": "0x0000000000000000000000000000000000000FD2",
+      "detail": "siblings.isLeft=[false,true] → 2 (expected 2)"
+    },
+    {
+      "id": "precompile.calculateTxIndex",
+      "status": "PASS",
+      "target": "0x0000000000000000000000000000000000000FD2",
+      "detail": "siblings.isLeft=[true,true,true] → 7 (expected 7)"
+    },
+    {
+      "id": "precompile.rejectsInvalidProof",
+      "status": "PASS",
+      "target": "0x0000000000000000000000000000000000000FD2",
+      "detail": "verify() reverted with \"Merkle proof validation failed\"",
+      "data": {
+        "revertReason": "Merkle proof validation failed"
+      }
+    },
+    {
+      "id": "proofService.attestedHeight",
+      "status": "PASS",
+      "target": "primary https://proof-gen-api.cc3-testnet.creditcoin.network",
+      "detail": "attestedHeight=11698720 (onchain − service = 0)",
+      "data": {
+        "role": "primary",
+        "attestedHeight": 11698720,
+        "onchainAttested": 11698720,
+        "lag": 0
+      }
+    },
+    {
+      "id": "proofService.attestedHeight",
+      "status": "PASS",
+      "target": "alternate[0] https://prover.cc3-testnet.creditcoin.network",
+      "detail": "attestedHeight=11698720 (onchain − service = 0)",
+      "data": {
+        "role": "alternate[0]",
+        "attestedHeight": 11698720,
+        "onchainAttested": 11698720,
+        "lag": 0
+      }
+    },
+    {
+      "id": "source.chainId",
+      "status": "PASS",
+      "target": "https://ethereum-sepolia-rpc.publicnode.com",
+      "detail": "eth_chainId=11155111, manifest=11155111",
+      "data": {
+        "observed": 11155111,
+        "expected": 11155111
+      }
+    }
+  ],
+  "summary": {
+    "pass": 13,
+    "fail": 0,
+    "skip": 0,
+    "info": 3
+  }
+}

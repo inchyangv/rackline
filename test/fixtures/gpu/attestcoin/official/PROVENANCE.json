@@ -1,0 +1,31 @@
+{
+  "capturedAt": "2026-09-13T22:00:00Z",
+  "capturedBy": "GPU-075 (docs/gpu/execution/GPU-075.md)",
+  "kind": "OFFICIAL_ARTIFACT_COPY",
+  "note": "Byte-identical copies of ABI JSON files shipped inside the official npm tarball. Not proofs, not chain captures. Drift against node_modules is checked by offchain/attestcoin/test/fixtures.test.ts.",
+  "files": {
+    "block_prover.abi.json": {
+      "package": "@gluwa/usc-sdk",
+      "version": "0.18.0",
+      "path": "dist/block-prover/block_prover.json",
+      "sha256": "cf796a38fa5b2ebfab7d25755256139652755c71eed935675d88458244e0cd5c"
+    },
+    "chain_info.abi.json": {
+      "package": "@gluwa/usc-sdk",
+      "version": "0.18.0",
+      "path": "dist/chain-info/chain_info.json",
+      "sha256": "1c93aab8f029bd0b25594753729e61c70dfa8f5d99b203745b77d6e7baa14f77"
+    },
+    "evmV1Decoder.abi.json": {
+      "package": "@gluwa/usc-sdk",
+      "version": "0.18.0",
+      "path": "dist/utils/evmV1DecoderAbi.json",
+      "sha256": "bd07dc76f8ab1505d6eec373da990de7fab624e878a206ed1a2618c4667c829a"
+    }
+  },
+  "tarballs": {
+    "@gluwa/usc-sdk-0.18.0.tgz": "b1f7ef611eb5658864686a7028907ed3d12e089091128e6c266281615a03d875",
+    "@gluwa/asc-contracts-0.2.1.tgz": "b45fffaf30fe94a1b050800dfd8a67e6e5e9564afbb12ce0422f2c3cb4289dee",
+    "@gluwa/usc-contracts-0.2.0.tgz": "68dc21d32ca58d92531296049a090fd71f85b14fa3c8c10ab2d13b3970f710e1"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@rackline/attestcoin-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rackline GPU lending: pinned official Attestcoin (ex-USC) SDK/ABI artifacts, environment manifest validation, and read-only probes. No signing, no broadcast.",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit && tsx ./src/cli.ts check",
+    "test": "vitest",
+    "probe": "tsx ./src/cli.ts probe",
+    "hash": "tsx ./src/cli.ts hash"
+  },
+  "dependencies": {
+    "@gluwa/asc-contracts": "0.2.1",
+    "@gluwa/usc-sdk": "0.18.0",
+    "ethers": "6.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.2",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}
