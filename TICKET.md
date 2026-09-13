@@ -446,7 +446,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-013 — 권한·통제 약정·상태 전환 계약
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, SPEC v1; docs/gpu/execution/GPU-013.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-003, GPU-011
 - 근거: PIVOT §4~5, §7~8.

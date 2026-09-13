@@ -1,0 +1,286 @@
+{
+  "schemaVersion": "1.0",
+  "source": "docs/gpu/permissions-and-states.md \u00a74-\u00a75",
+  "roles": [
+    "borrower",
+    "registrar",
+    "underwriter",
+    "guardian",
+    "oracle",
+    "treasury",
+    "servicer",
+    "lp",
+    "system",
+    "credit_committee"
+  ],
+  "purposes": [
+    "WALLET_LINK",
+    "AGREEMENT_CONSENT",
+    "CREDIT_APPROVAL",
+    "CONTROL_ATTESTATION",
+    "RELAY",
+    "TREASURY_OP"
+  ],
+  "transitions": [
+    {
+      "from": "DRAFT",
+      "to": "UNDER_REVIEW",
+      "trigger": "onboarding_complete",
+      "authority": [
+        "registrar"
+      ],
+      "guards": [
+        "wallet_linked",
+        "legal_entity_refs_present"
+      ]
+    },
+    {
+      "from": "UNDER_REVIEW",
+      "to": "CONTROL_PENDING",
+      "trigger": "credit_decision_approved",
+      "authority": [
+        "underwriter"
+      ],
+      "guards": [
+        "decision_inputs_native_accepted",
+        "required_verification_native",
+        "control_agreement_referenced"
+      ]
+    },
+    {
+      "from": "CONTROL_PENDING",
+      "to": "ACTIVE",
+      "trigger": "control_grade_e2_effective",
+      "authority": [
+        "underwriter",
+        "servicer"
+      ],
+      "guards": [
+        "agreement_version_fixed",
+        "reserve_funded"
+      ]
+    },
+    {
+      "from": "ACTIVE",
+      "to": "ACTIVE",
+      "trigger": "draw",
+      "authority": [
+        "borrower"
+      ],
+      "guards": [
+        "decision_fresh",
+        "control_observation_fresh",
+        "available_draw_ge_amount",
+        "vault_cash",
+        "draws_not_paused"
+      ]
+    },
+    {
+      "from": "ACTIVE",
+      "to": "ACTIVE",
+      "trigger": "repay_for",
+      "authority": [
+        "any"
+      ],
+      "guards": [
+        "destination_receipt_allocated"
+      ],
+      "never_blocked_by": [
+        "pauseDraws",
+        "evidence_outage",
+        "pauseEvidenceIntake"
+      ]
+    },
+    {
+      "from": "ACTIVE",
+      "to": "DRAW_FROZEN",
+      "trigger": "evidence_stale|proof_outage|control_observation_stale|decision_revoked|guardian_pause",
+      "authority": [
+        "system",
+        "guardian"
+      ],
+      "guards": []
+    },
+    {
+      "from": "DRAW_FROZEN",
+      "to": "ACTIVE",
+      "trigger": "cause_cleared",
+      "authority": [
+        "system",
+        "underwriter"
+      ],
+      "guards": [
+        "guardian_pause_requires_guardian_and_underwriter"
+      ]
+    },
+    {
+      "from": "ACTIVE",
+      "to": "DELINQUENT",
+      "trigger": "tranche_due_unpaid",
+      "authority": [
+        "system"
+      ],
+      "guards": []
+    },
+    {
+      "from": "DRAW_FROZEN",
+      "to": "DELINQUENT",
+      "trigger": "tranche_due_unpaid",
+      "authority": [
+        "system"
+      ],
+      "guards": []
+    },
+    {
+      "from": "DELINQUENT",
+      "to": "ACTIVE",
+      "trigger": "cure",
+      "authority": [
+        "system"
+      ],
+      "guards": [
+        "allocation_ge_due"
+      ]
+    },
+    {
+      "from": "DELINQUENT",
+      "to": "DEFAULTED",
+      "trigger": "grace_expired|control_loss_confirmed|misrepresentation",
+      "authority": [
+        "credit_committee"
+      ],
+      "guards": [
+        "reasons_recorded",
+        "dispute_window_respected"
+      ]
+    },
+    {
+      "from": "DEFAULTED",
+      "to": "RECOVERY",
+      "trigger": "recovery_case_opened",
+      "authority": [
+        "servicer"
+      ],
+      "guards": []
+    },
+    {
+      "from": "RECOVERY",
+      "to": "REPAID",
+      "trigger": "debt_zero",
+      "authority": [
+        "system"
+      ],
+      "guards": []
+    },
+    {
+      "from": "RECOVERY",
+      "to": "CLOSED_WITH_LOSS",
+      "trigger": "write_off_approved",
+      "authority": [
+        "credit_committee",
+        "treasury"
+      ],
+      "guards": [
+        "reserve_applied_first",
+        "recovery_rights_remain_open"
+      ]
+    },
+    {
+      "from": "ACTIVE",
+      "to": "REPAID",
+      "trigger": "debt_zero",
+      "authority": [
+        "system"
+      ],
+      "guards": []
+    },
+    {
+      "from": "REPAID",
+      "to": "RELEASED",
+      "trigger": "release_conditions_met",
+      "authority": [
+        "servicer",
+        "treasury"
+      ],
+      "guards": [
+        "debt_zero",
+        "no_pending_settlement_refund_reversal",
+        "reconciliation_window_closed"
+      ]
+    }
+  ],
+  "forbidden": [
+    {
+      "rule": "RELEASED with debt > 0"
+    },
+    {
+      "rule": "ACTIVE without approved unexpired decision"
+    },
+    {
+      "rule": "any transition triggered by oracle role"
+    },
+    {
+      "rule": "REPAID from source receipt, claimable balance, or proof alone"
+    },
+    {
+      "rule": "lowering requiredVerification"
+    },
+    {
+      "rule": "skipping CONTROL_PENDING"
+    },
+    {
+      "rule": "pauseRepayments exposed on product path"
+    }
+  ],
+  "pauses": {
+    "pauseDraws": {
+      "blocks": [
+        "draw",
+        "limit_increase"
+      ],
+      "never_blocks": [
+        "repay_for",
+        "allocation",
+        "recovery"
+      ],
+      "who": [
+        "guardian"
+      ],
+      "lift": [
+        "guardian",
+        "underwriter"
+      ]
+    },
+    "pauseEvidenceIntake": {
+      "blocks": [
+        "accept_new_evidence"
+      ],
+      "never_blocks": [
+        "use_accepted_evidence_in_validity",
+        "repay_for"
+      ],
+      "who": [
+        "guardian"
+      ],
+      "lift": [
+        "guardian"
+      ]
+    },
+    "pauseConversion": {
+      "blocks": [
+        "conversion_leg",
+        "bridge_leg"
+      ],
+      "never_blocks": [
+        "source_collection",
+        "destination_allocation"
+      ],
+      "who": [
+        "treasury"
+      ],
+      "lift": [
+        "treasury"
+      ]
+    }
+  }
+}
