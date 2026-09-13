@@ -27,7 +27,7 @@ deployment; not checked here, neither asserted nor denied).
 | Web Operator/Node/Pool tabs for v2 | README §Status | `apps/web` is the rebranded v1 UI (Dashboard/Pool, BTC flows); no GPU screens | PLANNED | GPU-047~052 |
 | v1 contracts "live on testnet" at listed addresses (chain 102031) | README §Status/§Addresses, TECH §9 | Addresses appear in `README.md`, `TECH.md`, `.env.example`, `apps/web/src/lib/env.ts`; local `broadcast/` artifacts exist (gitignored). No chain check performed | UNVERIFIED_EXTERNAL | GPU-060 (legacy state check), GPU-062 |
 | v2 contracts on CC3 testnet / Sepolia (`<TODO>` addresses) | README, TECH §9 | All `<TODO>`; nothing to verify | PLANNED (no deployment claimed with an address) | GPU-062, 080 |
-| Live demo / API URLs (`hashcredit.studioliq.com`) | README | v1 service; not checked | UNVERIFIED_EXTERNAL | GPU-060/063 |
+| Live demo / API URLs (`hashcredit.studioliq.com`) | README (removed 2026-09-14) | Owner states the deployment was taken down on 2026-09-14; repo renamed to `inchyangv/rackline`; redeploy under a Rackline domain is pending (GPU-066.a, `docs/deploy/RAILWAY.md` §9). Not chain/HTTP-checked here | TAKEN_DOWN (owner statement) | GPU-066 / 053 |
 
 Summary (updated by GPU-075): official artifacts are pinned and the CC3 testnet environment is read-only
 PROBED; **every verifier/source-contract/worker/GPU-credit component is still PLANNED; zero NATIVE_TESTNET
@@ -86,3 +86,4 @@ conditions (these *are* R2's financial basis); TECH §6 accounting invariants (c
   `docs/specs/USC_ADAPTER.md`, `docs/hackathon/HACKATHON_MVP_SCOPE.md` (see the ticket record for diffs).
 - 2026-09-14 GPU-075: SDK/ABI/manifest rows updated; C11/C17 resolved for CC3 testnet with pinned artifacts and probe.
 - 2026-09-14 GPU-065.a: communication-document rewrite to the R2 product (see §2 note); inventory §1 unchanged (no new code); `docs/gpu/decisions/attestcoin-first.md` R2-O08 marked DECIDED.
+- 2026-09-14 GPU-066.a: repo renamed to `inchyangv/rackline`; deployment identifiers renamed; C18 row updated to TAKEN_DOWN (owner statement).

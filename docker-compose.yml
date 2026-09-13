@@ -1,11 +1,11 @@
 version: "3.9"
 
-# Local/dev compose for Rackline v1 (SPV mode).
+# Local/dev compose for Rackline (v1 SPV services; the v2 GPU services are added by GPU-053).
 #
 # What you get:
 # - db: Postgres (persistent volume)
-# - hashcredit-api: FastAPI service (public HTTP)
-# - hashcredit-prover: background worker (no public networking)
+# - rackline-api: FastAPI service (public HTTP); Python package name stays `hashcredit_api`
+# - rackline-prover-legacy: v1 Bitcoin SPV worker (legacy; no public networking)
 #
 # Notes:
 # - This file contains NO secrets. Put them in env files (ignored by git) or export in your shell.
@@ -14,26 +14,26 @@ version: "3.9"
 services:
   db:
     image: postgres:16-alpine
-    container_name: hashcredit-db
+    container_name: rackline-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-hashcredit}
-      POSTGRES_USER: ${POSTGRES_USER:-hashcredit}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hashcredit}
+      POSTGRES_DB: ${POSTGRES_DB:-rackline}
+      POSTGRES_USER: ${POSTGRES_USER:-rackline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rackline}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - hashcredit_pgdata:/var/lib/postgresql/data
+      - rackline_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 20
 
-  hashcredit-api:
+  rackline-api:
     build:
       context: ./offchain/api
       dockerfile: Dockerfile
-    container_name: hashcredit-api
+    container_name: rackline-api
     depends_on:
       db:
         condition: service_healthy
@@ -45,15 +45,15 @@ services:
       PORT: "8000"
       # Keep this aligned with prover. The API currently does not require DB,
       # but it's convenient to have it available for future extensions.
-      DATABASE_URL: ${DATABASE_URL:-postgresql://hashcredit:hashcredit@db:5432/hashcredit}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://rackline:rackline@db:5432/rackline}
     ports:
       - "${API_PORT:-8000}:8000"
 
-  hashcredit-prover:
+  rackline-prover-legacy:
     build:
       context: ./offchain/prover
       dockerfile: Dockerfile
-    container_name: hashcredit-prover
+    container_name: rackline-prover-legacy
     depends_on:
       db:
         condition: service_healthy
@@ -61,8 +61,8 @@ services:
       # Safe defaults committed to git (no secrets). Override by exporting env vars or editing locally.
       - ./offchain/prover/.env.compose
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://hashcredit:hashcredit@db:5432/hashcredit}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://rackline:rackline@db:5432/rackline}
     restart: unless-stopped
 
 volumes:
-  hashcredit_pgdata:
+  rackline_pgdata:

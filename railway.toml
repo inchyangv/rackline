@@ -1,3 +1,5 @@
+# Rackline API service (Railway). The Python package/entry point keeps its legacy name `hashcredit_api`;
+# the Railway service should be named `rackline-api`. Set API_PROFILE=production and never an admin key.
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"

@@ -4,11 +4,12 @@ version: "3.9"
 # - Railway can import multiple services from a Compose file (drag-and-drop on the canvas).
 # - This file is intentionally "no-secrets". Set real values in Railway Variables/Secrets.
 #
-# Services
-# - hashcredit-api: public HTTP API (binds to $PORT)
-# - hashcredit-prover: background worker (no public networking needed)
+# Services (Rackline; Python package/CLI names keep the legacy `hashcredit_*` identifiers)
+# - rackline-api: public HTTP API (binds to $PORT). Run with API_PROFILE=production (no admin key).
+# - rackline-prover-legacy: v1 Bitcoin SPV worker. Not part of the v2 (GPU) deployment; keep only
+#   while legacy v1 borrowers/LPs need payout submission. Remove the service otherwise.
 services:
-  hashcredit-api:
+  rackline-api:
     build:
       context: ./offchain/api
       dockerfile: Dockerfile
@@ -19,7 +20,7 @@ services:
     ports:
       - "8000:8000"
 
-  hashcredit-prover:
+  rackline-prover-legacy:
     build:
       context: ./offchain/prover
       dockerfile: Dockerfile

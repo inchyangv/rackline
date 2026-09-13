@@ -2,7 +2,14 @@
 
 This document describes how to deploy the Rackline (formerly HashCredit) off-chain services to Railway.
 
-> Service, database and domain identifiers keep their legacy `hashcredit-*` names; the product is Rackline.
+> **Naming (2026-09-14).** Repo: `github.com/inchyangv/rackline`. Deployment / service / project / domain
+> identifiers are **Rackline** (`rackline-api`, `rackline-prover-legacy`, Vercel project `rackline`).
+> Python package, CLI, contract and env-variable identifiers keep their legacy names (`hashcredit_api`,
+> `hashcredit-prover`, `HashCreditManager`, `HASH_CREDIT_MANAGER`, `VITE_HASH_CREDIT_MANAGER`).
+>
+> **Status.** The previous deployment (`hashcredit.studioliq.com`, `api-hashcredit.studioliq.com`) was taken
+> down by the owner on 2026-09-14. Nothing is deployed until a Rackline domain is chosen (see §6 and §9).
+> The v2 GPU services (proof worker, connectors) are not part of this guide yet — GPU-053 adds them.
 
 ## Service Layout
 
@@ -13,9 +20,9 @@ This document describes how to deploy the Rackline (formerly HashCredit) off-cha
 | Prover (Worker) | Railway | `offchain/prover` |
 | Database | Railway Postgres | — |
 
-Production domains:
-- Frontend: `https://hashcredit.studioliq.com`
-- API: `https://api-hashcredit.studioliq.com`
+Production domains (to be created — see §9):
+- Frontend: `https://<rackline-domain>` (Vercel, project `rackline`)
+- API: `https://api.<rackline-domain>` (Railway, service `rackline-api`)
 
 ## Prerequisites
 
@@ -29,7 +36,7 @@ This is a monorepo with Python (API + Worker) and Vite (Frontend). Railway does 
 
 - **(Recommended)** Drag-and-drop the Compose file to create both services at once.
 - **(Alternative)** Create two GitHub repo connections, each with a different Root Directory.
-- **(Auto-staging)** The `offchain/api` and `offchain/prover` directories are registered as workspaces in the root `package.json`, so Railway may auto-detect `hashcredit-api` and `hashcredit-prover` as separate services on import.
+- **(Auto-staging)** The `offchain/api` and `offchain/prover` directories are registered as workspaces in the root `package.json`, so Railway may auto-detect the two packages as separate services on import — rename them to `rackline-api` and `rackline-prover-legacy`.
 
 Each service uses **Dockerfile-based builds**, not the Node runtime.
 
@@ -48,7 +55,7 @@ If Railway's auto-detection (Railpack) fails because the repo root has no single
 
 1. Create a new project in Railway.
 2. Drag-and-drop `railway-compose.yml` from the repo root onto the project canvas.
-3. Verify two services appear: `hashcredit-api` and `hashcredit-prover`.
+3. Verify two services appear: `rackline-api` and `rackline-prover-legacy`. Deploy the prover only if legacy v1 borrowers still need payout submission; the v2 product does not use it.
 
 **Note:** Compose drag-and-drop creates the service structure only. To enable auto-deploy on push, connect each service to the GitHub repo separately.
 
@@ -58,8 +65,8 @@ The prover worker requires a database for deduplication and state storage.
 
 1. Add the Postgres plugin in the Railway project.
 2. Connect the `DATABASE_URL` reference to:
-   - `hashcredit-prover` (required)
-   - `hashcredit-api` (optional, if the API needs DB access later)
+   - `rackline-prover-legacy` (required only if that service is deployed)
+   - `rackline-api` (optional today; the v2 GPU package `hashcredit_gpu` will require it — GPU-015/053)
 
 The prover code automatically converts Railway's `postgres://` format to `postgresql://`.
 
@@ -70,8 +77,8 @@ Each service has its own Dockerfile:
 - `offchain/prover/Dockerfile`
 
 Set Root Directories in Railway:
-- `hashcredit-api` → `offchain/api`
-- `hashcredit-prover` → `offchain/prover`
+- `rackline-api` → `offchain/api`
+- `rackline-prover-legacy` → `offchain/prover`
 
 ### (Optional) Config as Code
 
@@ -85,15 +92,15 @@ These limit `watchPatterns` to avoid unnecessary redeployments when unrelated fi
 - API: `/offchain/api/railway.toml`
 - Worker: `/offchain/prover/railway.toml`
 
-## 4. API Service Variables (`hashcredit-api`)
+## 4. API Service Variables (`rackline-api`)
 
-Set these in Railway → `hashcredit-api` → Variables/Secrets.
+Set these in Railway → `rackline-api` → Variables/Secrets. Run the `production` profile: `API_PROFILE=production` (default) and **no** `ADMIN_PRIVATE_KEY` / `DEMO_ADMIN_PRIVATE_KEY` — the API refuses to start with either in production (GPU-001).
 
 ### Required
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `ALLOWED_ORIGINS` | Variable | CORS origins as JSON array |
+| `ALLOWED_ORIGINS` | Variable | CORS origins as JSON array, e.g. `["https://<rackline-domain>"]` |
 | `BITCOIN_RPC_URL` | Variable | Bitcoin RPC endpoint |
 | `BITCOIN_RPC_USER` | Secret | Optional — for authenticated RPC |
 | `BITCOIN_RPC_PASSWORD` | Secret | Optional — for authenticated RPC |
@@ -122,9 +129,9 @@ For `claim` mode, also set:
 
 Railway injects `PORT` automatically. `HOST=0.0.0.0` is the Dockerfile default.
 
-## 5. Worker Service Variables (`hashcredit-prover`)
+## 5. Worker Service Variables (`rackline-prover-legacy`)
 
-Set these in Railway → `hashcredit-prover` → Variables/Secrets.
+Set these in Railway → `rackline-prover-legacy` → Variables/Secrets. Legacy v1 only.
 
 ### Required
 
@@ -170,9 +177,10 @@ The prover does not expose HTTP endpoints. Disable Public Networking in Railway 
 
 ## 6. Custom Domain (API)
 
-1. In Railway, add a custom domain under `hashcredit-api` → Networking/Domain.
-2. Create the DNS record (CNAME or A) as guided by Railway.
-3. Once HTTPS is provisioned, configure the frontend with `VITE_API_URL=https://api-hashcredit.studioliq.com`.
+1. In Railway, add a custom domain `api.<rackline-domain>` under `rackline-api` → Networking/Domain.
+2. Create the DNS record (CNAME to the Railway target) at the registrar.
+3. Once HTTPS is provisioned, configure the frontend with `VITE_API_URL=https://api.<rackline-domain>` and add
+   `https://<rackline-domain>` to the API's `ALLOWED_ORIGINS`.
 
 ## 7. Post-Deployment Checklist
 
@@ -195,3 +203,26 @@ The prover does not expose HTTP endpoints. Disable Public Networking in Railway 
    - API: `/offchain/api/railway.toml`
    - Worker: `/offchain/prover/railway.toml`
 3. Dockerfile-based deployment works without `railway.toml` — the config files are optional optimizations.
+
+## 9. Rackline domain and fresh deployment (checklist, 2026-09-14)
+
+Order matters: domain → Vercel project → Railway project → env → DNS → smoke test.
+
+1. **Domain.** Register `rackline.<tld>` (on 2026-09-14 `.com`, `.io`, `.xyz` were already registered; `.co`
+   was free; check `.finance` / `.credit` / `.capital` at the registrar). One apex for the web app, `api.` for
+   the API. Keep the registrar's DNS or move to Vercel DNS — either works.
+2. **Vercel.** `vercel login` → in `apps/web`: remove the old link (`rm -rf apps/web/.vercel`, it points at the
+   retired `ctc-hashcredit` project) → `vercel link` → project name `rackline`, framework Vite, root
+   `apps/web`. Environment (Production): `VITE_API_URL=https://api.<rackline-domain>`, contract addresses as in
+   `apps/web/.env.example`, `VITE_API_PROFILE` unset (production). Add the apex domain and `www` redirect in
+   Vercel → Domains and create the records Vercel prints (A `76.76.21.21` for the apex or CNAME
+   `cname.vercel-dns.com` for `www`).
+3. **Railway.** `railway login` → new project `rackline` → services from `railway-compose.yml` → root
+   directories and variables per §3–§5 (`API_PROFILE=production`, no admin keys) → custom domain per §6.
+4. **GitHub.** The repo is `inchyangv/rackline` (renamed 2026-09-14; old URLs redirect). Reconnect Vercel and
+   Railway to the renamed repo so auto-deploys resume.
+5. **Smoke test.** `GET https://api.<rackline-domain>/health` → `api_profile: production`; web loads on
+   `https://<rackline-domain>`, every number is an on-chain read, the setup panel shows "Verify payout address"
+   (no register step), footer commit matches `main`.
+6. **Record.** Add the live URLs to `README.md` (Status) and `docs/gpu/execution/GPU-066.md`; update
+   `docs/gpu/execution/ATTESTCOIN_GAP.md` C18 from UNVERIFIED_EXTERNAL to the checked state.

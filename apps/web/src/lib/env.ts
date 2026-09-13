@@ -17,7 +17,9 @@ const defaults = {
   btcSpvVerifier: '0x16DEd6a617a911471cd4549C24Ed8C281f096fd2',
   vaultAddress: '0x4d74126369BacB67085a1E70d535cA15515d1AFa',
   stablecoinAddress: '0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A',
-  apiUrl: 'https://api-hashcredit.studioliq.com',
+  // No production API baked in: the previous deployment (api-hashcredit.studioliq.com) was taken down on
+  // 2026-09-14. Each deployment sets VITE_API_URL (e.g. https://api.<rackline-domain>).
+  apiUrl: '',
   explorerBase: 'https://creditcoin-testnet.blockscout.com',
   explorerApiBase: 'https://creditcoin-testnet.blockscout.com/api',
   // 'production' (default): no self-service demo registration/credit request is ever sent.

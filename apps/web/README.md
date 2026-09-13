@@ -64,4 +64,7 @@ The footer shows the build commit (`__APP_COMMIT__`, injected in `vite.config.ts
 
 ## Deployment
 
-Deployed to Vercel from `apps/web`.
+Vercel project `rackline`, root `apps/web` (repo `github.com/inchyangv/rackline`). The previous deployment at
+`hashcredit.studioliq.com` was taken down on 2026-09-14; the Rackline domain, DNS and env are set up per
+`docs/deploy/RAILWAY.md` §9. `VITE_API_URL` has no baked-in default — set it per deployment. The local
+`apps/web/.vercel/` link (if present) points at the retired `ctc-hashcredit` project and should be re-linked.

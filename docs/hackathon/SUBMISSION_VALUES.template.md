@@ -11,7 +11,7 @@ Copy to `docs/hackathon/SUBMISSION_VALUES.md` and fill in. Leave `TODO — not d
 | Track | RWA (also DePIN, DeFi) |
 | One-liner | Working capital for GPU operators, secured by revenue they have already earned. |
 | Description | Paste from `DORAHACKS.md` (One-liner → Why Creditcoin) |
-| GitHub repo URL | https://github.com/inchyangv/ctc-hashcredit |
+| GitHub repo URL | https://github.com/inchyangv/rackline |
 | Deck PDF URL | TODO |
 | Demo video URL | TODO |
 | Attestcoin usage | Official native verification only: `AttestcoinRevenueVerifier` → `INativeQueryVerifier` precompile `0x…0FD2` (`verifyAndEmit`) + `EvmV1Decoder`; SDK `@gluwa/usc-sdk` 0.18.0, `@gluwa/asc-contracts` 0.2.1 pinned by hash (`config/attestcoin/cc3-testnet.sepolia.json`); source Sepolia chainKey 1; proof service `GET /api/v1/proof-by-tx/{chainKey}/{txHash}` (primary `proof-gen-api.cc3-testnet.creditcoin.network`) |

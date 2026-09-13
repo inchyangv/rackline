@@ -18,4 +18,4 @@ HashCredit is now **Rackline**: we pivoted from Bitcoin hashrate to **GPU receiv
 
 **Honesty notes:** evidence is natively verified; enforcement is contractual plus payment control, never "trustless". No fixed LP yield. No partnerships claimed (Aethir / GPU.net are targets). NFT collateral, future-cash-flow and equipment finance are separate, deferred decisions.
 
-Repo: https://github.com/inchyangv/ctc-hashcredit · Pivot write-up: `docs/hackathon/WHY_WE_PIVOTED.md` · Environment ledger: `docs/gpu/attestcoin/environment.md`
+Repo: https://github.com/inchyangv/rackline · Pivot write-up: `docs/hackathon/WHY_WE_PIVOTED.md` · Environment ledger: `docs/gpu/attestcoin/environment.md`

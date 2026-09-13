@@ -1108,7 +1108,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-066 — 브랜드·카피·demo·사용자 전환 안내
 
-- 상태: TODO
+- 상태: IN_PROGRESS (2026-09-14, docs/gpu/execution/GPU-066.md — 체크포인트 GPU-066.a 완료: 사용자 결정으로 GitHub repo `inchyangv/rackline`로 개명·remote 갱신, 배포/서비스 식별자 `rackline-*`로 통일, 죽은 도메인 기본값 제거, 도메인·재배포 체크리스트(`docs/deploy/RAILWAY.md` §9); 실제 도메인 등록·Vercel/Railway 재배포·DNS는 사용자 로그인/승인 후)
 - 유형/우선순위: CODE / P1
 - 선행: GPU-003, GPU-047, GPU-048, GPU-049, GPU-050
 - 근거: PIVOT §9, §13.2.
