@@ -3,45 +3,40 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hashcredit-prover"
+name = "hashcredit-gpu"
 version = "0.1.0"
-description = "Rackline Bitcoin SPV Proof Builder - generates Merkle proofs for payout verification"
+description = "Rackline GPU lending - shared domain types, PostgreSQL schema and migrations (GPU-015)"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
-authors = [
-    {name = "Rackline Team"}
-]
-keywords = ["bitcoin", "spv", "merkle", "proof", "hashcredit"]
+authors = [{name = "Rackline Team"}]
 
 dependencies = [
-    "web3>=6.0.0",
-    "httpx>=0.25.0",
-    "eth-account>=0.10.0",
-    "pydantic>=2.0.0",
-    "python-dotenv>=1.0.0",
-    "typer>=0.9.0",
-    "structlog>=23.0.0",
     "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
     "psycopg2-binary>=2.9.0",
-    "hashcredit-gpu>=0.1.0",
+    "pydantic>=2.0.0",
+    "structlog>=23.0.0",
+    "jsonschema>=4.20.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
 ]
 
 [project.scripts]
-hashcredit-prover = "hashcredit_prover.cli:main"
+hashcredit-gpu-db = "hashcredit_gpu.db.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["hashcredit_gpu*"]
+
+[tool.setuptools.package-data]
+hashcredit_gpu = ["py.typed"]
 
 [tool.black]
 line-length = 100
@@ -51,10 +46,5 @@ target-version = ["py311"]
 line-length = 100
 target-version = "py311"
 
-[tool.mypy]
-python_version = "3.11"
-strict = true
-
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 testpaths = ["tests"]

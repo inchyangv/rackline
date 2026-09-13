@@ -32,8 +32,9 @@ Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.
 
 ## Where to start (R2)
 
-GPU-000, GPU-074, GPU-075, GPU-001, GPU-002 are done (`docs/gpu/execution/GPU-NNN.md`, `BASELINE.md`).
-Next: GPU-003 (SPEC), then GPU-011~013 → GPU-076; follow each ticket's `선행`. v1 accounting defects are
+Done: GPU-000/074/075/001/002/003/011/013/015 (`docs/gpu/execution/GPU-NNN.md`, `BASELINE.md`).
+Next: GPU-016 (ledgers/audit DB), GPU-017, then GPU-029/030 contracts; GPU-012/076 wait on GPU-007. Follow
+each ticket's `선행`. v1 accounting defects are
 pinned in `test/diagnostic/AccountingRegressions.t.sol` (`RUN_RED_DIAGNOSTICS=true` = v2 acceptance).
 API profile rule: production API holds no key (`API_PROFILE=production` default); demo grants only under
 `testnet_demo` with `DEMO_*` vars. Status ledger = each ticket's `상태` field in `TICKET.md`.
@@ -51,11 +52,12 @@ manifest validation and a read-only probe (GPU-075). README/TECH present-tense c
 | SOL-FULL | `forge build --sizes && forge test --summary && forge fmt --check` | baseline: fmt drift in `contracts/BtcSpvVerifier.sol` |
 | PY-API / PY-PROVER / PY-RELAYER | `cd offchain/<api|prover|relayer> && ../../.venv-py313/bin/python -m pytest tests/ -q` | use `.venv-py313` (3.13); `.venv` (3.14) cannot install `coincurve` |
 | WEB | `npm ci --prefix apps/web && npm --prefix apps/web run lint && npm --prefix apps/web run build` | web is not in the root workspace |
+| PY-GPU | `python -m pytest offchain/gpu/tests -q` | real PostgreSQL (env `HASHCREDIT_GPU_TEST_DATABASE_URL` or local initdb); fails, never skips, without PG |
 | ASC-CHECK | `npm --prefix offchain/attestcoin run check` | pins/ABI/manifests; no network |
 | ASC-TEST | `npm --prefix offchain/attestcoin run test -- --run` | offline, fake transport |
 | ASC-PROBE | `npm --prefix offchain/attestcoin run probe -- --manifest config/attestcoin/<m>.json --out <report>` | read-only RPC/HTTP only; refuses mock manifests |
 
-ASC-NATIVE, PY-GPU, WEB-TEST, V2-E2E **do not exist yet** (GPU-080/015/052/057). Official artifact facts: `docs/gpu/attestcoin/environment.md`.
+ASC-NATIVE, WEB-TEST, V2-E2E **do not exist yet** (GPU-080/052/057). Install order: `pip install -e offchain/gpu[dev]` before api/prover. Official artifact facts: `docs/gpu/attestcoin/environment.md`.
 Root `Makefile` sources `.env` — avoid `make` targets when diagnosing to prevent accidental env load/broadcast.
 
 ## Evidence & handover rules

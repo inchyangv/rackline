@@ -25,6 +25,7 @@ dependencies = [
     "eth-account>=0.10.0",
     "coincurve>=20.0.0",
     "structlog>=23.0.0",
+    "hashcredit-gpu>=0.1.0",
 ]
 
 [project.optional-dependencies]

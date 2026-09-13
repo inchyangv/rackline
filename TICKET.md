@@ -472,7 +472,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-015 — 공통 Python package와 핵심 도메인 DB migration
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, PostgreSQL 16 실검증; docs/gpu/execution/GPU-015.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-000, GPU-011, GPU-013, GPU-075
 - 근거/읽기: PIVOT §8; prover `watcher.py`, legacy relayer `db.py`, 서비스별 `pyproject.toml`.
