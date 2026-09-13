@@ -714,7 +714,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-034 — Vault 현금·대출채권·NAV·보호된 share 코어
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 20 tests; ERC-4626 미채택 선언, 출금 queue는 GPU-042; docs/gpu/execution/GPU-034.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-012, GPU-029, GPU-033
 - 근거: PIVOT §2.2, §7.
