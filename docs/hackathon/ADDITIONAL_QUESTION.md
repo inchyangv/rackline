@@ -1,4 +1,6 @@
-# Answers
+# Answers (historical — v1 / Spring 2026)
+
+> These are the answers HashCredit v1 sent to the BUIDL CTC Spring 2026 judges' follow-up questions. They describe the **Bitcoin-hashrate product and its mainnet roadmap as of March 2026** (SPV payouts, pool KYC, Coverage Pool). They are kept as history. The questions themselves — "what happens when repayment doesn't occur?" — are the reason for the v2 pivot; the v2 answer (confirmed GPU receivables, E2 payment control, official Attestcoin native verification, repayment only from actual destination receipts) is in `docs/hackathon/WHY_WE_PIVOTED.md` and `TECH.md`. Nothing below is a v2 commitment.
 
 ## Premise: Bad debt is inherent to all unsecured lending
 

@@ -5,7 +5,7 @@ explicit user decision. Source of authority: user's R2 requirement + `TICKET.md`
 where `PIVOT.md`, `TECH.md`, `README.md`, `docs/specs/USC_ADAPTER.md` and `docs/hackathon/*` disagree.
 Conflicts and their owner tickets are listed in `docs/gpu/execution/ATTESTCOIN_GAP.md`.
 
-Decision IDs are stable references for execution records (`적용한 결정 ID`). Version: **R2-v1 (2026-09-14)**.
+Decision IDs are stable references for execution records (`적용한 결정 ID`). Version: **R2-v1 (2026-09-14)**. OPEN-item resolutions are recorded in place in §3 with the date and the deciding input; FIXED items are unchanged.
 Changing a FIXED item requires a new ledger version and re-verification of dependent tickets (§0.4).
 
 ## 1. FIXED decisions
@@ -48,7 +48,7 @@ Changing a FIXED item requires a new ledger version and re-verification of depen
 | R2-O05 | Settlement rail source escrow → conversion → destination receipt; and whether PIVOT §10.2's alternate vault-chain configuration is ever adopted. | Partner/liquidity facts; product/capital-structure change. | GPU-006, 040, 010 |
 | R2-O06 | Loan stablecoin on Creditcoin (issuer support, real contract, liquidity). | External confirmation. | GPU-006, 010 |
 | R2-O07 | Retirement or repurpose of `RelayerSigVerifier`/`offchain/relayer` (legacy EIP-712) — keep as legacy only, or reuse for OFFCHAIN_ASSERTION signing with a new domain. | Either is compatible with R2-D03/D04; code choice pending design. | GPU-013, 029, 060 |
-| R2-O08 | Fate of hackathon-facing docs (README/TECH NFT narrative): keep demo-labeled alongside R2 or rewrite. | Brand/communication choice. | GPU-065 |
+| R2-O08 | Fate of hackathon-facing docs (README/TECH NFT narrative): keep demo-labeled alongside R2 or rewrite. | **DECIDED 2026-09-14 (user: "Deck이랑 문서들 … 싹 수정하자") → rewrite.** README/TECH/TECH_DISCORD/`docs/hackathon/*`, the deck, pitch scripts and the submission draft now describe the R2 product (confirmed unpaid GPU receivables + E2 payment control + official Attestcoin native verification); the NFT / trailing-payout / attested-fallback narrative is retired to history (`WHY_WE_PIVOTED.md` §3). Recorded in `docs/gpu/execution/GPU-065.md` (checkpoint GPU-065.a). | GPU-065 (done for communication docs; code-reconciliation pass still owed) |
 | R2-O09 | Whether an approved, scoped public-testnet budget (wallet, gas, test tokens, contracts, period) exists for GPU-080. | External approval. | GPU-080 |
 
 ## 4. What this ledger does not do

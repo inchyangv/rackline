@@ -1096,7 +1096,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-065 — 제품·기술·보안·파트너·운영 문서 정합성
 
-- 상태: TODO
+- 상태: IN_PROGRESS (2026-09-14, docs/gpu/execution/GPU-065.md — 체크포인트 GPU-065.a 완료: README/TECH/TECH_DISCORD/docs/hackathon/deck·pitch·submission을 R2 GPU 매출채권 제품으로 재작성, R2-O08 결정 반영, v1 문서 legacy 표시; 코드·API·manifest 대조 정합화(GPU-065.b)는 선행 CODE 티켓 완료 후)
 - 유형/우선순위: SPEC / P1
 - 선행: GPU-008, GPU-011, GPU-012, GPU-013, GPU-043, GPU-045, GPU-059, GPU-074, GPU-078, GPU-079, GPU-081
 - 근거: PIVOT §13.2.

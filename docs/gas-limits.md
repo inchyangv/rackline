@@ -1,5 +1,7 @@
 # Gas Profiling and Limits (SPV-Only)
 
+> **Legacy v1 (Bitcoin SPV) document — not the v2 design.** Rackline v2 (GPU receivables credit, R2, 2026-09-14) uses only official Attestcoin native verification and a rebuilt debt ledger; see `TECH.md`, `PIVOT.md`, `docs/gpu/decisions/attestcoin-first.md`. Kept unchanged as the record of the v1 contracts that remain deployed on testnet. Do not reuse the BTC identity / SPV / relayer design as a GPU evidence path (R2-D03).
+
 This document summarizes practical gas bounds for the active SPV flow of Rackline (formerly HashCredit).
 
 ## Protocol Limits

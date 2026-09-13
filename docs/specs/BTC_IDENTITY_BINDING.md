@@ -1,5 +1,7 @@
 # BTC Identity Binding & Credit Scoring — Deep Dive
 
+> **Legacy v1 (Bitcoin SPV) document — not the v2 design.** Rackline v2 (GPU receivables credit, R2, 2026-09-14) uses only official Attestcoin native verification and a rebuilt debt ledger; see `TECH.md`, `PIVOT.md`, `docs/gpu/decisions/attestcoin-first.md`. Kept unchanged as the record of the v1 contracts that remain deployed on testnet. Do not reuse the BTC identity / SPV / relayer design as a GPU evidence path (R2-D03).
+
 > How Rackline (formerly HashCredit) proves Bitcoin wallet ownership on-chain without an oracle,
 > binds mining records to BTC addresses, and scores creditworthiness
 > from SPV-verified payout history.

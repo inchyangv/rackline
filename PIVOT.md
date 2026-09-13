@@ -2,6 +2,8 @@
 
 작성일: 2026-09-14 · 코드 기준: `c1f839a` 및 현재 작업 트리 · 상태: 설계/실행 계획, 구현 전
 
+> **R2 주석 (2026-09-14, GPU-065.a).** 이 문서는 제품 근거 기록이며 그대로 보존한다. 문서 충돌 시 `TICKET.md` §0.9와 `docs/gpu/decisions/attestcoin-first.md`(R2-D01~D14)가 우선한다. 특히 §10.2의 두 번째 구성(다른 정산 체인에 Vault)은 채택되지 않은 대안(R2-O05)이고, §10.3의 EIP-712 signer quorum 초기 연동 선택지는 R2-D03에 의해 폐기되었다(자체 서명은 native proof를 대체할 수 없고 보조 사실/승인 입력으로만 남는다, R2-D04). 해커톤 초안의 GPU NFT 담보·trailing payout 한도는 제품 결정이 아니다(R2-D10/D14).
+
 이 문서는 현재 Rackline v1(HashCredit) 코드와 공개된 공식 자료를 검토하여 GPU 렌딩으로 전환하기 위한 제품, 파트너, 집행, 회계, 구현, 운영 과제를 정리한다. 공개 문서 확인은 실제 파트너 계약이나 API 접근권 확보를 의미하지 않는다. 아래의 새 컨트랙트·API 이름은 설계 제안이다.
 
 ## 1. 피벗의 결론과 제품 정의
@@ -418,7 +420,7 @@ LP 화면에서는 “GPU-backed” 문구만으로 담보를 표현하지 않�
 - source 자산을 대출 통화로 바꿀 때 허용 token/router, minimum output, 가격 유효기간, max slippage, 유동성 한도, 가스·수수료 부담을 약정한다.
 - bridge/정산 실패 중 자금의 위치·소유권·재시도 주체를 추적한다. in-flight 금액을 사용 가능한 현금으로 보이지 않는다.
 - 지급 주체→source escrow→환전→송금→destination receipt→facility 상환을 하나의 settlement ID로 연결한다. 같은 금액을 양 체인에서 중복 상환하지 않는다.
-- EIP-712 signer quorum 방식의 초기 연동을 선택한다면 신뢰 주체·제한·만료·감사 범위를 명시한다. API 사실관계까지 chain proof가 보장한다고 표현하지 않는다.
+- ~~EIP-712 signer quorum 방식의 초기 연동을 선택한다면 신뢰 주체·제한·만료·감사 범위를 명시한다.~~ **R2-D03/D04로 폐기(2026-09-14):** 자체 서명 attestation은 어떤 profile에서도 native proof를 대체하지 않는다. 보조 서명(지갑 인증·약정 동의·심사 승인)은 OFFCHAIN_ASSERTION 입력으로만 존속한다. API 사실관계까지 chain proof가 보장한다고 표현하지 않는다.
 - ATH/$GPU, stablecoin depeg, token freeze, DEX 유동성 감소, bridge 장애에 따라 별도로 신규 실행·환전·회수를 제어한다.
 
 ## 11. 심사·계약·운영 체계
