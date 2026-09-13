@@ -32,16 +32,18 @@ Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.
 
 ## Where to start (R2)
 
-Done: GPU-000/074/075/001/002/003/011/013/015 (`docs/gpu/execution/GPU-NNN.md`, `BASELINE.md`).
-Next: GPU-016 (ledgers/audit DB), GPU-017, then GPU-029/030 contracts; GPU-012/076 wait on GPU-007. Follow
-each ticket's `선행`. v1 accounting defects are
+Done (17): GPU-000/074/075/001/002/003/011/013/015/007/012/076/014/029/030 + records in
+`docs/gpu/execution/GPU-NNN.md`. READY next: GPU-078 (native verifier), GPU-016, GPU-017/018, GPU-032, GPU-008,
+GPU-060; DD tickets 004/005/006 need partner input. Toolchain: solc 0.8.28 / evm london; OpenZeppelin 5.5 is
+Cancun-only (mcopy) and is NOT used by `contracts/gpu` — official Attestcoin files are vendored under
+`contracts/gpu/vendor/attestcoin/` (hash-pinned). Follow each ticket's `선행`. v1 accounting defects are
 pinned in `test/diagnostic/AccountingRegressions.t.sol` (`RUN_RED_DIAGNOSTICS=true` = v2 acceptance).
 API profile rule: production API holds no key (`API_PROFILE=production` default); demo grants only under
 `testnet_demo` with `DEMO_*` vars. Status ledger = each ticket's `상태` field in `TICKET.md`.
 
-Current code has **no** native verifier/proof worker yet (`AttestcoinRevenueVerifier`, `contracts/gpu/`,
-keeper do not exist). `offchain/attestcoin/` + `config/attestcoin/` hold only pinned official artifacts,
-manifest validation and a read-only probe (GPU-075). README/TECH present-tense claims are planned/unverified.
+`contracts/gpu/` now has types, 13 interfaces, roles/registries/authorization verifier and a TEST_ONLY
+`MockBlockProver`; the native verifier (GPU-078), EvidenceBook (GPU-031), ledger/vault/manager and the proof
+worker (GPU-079) are still unimplemented. No native proof has been submitted (G-ASC = GPU-080).
 
 ## Verification commands (existing today)
 
