@@ -151,6 +151,13 @@ def create_app(settings: Settings) -> FastAPI:
         from .demo import demo_router
 
         application.include_router(demo_router)
+    # GPU product API (GPU-018): auth/permissions/proof-query guard. Holds no signing key in any profile.
+    from .gpu import build_gpu_router, build_gpu_runtime
+    from .gpu.middleware import GpuSecurityMiddleware
+
+    application.state.gpu = build_gpu_runtime(settings)
+    application.add_middleware(GpuSecurityMiddleware)
+    application.include_router(build_gpu_router())
     return application
 
 

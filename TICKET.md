@@ -508,7 +508,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-018 — GPU API 인증·객체별 권한·credentials 보관
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 41 tests, PY-API 80 passed; provider OAuth 실제 방식은 파트너 입력; docs/gpu/execution/GPU-018.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-001, GPU-013, GPU-015
 - 근거: PIVOT §2.2, §7~8; 기존 `main.py`, `config.py`, claim/auth 패턴.

@@ -128,6 +128,35 @@ class Settings(BaseSettings):
         alias="DEMO_AUTH_TTL_SECONDS",
     )
 
+    # GPU API (GPU-018). Bearer sessions only; the secret comes from a secret ref or a direct value that is
+    # never logged. Proof queries are restricted to repo manifests and explicit provider/emitter allowlists.
+    gpu_session_secret_ref: str | None = Field(
+        default=None,
+        description="Secret ref for the session HMAC key, e.g. env://GPU_SESSION_SECRET_VALUE",
+        alias="GPU_SESSION_SECRET_REF",
+    )
+    gpu_session_secret: str | None = Field(
+        default=None,
+        description="Direct session HMAC secret (local/tests); prefer GPU_SESSION_SECRET_REF",
+        alias="GPU_SESSION_SECRET",
+    )
+    gpu_session_ttl_seconds: int = Field(default=900, alias="GPU_SESSION_TTL_SECONDS")
+    gpu_challenge_ttl_seconds: int = Field(default=300, alias="GPU_CHALLENGE_TTL_SECONDS")
+    gpu_app_domain: str = Field(default="app.rackline.local", alias="GPU_APP_DOMAIN")
+    gpu_auth_rate_limit_per_minute: int = Field(default=30, alias="GPU_AUTH_RATE_LIMIT_PER_MINUTE")
+    gpu_max_body_bytes: int = Field(default=65_536, alias="GPU_MAX_BODY_BYTES")
+    gpu_provider_allowlist: list[str] = Field(default=[], alias="GPU_PROVIDER_ALLOWLIST")
+    gpu_allow_mock_manifests: bool = Field(
+        default=False,
+        description="Allow LOCAL_MOCK manifests in proof-query plans (never honoured on production)",
+        alias="GPU_ALLOW_MOCK_MANIFESTS",
+    )
+    gpu_emitter_allowlist: dict[str, list[str]] = Field(
+        default={},
+        description="manifestId -> registered emitter addresses (JSON object)",
+        alias="GPU_EMITTER_ALLOWLIST",
+    )
+
     # Contracts (for UI hints/health metadata)
     hash_credit_manager: str | None = Field(
         default=None,
@@ -155,9 +184,15 @@ class Settings(BaseSettings):
                 "ADMIN_PRIVATE_KEY is no longer accepted by the API. Unset it. "
                 "Demo deployments use DEMO_ADMIN_PRIVATE_KEY with API_PROFILE=testnet_demo."
             )
+        if self.gpu_session_ttl_seconds <= 0 or self.gpu_challenge_ttl_seconds <= 0:
+            raise ValueError("GPU session/challenge TTLs must be positive")
         if self.api_profile == "production":
             if self.demo_admin_private_key:
                 raise ValueError("DEMO_ADMIN_PRIVATE_KEY must not be set on a production API process")
+            if any(o.strip() == "*" for o in self.allowed_origins):
+                raise ValueError("allowed_origins must not contain '*' on a production API process")
+            if self.gpu_allow_mock_manifests:
+                raise ValueError("GPU_ALLOW_MOCK_MANIFESTS must be false on a production API process")
             return self
         # testnet_demo
         blocked = MAINNET_CHAIN_IDS.intersection(self.demo_allowed_chain_ids)
