@@ -725,7 +725,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-035 — 온체인 borrowing base·집중도·실행 예약
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 31 tests; 035.a ReceivableBook + 035.b GpuRiskPolicy/ExposureController; schema gap: EvidenceMeaning.CHECKPOINT 부재·ObligationRecognized token 없음 → GPU-081/082에서 처리; docs/gpu/execution/GPU-035.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-007, GPU-012, GPU-029, GPU-030, GPU-031, GPU-033
 - 근거: PIVOT §6.3, §7.

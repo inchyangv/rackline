@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 24, [f.name for f in files]  # 13 + ISourceEscrow interfaces, 4 GPU-030 + GPU-078/031/033/032/077/034 impls
+    assert len(files) == 29, [f.name for f in files]  # 16 interfaces + 4 GPU-030 + GPU-078/031/033/032/077/034 + 3 GPU-035 impls
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()
@@ -84,6 +84,11 @@ def test_interface_abis_have_no_btc_fields_and_expected_surface():
     vnames2 = {e.get("name") for e in vault}
     assert {"deposit", "withdraw", "totalAssets", "lend", "onRepayment", "recognizeImpairment"} <= vnames2
     assert not {"setRate", "rateBps", "accrue", "grantTestnetCredit"} & vnames2  # no vault-side interest math (AR-02)
+    book_r = json.loads((ABI_DIR / "ReceivableBook.json").read_text())
+    rnames = {e.get("name") for e in book_r}
+    assert "ingest" in rnames and not {"setUnpaid", "recognizeDirect", "registerReceivable"} & rnames  # balances only via EvidenceBook
+    policy = json.loads((ABI_DIR / "GpuRiskPolicy.json").read_text())
+    assert "CapNotSet" in {e.get("name") for e in policy}  # cap=0 is never an unlimited sentinel
     impl_book = json.loads((ABI_DIR / "EvidenceBook.json").read_text())
     inames = {e.get("name") for e in impl_book}
     assert bnames - {None} <= inames
