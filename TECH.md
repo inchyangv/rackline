@@ -1,8 +1,8 @@
 # Rackline technical design
 
-Rackline is a receivables-backed lending system for GPU operators. Its central rule is simple: verified revenue evidence may increase borrowing capacity, but only measured destination cash may reduce debt.
+Rackline is a receivables-backed lending system for GPU operators. Verified revenue evidence may increase borrowing capacity; only measured destination cash may reduce debt.
 
-This document describes the implemented prototype. All partner, production, and public native-proof claims remain outside the current evidence set.
+This document describes the implemented prototype and its public native-testnet evidence. Partner integration, real GPU revenue, and production approval remain outside the current evidence set.
 
 ## System boundaries
 
@@ -90,7 +90,7 @@ For every allocation:
 received = feePaid + interestPaid + principalPaid + excess
 ```
 
-Important invariants:
+Accounting invariants:
 
 - Receivables support the borrowing base but are not vault assets.
 - Unallocated settlement cash is in flight and does not inflate LP NAV.
@@ -108,7 +108,7 @@ The reference accounting model lives in `offchain/gpu/hashcredit_gpu/accounting/
 
 PostgreSQL stores append-only observations, proof artifacts, native-verification records, evidence consumption, receivables, cash receipts, allocations, audit entries, chain cursors, durable jobs, outbox records and transaction intents.
 
-The workers are intentionally split:
+The workers have separate responsibilities:
 
 - ingestion accepts signed webhooks or backfills source observations;
 - the proof worker fetches and stores official proof artifacts, prepares deployment-bound calldata, and tracks native acceptance separately from business consumption;
@@ -134,7 +134,7 @@ The web client obtains all deployment identity and contract addresses from `/v1/
 | `NATIVE_TESTNET` | Real public source transaction and official native verification on a Creditcoin testnet |
 | `PRODUCTION` | Production configuration; still requires partner, legal, operational and financial approval |
 
-The committed implementation has extensive local coverage and pinned/probed Attestcoin environment data. TEST_ONLY source and destination deployments are recorded in manifests with contract addresses and bytecode hashes. The curated native evidence record contains four successful source-event consumptions on Creditcoin CC3 Testnet and confirms that proof-only transactions changed neither debt nor vault cash. The source revenue and payment control remain explicitly simulated/unconfigured, so this technical result is not partner, E2, production, or real-revenue evidence.
+The repository includes local tests and pinned Attestcoin environment data. TEST_ONLY source and destination deployments are recorded in manifests with contract addresses and bytecode hashes. The curated native evidence record contains four successful source-event consumptions on Creditcoin CC3 Testnet and confirms that proof-only transactions changed neither debt nor vault cash. Source revenue is simulated and partner payment control is unconfigured, so this result is not partner, production, or real-revenue evidence.
 
 The subsequent native checkpoint and browser financial tests are linked in [README](README.md#native-testnet-evidence): LP deposit/queued and direct exit return shares to zero, and a 1 tUSD draw followed by 1.000002 tUSD measured repayment returns legal debt to zero. Source protection expiry blocks new draws but did not block direct repayment.
 

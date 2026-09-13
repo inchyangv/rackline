@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  FOUNDRY_PROFILE: ci
+  # Match the compiler/formatter profile used for the immutable testnet release.
+  FOUNDRY_PROFILE: default
 
 jobs:
   check:
@@ -23,6 +24,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.4.2
 
       - name: Show Forge version
         run: forge --version
@@ -52,9 +55,11 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.4.2
 
       - name: Build contracts
-        run: forge build
+        run: forge build --build-info --skip test --skip script
 
       - uses: actions/setup-node@v4
         with:
@@ -63,12 +68,22 @@ jobs:
       - name: Validate exact reviewed findings and source hashes
         run: node script/gpu/check-slither-triage.mjs
 
-      - name: Run Slither
-        uses: crytic/slither-action@v0.4.0
+      # Run beside the installed Forge binary, not in an isolated Docker action.
+      # Analyzer/compiler versions must match the finding IDs reviewed in .slither.db.json.
+      - uses: actions/setup-python@v5
         with:
-          target: contracts/
-          slither-config: slither.config.json
-          fail-on: high
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: .github/slither-requirements.txt
+
+      - name: Install pinned Slither runtime
+        run: python -m pip install -r .github/slither-requirements.txt
+
+      - name: Run Slither
+        run: |
+          slither --version
+          slither . --config-file slither.config.json --ignore-compile \
+            --fail-high --sarif results.sarif --json results.json
         id: slither
 
       - name: Upload Slither Report
@@ -76,7 +91,9 @@ jobs:
         if: always()
         with:
           name: slither-report
-          path: results.sarif
+          path: |
+            results.sarif
+            results.json
           retention-days: 30
 
   python-tests:
@@ -163,6 +180,8 @@ jobs:
           persist-credentials: false
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.4.2
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'

@@ -1,0 +1,3 @@
+# These versions generated the exact reviewed finding IDs in .slither.db.json.
+slither-analyzer==0.11.6
+crytic-compile==0.4.2

@@ -20,7 +20,7 @@ Rackline finances revenue that GPU operators have already earned but have not ye
 6. Source cash moves through a settlement record to the destination vault.
 7. Only measured destination cash allocated through `RepaymentRouter` reduces debt.
 
-The system deliberately keeps five claims separate: native event verification, GPU-revenue provenance, current unpaid status, payment-control strength, and destination cash receipt. Proving one never silently proves the others.
+Rackline keeps five claims separate: native event verification, GPU-revenue provenance, current unpaid status, payment-control strength, and destination cash receipt. Evidence for one claim does not establish the others.
 
 ## What is implemented
 
@@ -84,7 +84,7 @@ Each proof-only transaction produced zero debt mutation events, zero vault mutat
 
 The [live LP browser audit](evidence/native-testnet/lp-browser-20260914.json) covers nine successful testnet transactions: faucet, approval, deposit, queue, cancellation, replacement queue, processing, claim, and final withdrawal. Final LP shares are zero; desktop and mobile views agree with the canonical chain.
 
-A [fresh native checkpoint](https://creditcoin-testnet.blockscout.com/tx/0x39dadbd7f24581069d40d5dee2d9f8148191c61ad95affbdd68c7bee0c77bba6) enabled the [live borrower browser audit](evidence/native-testnet/borrower-browser-20260914.json): [borrow 1 tUSD](https://creditcoin-testnet.blockscout.com/tx/0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee), then [repay 1.000002 tUSD](https://creditcoin-testnet.blockscout.com/tx/0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78). The 1.001 tUSD cap transferred only principal plus execution-time interest. Final legal debt is **zero**, verified on-chain and in the desktop/mobile application; repayment succeeded after source protection expired.
+A [fresh native checkpoint](https://creditcoin-testnet.blockscout.com/tx/0x39dadbd7f24581069d40d5dee2d9f8148191c61ad95affbdd68c7bee0c77bba6) enabled the [live borrower browser audit](evidence/native-testnet/borrower-browser-20260914.json): [borrow 1 tUSD](https://creditcoin-testnet.blockscout.com/tx/0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee), then [repay 1.000002 tUSD](https://creditcoin-testnet.blockscout.com/tx/0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78). The 1.001 tUSD cap transferred only principal plus execution-time interest. Final legal debt is zero on-chain and in the desktop and mobile views. Repayment succeeded after source protection expired.
 
 ## Architecture
 

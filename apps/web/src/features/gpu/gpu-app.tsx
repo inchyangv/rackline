@@ -1504,7 +1504,7 @@ function Activity(context: Context) {
                 <dd>
                   {item.evidence.proofReadyAt
                     ? new Date(item.evidence.proofReadyAt).toLocaleString()
-                    : "Not ready"}
+                    : "Not recorded"}
                 </dd>
               </div>
               <div>

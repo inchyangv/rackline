@@ -36,4 +36,4 @@ npm --prefix apps/web run test:e2e
 
 `scripts/generate-gpu.mjs` reads actual `forge inspect` ABIs and the GPU app's OpenAPI schema. It writes only `src/features/gpu/generated/`; never edit generated files manually. Install the shared GPU/API Python packages first. Locally the generator uses `.venv-py313/bin/python`; CI sets `GPU_TYPES_PYTHON=python`. Sources are Solidity interfaces plus `GpuTestToken` and `hashcredit_api.gpu.app:create_app`.
 
-The static build is `apps/web/dist`. Configure the hosting fallback to `index.html` for `/app` and `/demo`. Build provenance appears in the footer. See [tests/README.md](tests/README.md) for evidence boundaries and real API interoperability checks.
+The static build is `apps/web/dist`. `vercel.json` provides scoped `index.html` fallbacks for `/app` and `/demo`; API and asset paths are untouched. The root `.vercelignore` allowlists only frontend build inputs, excluding keys, environments, native artifacts and backend files from CLI uploads. Build provenance appears in the footer. See [tests/README.md](tests/README.md) for evidence boundaries and real API interoperability checks.

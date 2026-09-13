@@ -74,8 +74,12 @@
     "repaymentCapAboveExecutionDebt": true,
     "noExcessTransferred": true,
     "priorBorrowNotRepeated": true,
-    "desktopAndMobileCanonicalZeroDebtReadback": true
+    "desktopAndMobileCanonicalZeroDebtReadback": true,
+    "actualApiFinalizedRouterAllocation": true,
+    "desktopAndMobileRepaymentActivityReadback": true,
+    "activityReadbackTransactionSubmissions": 0
   },
+  "apiApplicationEvidence": "FINALIZED_ROUTER_EVENT",
   "automation": {
     "completedWithRepaymentOnlyResume": true,
     "intermediateFailures": [

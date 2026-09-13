@@ -99,6 +99,7 @@ async function fixture(
     rejectContractWallet = false,
     missingChain = false,
     staleRead = false,
+    missingProofReadyTime = false,
   } = {},
 ) {
   const errors: string[] = [];
@@ -526,7 +527,9 @@ async function fixture(
             unpaidAmount: money("5000000000"),
             evidence: {
               proofRequestStatus: "READY",
-              proofReadyAt: new Date().toISOString(),
+              proofReadyAt: missingProofReadyTime
+                ? null
+                : new Date().toISOString(),
               nativeStatus: "VERIFIED",
               verificationMethod: "ATTESTCOIN_NATIVE",
               nativeCanonical: true,
@@ -693,7 +696,7 @@ test("delegated EOA retains EOA login while a regular contract uses ERC1271", as
 test("connected app keeps native evidence, source cash and debt separate; outage permits repayment", async ({
   page,
 }) => {
-  const state = await fixture(page);
+  const state = await fixture(page, { missingProofReadyTime: true });
   await login(page);
   await navigate(page, "Borrow");
   await expect(
@@ -707,6 +710,9 @@ test("connected app keeps native evidence, source cash and debt separate; outage
   await expect(
     page.getByText("Verified · Canonical consumption"),
   ).toBeVisible();
+  await expect(
+    page.getByText("Artifact ready", { exact: true }).locator("..").locator("dd"),
+  ).toHaveText("Not recorded");
   await expect(page.getByText("Destination cash not received")).toBeVisible();
   expect(state.debt()).toBe(debt);
   await navigate(page, "Borrow");
