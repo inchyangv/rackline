@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "CANONICAL_ID_AND_AMOUNT_VECTORS",
+  "note": "GPU-076 cross-language vectors. sourceEventId = keccak256(abi.encode(bytes32 keccak256(envId), uint64 chainKey, uint64 height, uint64 txIndex, uint32 logOrdinal)). economicEventIdHash = keccak256(utf8(economicEventId)). Amounts are decimal strings of base units; JSON numbers are never used for money. Locator integers are strings here because uint64 values exceed the JSON/JS safe-integer range (2^53-1); parsing 2^64-1 as a JSON number yields 2^64 in JavaScript.",
+  "sourceEventIds": [
+    {
+      "envId": "cc3-testnet",
+      "chainKey": "1",
+      "height": "9100000",
+      "txIndex": "17",
+      "logOrdinal": "0",
+      "id": "0xc000764953a9f8b015dde6fd467ee579ce76089c53936bfffa1e5d84264a56ad"
+    },
+    {
+      "envId": "cc3-testnet",
+      "chainKey": "1",
+      "height": "9100000",
+      "txIndex": "17",
+      "logOrdinal": "1",
+      "id": "0x4f8f2b45aa0b3f6513c91e81e36728a65a60e6b641d2a3d4819f9a77f5d08ece"
+    },
+    {
+      "envId": "cc3-mainnet",
+      "chainKey": "1",
+      "height": "9100000",
+      "txIndex": "17",
+      "logOrdinal": "0",
+      "id": "0x309e1a3f03e76d40756ed3b213abce8406686fb8abfdecd507402da32d58ba3a"
+    },
+    {
+      "envId": "cc3-testnet",
+      "chainKey": "3",
+      "height": "9100000",
+      "txIndex": "17",
+      "logOrdinal": "0",
+      "id": "0x4cc1fceb1fdb3732ac9a6ac845d0e53e2bfb2c2ee0e721a304f55331dca5e563"
+    },
+    {
+      "envId": "cc3-testnet",
+      "chainKey": "1",
+      "height": "18446744073709551615",
+      "txIndex": "4294967295",
+      "logOrdinal": "4294967295",
+      "id": "0x2bafa87cef5cbca7735a0e04bd7be443330b26a03f77ec6dd3eb7d2a0e22aa6f"
+    }
+  ],
+  "economicEventIds": [
+    {
+      "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-2026-08-A",
+      "hash": "0x823cc2ff53e8974c15fa888820aee2c38a5c7a7d0e1c136f1337aaa483bcbbf5"
+    },
+    {
+      "economicEventId": "aethir/host-123/PAYOUT/chain:1:9100000:17:0",
+      "hash": "0x7575d39eaf8ac7eb21abb215e22bf0bebe07e2fe442eebe9bfd194cf98343970"
+    }
+  ],
+  "amounts": [
+    {
+      "amount": "0",
+      "decimals": 6,
+      "display": "0.000000"
+    },
+    {
+      "amount": "1234567",
+      "decimals": 6,
+      "display": "1.234567"
+    },
+    {
+      "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+      "decimals": 18,
+      "display": "115792089237316195423570985008687907853269984665640564039457.584007913129639935",
+      "note": "uint256 max: must round-trip as a string in JSON, Python int, TS BigInt"
+    },
+    {
+      "amount": "9007199254740993",
+      "decimals": 0,
+      "display": "9007199254740993",
+      "note": "2^53+1: a JSON number would lose precision; strings are mandatory"
+    }
+  ]
+}

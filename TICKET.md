@@ -1219,7 +1219,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-076 — native 증명 범위·source 금융 사건·매출채권 의미 계약
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, SPEC v1; 파트너 의존 EC-O01~O03 OPEN; docs/gpu/execution/GPU-076.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-011, GPU-012, GPU-013, GPU-075
 - 근거: §0.9, PIVOT §5/6/10; 공식 source-contract/decoder 구조. 실제 파트너 선택은 GPU-004/005 자료와 GPU-008을 참조하되 없으면 DRAFT/OPEN으로 명시한다.

@@ -1,0 +1,441 @@
+{
+ "schemaVersion": "1.0",
+ "kind": "EVIDENCE_REVIEW_VECTORS",
+ "note": "GPU-076 review fixture: expected classification and gate outcomes for the evidence chain. Not proofs; not partner data. Implementations (GPU-031/077/078/081/082) turn these into executable tests.",
+ "cases": [
+  {
+   "id": "EV-01 two logs in one tx are two events, each consumable once",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100000,
+      "txIndex": 17,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "ObligationRecognized",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "amount": "12000000000",
+      "revision": 1
+     }
+    },
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100000,
+      "txIndex": 17,
+      "logOrdinal": 1
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "ObligationRecognized",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0xf7db638ac4960455d6877cb8d1e88059b1b76c272600053919835bd2f3153dec",
+      "amount": "9000000000",
+      "revision": 1
+     }
+    }
+   ],
+   "expect": {
+    "sourceEventIds": [
+     "0xc000764953a9f8b015dde6fd467ee579ce76089c53936bfffa1e5d84264a56ad",
+     "0x4f8f2b45aa0b3f6513c91e81e36728a65a60e6b641d2a3d4819f9a77f5d08ece"
+    ],
+    "distinct": true,
+    "secondConsumptionOfSameLog": "DUPLICATE_CONSUMPTION",
+    "businessEvidenceCount": 2
+   }
+  },
+  {
+   "id": "EV-02 one receivable, many payouts: paid accumulates, base falls, never below zero",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100100,
+      "txIndex": 3,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "amount": "4000000000",
+      "settlementSeq": 1
+     }
+    },
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100200,
+      "txIndex": 9,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "amount": "8000000000",
+      "settlementSeq": 2
+     }
+    }
+   ],
+   "receivableBefore": {
+    "ref": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+    "net": "12000000000",
+    "unpaid": "12000000000"
+   },
+   "expect": {
+    "unpaidAfter": "0",
+    "state": "PAID",
+    "borrowingBaseContribution": "0",
+    "debtChange": "0 \u2014 payouts at source never reduce destination debt"
+   }
+  },
+  {
+   "id": "EV-03 one payout, many receivables: allocation must be explicit and sum to the payout",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100300,
+      "txIndex": 1,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "amount": "6000000000",
+      "settlementSeq": 3
+     }
+    }
+   ],
+   "allocation": [
+    {
+     "ref": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+     "amount": "4000000000"
+    },
+    {
+     "ref": "0xf7db638ac4960455d6877cb8d1e88059b1b76c272600053919835bd2f3153dec",
+     "amount": "2000000000"
+    }
+   ],
+   "expect": {
+    "allocationSum": "6000000000",
+    "unallocatedUntilReconciled": true,
+    "provenanceUntilReconciled": "UNCLASSIFIED"
+   }
+  },
+  {
+   "id": "EV-04 own transfer into the escrow is not revenue",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100400,
+      "txIndex": 5,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "amount": "5000000000",
+      "settlementSeq": 4,
+      "payer": "0x00000000000000000000000000000000000A11CE"
+     }
+    }
+   ],
+   "borrowerWallets": [
+    "0x00000000000000000000000000000000000A11CE"
+   ],
+   "expect": {
+    "nativeStatus": "CONSUMED",
+    "earningsProvenance": "SELF_TRANSFER",
+    "borrowingBaseContribution": "0",
+    "reducesReceivable": false
+   }
+  },
+  {
+   "id": "EV-05 our own statement-hash anchor is not a source fact",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100500,
+      "txIndex": 2,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000AA",
+     "event": "StatementAnchored(bytes32)",
+     "args": {
+      "hash": "0xb111c6e1d318f203063e5c16bab43c108326af0aa2f7b65760c95547a43dbe52"
+     }
+    }
+   ],
+   "expect": {
+    "nativeStatus": "CONSUMED",
+    "kind": "OUR_ANCHOR",
+    "trust": "ASSERTED",
+    "verificationMethod": "OFFCHAIN_ASSERTION",
+    "borrowingBaseContribution": "0"
+   }
+  },
+  {
+   "id": "EV-06 paid receivable cannot be re-pledged with an older obligation proof",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100000,
+      "txIndex": 17,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "ObligationRecognized",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "amount": "12000000000",
+      "revision": 1
+     }
+    }
+   ],
+   "receivableBefore": {
+    "ref": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+    "state": "PAID",
+    "unpaid": "0",
+    "latestRevision": 1
+   },
+   "expect": {
+    "resubmission": "DUPLICATE_CONSUMPTION",
+    "borrowingBaseContribution": "0",
+    "freshnessRefreshed": false
+   }
+  },
+  {
+   "id": "EV-07 other borrower / other token / other chain do not attach",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100600,
+      "txIndex": 4,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0x4325f1ae4eda9a8c7df02ddf9226d340dd6cc5b2ba1b51bbf6148e2d5312fb36",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "amount": "1000000000",
+      "settlementSeq": 5
+     }
+    },
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100600,
+      "txIndex": 4,
+      "logOrdinal": 1
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "token": "0x00000000000000000000000000000000000000BB",
+      "amount": "1000000000",
+      "settlementSeq": 6
+     }
+    },
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 3,
+      "height": 21000000,
+      "txIndex": 4,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x4f29b8d00613429054b4589e4f303a499b5141f621f9df36317b9786a46c7642",
+      "amount": "1000000000",
+      "settlementSeq": 7
+     }
+    }
+   ],
+   "facility": {
+    "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+    "token": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "chainKey": 1
+   },
+   "expect": {
+    "attachedToInvA": 0,
+    "reasons": [
+     "ACCOUNT_MISMATCH",
+     "TOKEN_MISMATCH",
+     "CHAIN_MISMATCH"
+    ],
+    "rawEventsStillRecorded": true
+   }
+  },
+  {
+   "id": "EV-08 source confirmed, destination cash missing: debt unchanged",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100700,
+      "txIndex": 8,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "PayoutReceived",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0xf7db638ac4960455d6877cb8d1e88059b1b76c272600053919835bd2f3153dec",
+      "amount": "3600000000",
+      "settlementSeq": 8
+     }
+    }
+   ],
+   "pipeline": {
+    "sourceEscrow": "3600000000",
+    "inFlight": "0",
+    "destinationReceived": "0"
+   },
+   "expect": {
+    "receivableUnpaidReduced": true,
+    "facilityDebtReduced": false,
+    "cashState": "SOURCE_ESCROW",
+    "nav": "unchanged"
+   }
+  },
+  {
+   "id": "EV-09 wrong emitter with identical topics is rejected before business meaning",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100800,
+      "txIndex": 6,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E2",
+     "event": "ObligationRecognized",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x1be66177087fb720279257297c5e6645639c5d5952126b0bbc006d8b73a12c48",
+      "amount": "99000000000",
+      "revision": 1
+     }
+    }
+   ],
+   "registeredEmitters": [
+    "0x00000000000000000000000000000000000000E1"
+   ],
+   "expect": {
+    "nativeStatus": "NATIVE_ACCEPTED",
+    "businessEvidence": "NONE",
+    "reason": "EMITTER_NOT_REGISTERED"
+   }
+  },
+  {
+   "id": "EV-10 obligation proof consumed but checkpoint missing/stale: no draw",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9100900,
+      "txIndex": 2,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "ObligationRecognized",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x84d57f3aaf5f17d4400c221116a49c18701b1c4394af7a675b512b701dcb1274",
+      "amount": "5000000000",
+      "revision": 1
+     }
+    }
+   ],
+   "checkpoint": {
+    "latest": null
+   },
+   "expect": {
+    "receivableState": "RECOGNIZED",
+    "eligibleForDraw": false,
+    "reason": "SOURCE_CHECKPOINT_MISSING"
+   }
+  },
+  {
+   "id": "EV-11 checkpoint reveals a later revision the submitter omitted: draw blocked",
+   "sourceEvents": [
+    {
+     "locator": {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "height": 9101000,
+      "txIndex": 1,
+      "logOrdinal": 0
+     },
+     "emitter": "0x00000000000000000000000000000000000000E1",
+     "event": "ObligationRecognized",
+     "args": {
+      "accountKey": "0xa0b946fa8e4ff63dcc0735935da110036905ef17f638f596f8ff2c5360d9b2f1",
+      "obligationRef": "0x615da330e663d5779b4eaa13cce55db1f78ca1e1b21c30fbd095d2dc06deef31",
+      "amount": "5000000000",
+      "revision": 1
+     }
+    }
+   ],
+   "checkpoint": {
+    "checkpointSeq": 40,
+    "latestRevision": 2,
+    "openAmount": "2000000000"
+   },
+   "consumedHighestRevision": 1,
+   "expect": {
+    "eligibleForDraw": false,
+    "reason": "REVISION_GAP",
+    "action": "ingest revision 2 before any decision"
+   }
+  },
+  {
+   "id": "EV-12 reorg on the destination vs dispute after draw",
+   "destinationReorg": {
+    "verificationTx": "0xb155a849df04a4029e1039289aea51022d808bad5ab1f87fe5ff31b2df9932c9",
+    "reorged": true
+   },
+   "expect": {
+    "readModel": "rollback consumption + evidence rows for the orphaned block; economic ids unchanged",
+    "disputeAfterDraw": "collateral marked DISPUTED, new draws blocked, existing destination debt and received cash untouched"
+   }
+  }
+ ]
+}

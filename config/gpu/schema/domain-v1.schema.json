@@ -576,11 +576,14 @@
         },
         "height": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Safe-integer range only; values beyond 2^53-1 must be carried as strings (see canonical-id-vectors)."
         },
         "txIndex": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "logOrdinal": {
           "type": "integer",
@@ -607,7 +610,8 @@
         },
         "blockNumber": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "logIndex": {
           "type": "integer",

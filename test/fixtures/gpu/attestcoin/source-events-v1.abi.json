@@ -1,0 +1,240 @@
+{
+  "kind": "PROPOSED_INTERNAL_SOURCE_EVENTS",
+  "schemaVersion": "1.0",
+  "note": "GPU-076 proposal for the TEST_ONLY / Rackline-controlled source contracts (GPU-077). NOT a partner ABI. Real partner events (Aethir/GPU.net) are external and are recorded separately once confirmed (GPU-004/005/008). Field semantics are in docs/gpu/attestcoin/evidence-contract.md.",
+  "events": [
+    {
+      "name": "ObligationRecognized",
+      "signature": "ObligationRecognized(bytes32,bytes32,address,address,address,uint256,uint64,uint32)",
+      "topic0": "0xf2432b0831f19cbdcce9a78cb1ac91763952986b054bb7c20d6ec6511d6cd1cf",
+      "inputs": [
+        {
+          "name": "accountKey",
+          "type": "bytes32",
+          "indexed": true,
+          "doc": "keccak256(providerId ':' externalAccountId)"
+        },
+        {
+          "name": "obligationRef",
+          "type": "bytes32",
+          "indexed": true,
+          "doc": "issuer's stable reference (invoice/settlement id hash)"
+        },
+        {
+          "name": "issuer",
+          "type": "address",
+          "indexed": true,
+          "doc": "msg.sender-bound issuer with ISSUER role on the source contract"
+        },
+        {
+          "name": "payer",
+          "type": "address",
+          "indexed": false
+        },
+        {
+          "name": "payee",
+          "type": "address",
+          "indexed": false,
+          "doc": "controlled receiver (escrow)"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "doc": "base units of `token` on the source chain (net of issuer deductions)"
+        },
+        {
+          "name": "dueAt",
+          "type": "uint64",
+          "indexed": false,
+          "doc": "issuer-stated due time (CLAIMED, not proven time)"
+        },
+        {
+          "name": "revision",
+          "type": "uint32",
+          "indexed": false,
+          "doc": "monotonic per obligationRef; each revision is a new event"
+        }
+      ],
+      "meaning": "OBLIGATION_RECOGNIZED",
+      "stateChange": "source contract stores obligations[accountKey][obligationRef] = (amount, revision, status=OPEN)"
+    },
+    {
+      "name": "ObligationAssigned",
+      "signature": "ObligationAssigned(bytes32,bytes32,bytes32,uint32)",
+      "topic0": "0xb9319668d674e0c92c7a074fe0acbcbc23f35920963e5fd65b00cd70b898c88b",
+      "inputs": [
+        {
+          "name": "accountKey",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "obligationRef",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "facilityKey",
+          "type": "bytes32",
+          "indexed": true,
+          "doc": "keccak256 of the destination facilityId"
+        },
+        {
+          "name": "revision",
+          "type": "uint32",
+          "indexed": false
+        }
+      ],
+      "meaning": "ASSIGNMENT_RECOGNIZED",
+      "stateChange": "obligation.assignedTo = facilityKey; only issuer or controller may call"
+    },
+    {
+      "name": "ObligationCorrected",
+      "signature": "ObligationCorrected(bytes32,bytes32,int256,uint32,uint8)",
+      "topic0": "0x651d868fcd97e2e6ac1d31ed0b5902473e3666e89d8895ea075c79cba3d4e533",
+      "inputs": [
+        {
+          "name": "accountKey",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "obligationRef",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "delta",
+          "type": "int256",
+          "indexed": false,
+          "doc": "signed change to amount"
+        },
+        {
+          "name": "revision",
+          "type": "uint32",
+          "indexed": false
+        },
+        {
+          "name": "reason",
+          "type": "uint8",
+          "indexed": false,
+          "doc": "0=DISPUTE 1=REFUND 2=SLA 3=CANCEL 4=OTHER"
+        }
+      ],
+      "meaning": "CORRECTION",
+      "stateChange": "obligation.amount += delta; revision++"
+    },
+    {
+      "name": "PayoutReceived",
+      "signature": "PayoutReceived(bytes32,bytes32,address,address,uint256,uint64)",
+      "topic0": "0x129dd261782a12f345cf84c1f9525b070b50a9dcb981b493a24088811b287384",
+      "inputs": [
+        {
+          "name": "accountKey",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "obligationRef",
+          "type": "bytes32",
+          "indexed": true,
+          "doc": "zero when the payment is not attributable to one obligation (then it is UNCLASSIFIED until reconciled)"
+        },
+        {
+          "name": "token",
+          "type": "address",
+          "indexed": true
+        },
+        {
+          "name": "payer",
+          "type": "address",
+          "indexed": false
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "doc": "exact balance delta measured by the escrow (before/after), never a caller-supplied number"
+        },
+        {
+          "name": "settlementSeq",
+          "type": "uint64",
+          "indexed": false,
+          "doc": "escrow-local monotonic sequence; replay of the same delta is impossible"
+        }
+      ],
+      "meaning": "PAYOUT",
+      "stateChange": "escrow balance increased by amount; obligation.paid += amount when obligationRef != 0"
+    },
+    {
+      "name": "PayoutCancelled",
+      "signature": "PayoutCancelled(bytes32,bytes32,uint64,uint256)",
+      "topic0": "0xee3df3580a053881b5e36fb77551ad39e390011bc6e542ed7bdb25e58a7d731f",
+      "inputs": [
+        {
+          "name": "accountKey",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "obligationRef",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "settlementSeq",
+          "type": "uint64",
+          "indexed": false
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false
+        }
+      ],
+      "meaning": "PAYMENT_CANCELLED",
+      "stateChange": "reversal of a prior PayoutReceived (chargeback/clawback path)"
+    },
+    {
+      "name": "SourceCheckpoint",
+      "signature": "SourceCheckpoint(bytes32,uint64,uint32,uint256,uint256)",
+      "topic0": "0x729d6be8d63ebd41a4286ecb80f814620294a70ed0f931aa69aadea24a28db64",
+      "inputs": [
+        {
+          "name": "accountKey",
+          "type": "bytes32",
+          "indexed": true
+        },
+        {
+          "name": "checkpointSeq",
+          "type": "uint64",
+          "indexed": false
+        },
+        {
+          "name": "latestRevision",
+          "type": "uint32",
+          "indexed": false,
+          "doc": "highest revision the issuer has emitted for this account"
+        },
+        {
+          "name": "openAmount",
+          "type": "uint256",
+          "indexed": false,
+          "doc": "issuer-maintained sum of open obligations (net)"
+        },
+        {
+          "name": "paidCumulative",
+          "type": "uint256",
+          "indexed": false
+        }
+      ],
+      "meaning": "CHECKPOINT",
+      "stateChange": "issuer publishes the account's current state; a decision must cite a checkpoint whose latestRevision equals the highest revision it consumed"
+    }
+  ],
+  "externalAbisPending": [
+    "aethir: settlement/claim contract ABI (GPU-004)",
+    "gpunet: supplier settlement ABI (GPU-005)"
+  ]
+}
