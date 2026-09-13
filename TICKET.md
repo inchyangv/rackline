@@ -484,7 +484,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-016 — 이벤트·현금·상환·작업 원장과 audit DB
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; PY-GPU 57 passed, migration 0002, PostgreSQL 16 실검증; docs/gpu/execution/GPU-016.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-014, GPU-015
 - 근거: PIVOT §8.2~8.3.

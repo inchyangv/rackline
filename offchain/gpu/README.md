@@ -28,3 +28,11 @@ PoC reference; funded facilities need a pinned agreement version; nothing is `RE
 `execution_profile` is immutable and PRODUCTION rows can never reference TEST_ONLY policies/terms or
 non-production providers (PL/pgSQL triggers). Production schemas come only from migrations — never
 `metadata.create_all()`.
+
+GPU-016 (`0002_event_cash_job_ledgers`, `hashcredit_gpu/db/ledgers.py`) adds the raw-observation, official-proof
+pipeline (`proof_requests` → `proof_artifacts` → `native_verifications` → `evidence_consumptions`), receivable,
+settlement, destination-cash/allocation, recovery/write-off, audit, cursor, job, outbox, tx-intent and exception
+ledgers. Proof API 200, `eth_call` pre-check, native acceptance and economic consumption are four independent
+facts guarded by triggers; PRODUCTION rows can never reference LOCAL_MOCK verifications; `audit_log` and
+`raw_source_observations` are append-only; `allocations` never exceed their `cash_receipts` row and `excess` is
+borrower-refundable (`v_cash_ownership`); `hcg_lease_job()` hands out exclusive job leases.

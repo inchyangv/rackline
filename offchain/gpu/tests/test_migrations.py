@@ -20,6 +20,7 @@ from .conftest import _dsn
 
 REPO = Path(__file__).resolve().parents[3]
 DOMAIN_FIXTURE = REPO / "test" / "fixtures" / "gpu" / "domain" / "sample-v1.json"
+HEAD = "0002"  # GPU-016; bump when a migration is added
 
 
 def _tables(url: str) -> set[str]:
@@ -30,10 +31,13 @@ def _tables(url: str) -> set[str]:
 
 def test_empty_database_to_head_and_back(fresh_db_url):
     assert current(fresh_db_url) is None
-    upgrade(fresh_db_url, "head")
+    upgrade(fresh_db_url, "0001")
     assert current(fresh_db_url) == "0001"
     tables = _tables(fresh_db_url)
-    assert len(tables) == 19  # 18 domain tables + alembic_version
+    assert len(tables) == 19  # 18 domain tables + alembic_version (GPU-015)
+    upgrade(fresh_db_url, "head")
+    assert current(fresh_db_url) == HEAD
+    assert len(_tables(fresh_db_url)) == 19 + 20 + 1  # + GPU-016 ledgers (0002) + v_cash_ownership view
     assert schema_diff(fresh_db_url) == [], "ORM metadata and migrated schema drifted"
     downgrade(fresh_db_url, "base")
     assert current(fresh_db_url) is None
@@ -41,13 +45,17 @@ def test_empty_database_to_head_and_back(fresh_db_url):
     with psycopg2.connect(_dsn(fresh_db_url)) as c, c.cursor() as cur:
         cur.execute("SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal")
         assert cur.fetchone()[0] == 0
+        cur.execute("SELECT count(*) FROM pg_proc WHERE proname LIKE 'hcg_%'")
+        assert cur.fetchone()[0] == 0
+        cur.execute("SELECT count(*) FROM information_schema.views WHERE table_schema='public'")
+        assert cur.fetchone()[0] == 0
     upgrade(fresh_db_url, "head")
-    assert current(fresh_db_url) == "0001"
+    assert current(fresh_db_url) == HEAD
 
 
 def test_upgrade_is_idempotent(migrated_db_url):
     upgrade(migrated_db_url, "head")
-    assert current(migrated_db_url) == "0001"
+    assert current(migrated_db_url) == HEAD
 
 
 def test_previous_schema_fixture_to_head_preserves_legacy_table(fresh_db_url):
@@ -150,7 +158,7 @@ def test_backup_restore_preserves_ids_relations_and_sums(pg_server_url, fresh_db
 
     after = _snapshot(fresh_db_url)
     assert after == before
-    assert current(fresh_db_url) == "0001"
+    assert current(fresh_db_url) == HEAD
     assert schema_diff(fresh_db_url) == []
     # triggers survive the round-trip and still enforce isolation
     with psycopg2.connect(_dsn(fresh_db_url)) as c, c.cursor() as cur:

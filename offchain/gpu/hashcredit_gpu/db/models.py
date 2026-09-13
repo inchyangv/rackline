@@ -455,3 +455,6 @@ TRIGGER_NAMES = (
     "trg_credit_decisions_profile_match",
     "trg_facilities_production_isolation",
 )
+
+# GPU-016 ledgers register themselves on the same metadata (import for side effects).
+from . import ledgers as _ledgers  # noqa: E402,F401
