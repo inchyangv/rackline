@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 13, [f.name for f in files]
+    assert len(files) == 17, [f.name for f in files]  # 13 interfaces + 4 GPU-030 implementations
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()

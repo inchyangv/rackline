@@ -668,7 +668,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-030 — 역할·provider/account/asset 등록과 지갑 귀속
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, 15 tests; AuthorizationVerifier 포함; docs/gpu/execution/GPU-030.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-013, GPU-029
 - 근거: PIVOT §7, §11.
