@@ -283,7 +283,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-000 — 재현 환경과 Claude Code 작업 진입점
 
-- 상태: READY
+- 상태: DONE (2026-09-13, docs/gpu/execution/GPU-000.md)
 - 유형/우선순위: CODE / P0
 - 선행: 없음
 - 근거/읽기: PIVOT §2, §12; `AGENT.md`, `foundry.toml`, root 및 web `package.json`, `offchain/*/pyproject.toml`, `.github/workflows/test.yml`.
