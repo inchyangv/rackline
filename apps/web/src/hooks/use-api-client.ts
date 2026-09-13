@@ -1,13 +1,8 @@
 import { useCallback } from 'react'
 import { env } from '@/lib/env'
 import { normalizeBaseUrl } from '@/lib/explorer'
-import { getErrorMessage } from '@/lib/ethereum'
-import { useApiStore } from '@/stores/api-store'
 
 export function useApiClient() {
-  const setApiBusy = useApiStore((s) => s.setApiBusy)
-  const setApiLog = useApiStore((s) => s.setApiLog)
-
   const apiRequest = useCallback(
     async (path: string, init?: RequestInit): Promise<unknown> => {
       const base = normalizeBaseUrl(env.apiUrl)
@@ -36,21 +31,5 @@ export function useApiClient() {
     [],
   )
 
-  const apiRun = useCallback(
-    async (label: string, fn: () => Promise<unknown>): Promise<void> => {
-      setApiBusy(true)
-      setApiLog('')
-      try {
-        const result = await fn()
-        setApiLog(`${label}\n${JSON.stringify(result, null, 2)}`)
-      } catch (e) {
-        setApiLog(`${label}\nERROR: ${getErrorMessage(e)}`)
-      } finally {
-        setApiBusy(false)
-      }
-    },
-    [setApiBusy, setApiLog],
-  )
-
-  return { apiRequest, apiRun }
+  return { apiRequest }
 }

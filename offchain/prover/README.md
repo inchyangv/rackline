@@ -1,6 +1,8 @@
-# HashCredit Prover (`offchain/prover`)
+# Rackline Prover (`offchain/prover`)
 
-CLI tool and background worker that builds Bitcoin SPV proofs (header chain + Merkle inclusion) and submits them on-chain to the HashCredit protocol.
+CLI tool and background worker that builds Bitcoin SPV proofs (header chain + Merkle inclusion) and submits them on-chain to the Rackline protocol.
+
+> Package, CLI, contract and environment-variable identifiers keep their legacy `hashcredit*` / `HashCredit*` / `HASH_CREDIT_*` names; the product is Rackline (formerly HashCredit).
 
 ## Commands
 

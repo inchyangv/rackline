@@ -2,7 +2,7 @@
 
 ## Premise: Bad debt is inherent to all unsecured lending
 
-All three questions converge on the same issue: **"What happens when repayment doesn't occur?"** This is not unique to HashCredit. Unsecured credit lending, by definition, has no collateral to seize upon default — bad debt is a structural inevitability. Traditional finance does not eliminate this risk; it manages it.
+All three questions converge on the same issue: **"What happens when repayment doesn't occur?"** This is not unique to Rackline (formerly HashCredit). Unsecured credit lending, by definition, has no collateral to seize upon default — bad debt is a structural inevitability. Traditional finance does not eliminate this risk; it manages it.
 
 How banks manage unsecured credit risk:
 1. **Income verification** — pay stubs, tax returns to confirm repayment capacity
@@ -11,9 +11,9 @@ How banks manage unsecured credit risk:
 4. **KYC + legal enforcement** — verified identity enables debt collection and legal proceedings
 5. **Loan loss provisions** — reserves set aside from revenue to absorb expected losses
 
-HashCredit applies the same framework to mining revenue.
+Rackline applies the same framework to mining revenue.
 
-| Traditional Credit | HashCredit | Status |
+| Traditional Credit | Rackline | Status |
 |---|---|---|
 | Income verification (pay stubs) | SPV-proven BTC payouts | **Live** |
 | Credit score / DTI limits | Trailing revenue x advance rate + caps | **Live** |
@@ -25,7 +25,7 @@ HashCredit applies the same framework to mining revenue.
 
 ## Q1. What prevents a mining pool from simply not enforcing repayment or colluding with the miner?
 
-In traditional banking, borrowers can conceal income or collude with employers to fabricate pay stubs. Banks mitigate this through income verification procedures and KYC-based legal accountability. HashCredit follows the same principle.
+In traditional banking, borrowers can conceal income or collude with employers to fabricate pay stubs. Banks mitigate this through income verification procedures and KYC-based legal accountability. Rackline follows the same principle.
 
 **Currently live:**
 - **Income verification:** Only payouts recorded on the Bitcoin blockchain and verified via SPV proof are accepted as credit evidence. Self-reported or fabricated data cannot pass.
@@ -41,11 +41,11 @@ On-chain logic alone cannot prevent collusion, but neither can traditional finan
 
 ## Q2. How do you handle miners switching pools or splitting hashrate across multiple pools?
 
-In traditional banking, when a borrower's income stream stops, further lending is blocked and existing debt enters delinquency management. HashCredit works the same way.
+In traditional banking, when a borrower's income stream stops, further lending is blocked and existing debt enters delinquency management. Rackline works the same way.
 
 **Currently live — payout-address-based tracking:**
 
-HashCredit tracks **SPV-verified payouts to a registered BTC address**, not hashrate directly.
+Rackline tracks **SPV-verified payouts to a registered BTC address**, not hashrate directly.
 
 - **Switching between approved pools:** As long as the same payout address is used, payouts from any approved pool are attributed to the same borrower. Tracking continues seamlessly.
 - **Multiple approved pools simultaneously:** All payouts aggregate into a single credit history within the trailing revenue window.
@@ -59,7 +59,7 @@ HashCredit tracks **SPV-verified payouts to a registered BTC address**, not hash
 
 ## Q3. How does your protocol adjust credit limits when BTC price drops sharply, or do you have any mechanism equivalent to liquidation or risk buffering?
 
-Traditional unsecured lending also uses **income-based limit adjustments + loan loss provisions** rather than collateral liquidation. HashCredit follows the same model.
+Traditional unsecured lending also uses **income-based limit adjustments + loan loss provisions** rather than collateral liquidation. Rackline follows the same model.
 
 **Currently live — automatic limit reduction:**
 
@@ -72,7 +72,7 @@ When a payout is submitted for a borrower with outstanding debt, a configurable 
 
 *Two-layer loss absorption — vault reserve + Coverage Pool:*
 
-In traditional finance, banks set aside loan loss provisions from revenue and, when those are exhausted, absorb remaining losses from capital. In DeFi, Aave uses Umbrella (formerly Safety Module) — a separate staking pool where participants earn rewards in exchange for bearing slashing risk when bad debt occurs. HashCredit combines both approaches.
+In traditional finance, banks set aside loan loss provisions from revenue and, when those are exhausted, absorb remaining losses from capital. In DeFi, Aave uses Umbrella (formerly Safety Module) — a separate staking pool where participants earn rewards in exchange for bearing slashing risk when bad debt occurs. Rackline combines both approaches.
 
 **Layer 1 — Vault reserve (loan loss provision):**
 - A configurable share (e.g., 20%) of LendingVault interest revenue is automatically set aside as `reserveBalance`
@@ -87,4 +87,4 @@ In traditional finance, banks set aside loan loss provisions from revenue and, w
 
 **Loss absorption waterfall:** deficit occurs → (1) vault reserve → (2) Coverage Pool slashing → (3) LP loss as last resort
 
-The key difference from Aave is that Aave's primary defense is collateral liquidation, with bad debt being a rare edge case. HashCredit has no collateral, so the **Coverage Pool serves as a thicker, more critical protection layer**. Reserve balances, Coverage Pool size, and deficit status are all publicly visible on-chain — making this more transparent than traditional bank loan loss provisions.
+The key difference from Aave is that Aave's primary defense is collateral liquidation, with bad debt being a rare edge case. Rackline has no collateral, so the **Coverage Pool serves as a thicker, more critical protection layer**. Reserve balances, Coverage Pool size, and deficit status are all publicly visible on-chain — making this more transparent than traditional bank loan loss provisions.

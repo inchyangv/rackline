@@ -1,7 +1,7 @@
 {
-  "name": "HashCredit",
-  "short_name": "HashCredit",
-  "description": "Working capital for GPU operators on Creditcoin.",
+  "name": "Rackline",
+  "short_name": "Rackline",
+  "description": "Rackline — working capital for GPU operators on Creditcoin.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

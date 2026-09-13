@@ -6,7 +6,6 @@ type ConfigState = {
   chainId: number
   managerAddress: string
   spvVerifierAddress: string
-  checkpointManagerAddress: string
   vaultAddress: string
   stablecoinAddress: string
 }
@@ -16,7 +15,6 @@ export const useConfigStore = create<ConfigState>(() => ({
   chainId: env.chainId,
   managerAddress: env.hashCreditManager,
   spvVerifierAddress: env.btcSpvVerifier,
-  checkpointManagerAddress: env.checkpointManager,
   vaultAddress: env.vaultAddress,
   stablecoinAddress: env.stablecoinAddress,
 }))

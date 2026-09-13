@@ -1,6 +1,6 @@
 version: "3.9"
 
-# Local/dev compose for HashCredit (SPV mode).
+# Local/dev compose for Rackline v1 (SPV mode).
 #
 # What you get:
 # - db: Postgres (persistent volume)

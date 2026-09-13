@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <title>HashCredit</title>
+  <title>Rackline</title>
   <!--
-    HashCredit mark. Geometry = src/components/shared/logo.tsx (24x24 viewBox) at scale 2,
+    Rackline mark. Geometry = src/components/shared/logo.tsx (24x24 viewBox) at scale 2,
     offset +10 so every edge lands on a multiple of 4 (pixel-exact at 16/32/48/64/512)
     and the glyph sits on its optical centre rather than its bounding-box centre.
     Bottom rule is the static fallback gauge, 8/16.

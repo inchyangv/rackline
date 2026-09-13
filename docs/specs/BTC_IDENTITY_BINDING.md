@@ -1,6 +1,6 @@
 # BTC Identity Binding & Credit Scoring — Deep Dive
 
-> How HashCredit proves Bitcoin wallet ownership on-chain without an oracle,
+> How Rackline (formerly HashCredit) proves Bitcoin wallet ownership on-chain without an oracle,
 > binds mining records to BTC addresses, and scores creditworthiness
 > from SPV-verified payout history.
 
@@ -112,7 +112,7 @@ BIP-137 is the Bitcoin standard for message signing. It defines:
 - Hash: `sha256(sha256(formatted_message))` (Bitcoin double-SHA256)
 - Signature: 65 bytes (1 byte recovery flag + 32 bytes r + 32 bytes s)
 
-The recovery flag encodes both the `v` value (for `ecrecover`) and the address type (P2PKH compressed, P2PKH uncompressed, P2WPKH). HashCredit supports **P2PKH compressed** and **P2WPKH** — the two modern standard formats.
+The recovery flag encodes both the `v` value (for `ecrecover`) and the address type (P2PKH compressed, P2PKH uncompressed, P2WPKH). Rackline supports **P2PKH compressed** and **P2WPKH** — the two modern standard formats.
 
 ---
 
@@ -348,13 +348,13 @@ Interest accrues, miner repays
 
 ## 6. Comparison with USC Attestation Model
 
-| Aspect | USC Attestation | HashCredit SPV | Assessment |
+| Aspect | USC Attestation | Rackline SPV | Assessment |
 |---|---|---|---|
 | Chain continuity | STARK proof of attestation chain | PoW header chain verification | Both prove block is canonical; SPV uses Bitcoin's native security |
 | Trust assumption | Attestor set is honest majority | Bitcoin PoW is unforgeable | SPV is arguably stronger for BTC (energy-based vs consensus-based) |
-| Identity binding | Not specified (app-level) | `claimBtcAddress` (pure crypto) | **HashCredit is ahead** — solved on-chain without oracle |
-| Revenue verification | Generic event extraction | BTC output parsing + pubkeyHash match | **HashCredit is domain-specific** — tailored to mining payouts |
-| Credit scoring | Not part of USC | Trailing window + heuristics + caps | **HashCredit adds this layer** on top of proof verification |
+| Identity binding | Not specified (app-level) | `claimBtcAddress` (pure crypto) | **Rackline is ahead** — solved on-chain without oracle |
+| Revenue verification | Generic event extraction | BTC output parsing + pubkeyHash match | **Rackline is domain-specific** — tailored to mining payouts |
+| Credit scoring | Not part of USC | Trailing window + heuristics + caps | **Rackline adds this layer** on top of proof verification |
 | Gas efficiency | Native precompile (~low) | Solidity loops (~500k–2M gas) | USC is cheaper; acceptable for low-frequency payout proofs |
 | Decentralization | Distributed attestors | Single checkpoint owner | **USC is better** — we mitigate with multisig on mainnet |
 

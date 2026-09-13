@@ -1,6 +1,6 @@
-# USC Integration Design — HashCredit
+# USC Integration Design — Rackline
 
-> How HashCredit mirrors Creditcoin's Universal Smart Contract architecture,
+> How Rackline (formerly HashCredit) mirrors Creditcoin's Universal Smart Contract architecture,
 > why our BTC SPV implementation is a valid instantiation of the same pattern,
 > and how we transition to native USC when it ships.
 
@@ -82,14 +82,14 @@ interface INativeQueryVerifier {
 
 ---
 
-## 2. HashCredit: Same Pattern, BTC-Native Proof
+## 2. Rackline: Same Pattern, BTC-Native Proof
 
 We implement the **exact same architectural pattern** as USC, using Bitcoin SPV as the proof mechanism instead of USC's attestor/prover/STARK pipeline.
 
 ### Side-by-Side Architecture Comparison
 
 ```
-USC Pipeline:                          HashCredit Pipeline:
+USC Pipeline:                          Rackline Pipeline:  
 ─────────────                          ──────────────────
 Source chain event                     Bitcoin mining payout (tx)
         │                                      │
@@ -108,7 +108,7 @@ Business logic contract                HashCreditManager processes PayoutEvidenc
 
 ### Mapping of Equivalent Components
 
-| USC Component | HashCredit Equivalent | Interface |
+| USC Component | Rackline Equivalent | Interface |
 |---|---|---|
 | `INativeQueryVerifier` | `IVerifierAdapter` | `verifyPayout(bytes) → PayoutEvidence` |
 | Attestation chain digest | `CheckpointManager` checkpoint | Trusted anchor for chain continuity |
@@ -152,9 +152,9 @@ struct PayoutEvidence {
 
 ### 3.1 Same Trust Reduction Goal
 
-Both USC and HashCredit aim to **replace trusted intermediaries with cryptographic proofs** for cross-chain data verification.
+Both USC and Rackline aim to **replace trusted intermediaries with cryptographic proofs** for cross-chain data verification.
 
-| Property | USC | HashCredit |
+| Property | USC | Rackline |
 |---|---|---|
 | Oracle-free | Attestors + STARK (no single trusted party) | PoW + Merkle (Bitcoin's own security model) |
 | Proof completeness | Merkle inclusion + chain continuity | Merkle inclusion + header chain PoW |
@@ -165,7 +165,7 @@ Both USC and HashCredit aim to **replace trusted intermediaries with cryptograph
 
 ```
 USC:           Verification Contract  ←→  Business Logic Contract
-HashCredit:    IVerifierAdapter       ←→  HashCreditManager
+Rackline:      IVerifierAdapter       ←→  HashCreditManager
 ```
 
 Both enforce that **the verifier knows nothing about credit** and **the credit engine knows nothing about proofs**. The boundary is a structured data interface (`PayoutEvidence` / decoded event data).
@@ -175,26 +175,26 @@ Both enforce that **the verifier knows nothing about credit** and **the credit e
 Both place replay protection in the **business logic layer**, not the verification layer:
 
 - USC: `processedQueries[hash(chainKey, height, txIndex)]`
-- HashCredit: `processedPayouts[keccak256(txid, vout)]`
+- Rackline: `processedPayouts[keccak256(txid, vout)]`
 
 This is deliberate: the verifier is stateless (pure function), and the business contract owns state.
 
 ### 3.4 Same Checkpoint/Anchor System
 
 - USC: attestation chain digests (built by distributed attestor consensus)
-- HashCredit: `CheckpointManager` stores trusted Bitcoin block headers
+- Rackline: `CheckpointManager` stores trusted Bitcoin block headers
 
 Both serve the same role: **"everything after this point is validated from a known-good anchor."**
 
 ---
 
-## 4. What HashCredit Does That USC Doesn't
+## 4. What Rackline Does That USC Doesn't
 
 ### 4.1 BTC Identity Binding (`claimBtcAddress`)
 
 USC documentation does not specify how to bind a source-chain address to an EVM address. This is left as an application-level concern.
 
-HashCredit solves this **on-chain with pure cryptography**:
+Rackline solves this **on-chain with pure cryptography**:
 
 ```
 User signs message with BTC private key (BIP-137)
@@ -217,7 +217,7 @@ See `docs/specs/BTC_IDENTITY_BINDING.md` for the full deep-dive.
 
 ### 4.2 Revenue-Based Credit Scoring
 
-USC is a generic cross-chain data verification framework. HashCredit adds a complete **revenue-based credit scoring engine** on top:
+USC is a generic cross-chain data verification framework. Rackline adds a complete **revenue-based credit scoring engine** on top:
 
 - Trailing-window revenue accumulation (configurable, default 30 days)
 - BTC→USD conversion at on-chain oracle price
@@ -238,7 +238,7 @@ For Bitcoin specifically, our approach is arguably **more trustless** than USC's
 
 ## 5. What USC Has That We Don't (Yet)
 
-| Capability | USC | HashCredit | Impact |
+| Capability | USC | Rackline | Impact |
 |---|---|---|---|
 | Decentralized checkpoints | Attestor consensus | `onlyOwner` | **Centralization risk** — mitigated by multisig on mainnet |
 | Native precompile (gas) | `0x0FD2` (Rust) | Pure Solidity | **Higher gas costs** — acceptable for low-frequency payout proofs |
@@ -346,7 +346,7 @@ This would require a minor HashCreditManager modification to accept a verifier a
 
 ## 9. Summary
 
-HashCredit is not a "USC workaround." It is a **production implementation of the same architectural pattern** that USC standardizes — proof-separated, replay-protected, adapter-abstracted credit from cross-chain economic evidence.
+Rackline is not a "USC workaround." It is a **production implementation of the same architectural pattern** that USC standardizes — proof-separated, replay-protected, adapter-abstracted credit from cross-chain economic evidence.
 
 The difference is the proof mechanism: we use Bitcoin's native PoW + Merkle instead of USC's attestor + STARK pipeline. Both produce the same output: **verified, structured evidence** that a business logic contract consumes without knowing how it was proven.
 

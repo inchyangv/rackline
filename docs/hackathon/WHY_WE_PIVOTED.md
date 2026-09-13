@@ -1,6 +1,6 @@
 # Why We Pivoted: From Bitcoin Hashrate to GPU NFTs
 
-> HashCredit v1 (BUIDL CTC Spring 2026 winner) issued stablecoin credit against SPV-proven Bitcoin mining payouts.
+> Rackline v1 (then HashCredit) won BUIDL CTC Spring 2026 and issued stablecoin credit against SPV-proven Bitcoin mining payouts.
 > Rackline (v2, formerly HashCredit) issues stablecoin credit against **GPU NFTs** — tokenized GPU deployments on DePIN compute networks whose revenue is routed through a protocol-controlled Node Account and proven on Creditcoin via the Attestcoin Protocol.
 >
 > Same mission: turn verifiable machine revenue into on-chain credit. Different asset, because the asset is what decides whether the lender ever gets paid.

@@ -1,7 +1,9 @@
-# HashCredit API (`offchain/api`)
+# Rackline API (`offchain/api`)
 
 FastAPI API for read/verification tasks used by the frontend.  
 On-chain transactions are wallet-side only.
+
+> Package, service and signed-message identifiers keep their legacy `hashcredit*` / `HashCredit*` names; the product is Rackline (formerly HashCredit).
 
 ## Endpoints
 

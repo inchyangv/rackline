@@ -1,8 +1,8 @@
-# HashCredit Engineering Prompt (Current)
+# Rackline Engineering Prompt (Current)
 
 ## Objective
 
-Implement and maintain HashCredit in SPV mode with wallet-first transaction execution.
+Implement and maintain Rackline (formerly HashCredit) in SPV mode with wallet-first transaction execution.
 
 ## Source of Truth
 

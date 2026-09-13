@@ -348,7 +348,7 @@ export function SetupPanel({ facility, viewed, onView }: Props) {
 
               <div>
                 <p className="text-xs leading-relaxed text-bone-3">
-                  The message references HashCredit, the name of the on-chain verifier contract this
+                  The message references HashCredit, the legacy name of the contracts this
                   deployment uses. Sign it exactly as shown.
                 </p>
                 <div className="mt-2 flex items-center justify-between gap-2">

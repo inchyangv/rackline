@@ -1,8 +1,10 @@
-# HashCredit Relayer Utility
+# Rackline Relayer Utility
 
 This package is a standalone EIP-712 signer utility kept for compatibility experiments.
 
-The active HashCredit runtime path uses:
+> Package and CLI identifiers keep their legacy `hashcredit*` names; the product is Rackline (formerly HashCredit).
+
+The active Rackline runtime path uses:
 - `offchain/api` for payload/proof building and verification
 - `offchain/prover` for SPV worker submission
 

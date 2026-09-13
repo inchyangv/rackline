@@ -1,4 +1,4 @@
-# HashCredit Makefile
+# Rackline Makefile
 # Common commands for development
 
 .PHONY: build test clean fmt lint deploy relayer
@@ -76,7 +76,7 @@ anvil:
 	anvil --chain-id 31337
 
 help:
-	@echo "HashCredit Development Commands:"
+	@echo "Rackline Development Commands:"
 	@echo "  make build          - Build Solidity contracts"
 	@echo "  make test           - Run Foundry tests"
 	@echo "  make test-gas       - Run tests with gas report"

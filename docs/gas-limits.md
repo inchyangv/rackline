@@ -1,6 +1,6 @@
 # Gas Profiling and Limits (SPV-Only)
 
-This document summarizes practical gas bounds for HashCredit's active SPV flow.
+This document summarizes practical gas bounds for the active SPV flow of Rackline (formerly HashCredit).
 
 ## Protocol Limits
 

@@ -1,8 +1,8 @@
-# HashCredit Threat Model (SPV-Only)
+# Rackline Threat Model (SPV-Only)
 
 ## 1. System Scope
 
-HashCredit is a revenue-based credit protocol on Creditcoin EVM.
+Rackline (formerly HashCredit) is a revenue-based credit protocol on Creditcoin EVM.
 Active verification mode is Bitcoin SPV via `BtcSpvVerifier`.
 
 ### Trust Boundaries

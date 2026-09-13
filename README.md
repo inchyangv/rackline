@@ -15,7 +15,7 @@ Next payout → sweep → repayFor(tokenId) → debt falls
 Sustained default → NFT forecloses to the vault
 ```
 
-> **Pivot notice (Sep 2026).** HashCredit v1 — credit against SPV-proven Bitcoin mining payouts — won BUIDL CTC Spring 2026. We pivoted to GPU NFTs because v1 could prove revenue but could not collect on it, and renamed the protocol Rackline to match the asset. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the v2 design is in [`TECH.md`](TECH.md); the production plan is in `PIVOT.md` / `TICKET.md`. The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
+> **Pivot notice (Sep 2026).** Rackline v1 (then HashCredit) — credit against SPV-proven Bitcoin mining payouts — won BUIDL CTC Spring 2026. We pivoted to GPU NFTs because v1 could prove revenue but could not collect on it, and renamed the protocol Rackline to match the asset. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the v2 design is in [`TECH.md`](TECH.md); the production plan is in `PIVOT.md` / `TICKET.md`. The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
 
 ## Status
 
@@ -117,6 +117,8 @@ Mint, Attestcoin verification, limit computation, draw, lien, sweep, `repayFor` 
 ---
 
 ## Contract addresses
+
+_Contract, package and service identifiers keep their legacy `HashCredit*` names; the product is Rackline._
 
 **v2 — Creditcoin CC3 Testnet (`102031`)**
 

@@ -1,7 +1,7 @@
 {
   "name": "hashcredit-api",
   "private": true,
-  "description": "HashCredit offchain API (Dockerfile build; Python runtime).",
+  "description": "Rackline offchain API (Dockerfile build; Python runtime).",
   "scripts": {
     "start": "echo \"This package is deployed via Dockerfile.\" && exit 0"
   }

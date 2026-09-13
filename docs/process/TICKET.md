@@ -1,4 +1,4 @@
-# HashCredit Tickets (Current Baseline)
+# Rackline Tickets (Current Baseline)
 
 This file tracks actionable work for the SPV-only architecture.
 

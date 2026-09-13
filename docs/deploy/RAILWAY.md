@@ -1,6 +1,8 @@
 # Railway Deployment Guide
 
-This document describes how to deploy the HashCredit off-chain services to Railway.
+This document describes how to deploy the Rackline (formerly HashCredit) off-chain services to Railway.
+
+> Service, database and domain identifiers keep their legacy `hashcredit-*` names; the product is Rackline.
 
 ## Service Layout
 

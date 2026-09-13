@@ -2,7 +2,7 @@
 
 ## Overview
 
-HashCredit uses payout-based credit. Without provenance controls, a borrower could attempt self-transfer loops to inflate credit.
+Rackline (formerly HashCredit) uses payout-based credit. Without provenance controls, a borrower could attempt self-transfer loops to inflate credit.
 
 ## Attack Pattern
 

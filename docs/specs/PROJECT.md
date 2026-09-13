@@ -1,8 +1,8 @@
-# HashCredit — Project Specification (SPV-Only)
+# Rackline — Project Specification (SPV-Only)
 
 ## 0. Definition
 
-HashCredit is a Creditcoin EVM protocol that provides stablecoin revolving credit lines to Bitcoin miners using SPV-verified Bitcoin payout events as credit evidence.
+Rackline (formerly HashCredit) is a Creditcoin EVM protocol that provides stablecoin revolving credit lines to Bitcoin miners using SPV-verified Bitcoin payout events as credit evidence.
 
 ## 1. Problem
 
@@ -10,7 +10,7 @@ Bitcoin miners face recurring operating costs while revenue timing is volatile. 
 - traditional loans are slow and collateral-heavy
 - DeFi lending usually requires overcollateralized liquid assets
 
-HashCredit addresses this by turning verified Bitcoin payouts into deterministic on-chain credit inputs.
+Rackline addresses this by turning verified Bitcoin payouts into deterministic on-chain credit inputs.
 
 ## 2. Goals
 

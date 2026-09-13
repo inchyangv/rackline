@@ -1,11 +1,11 @@
-# ADR 0001: Bitcoin SPV Verification for HashCredit
+# ADR 0001: Bitcoin SPV Verification for Rackline
 
 - Status: Accepted
 - Date: 2026-03-04
 
 ## Context
 
-HashCredit requires a cryptographic, replay-safe method to prove Bitcoin miner payouts on Creditcoin EVM.
+Rackline (formerly HashCredit) requires a cryptographic, replay-safe method to prove Bitcoin miner payouts on Creditcoin EVM.
 The selected production path is Bitcoin SPV verification on-chain:
 - checkpoint anchor + header chain
 - PoW validation
@@ -84,11 +84,11 @@ This eliminates the need for a trusted operator to set borrower mappings.
 
 ## Relationship to Creditcoin USC
 
-HashCredit's architecture deliberately mirrors USC's design principles:
+Rackline's architecture deliberately mirrors USC's design principles:
 
 ### Same Pattern, Different Proof Mechanism
 
-| Principle | USC Implementation | HashCredit Implementation |
+| Principle | USC Implementation | Rackline Implementation |
 |---|---|---|
 | Proof-business separation | `INativeQueryVerifier` ↔ Business contract | `IVerifierAdapter` ↔ `HashCreditManager` |
 | Structured evidence | Decoded event data from `encodedTransaction` | `PayoutEvidence` struct |
@@ -98,7 +98,7 @@ HashCredit's architecture deliberately mirrors USC's design principles:
 | Chain continuity proof | STARK zero-knowledge proof | PoW header chain verification |
 | Transaction inclusion | Merkle proof (Keccak-256) | Merkle proof (SHA-256d) |
 
-### What HashCredit Adds Beyond USC's Scope
+### What Rackline Adds Beyond USC's Scope
 
 1. **BTC identity binding** — `claimBtcAddress()` proves BTC address ownership on-chain using ecrecover + Hash160, without any oracle. USC documentation leaves cross-chain identity binding as an application-level concern.
 

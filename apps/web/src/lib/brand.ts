@@ -3,8 +3,8 @@
  * legacy names (HashCreditManager, VITE_HASH_CREDIT_MANAGER, …).
  */
 export const BRAND = {
-  name: 'HashCredit',
-  wordmark: 'HASHCREDIT',
+  name: 'Rackline',
+  wordmark: 'RACKLINE',
   descriptor: 'Working capital for GPU operators',
   network: 'Creditcoin Testnet',
   legal:
@@ -12,6 +12,6 @@ export const BRAND = {
 } as const
 
 export const STORAGE_KEYS = {
-  /** v2 namespace — the legacy 'hashcredit_tab' key held 'dashboard' | 'pool'. */
-  tab: 'hashcredit:v2:tab',
+  /** Rackline namespace — the legacy 'hashcredit:v2:tab' key is no longer read. */
+  tab: 'rackline:tab',
 } as const

@@ -1,6 +1,6 @@
-# HashCredit Web Frontend
+# Rackline Web Frontend
 
-React app for HashCredit on Creditcoin EVM — stablecoin working capital for GPU operators, funded by liquidity providers.
+React app for Rackline (formerly HashCredit) on Creditcoin EVM — stablecoin working capital for GPU operators, funded by liquidity providers.
 This is the v2 visual system running on the v1 (Bitcoin-payout) testnet contracts; every number shown is a live
 on-chain read and every step that is not available in this deployment is labelled as such.
 
@@ -22,8 +22,6 @@ on-chain read and every step that is not available in this deployment is labelle
   on-chain statement, Draw / Repay action block, facility setup stepper, repayment disclosure.
 - **Lend** — pool header, cash in pool, utilization meter, pool ledger, connected-wallet position,
   Deposit / Withdraw action block (withdraw is denominated in mUSDT), funding disclosure.
-
-Legacy admin / operations / proof tabs remain in `src/features/{admin,operations,proof}` but are not routed.
 
 ## Design system
 
@@ -56,11 +54,10 @@ npm run preview
 All optional; defaults target Creditcoin Testnet (chainId `102031`).
 
 - `VITE_RPC_URL`, `VITE_CHAIN_ID`
-- `VITE_HASH_CREDIT_MANAGER`, `VITE_VAULT_ADDRESS`, `VITE_STABLECOIN_ADDRESS`, `VITE_BTC_SPV_VERIFIER`, `VITE_CHECKPOINT_MANAGER`
+- `VITE_HASH_CREDIT_MANAGER`, `VITE_VAULT_ADDRESS`, `VITE_STABLECOIN_ADDRESS`, `VITE_BTC_SPV_VERIFIER`
 - `VITE_API_URL` — backend API (payout-address verification)
 - `VITE_EXPLORER_BASE` — Blockscout UI base (address / tx links)
 - `VITE_EXPLORER_API_BASE` — Blockscout API base (statement events)
-- `VITE_BTC_EXPLORER_TX_BASE` — legacy BTC tx links
 
 The footer shows the build commit (`__APP_COMMIT__`, injected in `vite.config.ts`; Vercel's
 `VERCEL_GIT_COMMIT_SHA` is used when present).

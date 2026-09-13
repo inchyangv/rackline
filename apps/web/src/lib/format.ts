@@ -10,16 +10,6 @@ export function shortHash(hash: string): string {
   return `${hash.slice(0, 10)}…${hash.slice(-4)}`
 }
 
-export function shortBtcAddress(addr: string): string {
-  if (!addr) return ''
-  if (addr.length <= 18) return addr
-  return `${addr.slice(0, 8)}…${addr.slice(-6)}`
-}
-
-export function isHexBytes(value: string): boolean {
-  return /^0x[0-9a-fA-F]*$/.test(value) && value.length % 2 === 0
-}
-
 export function sameAddress(a: string, b: string): boolean {
   return !!a && !!b && a.toLowerCase() === b.toLowerCase()
 }

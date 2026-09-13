@@ -1,5 +1,5 @@
 {
-  "name": "ctc-hashcredit-monorepo",
+  "name": "rackline-monorepo",
   "private": true,
   "workspaces": [
     "offchain/api",

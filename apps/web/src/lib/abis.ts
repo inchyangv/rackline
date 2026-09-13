@@ -227,69 +227,6 @@ export const BtcSpvVerifierAbi = [
   { inputs: [], name: 'InvalidAddress', type: 'error' },
 ] as const;
 
-export const CheckpointManagerAbi = [
-  {
-    inputs: [],
-    name: 'latestCheckpointHeight',
-    outputs: [{ internalType: 'uint32', name: '', type: 'uint32' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [{ internalType: 'uint32', name: 'height', type: 'uint32' }],
-    name: 'getCheckpoint',
-    outputs: [
-      {
-        components: [
-          { internalType: 'bytes32', name: 'blockHash', type: 'bytes32' },
-          { internalType: 'uint32', name: 'height', type: 'uint32' },
-          { internalType: 'uint256', name: 'chainWork', type: 'uint256' },
-          { internalType: 'uint32', name: 'timestamp', type: 'uint32' },
-          { internalType: 'uint32', name: 'bits', type: 'uint32' },
-        ],
-        internalType: 'struct ICheckpointManager.Checkpoint',
-        name: 'checkpoint',
-        type: 'tuple',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [],
-    name: 'latestCheckpoint',
-    outputs: [
-      {
-        components: [
-          { internalType: 'bytes32', name: 'blockHash', type: 'bytes32' },
-          { internalType: 'uint32', name: 'height', type: 'uint32' },
-          { internalType: 'uint256', name: 'chainWork', type: 'uint256' },
-          { internalType: 'uint32', name: 'timestamp', type: 'uint32' },
-          { internalType: 'uint32', name: 'bits', type: 'uint32' },
-        ],
-        internalType: 'struct ICheckpointManager.Checkpoint',
-        name: '',
-        type: 'tuple',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      { internalType: 'uint32', name: 'height', type: 'uint32' },
-      { internalType: 'bytes32', name: 'blockHash', type: 'bytes32' },
-      { internalType: 'uint256', name: 'chainWork', type: 'uint256' },
-      { internalType: 'uint32', name: 'timestamp', type: 'uint32' },
-      { internalType: 'uint32', name: 'bits', type: 'uint32' },
-    ],
-    name: 'setCheckpoint',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
-
 export const LendingVaultAbi = [
   {
     inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],

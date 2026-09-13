@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hashcredit-relayer"
 version = "0.1.0"
-description = "HashCredit Bitcoin Payout Relayer - watches Bitcoin payouts and submits signed proofs to EVM"
+description = "Rackline Bitcoin Payout Relayer - watches Bitcoin payouts and submits signed proofs to EVM"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
-    {name = "HashCredit Team"}
+    {name = "Rackline Team"}
 ]
 keywords = ["bitcoin", "evm", "defi", "relayer", "hashcredit"]
 

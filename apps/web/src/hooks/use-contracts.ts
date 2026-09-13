@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Contract, ethers, JsonRpcProvider, Network } from 'ethers'
-import { HashCreditManagerAbi, BtcSpvVerifierAbi, CheckpointManagerAbi, Erc20Abi, LendingVaultAbi } from '@/lib/abis'
+import { HashCreditManagerAbi, Erc20Abi, LendingVaultAbi } from '@/lib/abis'
 import { useConfigStore } from '@/stores/config-store'
 
 export function useReadonlyProvider(): JsonRpcProvider | null {
@@ -24,24 +24,6 @@ export function useManagerRead(): Contract | null {
     if (!provider || !ethers.isAddress(managerAddress)) return null
     return new Contract(managerAddress, HashCreditManagerAbi, provider)
   }, [provider, managerAddress])
-}
-
-export function useSpvVerifierRead(): Contract | null {
-  const provider = useReadonlyProvider()
-  const spvVerifierAddress = useConfigStore((s) => s.spvVerifierAddress)
-  return useMemo(() => {
-    if (!provider || !ethers.isAddress(spvVerifierAddress)) return null
-    return new Contract(spvVerifierAddress, BtcSpvVerifierAbi, provider)
-  }, [provider, spvVerifierAddress])
-}
-
-export function useCheckpointRead(): Contract | null {
-  const provider = useReadonlyProvider()
-  const checkpointManagerAddress = useConfigStore((s) => s.checkpointManagerAddress)
-  return useMemo(() => {
-    if (!provider || !ethers.isAddress(checkpointManagerAddress)) return null
-    return new Contract(checkpointManagerAddress, CheckpointManagerAbi, provider)
-  }, [provider, checkpointManagerAddress])
 }
 
 export function useVaultRead(): Contract | null {
