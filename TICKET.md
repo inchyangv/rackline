@@ -833,6 +833,8 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ## 7. 운영 서비스·API·프런트엔드
 
+> **2026-09-14 사용자 우선순위 변경 — 화면 먼저:** GPU-047~052/066의 화면·상호작용을 backend와 독립된 LOCAL_MOCK preview로 선행 구현했다. 산출물/재현/검증/실연결 잔여는 [`GPU-UI-PREVIEW.md`](docs/gpu/execution/GPU-UI-PREVIEW.md)를 읽는다. `apps/web/src/features/preview/` 및 web 진입/스타일/테스트가 해당 작업 소유 범위다. 아래 부모 티켓의 TODO/IN_PROGRESS는 실제 API·wallet·native·권한·회계 연동까지 포함하며, demo 화면 완료를 부모 DONE이나 GPU-080/G3/G4 통과로 승격하지 않는다. 동시 backend 실행자는 현재 preview를 덮어쓰지 말고 생성 타입·manifest 기반 data adapter 연결 시 통합한다.
+
 ### GPU-044 — 통제/약정 모니터와 회수 case workflow
 
 - 상태: TODO

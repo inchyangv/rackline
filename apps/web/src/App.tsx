@@ -1,12 +1,12 @@
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { AppShell } from '@/components/layout/app-shell'
+import { PreviewApp } from '@/features/preview/preview-app'
 
 function App() {
   return (
     <TooltipProvider>
-      <AppShell />
-      <Toaster position="bottom-right" closeButton />
+      <PreviewApp />
+      <Toaster theme="light" position="bottom-right" closeButton />
     </TooltipProvider>
   )
 }
