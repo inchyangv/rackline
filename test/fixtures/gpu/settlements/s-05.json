@@ -1,0 +1,92 @@
+{
+ "id": "S-05 allocation cannot exceed destination receipt; allocation in a non-loan asset is rejected; excess above debt is not applied",
+ "facilities": {
+  "fac-2": {
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 1000000000,
+   "loanAsset": "musdt:102031"
+  }
+ },
+ "observations": [
+  {
+   "observationId": "d1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "cc3/settle-7/receipt",
+   "eventType": "DESTINATION_RECEIPT",
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "musdt:102031",
+   "settlementId": "settle-7",
+   "amount": 1500000000,
+   "observedAt": "t1"
+  },
+  {
+   "observationId": "a1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "cc3/settle-7/alloc-usdc",
+   "eventType": "ALLOCATION",
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "settlementId": "settle-7",
+   "facility": "fac-2",
+   "amount": 100000000,
+   "observedAt": "t2"
+  },
+  {
+   "observationId": "a2",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "cc3/settle-7/alloc-1",
+   "eventType": "ALLOCATION",
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "musdt:102031",
+   "settlementId": "settle-7",
+   "facility": "fac-2",
+   "amount": 1200000000,
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "a3",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "cc3/settle-7/alloc-2",
+   "eventType": "ALLOCATION",
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "musdt:102031",
+   "settlementId": "settle-7",
+   "facility": "fac-2",
+   "amount": 400000000,
+   "observedAt": "t4"
+  }
+ ],
+ "expect": {
+  "economicEvents": 4,
+  "receivables": {},
+  "eligibleUnpaid": 0,
+  "sourceEscrow": 0,
+  "inFlight": -1500000000,
+  "destinationReceived": 1500000000,
+  "unclassifiedCash": 0,
+  "facilityDebt": {
+   "fac-2": 0
+  },
+  "allocations": [
+   {
+    "facility": "fac-2",
+    "amount": 1200000000,
+    "applied": 1000000000,
+    "excess": 200000000,
+    "settlementId": "settle-7"
+   }
+  ],
+  "consumedSourceEvents": [],
+  "exceptions": [
+   "ALLOCATION_EXCEEDS_RECEIPT",
+   "LOAN_ASSET_MISMATCH"
+  ],
+  "decisionsRevoked": []
+ }
+}

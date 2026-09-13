@@ -1,0 +1,154 @@
+{
+ "id": "S-01 same obligation seen via API, signed statement and native chain: one event, PROVEN; source payout reduces unpaid but not debt",
+ "facilities": {
+  "fac-1": {
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 5000000000,
+   "loanAsset": "musdt:102031"
+  },
+  "fac-2": {
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 1000000000,
+   "loanAsset": "musdt:102031"
+  }
+ },
+ "observations": [
+  {
+   "observationId": "api:inv-A:r1",
+   "source": "API",
+   "trust": "OBSERVED",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-A",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-A",
+   "amount": 12000000000,
+   "revision": 1,
+   "observedAt": "t1"
+  },
+  {
+   "observationId": "stmt:inv-A",
+   "source": "STATEMENT",
+   "trust": "ASSERTED",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-A",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-A",
+   "amount": 12000000000,
+   "revision": 1,
+   "observedAt": "t2"
+  },
+  {
+   "observationId": "chain:9100000:17:0",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-A",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x0101010101010101010101010101010101010101010101010101010101010101",
+   "proven": {
+    "height": 9100000,
+    "txIndex": 17,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 9100000,
+    "txIndex": 17,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-A",
+   "amount": 12000000000,
+   "revision": 1,
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "chain:9100001:2:0",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/ASSIGNMENT/inv-A",
+   "eventType": "ASSIGNMENT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x0202020202020202020202020202020202020202020202020202020202020202",
+   "proven": {
+    "height": 9100001,
+    "txIndex": 2,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 9100001,
+    "txIndex": 2,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-A",
+   "facility": "fac-1",
+   "revision": 1,
+   "observedAt": "t4"
+  },
+  {
+   "observationId": "chain:9100100:3:0",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-1:1",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x0303030303030303030303030303030303030303030303030303030303030303",
+   "proven": {
+    "height": 9100100,
+    "txIndex": 3,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 9100100,
+    "txIndex": 3,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-A",
+   "amount": 4000000000,
+   "settlementId": "settle-1",
+   "revision": 1,
+   "observedAt": "t5"
+  }
+ ],
+ "expect": {
+  "economicEvents": 3,
+  "receivables": {
+   "mockdepin-testonly:acct-A|inv-A": {
+    "net": 12000000000,
+    "paid": 4000000000,
+    "unpaid": 8000000000,
+    "state": "PARTIALLY_PAID",
+    "revision": 1,
+    "trust": "PROVEN",
+    "assigned": "fac-1"
+   }
+  },
+  "eligibleUnpaid": 8000000000,
+  "sourceEscrow": 4000000000,
+  "inFlight": 0,
+  "destinationReceived": 0,
+  "unclassifiedCash": 0,
+  "facilityDebt": {
+   "fac-1": 5000000000,
+   "fac-2": 1000000000
+  },
+  "allocations": [],
+  "consumedSourceEvents": [
+   "0x0101010101010101010101010101010101010101010101010101010101010101",
+   "0x0202020202020202020202020202020202020202020202020202020202020202",
+   "0x0303030303030303030303030303030303030303030303030303030303030303"
+  ],
+  "exceptions": [],
+  "decisionsRevoked": []
+ }
+}

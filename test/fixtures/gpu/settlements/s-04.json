@@ -1,0 +1,317 @@
+{
+ "id": "S-04 rejections: paid re-pledge, other account, unclassified cash, self transfer, own anchor, unconsumed verify, tampered locator, duplicate consumption (the other-account assignment is recorded as an event, then rejected)",
+ "facilities": {
+  "fac-1": {
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 5000000000,
+   "loanAsset": "musdt:102031"
+  },
+  "fac-2": {
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 1000000000,
+   "loanAsset": "musdt:102031"
+  }
+ },
+ "observations": [
+  {
+   "observationId": "c1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-D",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-D",
+   "amount": 1000000000,
+   "revision": 1,
+   "observedAt": "t1",
+   "sourceEventId": "0x3131313131313131313131313131313131313131313131313131313131313131",
+   "proven": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true
+  },
+  {
+   "observationId": "c2",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-4:D",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3232323232323232323232323232323232323232323232323232323232323232",
+   "proven": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-D",
+   "amount": 1000000000,
+   "settlementId": "settle-4",
+   "observedAt": "t2"
+  },
+  {
+   "observationId": "c3",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/ASSIGNMENT/inv-D",
+   "eventType": "ASSIGNMENT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3333333333333333333333333333333333333333333333333333333333333333",
+   "proven": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-D",
+   "facility": "fac-1",
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "c4",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-B/ASSIGNMENT/inv-D",
+   "eventType": "ASSIGNMENT",
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3434343434343434343434343434343434343434343434343434343434343434",
+   "proven": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "claimed": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "consumed": true,
+   "obligationRef": "inv-D",
+   "facility": "fac-1",
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "c5",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-5:unknown",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3535353535353535353535353535353535353535353535353535353535353535",
+   "proven": {
+    "height": 4,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 4,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "amount": 700000000,
+   "settlementId": "settle-5",
+   "observedAt": "t4"
+  },
+  {
+   "observationId": "c6",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-6:self",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3636363636363636363636363636363636363636363636363636363636363636",
+   "proven": {
+    "height": 5,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 5,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "amount": 300000000,
+   "settlementId": "settle-6",
+   "payer": "0xa11ce",
+   "payerIsBorrower": true,
+   "observedAt": "t5"
+  },
+  {
+   "observationId": "c7",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "rackline/anchor/stmt-1",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3737373737373737373737373737373737373737373737373737373737373737",
+   "proven": {
+    "height": 6,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 6,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "stmt-1",
+   "amount": 99999000000,
+   "anchor": true,
+   "observedAt": "t6"
+  },
+  {
+   "observationId": "c8",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-E",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3838383838383838383838383838383838383838383838383838383838383838",
+   "proven": {
+    "height": 7,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 7,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": false,
+   "obligationRef": "inv-E",
+   "amount": 2000000000,
+   "observedAt": "t7"
+  },
+  {
+   "observationId": "c9",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-F",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-F",
+   "amount": 2000000000,
+   "sourceEventId": "0x3939393939393939393939393939393939393939393939393939393939393939",
+   "proven": {
+    "height": 8,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 8,
+    "txIndex": 5,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "observedAt": "t8"
+  },
+  {
+   "observationId": "c10",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-4:D",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x3232323232323232323232323232323232323232323232323232323232323232",
+   "proven": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-D",
+   "amount": 1000000000,
+   "settlementId": "settle-4",
+   "observedAt": "t9"
+  }
+ ],
+ "expect": {
+  "economicEvents": 7,
+  "receivables": {
+   "mockdepin-testonly:acct-A|inv-D": {
+    "net": 1000000000,
+    "paid": 1000000000,
+    "unpaid": 0,
+    "state": "PAID",
+    "revision": 1,
+    "trust": "PROVEN",
+    "assigned": null
+   },
+   "mockdepin-testonly:acct-A|inv-E": {
+    "net": 2000000000,
+    "paid": 0,
+    "unpaid": 2000000000,
+    "state": "RECOGNIZED",
+    "revision": 1,
+    "trust": "OBSERVED",
+    "assigned": null
+   }
+  },
+  "eligibleUnpaid": 0,
+  "sourceEscrow": 2000000000,
+  "inFlight": 0,
+  "destinationReceived": 0,
+  "unclassifiedCash": 700000000,
+  "facilityDebt": {
+   "fac-1": 5000000000,
+   "fac-2": 1000000000
+  },
+  "allocations": [],
+  "consumedSourceEvents": [
+   "0x3131313131313131313131313131313131313131313131313131313131313131",
+   "0x3232323232323232323232323232323232323232323232323232323232323232",
+   "0x3333333333333333333333333333333333333333333333333333333333333333",
+   "0x3434343434343434343434343434343434343434343434343434343434343434",
+   "0x3535353535353535353535353535353535353535353535353535353535353535",
+   "0x3636363636363636363636363636363636363636363636363636363636363636",
+   "0x3737373737373737373737373737373737373737373737373737373737373737"
+  ],
+  "exceptions": [
+   "ACCOUNT_MISMATCH",
+   "DUPLICATE_CONSUMPTION",
+   "LOCATOR_TAMPERED",
+   "OWN_ANCHOR_INELIGIBLE",
+   "PAID_REPLEDGE"
+  ],
+  "decisionsRevoked": []
+ }
+}

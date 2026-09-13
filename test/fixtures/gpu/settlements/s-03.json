@@ -1,0 +1,181 @@
+{
+ "id": "S-03 correction after the receivable was used revokes the decision; out-of-order revision and conflicting amounts are exceptions",
+ "facilities": {
+  "fac-1": {
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 5000000000,
+   "loanAsset": "musdt:102031"
+  },
+  "fac-2": {
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 1000000000,
+   "loanAsset": "musdt:102031"
+  }
+ },
+ "observations": [
+  {
+   "observationId": "c1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-C",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-C",
+   "amount": 5000000000,
+   "revision": 1,
+   "observedAt": "t1",
+   "sourceEventId": "0x2121212121212121212121212121212121212121212121212121212121212121",
+   "proven": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true
+  },
+  {
+   "observationId": "c2",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/ASSIGNMENT/inv-C",
+   "eventType": "ASSIGNMENT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+   "proven": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-C",
+   "facility": "fac-1",
+   "observedAt": "t2"
+  },
+  {
+   "observationId": "use-1",
+   "source": "API",
+   "trust": "OBSERVED",
+   "economicEventId": "decision/fac-1/use/inv-C",
+   "eventType": "DECISION_USE",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-C",
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "c3",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/CORRECTION/inv-C:r2",
+   "eventType": "CORRECTION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x2323232323232323232323232323232323232323232323232323232323232323",
+   "proven": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "targetEconomicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-C",
+   "delta": -1000000000,
+   "revision": 2,
+   "observedAt": "t4"
+  },
+  {
+   "observationId": "c4",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/CORRECTION/inv-C:r4",
+   "eventType": "CORRECTION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x2424242424242424242424242424242424242424242424242424242424242424",
+   "proven": {
+    "height": 4,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 4,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "targetEconomicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-C",
+   "delta": -500000000,
+   "revision": 4,
+   "observedAt": "t5"
+  },
+  {
+   "observationId": "api:inv-C:dup",
+   "source": "API",
+   "trust": "OBSERVED",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-C",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-C",
+   "amount": 5100000000,
+   "revision": 1,
+   "observedAt": "t6"
+  }
+ ],
+ "expect": {
+  "economicEvents": 5,
+  "receivables": {
+   "mockdepin-testonly:acct-A|inv-C": {
+    "net": 4000000000,
+    "paid": 0,
+    "unpaid": 4000000000,
+    "state": "ASSIGNED",
+    "revision": 2,
+    "trust": "PROVEN",
+    "assigned": "fac-1"
+   }
+  },
+  "eligibleUnpaid": 4000000000,
+  "sourceEscrow": 0,
+  "inFlight": 0,
+  "destinationReceived": 0,
+  "unclassifiedCash": 0,
+  "facilityDebt": {
+   "fac-1": 5000000000,
+   "fac-2": 1000000000
+  },
+  "allocations": [],
+  "consumedSourceEvents": [
+   "0x2121212121212121212121212121212121212121212121212121212121212121",
+   "0x2222222222222222222222222222222222222222222222222222222222222222",
+   "0x2323232323232323232323232323232323232323232323232323232323232323",
+   "0x2424242424242424242424242424242424242424242424242424242424242424"
+  ],
+  "exceptions": [
+   "AMOUNT_CONFLICT",
+   "REVISION_OUT_OF_ORDER"
+  ],
+  "decisionsRevoked": [
+   "fac-1"
+  ]
+ }
+}

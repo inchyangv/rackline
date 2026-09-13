@@ -1,0 +1,259 @@
+{
+ "id": "S-02 one source payout over two receivables; conversion leg; destination receipt; allocation reduces debt (loan currency)",
+ "facilities": {
+  "fac-1": {
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 5000000000,
+   "loanAsset": "musdt:102031"
+  },
+  "fac-2": {
+   "account": "mockdepin-testonly:acct-B",
+   "asset": "usdc:11155111",
+   "chainKey": 1,
+   "debt": 1000000000,
+   "loanAsset": "musdt:102031"
+  }
+ },
+ "observations": [
+  {
+   "observationId": "c1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-A",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-A",
+   "amount": 12000000000,
+   "revision": 1,
+   "observedAt": "t1",
+   "sourceEventId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+   "proven": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true
+  },
+  {
+   "observationId": "c2",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-B",
+   "eventType": "OBLIGATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "obligationRef": "inv-B",
+   "amount": 9000000000,
+   "revision": 1,
+   "observedAt": "t1",
+   "sourceEventId": "0x1212121212121212121212121212121212121212121212121212121212121212",
+   "proven": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "claimed": {
+    "height": 1,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "consumed": true
+  },
+  {
+   "observationId": "c3",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/ASSIGNMENT/inv-A",
+   "eventType": "ASSIGNMENT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x1313131313131313131313131313131313131313131313131313131313131313",
+   "proven": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-A",
+   "facility": "fac-1",
+   "observedAt": "t2"
+  },
+  {
+   "observationId": "c4",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/ASSIGNMENT/inv-B",
+   "eventType": "ASSIGNMENT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x1414141414141414141414141414141414141414141414141414141414141414",
+   "proven": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "claimed": {
+    "height": 2,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "consumed": true,
+   "obligationRef": "inv-B",
+   "facility": "fac-1",
+   "observedAt": "t2"
+  },
+  {
+   "observationId": "c5",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-2:A",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x1515151515151515151515151515151515151515151515151515151515151515",
+   "proven": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "claimed": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 0
+   },
+   "consumed": true,
+   "obligationRef": "inv-A",
+   "amount": 4000000000,
+   "settlementId": "settle-2",
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "c6",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "mockdepin-testonly/acct-A/PAYOUT/settle-2:B",
+   "eventType": "PAYOUT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "sourceEventId": "0x1616161616161616161616161616161616161616161616161616161616161616",
+   "proven": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "claimed": {
+    "height": 3,
+    "txIndex": 0,
+    "logOrdinal": 1
+   },
+   "consumed": true,
+   "obligationRef": "inv-B",
+   "amount": 2000000000,
+   "settlementId": "settle-2",
+   "observedAt": "t3"
+  },
+  {
+   "observationId": "leg-1",
+   "source": "API",
+   "trust": "OBSERVED",
+   "economicEventId": "rail/settle-2/leg-1",
+   "eventType": "LEG",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "usdc:11155111",
+   "settlementId": "settle-2",
+   "amount": 3600000000,
+   "toAmount": 3600000000,
+   "toAsset": "musdt:102031",
+   "observedAt": "t4"
+  },
+  {
+   "observationId": "dest-1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "cc3/settle-2/receipt",
+   "eventType": "DESTINATION_RECEIPT",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "musdt:102031",
+   "settlementId": "settle-2",
+   "amount": 3600000000,
+   "observedAt": "t5"
+  },
+  {
+   "observationId": "alloc-1",
+   "source": "CHAIN",
+   "trust": "PROVEN",
+   "economicEventId": "cc3/settle-2/alloc",
+   "eventType": "ALLOCATION",
+   "account": "mockdepin-testonly:acct-A",
+   "asset": "musdt:102031",
+   "settlementId": "settle-2",
+   "facility": "fac-1",
+   "amount": 3600000000,
+   "observedAt": "t6"
+  }
+ ],
+ "expect": {
+  "economicEvents": 9,
+  "receivables": {
+   "mockdepin-testonly:acct-A|inv-A": {
+    "net": 12000000000,
+    "paid": 4000000000,
+    "unpaid": 8000000000,
+    "state": "PARTIALLY_PAID",
+    "revision": 1,
+    "trust": "PROVEN",
+    "assigned": "fac-1"
+   },
+   "mockdepin-testonly:acct-A|inv-B": {
+    "net": 9000000000,
+    "paid": 2000000000,
+    "unpaid": 7000000000,
+    "state": "PARTIALLY_PAID",
+    "revision": 1,
+    "trust": "PROVEN",
+    "assigned": "fac-1"
+   }
+  },
+  "eligibleUnpaid": 15000000000,
+  "sourceEscrow": 2400000000,
+  "inFlight": 0,
+  "destinationReceived": 3600000000,
+  "unclassifiedCash": 0,
+  "facilityDebt": {
+   "fac-1": 1400000000,
+   "fac-2": 1000000000
+  },
+  "allocations": [
+   {
+    "facility": "fac-1",
+    "amount": 3600000000,
+    "applied": 3600000000,
+    "excess": 0,
+    "settlementId": "settle-2"
+   }
+  ],
+  "consumedSourceEvents": [
+   "0x1111111111111111111111111111111111111111111111111111111111111111",
+   "0x1212121212121212121212121212121212121212121212121212121212121212",
+   "0x1313131313131313131313131313131313131313131313131313131313131313",
+   "0x1414141414141414141414141414141414141414141414141414141414141414",
+   "0x1515151515151515151515151515151515151515151515151515151515151515",
+   "0x1616161616161616161616161616161616161616161616161616161616161616"
+  ],
+  "exceptions": [],
+  "decisionsRevoked": []
+ }
+}

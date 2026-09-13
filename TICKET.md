@@ -458,7 +458,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-014 — 경제 사건·정정·정산 대사의 골든 fixture
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, 5 golden fixtures executed; docs/gpu/execution/GPU-014.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-011, GPU-012, GPU-013, GPU-076
 - 근거: PIVOT §6.2, §8.2~8.3, §10.3.
