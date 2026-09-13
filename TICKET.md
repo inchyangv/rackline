@@ -422,7 +422,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-011 — 도메인·ID·단위·경로·API 계약
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, SPEC v1; docs/gpu/execution/GPU-011.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-003, GPU-074, GPU-075
 - 근거: PIVOT §6.1~6.2, §7~9.

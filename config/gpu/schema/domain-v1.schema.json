@@ -1,0 +1,2609 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rackline/gpu/domain/v1",
+  "title": "Rackline GPU lending domain (v1)",
+  "description": "Entities, evidence chain, identifiers, units and enums fixed by GPU-011 (docs/gpu/domain-model.md). Semantic rules beyond the schema (allocation sums, unique consumption per (envId, locator), profile isolation) are checked by script/gpu/validate_domain_fixture.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "executionProfile",
+    "sourceChains",
+    "borrowers",
+    "legalEntities",
+    "providerAccounts",
+    "assets",
+    "assetAssignments",
+    "encumbrances",
+    "controlAgreements",
+    "facilities",
+    "creditDecisions",
+    "receivables",
+    "settlements",
+    "cashReceipts",
+    "repaymentAllocations",
+    "corrections",
+    "recoveryCases",
+    "sourceEvents",
+    "proofRequests",
+    "proofArtifacts",
+    "nativeVerifications",
+    "evidenceConsumptions",
+    "businessEvidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "executionProfile": {
+      "$ref": "#/$defs/ExecutionProfile"
+    },
+    "sourceChains": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SourceChainRef"
+      }
+    },
+    "borrowers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Borrower"
+      }
+    },
+    "legalEntities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LegalEntity"
+      }
+    },
+    "providerAccounts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProviderAccount"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Asset"
+      }
+    },
+    "assetAssignments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AssetAssignment"
+      }
+    },
+    "encumbrances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Encumbrance"
+      }
+    },
+    "controlAgreements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ControlAgreement"
+      }
+    },
+    "facilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Facility"
+      }
+    },
+    "creditDecisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CreditDecision"
+      }
+    },
+    "receivables": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Receivable"
+      }
+    },
+    "settlements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Settlement"
+      }
+    },
+    "cashReceipts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CashReceipt"
+      }
+    },
+    "repaymentAllocations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RepaymentAllocation"
+      }
+    },
+    "corrections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Correction"
+      }
+    },
+    "recoveryCases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RecoveryCase"
+      }
+    },
+    "sourceEvents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SourceEvent"
+      }
+    },
+    "proofRequests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProofRequest"
+      }
+    },
+    "proofArtifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProofArtifact"
+      }
+    },
+    "nativeVerifications": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/NativeVerification"
+      }
+    },
+    "evidenceConsumptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EvidenceConsumption"
+      }
+    },
+    "businessEvidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BusinessEvidence"
+      }
+    }
+  },
+  "$defs": {
+    "Ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "Address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$"
+    },
+    "Hex32": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$"
+    },
+    "HexBytes": {
+      "type": "string",
+      "pattern": "^0x([0-9a-fA-F]{2})*$"
+    },
+    "IntString": {
+      "type": "string",
+      "pattern": "^-?[0-9]+$"
+    },
+    "UintString": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "DateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ExecutionProfile": {
+      "type": "string",
+      "enum": [
+        "LOCAL_MOCK",
+        "NATIVE_TESTNET",
+        "PRODUCTION"
+      ]
+    },
+    "VerificationMethod": {
+      "type": "string",
+      "enum": [
+        "ATTESTCOIN_NATIVE",
+        "LOCAL_MOCK",
+        "OFFCHAIN_ASSERTION"
+      ]
+    },
+    "NativeStatus": {
+      "type": "string",
+      "enum": [
+        "NOT_REQUIRED",
+        "NOT_REQUESTED",
+        "OBSERVED",
+        "WAITING_ATTESTATION",
+        "PROOF_READY",
+        "SUBMITTED",
+        "NATIVE_ACCEPTED",
+        "CONSUMED",
+        "INVALID",
+        "UNSUPPORTED",
+        "EXPIRED"
+      ]
+    },
+    "EarningsProvenance": {
+      "type": "string",
+      "enum": [
+        "UNCLASSIFIED",
+        "PROVIDER_SETTLEMENT",
+        "PROVIDER_INCENTIVE",
+        "SELF_TRANSFER",
+        "THIRD_PARTY_UNKNOWN",
+        "REFUND_OR_REVERSAL",
+        "SIMULATED"
+      ]
+    },
+    "ControlGrade": {
+      "type": "string",
+      "enum": [
+        "E0",
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    "CashState": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "SOURCE_ESCROW",
+        "IN_FLIGHT",
+        "DESTINATION_RECEIVED",
+        "ALLOCATED",
+        "RETURNED"
+      ]
+    },
+    "EnvironmentStatus": {
+      "type": "string",
+      "enum": [
+        "UNCONFIRMED",
+        "PROBED",
+        "UNSUPPORTED"
+      ]
+    },
+    "FacilityState": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "UNDER_REVIEW",
+        "CONTROL_PENDING",
+        "ACTIVE",
+        "DRAW_FROZEN",
+        "DELINQUENT",
+        "DEFAULTED",
+        "RECOVERY",
+        "REPAID",
+        "RELEASED",
+        "CLOSED_WITH_LOSS"
+      ]
+    },
+    "ReceivableState": {
+      "type": "string",
+      "enum": [
+        "RECOGNIZED",
+        "ASSIGNED",
+        "PARTIALLY_PAID",
+        "PAID",
+        "DISPUTED",
+        "CANCELLED",
+        "WRITTEN_OFF"
+      ]
+    },
+    "SettlementState": {
+      "type": "string",
+      "enum": [
+        "ANNOUNCED",
+        "PAID_AT_SOURCE",
+        "CONVERTING",
+        "RECEIVED_AT_DESTINATION",
+        "ALLOCATED",
+        "REVERSED"
+      ]
+    },
+    "AssetKind": {
+      "type": "string",
+      "enum": [
+        "PHYSICAL_GPU",
+        "MIG_PARTITION",
+        "VGPU",
+        "VM",
+        "CONTAINER",
+        "STAKING_GROUP",
+        "NODE_NFT"
+      ]
+    },
+    "EconomicEventType": {
+      "type": "string",
+      "enum": [
+        "OBLIGATION",
+        "ASSIGNMENT",
+        "CORRECTION",
+        "PAYOUT",
+        "CANCELLATION",
+        "REFUND"
+      ]
+    },
+    "Trust": {
+      "type": "string",
+      "enum": [
+        "PROVEN",
+        "ASSERTED",
+        "OBSERVED",
+        "CLAIMED"
+      ]
+    },
+    "ProvenanceKind": {
+      "type": "string",
+      "enum": [
+        "NATIVE_PROOF",
+        "PROVIDER_API",
+        "PROVIDER_STATEMENT",
+        "CHAIN_RPC",
+        "OUR_SYSTEM",
+        "MANUAL",
+        "SIMULATED"
+      ]
+    },
+    "EvidenceKind": {
+      "type": "string",
+      "enum": [
+        "SOURCE_EVENT_NATIVE",
+        "PROVIDER_API",
+        "PROVIDER_SIGNED_STATEMENT",
+        "OUR_ANCHOR",
+        "MANUAL_DOCUMENT"
+      ]
+    },
+    "EvidenceMeaning": {
+      "type": "string",
+      "enum": [
+        "OBLIGATION_RECOGNIZED",
+        "ASSIGNMENT_RECOGNIZED",
+        "CORRECTION",
+        "PAYOUT",
+        "PAYMENT_CANCELLED"
+      ]
+    },
+    "Role": {
+      "type": "string",
+      "enum": [
+        "borrower",
+        "lp",
+        "underwriter",
+        "operator",
+        "keeper",
+        "guardian",
+        "treasury",
+        "system"
+      ]
+    },
+    "Provenance": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/ProvenanceKind"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "schemaVersion": {
+          "type": "string"
+        },
+        "trust": {
+          "$ref": "#/$defs/Trust"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ref",
+        "observedAt",
+        "trust"
+      ]
+    },
+    "AssetRef": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "address": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 36
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "chainId",
+        "address",
+        "symbol",
+        "decimals"
+      ]
+    },
+    "Money": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^-?[0-9]+$"
+        },
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "asset"
+      ]
+    },
+    "Valuation": {
+      "type": "object",
+      "properties": {
+        "money": {
+          "$ref": "#/$defs/Money"
+        },
+        "inAsset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "amount": {
+          "type": "string",
+          "pattern": "^-?[0-9]+$"
+        },
+        "rateSource": {
+          "type": "string"
+        },
+        "rateAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "policyVersionId": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "money",
+        "inAsset",
+        "amount",
+        "rateSource",
+        "rateAt",
+        "policyVersionId"
+      ]
+    },
+    "Timestamp": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "at",
+        "provenance"
+      ]
+    },
+    "ChainRef": {
+      "type": "object",
+      "properties": {
+        "envId": {
+          "type": "string"
+        },
+        "chainId": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "envId",
+        "chainId"
+      ]
+    },
+    "SourceChainRef": {
+      "type": "object",
+      "properties": {
+        "envId": {
+          "type": "string"
+        },
+        "chainKey": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chainId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "encoding": {
+          "const": 1
+        },
+        "manifestHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "envId",
+        "chainKey",
+        "chainId",
+        "encoding",
+        "manifestHash"
+      ]
+    },
+    "SourceEventLocator": {
+      "type": "object",
+      "properties": {
+        "chainKey": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "txIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "logOrdinal": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "chainKey",
+        "height",
+        "txIndex",
+        "logOrdinal"
+      ]
+    },
+    "DestinationTxRef": {
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer"
+        },
+        "txHash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "blockNumber": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "logIndex": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "chainId",
+        "txHash",
+        "blockNumber",
+        "logIndex"
+      ]
+    },
+    "Wallet": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "chainId": {
+          "type": "integer"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "SIGNER",
+            "PAYEE",
+            "VIEWER"
+          ]
+        },
+        "verifiedAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "chainId",
+        "role",
+        "verifiedAt"
+      ]
+    },
+    "IdentityKey": {
+      "type": "object",
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "enum": [
+            "GPU_UUID",
+            "SERIAL",
+            "HOST_ID",
+            "GROUP_ID",
+            "NFT_TOKEN"
+          ]
+        },
+        "value": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "scheme",
+        "value",
+        "provenance"
+      ]
+    },
+    "Borrower": {
+      "type": "object",
+      "properties": {
+        "borrowerId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "legalEntityId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "wallets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Wallet"
+          },
+          "minItems": 1
+        },
+        "groupId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kycStatus": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "PENDING",
+            "VERIFIED",
+            "REJECTED"
+          ]
+        },
+        "underwritingStatus": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "IN_REVIEW",
+            "APPROVED",
+            "DECLINED"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "borrowerId",
+        "legalEntityId",
+        "wallets",
+        "groupId",
+        "kycStatus",
+        "underwritingStatus"
+      ]
+    },
+    "LegalEntity": {
+      "type": "object",
+      "properties": {
+        "legalEntityId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "jurisdiction": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registrationRef": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "beneficialOwnersRef": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "signingAuthorityRef": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "documentsRef": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "legalEntityId",
+        "jurisdiction",
+        "registrationRef",
+        "beneficialOwnersRef",
+        "signingAuthorityRef",
+        "documentsRef"
+      ]
+    },
+    "ProviderAccount": {
+      "type": "object",
+      "properties": {
+        "providerAccountId": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+:[^\\s]+$"
+        },
+        "providerId": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "externalAccountId": {
+          "type": "string"
+        },
+        "borrowerId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "OPERATOR",
+              "PAYEE",
+              "ADMIN"
+            ]
+          }
+        },
+        "authScope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "credentialRef": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(secret|vault)://"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "controlVersion": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastVerifiedAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "providerAccountId",
+        "providerId",
+        "externalAccountId",
+        "borrowerId",
+        "roles",
+        "authScope",
+        "credentialRef",
+        "controlVersion",
+        "lastVerifiedAt"
+      ]
+    },
+    "Asset": {
+      "type": "object",
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "kind": {
+          "$ref": "#/$defs/AssetKind"
+        },
+        "sku": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unitCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "identityKeys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/IdentityKey"
+          }
+        },
+        "ownership": {
+          "type": "string",
+          "enum": [
+            "OWNED",
+            "LEASED",
+            "UNKNOWN"
+          ]
+        },
+        "custodian": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "location": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parentAssetId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "assetId",
+        "kind",
+        "sku",
+        "unitCount",
+        "identityKeys",
+        "ownership",
+        "custodian",
+        "location",
+        "parentAssetId"
+      ]
+    },
+    "AssetAssignment": {
+      "type": "object",
+      "properties": {
+        "assignmentId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "assetId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "providerAccountId": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "ONBOARD",
+            "MOVE",
+            "RMA",
+            "OFFBOARD"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "assignmentId",
+        "assetId",
+        "providerAccountId",
+        "from",
+        "to",
+        "reason",
+        "provenance"
+      ]
+    },
+    "Encumbrance": {
+      "type": "object",
+      "properties": {
+        "encumbranceId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "assetId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receivableId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "holder": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "LIEN",
+            "ASSIGNMENT",
+            "LEASE",
+            "PLEDGE"
+          ]
+        },
+        "documentRef": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "validFrom": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validTo": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "encumbranceId",
+        "assetId",
+        "receivableId",
+        "holder",
+        "priority",
+        "kind",
+        "documentRef",
+        "validFrom",
+        "validTo"
+      ]
+    },
+    "ControlAgreement": {
+      "type": "object",
+      "properties": {
+        "controlAgreementId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "borrowerId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "providerAccountId": {
+          "type": "string"
+        },
+        "facilityIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          }
+        },
+        "controlGrade": {
+          "$ref": "#/$defs/ControlGrade"
+        },
+        "subject": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "REWARD_RECEIVER",
+              "SERVICE_FEE_RECEIVER",
+              "CLAIM_DESTINATION",
+              "UNSTAKE",
+              "ACCOUNT_RECOVERY",
+              "SIGNER"
+            ]
+          },
+          "minItems": 1
+        },
+        "receiver": {
+          "type": "object",
+          "properties": {
+            "chainId": {
+              "type": "integer"
+            },
+            "address": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "chainId",
+            "address"
+          ]
+        },
+        "changeAuthority": {
+          "type": "string",
+          "enum": [
+            "BORROWER_ALONE",
+            "PROTOCOL",
+            "PARTNER",
+            "MULTI"
+          ]
+        },
+        "agreementHash": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "agreementVersionId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effectiveFrom": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effectiveTo": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precedence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastObservedAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observationProvenance": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "controlAgreementId",
+        "borrowerId",
+        "providerAccountId",
+        "facilityIds",
+        "controlGrade",
+        "subject",
+        "receiver",
+        "changeAuthority",
+        "agreementHash",
+        "agreementVersionId",
+        "effectiveFrom",
+        "effectiveTo",
+        "precedence",
+        "lastObservedAt",
+        "observationProvenance"
+      ]
+    },
+    "Facility": {
+      "type": "object",
+      "properties": {
+        "facilityId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "borrowerId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "vaultId": {
+          "type": "string"
+        },
+        "loanAsset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "state": {
+          "$ref": "#/$defs/FacilityState"
+        },
+        "approvedCap": {
+          "$ref": "#/$defs/Money"
+        },
+        "advanceRateBps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "termsVersionId": {
+          "type": "string"
+        },
+        "policyVersionId": {
+          "type": "string"
+        },
+        "requiredVerification": {
+          "const": "ATTESTCOIN_NATIVE"
+        },
+        "executionProfile": {
+          "$ref": "#/$defs/ExecutionProfile"
+        },
+        "principal": {
+          "$ref": "#/$defs/Money"
+        },
+        "unpaidInterest": {
+          "$ref": "#/$defs/Money"
+        },
+        "fees": {
+          "$ref": "#/$defs/Money"
+        },
+        "reservedDraws": {
+          "$ref": "#/$defs/Money"
+        },
+        "rateBps": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accrualBasis": {
+          "const": "ACT_365"
+        },
+        "maturityAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usedReceivableIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          }
+        },
+        "controlAgreementId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "testOnlyTerms": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "facilityId",
+        "borrowerId",
+        "vaultId",
+        "loanAsset",
+        "state",
+        "approvedCap",
+        "advanceRateBps",
+        "termsVersionId",
+        "policyVersionId",
+        "requiredVerification",
+        "executionProfile",
+        "principal",
+        "unpaidInterest",
+        "fees",
+        "reservedDraws",
+        "rateBps",
+        "accrualBasis",
+        "maturityAt",
+        "usedReceivableIds",
+        "controlAgreementId",
+        "testOnlyTerms"
+      ]
+    },
+    "CreditDecision": {
+      "type": "object",
+      "properties": {
+        "creditDecisionId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "facilityId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "decidedBy": {
+          "$ref": "#/$defs/Role"
+        },
+        "policyVersionId": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "eligibleReceivableIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              }
+            },
+            "nativeVerificationIds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "controlAgreementId": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "provenanceSummary": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "eligibleReceivableIds",
+            "nativeVerificationIds",
+            "controlAgreementId",
+            "provenanceSummary"
+          ]
+        },
+        "limit": {
+          "$ref": "#/$defs/Money"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "freshnessCheckpoint": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "APPROVED",
+            "EXPIRED",
+            "REVOKED"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "creditDecisionId",
+        "facilityId",
+        "decidedBy",
+        "policyVersionId",
+        "inputs",
+        "limit",
+        "validUntil",
+        "freshnessCheckpoint",
+        "status"
+      ]
+    },
+    "Deduction": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "DISPUTE",
+            "REFUND",
+            "SLA",
+            "SENIOR",
+            "FEE",
+            "OTHER"
+          ]
+        },
+        "money": {
+          "$ref": "#/$defs/Money"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "money"
+      ]
+    },
+    "Receivable": {
+      "type": "object",
+      "properties": {
+        "receivableId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "economicEventId": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+/[^/\\s]+/(OBLIGATION|ASSIGNMENT|CORRECTION|PAYOUT|CANCELLATION|REFUND)/[^\\s]+$"
+        },
+        "providerAccountId": {
+          "type": "string"
+        },
+        "debtor": {
+          "type": "string"
+        },
+        "contractRef": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "period": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "to": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ]
+        },
+        "dueAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gross": {
+          "$ref": "#/$defs/Money"
+        },
+        "deductions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Deduction"
+          }
+        },
+        "net": {
+          "$ref": "#/$defs/Money"
+        },
+        "paidAmount": {
+          "$ref": "#/$defs/Money"
+        },
+        "unpaidAmount": {
+          "$ref": "#/$defs/Money"
+        },
+        "state": {
+          "$ref": "#/$defs/ReceivableState"
+        },
+        "assignment": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "facilityId": {
+                  "type": "string",
+                  "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+                },
+                "encumbranceId": {
+                  "type": "string",
+                  "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "facilityId",
+                "encumbranceId"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sourceCheckpoint": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "receivableId",
+        "economicEventId",
+        "providerAccountId",
+        "debtor",
+        "contractRef",
+        "period",
+        "dueAt",
+        "gross",
+        "deductions",
+        "net",
+        "paidAmount",
+        "unpaidAmount",
+        "state",
+        "assignment",
+        "revision",
+        "sourceCheckpoint",
+        "evidence"
+      ]
+    },
+    "SettlementLeg": {
+      "type": "object",
+      "properties": {
+        "legId": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "CONVERSION",
+            "BRIDGE",
+            "TRANSFER"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/Money"
+        },
+        "to": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Money"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "IN_FLIGHT",
+            "DONE",
+            "FAILED"
+          ]
+        },
+        "ref": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "legId",
+        "kind",
+        "from",
+        "to",
+        "state",
+        "ref"
+      ]
+    },
+    "Settlement": {
+      "type": "object",
+      "properties": {
+        "settlementId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "providerAccountId": {
+          "type": "string"
+        },
+        "batchRef": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receivableAllocations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "receivableId": {
+                "type": "string",
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+              },
+              "money": {
+                "$ref": "#/$defs/Money"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "receivableId",
+              "money"
+            ]
+          },
+          "minItems": 1
+        },
+        "netPayout": {
+          "$ref": "#/$defs/Money"
+        },
+        "state": {
+          "$ref": "#/$defs/SettlementState"
+        },
+        "payer": {
+          "type": "string"
+        },
+        "payee": {
+          "type": "string"
+        },
+        "sourceCashReceiptId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SettlementLeg"
+          }
+        },
+        "destinationCashReceiptId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "corrections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "settlementId",
+        "providerAccountId",
+        "batchRef",
+        "receivableAllocations",
+        "netPayout",
+        "state",
+        "payer",
+        "payee",
+        "sourceCashReceiptId",
+        "legs",
+        "destinationCashReceiptId",
+        "revision",
+        "corrections"
+      ]
+    },
+    "CashReceipt": {
+      "type": "object",
+      "properties": {
+        "cashReceiptId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "where": {
+          "type": "string",
+          "enum": [
+            "SOURCE_ESCROW",
+            "DESTINATION_VAULT",
+            "BANK"
+          ]
+        },
+        "locator": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/DestinationTxRef"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "bankRef": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "bankRef"
+              ]
+            }
+          ]
+        },
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "amount": {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        },
+        "finality": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "FINAL",
+            "REORGED"
+          ]
+        },
+        "escrowId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "earningsProvenance": {
+          "$ref": "#/$defs/EarningsProvenance"
+        },
+        "sourceEventId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cashState": {
+          "$ref": "#/$defs/CashState"
+        },
+        "executionProfile": {
+          "$ref": "#/$defs/ExecutionProfile"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "cashReceiptId",
+        "where",
+        "locator",
+        "asset",
+        "amount",
+        "finality",
+        "escrowId",
+        "earningsProvenance",
+        "sourceEventId",
+        "cashState",
+        "executionProfile"
+      ]
+    },
+    "RepaymentAllocation": {
+      "type": "object",
+      "properties": {
+        "repaymentAllocationId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "cashReceiptId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "facilityId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "settlementId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fees": {
+          "$ref": "#/$defs/Money"
+        },
+        "interest": {
+          "$ref": "#/$defs/Money"
+        },
+        "principal": {
+          "$ref": "#/$defs/Money"
+        },
+        "excess": {
+          "$ref": "#/$defs/Money"
+        },
+        "txRef": {
+          "$ref": "#/$defs/DestinationTxRef"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "repaymentAllocationId",
+        "cashReceiptId",
+        "facilityId",
+        "settlementId",
+        "fees",
+        "interest",
+        "principal",
+        "excess",
+        "txRef",
+        "at"
+      ]
+    },
+    "Correction": {
+      "type": "object",
+      "properties": {
+        "correctionId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "targetId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "targetRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "REVERSAL",
+            "DELTA"
+          ]
+        },
+        "delta": {
+          "$ref": "#/$defs/Money"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "correctionId",
+        "targetId",
+        "targetRevision",
+        "kind",
+        "delta",
+        "reason",
+        "provenance"
+      ]
+    },
+    "RecoveryCase": {
+      "type": "object",
+      "properties": {
+        "recoveryCaseId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "facilityId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "trigger": {
+          "type": "string"
+        },
+        "openedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reserveUsed": {
+          "$ref": "#/$defs/Money"
+        },
+        "recovered": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Money"
+          }
+        },
+        "costs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Money"
+          }
+        },
+        "writeOff": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Money"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "postWriteOffRecoveries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Money"
+          }
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "RECOVERING",
+            "WRITTEN_OFF",
+            "CLOSED"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "recoveryCaseId",
+        "facilityId",
+        "trigger",
+        "openedAt",
+        "reserveUsed",
+        "recovered",
+        "costs",
+        "writeOff",
+        "postWriteOffRecoveries",
+        "state"
+      ]
+    },
+    "SourceEvent": {
+      "type": "object",
+      "properties": {
+        "sourceEventId": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "sourceChain": {
+          "$ref": "#/$defs/SourceChainRef"
+        },
+        "locator": {
+          "$ref": "#/$defs/SourceEventLocator"
+        },
+        "emitter": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "topic0": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          }
+        },
+        "data": {
+          "type": "string",
+          "pattern": "^0x([0-9a-fA-F]{2})*$"
+        },
+        "claimedTxHash": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "claimedBlockTime": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observation": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "executionProfile": {
+          "$ref": "#/$defs/ExecutionProfile"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "sourceEventId",
+        "sourceChain",
+        "locator",
+        "emitter",
+        "topic0",
+        "topics",
+        "data",
+        "claimedTxHash",
+        "claimedBlockTime",
+        "observation",
+        "executionProfile"
+      ]
+    },
+    "ProofRequest": {
+      "type": "object",
+      "properties": {
+        "proofRequestId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "proofQueryKey": {
+          "type": "object",
+          "properties": {
+            "envId": {
+              "type": "string"
+            },
+            "chainKey": {
+              "type": "integer"
+            },
+            "txHash": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "envId",
+            "chainKey",
+            "txHash"
+          ]
+        },
+        "locators": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceEventLocator"
+          },
+          "minItems": 1
+        },
+        "state": {
+          "$ref": "#/$defs/NativeStatus"
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nextAttemptAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manifestHash": {
+          "type": "string"
+        },
+        "proofArtifactId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nativeVerificationId": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "terminalReason": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "proofRequestId",
+        "proofQueryKey",
+        "locators",
+        "state",
+        "attempts",
+        "nextAttemptAt",
+        "manifestHash",
+        "proofArtifactId",
+        "nativeVerificationId",
+        "terminalReason"
+      ]
+    },
+    "ProofArtifact": {
+      "type": "object",
+      "properties": {
+        "proofArtifactId": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "chainKey": {
+          "type": "integer"
+        },
+        "headerNumber": {
+          "type": "integer"
+        },
+        "txBytesRef": {
+          "type": "string"
+        },
+        "merkleProof": {
+          "type": "object",
+          "properties": {
+            "root": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            },
+            "siblings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "hash": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}$"
+                  },
+                  "isLeft": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "hash",
+                  "isLeft"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "root",
+            "siblings"
+          ]
+        },
+        "continuityProof": {
+          "type": "object",
+          "properties": {
+            "lowerEndpointDigest": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            },
+            "roots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{64}$"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "lowerEndpointDigest",
+            "roots"
+          ]
+        },
+        "serviceMeta": {
+          "type": "object",
+          "properties": {
+            "cached": {
+              "type": "boolean"
+            },
+            "generatedAt": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "host": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "cached",
+            "generatedAt",
+            "host"
+          ]
+        },
+        "sdkVersion": {
+          "type": "string"
+        },
+        "manifestHash": {
+          "type": "string"
+        },
+        "trusted": {
+          "const": false
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "proofArtifactId",
+        "chainKey",
+        "headerNumber",
+        "txBytesRef",
+        "merkleProof",
+        "continuityProof",
+        "serviceMeta",
+        "sdkVersion",
+        "manifestHash",
+        "trusted"
+      ]
+    },
+    "NativeVerification": {
+      "type": "object",
+      "properties": {
+        "nativeVerificationId": {
+          "type": "string"
+        },
+        "destination": {
+          "$ref": "#/$defs/DestinationTxRef"
+        },
+        "verifier": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "precompile": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "ACCEPTED",
+            "REJECTED"
+          ]
+        },
+        "revertReason": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenTxIndex": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenAt": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manifestHash": {
+          "type": "string"
+        },
+        "executionProfile": {
+          "$ref": "#/$defs/ExecutionProfile"
+        },
+        "proofArtifactId": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "nativeVerificationId",
+        "destination",
+        "verifier",
+        "precompile",
+        "result",
+        "revertReason",
+        "provenTxIndex",
+        "provenAt",
+        "manifestHash",
+        "executionProfile",
+        "proofArtifactId"
+      ]
+    },
+    "EvidenceConsumption": {
+      "type": "object",
+      "properties": {
+        "envId": {
+          "type": "string"
+        },
+        "sourceEventId": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{64}$"
+        },
+        "consumerContract": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{40}$"
+        },
+        "nativeVerificationId": {
+          "type": "string"
+        },
+        "consumedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "consumedBy": {
+          "$ref": "#/$defs/Role"
+        },
+        "locator": {
+          "$ref": "#/$defs/SourceEventLocator"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "envId",
+        "sourceEventId",
+        "consumerContract",
+        "nativeVerificationId",
+        "consumedAt",
+        "consumedBy",
+        "locator"
+      ]
+    },
+    "BusinessEvidence": {
+      "type": "object",
+      "properties": {
+        "businessEvidenceId": {
+          "type": "string",
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvidenceKind"
+        },
+        "refs": {
+          "type": "object",
+          "properties": {
+            "sourceEventId": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-fA-F]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "observationId": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "sourceEventId",
+            "observationId"
+          ]
+        },
+        "verificationMethod": {
+          "$ref": "#/$defs/VerificationMethod"
+        },
+        "nativeStatus": {
+          "$ref": "#/$defs/NativeStatus"
+        },
+        "earningsProvenance": {
+          "$ref": "#/$defs/EarningsProvenance"
+        },
+        "meaning": {
+          "$ref": "#/$defs/EvidenceMeaning"
+        },
+        "amount": {
+          "$ref": "#/$defs/Money"
+        },
+        "counterparties": {
+          "type": "object",
+          "properties": {
+            "payer": {
+              "type": "string"
+            },
+            "payee": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "payer",
+            "payee"
+          ]
+        },
+        "economicEventId": {
+          "type": "string"
+        },
+        "validUntil": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trust": {
+          "$ref": "#/$defs/Trust"
+        },
+        "executionProfile": {
+          "$ref": "#/$defs/ExecutionProfile"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "businessEvidenceId",
+        "kind",
+        "refs",
+        "verificationMethod",
+        "nativeStatus",
+        "earningsProvenance",
+        "meaning",
+        "amount",
+        "counterparties",
+        "economicEventId",
+        "validUntil",
+        "trust",
+        "executionProfile"
+      ]
+    }
+  }
+}

@@ -1,0 +1,1030 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "sourceChains": [
+    {
+      "envId": "cc3-testnet",
+      "chainKey": 1,
+      "chainId": 11155111,
+      "encoding": 1,
+      "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb"
+    },
+    {
+      "envId": "cc3-mainnet",
+      "chainKey": 1,
+      "chainId": 1,
+      "encoding": 1,
+      "manifestHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "borrowers": [
+    {
+      "borrowerId": "6KMYWV1Q126T706M28D84TS2A9",
+      "legalEntityId": "K18F91ZFD0GB73ZM5CCH28N838",
+      "wallets": [
+        {
+          "address": "0x00000000000000000000000000000000000A11CE",
+          "chainId": 102031,
+          "role": "SIGNER",
+          "verifiedAt": "2026-09-13T22:00:00Z"
+        }
+      ],
+      "groupId": "grp-demo",
+      "kycStatus": "VERIFIED",
+      "underwritingStatus": "APPROVED"
+    }
+  ],
+  "legalEntities": [
+    {
+      "legalEntityId": "K18F91ZFD0GB73ZM5CCH28N838",
+      "jurisdiction": null,
+      "registrationRef": "vault://kyc/le-1",
+      "beneficialOwnersRef": "vault://kyc/le-1/ubo",
+      "signingAuthorityRef": null,
+      "documentsRef": [
+        "vault://docs/le-1/incorporation"
+      ]
+    }
+  ],
+  "providerAccounts": [
+    {
+      "providerAccountId": "mockdepin-testonly:acct-A",
+      "providerId": "mockdepin-testonly",
+      "externalAccountId": "acct-A",
+      "borrowerId": "6KMYWV1Q126T706M28D84TS2A9",
+      "roles": [
+        "OPERATOR",
+        "PAYEE"
+      ],
+      "authScope": [
+        "read:settlements"
+      ],
+      "credentialRef": "secret://mockdepin/acct-A",
+      "controlVersion": 2,
+      "lastVerifiedAt": "2026-09-13T22:00:00Z"
+    },
+    {
+      "providerAccountId": "mockdepin-testonly:acct-B",
+      "providerId": "mockdepin-testonly",
+      "externalAccountId": "acct-B",
+      "borrowerId": "6KMYWV1Q126T706M28D84TS2A9",
+      "roles": [
+        "OPERATOR"
+      ],
+      "authScope": [
+        "read:settlements"
+      ],
+      "credentialRef": null,
+      "controlVersion": 0,
+      "lastVerifiedAt": null
+    }
+  ],
+  "assets": [
+    {
+      "assetId": "Z71VW3J933JXKBJJ1KRBAMGKM6",
+      "kind": "PHYSICAL_GPU",
+      "sku": "H100-SXM-80GB",
+      "unitCount": 1,
+      "identityKeys": [
+        {
+          "scheme": "SERIAL",
+          "value": "SN-TEST-0001",
+          "provenance": {
+            "kind": "MANUAL",
+            "ref": "invoice-scan",
+            "observedAt": "2026-09-13T22:00:00Z",
+            "trust": "CLAIMED"
+          }
+        },
+        {
+          "scheme": "GPU_UUID",
+          "value": "GPU-0000-TEST-0001",
+          "provenance": {
+            "kind": "PROVIDER_API",
+            "ref": "mockdepin/nodes",
+            "observedAt": "2026-09-13T22:00:00Z",
+            "trust": "OBSERVED"
+          }
+        }
+      ],
+      "ownership": "OWNED",
+      "custodian": null,
+      "location": "KR",
+      "parentAssetId": null
+    },
+    {
+      "assetId": "ZH25MTYDX2DQHP77NKBYAZP9T6",
+      "kind": "MIG_PARTITION",
+      "sku": null,
+      "unitCount": 1,
+      "identityKeys": [
+        {
+          "scheme": "HOST_ID",
+          "value": "host-7/mig-2",
+          "provenance": {
+            "kind": "PROVIDER_API",
+            "ref": "mockdepin/nodes",
+            "observedAt": "2026-09-13T22:00:00Z",
+            "trust": "OBSERVED"
+          }
+        }
+      ],
+      "ownership": "OWNED",
+      "custodian": null,
+      "location": null,
+      "parentAssetId": "Z71VW3J933JXKBJJ1KRBAMGKM6"
+    }
+  ],
+  "assetAssignments": [
+    {
+      "assignmentId": "KJC8D8D439F3P8KEMTMKCVE43S",
+      "assetId": "Z71VW3J933JXKBJJ1KRBAMGKM6",
+      "providerAccountId": "mockdepin-testonly:acct-A",
+      "from": "2026-07-01T00:00:00Z",
+      "to": "2026-09-01T00:00:00Z",
+      "reason": "ONBOARD",
+      "provenance": {
+        "kind": "PROVIDER_API",
+        "ref": "mockdepin/nodes",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "OBSERVED"
+      }
+    },
+    {
+      "assignmentId": "K5W70TE3NXRP2GSQSGWVXFX5YS",
+      "assetId": "Z71VW3J933JXKBJJ1KRBAMGKM6",
+      "providerAccountId": "mockdepin-testonly:acct-B",
+      "from": "2026-09-01T00:00:00Z",
+      "to": null,
+      "reason": "MOVE",
+      "provenance": {
+        "kind": "PROVIDER_API",
+        "ref": "mockdepin/nodes",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "OBSERVED"
+      }
+    },
+    {
+      "assignmentId": "24TWSYQHEYQM4KHCBDYMF2DX28",
+      "assetId": "ZH25MTYDX2DQHP77NKBYAZP9T6",
+      "providerAccountId": "mockdepin-testonly:acct-B",
+      "from": "2026-09-01T00:00:00Z",
+      "to": null,
+      "reason": "ONBOARD",
+      "provenance": {
+        "kind": "PROVIDER_API",
+        "ref": "mockdepin/nodes",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "OBSERVED"
+      }
+    }
+  ],
+  "encumbrances": [
+    {
+      "encumbranceId": "0CFQP1YYF9EEZ06PVJ5K4BFZE2",
+      "assetId": null,
+      "receivableId": "9E3F2FPDF17PVY69V25BWMETD3",
+      "holder": "rackline-facility-1",
+      "priority": 1,
+      "kind": "ASSIGNMENT",
+      "documentRef": "vault://agreements/ca-1",
+      "validFrom": "2026-09-13T22:00:00Z",
+      "validTo": null
+    },
+    {
+      "encumbranceId": "0MMG4VPDSNWPY1940ZJ8WF5B03",
+      "assetId": null,
+      "receivableId": "77FDWB6HW6RK98G3RHEK0ZKE71",
+      "holder": "rackline-facility-1",
+      "priority": 1,
+      "kind": "ASSIGNMENT",
+      "documentRef": "vault://agreements/ca-1",
+      "validFrom": "2026-09-13T22:00:00Z",
+      "validTo": null
+    }
+  ],
+  "controlAgreements": [
+    {
+      "controlAgreementId": "005KD092M9GWV18WABRT3HP25F",
+      "borrowerId": "6KMYWV1Q126T706M28D84TS2A9",
+      "providerAccountId": "mockdepin-testonly:acct-A",
+      "facilityIds": [
+        "1P0NJ3YKX73TXX2VYPBQ1D62PF"
+      ],
+      "controlGrade": "E2",
+      "subject": [
+        "REWARD_RECEIVER",
+        "CLAIM_DESTINATION"
+      ],
+      "receiver": {
+        "chainId": 11155111,
+        "address": "0x00000000000000000000000000000000000000E1"
+      },
+      "changeAuthority": "PARTNER",
+      "agreementHash": "0x7847a56630c572cf8f351f83de515c1ea2c5651a5fbb5cb608bb70b5bd638c8f",
+      "agreementVersionId": "ca-v1",
+      "effectiveFrom": "2026-09-13T22:00:00Z",
+      "effectiveTo": "2027-03-31T00:00:00Z",
+      "precedence": 1,
+      "lastObservedAt": "2026-09-13T22:00:00Z",
+      "observationProvenance": {
+        "kind": "SIMULATED",
+        "ref": "mockdepin-controller",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "ASSERTED"
+      }
+    }
+  ],
+  "facilities": [
+    {
+      "facilityId": "1P0NJ3YKX73TXX2VYPBQ1D62PF",
+      "borrowerId": "6KMYWV1Q126T706M28D84TS2A9",
+      "vaultId": "vault-testnet-1",
+      "loanAsset": {
+        "chainId": 102031,
+        "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+        "symbol": "mUSDT",
+        "decimals": 6
+      },
+      "state": "ACTIVE",
+      "approvedCap": {
+        "amount": "8000000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "advanceRateBps": 5000,
+      "termsVersionId": "ts-v0.1-TEST_ONLY",
+      "policyVersionId": "pol-v0-TEST_ONLY",
+      "requiredVerification": "ATTESTCOIN_NATIVE",
+      "executionProfile": "NATIVE_TESTNET",
+      "principal": {
+        "amount": "3000000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "unpaidInterest": {
+        "amount": "50000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "fees": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "reservedDraws": {
+        "amount": "1000000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "rateBps": 1000,
+      "accrualBasis": "ACT_365",
+      "maturityAt": "2026-12-12T00:00:00Z",
+      "usedReceivableIds": [
+        "9E3F2FPDF17PVY69V25BWMETD3",
+        "77FDWB6HW6RK98G3RHEK0ZKE71"
+      ],
+      "controlAgreementId": "005KD092M9GWV18WABRT3HP25F",
+      "testOnlyTerms": true
+    },
+    {
+      "facilityId": "EKGN4ETNNYQ55VJ3ZK52VH036A",
+      "borrowerId": "6KMYWV1Q126T706M28D84TS2A9",
+      "vaultId": "vault-testnet-1",
+      "loanAsset": {
+        "chainId": 102031,
+        "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+        "symbol": "mUSDT",
+        "decimals": 6
+      },
+      "state": "DRAFT",
+      "approvedCap": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "advanceRateBps": 0,
+      "termsVersionId": "ts-v0.1-TEST_ONLY",
+      "policyVersionId": "pol-v0-TEST_ONLY",
+      "requiredVerification": "ATTESTCOIN_NATIVE",
+      "executionProfile": "NATIVE_TESTNET",
+      "principal": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "unpaidInterest": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "fees": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "reservedDraws": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "rateBps": 0,
+      "accrualBasis": "ACT_365",
+      "maturityAt": null,
+      "usedReceivableIds": [],
+      "controlAgreementId": null,
+      "testOnlyTerms": true
+    }
+  ],
+  "creditDecisions": [
+    {
+      "creditDecisionId": "JYE5YTC8V3TNJC4D6QYZM72CG8",
+      "facilityId": "1P0NJ3YKX73TXX2VYPBQ1D62PF",
+      "decidedBy": "underwriter",
+      "policyVersionId": "pol-v0-TEST_ONLY",
+      "inputs": {
+        "eligibleReceivableIds": [
+          "9E3F2FPDF17PVY69V25BWMETD3",
+          "77FDWB6HW6RK98G3RHEK0ZKE71"
+        ],
+        "nativeVerificationIds": [
+          "102031:0x1fbda5c08ce73dfb68a062c8c0e3a6c338b3d62a3e8c0cdb327ef5c69f7f3cfa:3"
+        ],
+        "controlAgreementId": "005KD092M9GWV18WABRT3HP25F",
+        "provenanceSummary": "2 native-proven obligation logs, SIMULATED provider (TEST_ONLY)"
+      },
+      "limit": {
+        "amount": "8000000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "validUntil": "2026-10-13T00:00:00Z",
+      "freshnessCheckpoint": null,
+      "status": "APPROVED"
+    }
+  ],
+  "receivables": [
+    {
+      "receivableId": "9E3F2FPDF17PVY69V25BWMETD3",
+      "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-2026-08-A",
+      "providerAccountId": "mockdepin-testonly:acct-A",
+      "debtor": "MockDePIN Settlement (TEST_ONLY)",
+      "contractRef": null,
+      "period": {
+        "from": "2026-08-01T00:00:00Z",
+        "to": "2026-08-31T23:59:59Z"
+      },
+      "dueAt": "2026-10-15T00:00:00Z",
+      "gross": {
+        "amount": "12000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "deductions": [
+        {
+          "kind": "FEE",
+          "money": {
+            "amount": "500000000",
+            "asset": {
+              "chainId": 11155111,
+              "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+              "symbol": "USDC",
+              "decimals": 6
+            }
+          }
+        }
+      ],
+      "net": {
+        "amount": "11500000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "paidAmount": {
+        "amount": "4000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "unpaidAmount": {
+        "amount": "7500000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "state": "PARTIALLY_PAID",
+      "assignment": {
+        "facilityId": "1P0NJ3YKX73TXX2VYPBQ1D62PF",
+        "encumbranceId": "0CFQP1YYF9EEZ06PVJ5K4BFZE2"
+      },
+      "revision": 2,
+      "sourceCheckpoint": null,
+      "evidence": [
+        "F3RD5XC9ZQRTBD3EMSTG3VMHBT"
+      ]
+    },
+    {
+      "receivableId": "77FDWB6HW6RK98G3RHEK0ZKE71",
+      "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-2026-08-B",
+      "providerAccountId": "mockdepin-testonly:acct-A",
+      "debtor": "MockDePIN Settlement (TEST_ONLY)",
+      "contractRef": null,
+      "period": {
+        "from": "2026-08-01T00:00:00Z",
+        "to": "2026-08-31T23:59:59Z"
+      },
+      "dueAt": "2026-10-15T00:00:00Z",
+      "gross": {
+        "amount": "9000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "deductions": [],
+      "net": {
+        "amount": "9000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "paidAmount": {
+        "amount": "2000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "unpaidAmount": {
+        "amount": "7000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "state": "PARTIALLY_PAID",
+      "assignment": {
+        "facilityId": "1P0NJ3YKX73TXX2VYPBQ1D62PF",
+        "encumbranceId": "0MMG4VPDSNWPY1940ZJ8WF5B03"
+      },
+      "revision": 1,
+      "sourceCheckpoint": null,
+      "evidence": [
+        "4JER5BNFK2503Y66NSZWMVQS6T"
+      ]
+    }
+  ],
+  "settlements": [
+    {
+      "settlementId": "AECWHY8KHZCD7X4WQ3RK1MW6MR",
+      "providerAccountId": "mockdepin-testonly:acct-A",
+      "batchRef": "batch-2026-09-10",
+      "receivableAllocations": [
+        {
+          "receivableId": "9E3F2FPDF17PVY69V25BWMETD3",
+          "money": {
+            "amount": "4000000000",
+            "asset": {
+              "chainId": 11155111,
+              "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+              "symbol": "USDC",
+              "decimals": 6
+            }
+          }
+        },
+        {
+          "receivableId": "77FDWB6HW6RK98G3RHEK0ZKE71",
+          "money": {
+            "amount": "2000000000",
+            "asset": {
+              "chainId": 11155111,
+              "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+              "symbol": "USDC",
+              "decimals": 6
+            }
+          }
+        }
+      ],
+      "netPayout": {
+        "amount": "6000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "state": "ALLOCATED",
+      "payer": "MockDePIN Settlement (TEST_ONLY)",
+      "payee": "source-escrow-1",
+      "sourceCashReceiptId": "7AN3379J7S63MJW6EXEVC0KP60",
+      "legs": [
+        {
+          "legId": "leg-1",
+          "kind": "BRIDGE",
+          "from": {
+            "amount": "3600000000",
+            "asset": {
+              "chainId": 11155111,
+              "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+              "symbol": "USDC",
+              "decimals": 6
+            }
+          },
+          "to": {
+            "amount": "3600000000",
+            "asset": {
+              "chainId": 102031,
+              "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+              "symbol": "mUSDT",
+              "decimals": 6
+            }
+          },
+          "state": "DONE",
+          "ref": "settlement-rail-sim-1"
+        }
+      ],
+      "destinationCashReceiptId": "GEZ10NAZXDNW9CWCJF23ZC37G2",
+      "revision": 1,
+      "corrections": []
+    }
+  ],
+  "cashReceipts": [
+    {
+      "cashReceiptId": "7AN3379J7S63MJW6EXEVC0KP60",
+      "where": "SOURCE_ESCROW",
+      "locator": {
+        "chainId": 11155111,
+        "txHash": "0x8f23c2489e8cf17812b9704dc57bcbaff1543639c9d859e175cd1db9559103c5",
+        "blockNumber": 9100200,
+        "logIndex": 41
+      },
+      "asset": {
+        "chainId": 11155111,
+        "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "amount": "6000000000",
+      "finality": "FINAL",
+      "escrowId": "source-escrow-1",
+      "earningsProvenance": "SIMULATED",
+      "sourceEventId": null,
+      "cashState": "SOURCE_ESCROW",
+      "executionProfile": "NATIVE_TESTNET"
+    },
+    {
+      "cashReceiptId": "GEZ10NAZXDNW9CWCJF23ZC37G2",
+      "where": "DESTINATION_VAULT",
+      "locator": {
+        "chainId": 102031,
+        "txHash": "0x3a4a9cc50bdfaf95d15d24affd632b9a1ca3622db93fe77010bb86aa050b8041",
+        "blockNumber": 5483500,
+        "logIndex": 2
+      },
+      "asset": {
+        "chainId": 102031,
+        "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+        "symbol": "mUSDT",
+        "decimals": 6
+      },
+      "amount": "3600000000",
+      "finality": "FINAL",
+      "escrowId": null,
+      "earningsProvenance": "SIMULATED",
+      "sourceEventId": null,
+      "cashState": "ALLOCATED",
+      "executionProfile": "NATIVE_TESTNET"
+    }
+  ],
+  "repaymentAllocations": [
+    {
+      "repaymentAllocationId": "1ARZ4HK1X9MWDFMFKN5R7XES98",
+      "cashReceiptId": "GEZ10NAZXDNW9CWCJF23ZC37G2",
+      "facilityId": "1P0NJ3YKX73TXX2VYPBQ1D62PF",
+      "settlementId": "AECWHY8KHZCD7X4WQ3RK1MW6MR",
+      "fees": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "interest": {
+        "amount": "50000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "principal": {
+        "amount": "3550000000",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "excess": {
+        "amount": "0",
+        "asset": {
+          "chainId": 102031,
+          "address": "0xb9D6E174C8e0267Fb0cC3F2AC34130D680151B6A",
+          "symbol": "mUSDT",
+          "decimals": 6
+        }
+      },
+      "txRef": {
+        "chainId": 102031,
+        "txHash": "0xb1f31db91a5c688e75e1660d287150de97f9c20281b9320933ff695635360ce1",
+        "blockNumber": 5483501,
+        "logIndex": 0
+      },
+      "at": "2026-09-13T22:30:00Z"
+    }
+  ],
+  "corrections": [
+    {
+      "correctionId": "PPQEC3BJFAKGMM0JDCXYY52WD5",
+      "targetId": "9E3F2FPDF17PVY69V25BWMETD3",
+      "targetRevision": 1,
+      "kind": "DELTA",
+      "delta": {
+        "amount": "-1000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "reason": "provider SLA credit applied to inv-2026-08-A",
+      "provenance": {
+        "kind": "PROVIDER_API",
+        "ref": "mockdepin/statements/inv-2026-08-A/rev2",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "OBSERVED"
+      }
+    }
+  ],
+  "recoveryCases": [],
+  "sourceEvents": [
+    {
+      "sourceEventId": "0xea6e3b5dce6fad95032d6f8e2552223c809d9156d52a818b59748d900e2b5a6b",
+      "sourceChain": {
+        "envId": "cc3-testnet",
+        "chainKey": 1,
+        "chainId": 11155111,
+        "encoding": 1,
+        "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb"
+      },
+      "locator": {
+        "chainKey": 1,
+        "height": 9100000,
+        "txIndex": 17,
+        "logOrdinal": 0
+      },
+      "emitter": "0x00000000000000000000000000000000000000E1",
+      "topic0": "0xc9c02810ef9863bddb630db6f9d99323e7148041076a8a812b9efedae2cbf2e0",
+      "topics": [
+        "0xc9c02810ef9863bddb630db6f9d99323e7148041076a8a812b9efedae2cbf2e0",
+        "0xb144ac1a3d30f0ab096f7ce639a780bc968607e02ad9cea41ee0c70b0d0cb528"
+      ],
+      "data": "0x0000000000000000000000000000000000000000000000000000000000000001",
+      "claimedTxHash": "0x9f5cec23df4380fa23e069a4eba537a486a2573dad321bd80fd6325e2c3658e6",
+      "claimedBlockTime": {
+        "at": "2026-09-10T12:00:00Z",
+        "provenance": {
+          "kind": "CHAIN_RPC",
+          "ref": "sepolia/eth_getBlockByNumber",
+          "observedAt": "2026-09-13T22:00:00Z",
+          "trust": "OBSERVED"
+        }
+      },
+      "observation": {
+        "kind": "CHAIN_RPC",
+        "ref": "sepolia/eth_getLogs",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "OBSERVED"
+      },
+      "executionProfile": "NATIVE_TESTNET"
+    },
+    {
+      "sourceEventId": "0x78c6283d716f3cb2697e14b438b41ca48b7a3dba2a2d8736816e431a1ed4e0c6",
+      "sourceChain": {
+        "envId": "cc3-testnet",
+        "chainKey": 1,
+        "chainId": 11155111,
+        "encoding": 1,
+        "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb"
+      },
+      "locator": {
+        "chainKey": 1,
+        "height": 9100000,
+        "txIndex": 17,
+        "logOrdinal": 1
+      },
+      "emitter": "0x00000000000000000000000000000000000000E1",
+      "topic0": "0xc9c02810ef9863bddb630db6f9d99323e7148041076a8a812b9efedae2cbf2e0",
+      "topics": [
+        "0xc9c02810ef9863bddb630db6f9d99323e7148041076a8a812b9efedae2cbf2e0",
+        "0x6fb8f84ee2f522f809871d9c45fc4ef5b2de0840fb2ae58e4849405ae026e20c"
+      ],
+      "data": "0x0000000000000000000000000000000000000000000000000000000000000002",
+      "claimedTxHash": "0x9f5cec23df4380fa23e069a4eba537a486a2573dad321bd80fd6325e2c3658e6",
+      "claimedBlockTime": {
+        "at": "2026-09-10T12:00:00Z",
+        "provenance": {
+          "kind": "CHAIN_RPC",
+          "ref": "sepolia/eth_getBlockByNumber",
+          "observedAt": "2026-09-13T22:00:00Z",
+          "trust": "OBSERVED"
+        }
+      },
+      "observation": {
+        "kind": "CHAIN_RPC",
+        "ref": "sepolia/eth_getLogs",
+        "observedAt": "2026-09-13T22:00:00Z",
+        "trust": "OBSERVED"
+      },
+      "executionProfile": "NATIVE_TESTNET"
+    }
+  ],
+  "proofRequests": [
+    {
+      "proofRequestId": "V10V1A130N893EYNZXG83CC1P7",
+      "proofQueryKey": {
+        "envId": "cc3-testnet",
+        "chainKey": 1,
+        "txHash": "0x9f5cec23df4380fa23e069a4eba537a486a2573dad321bd80fd6325e2c3658e6"
+      },
+      "locators": [
+        {
+          "chainKey": 1,
+          "height": 9100000,
+          "txIndex": 17,
+          "logOrdinal": 0
+        },
+        {
+          "chainKey": 1,
+          "height": 9100000,
+          "txIndex": 17,
+          "logOrdinal": 1
+        }
+      ],
+      "state": "CONSUMED",
+      "attempts": 2,
+      "nextAttemptAt": null,
+      "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb",
+      "proofArtifactId": "sha256:c15d85593a492e7cf6584734b331767b5649b450c5bc0117b6ce4674a2b7bf7b",
+      "nativeVerificationId": "102031:0x1fbda5c08ce73dfb68a062c8c0e3a6c338b3d62a3e8c0cdb327ef5c69f7f3cfa:3",
+      "terminalReason": null
+    }
+  ],
+  "proofArtifacts": [
+    {
+      "proofArtifactId": "sha256:c15d85593a492e7cf6584734b331767b5649b450c5bc0117b6ce4674a2b7bf7b",
+      "chainKey": 1,
+      "headerNumber": 9100000,
+      "txBytesRef": "blob://proofs/sha256:c15d85593a492e7cf6584734b331767b5649b450c5bc0117b6ce4674a2b7bf7b",
+      "merkleProof": {
+        "root": "0x7c60c6565956960d53d9405d9cf80388faba64acca2eefe39195328a3fd49dea",
+        "siblings": [
+          {
+            "hash": "0xec18eac8d758b1eba52d3c10d39adc6dd9806472cb4ae069635d383d9086a513",
+            "isLeft": true
+          },
+          {
+            "hash": "0xe8bc163c82eee18733288c7d4ac636db3a6deb013ef2d37b68322be20edc45cc",
+            "isLeft": false
+          }
+        ]
+      },
+      "continuityProof": {
+        "lowerEndpointDigest": "0x8c6fb1e9e37a1aea1d308c785192e1a17d71cef08c7f50a68d2e0ab292b2e7f4",
+        "roots": [
+          "0xdd191696e15e2ee293410d02454c5f9461a2249dee6d57c75f264eaeb83a3782",
+          "0x82f3e9c695dc6b8d1b11818d5701919e286de8d47f7c3eb3100c485f79e57828"
+        ]
+      },
+      "serviceMeta": {
+        "cached": false,
+        "generatedAt": "2026-09-13T21:59:00Z",
+        "host": "proof-gen-api.cc3-testnet.creditcoin.network"
+      },
+      "sdkVersion": "@gluwa/usc-sdk@0.18.0",
+      "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb",
+      "trusted": false
+    }
+  ],
+  "nativeVerifications": [
+    {
+      "nativeVerificationId": "102031:0x1fbda5c08ce73dfb68a062c8c0e3a6c338b3d62a3e8c0cdb327ef5c69f7f3cfa:3",
+      "destination": {
+        "chainId": 102031,
+        "txHash": "0x1fbda5c08ce73dfb68a062c8c0e3a6c338b3d62a3e8c0cdb327ef5c69f7f3cfa",
+        "blockNumber": 5483400,
+        "logIndex": 3
+      },
+      "verifier": "0x00000000000000000000000000000000000000A9",
+      "precompile": "0x0000000000000000000000000000000000000FD2",
+      "result": "ACCEPTED",
+      "revertReason": null,
+      "provenTxIndex": 17,
+      "provenAt": "2026-09-13T22:05:00Z",
+      "manifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb",
+      "executionProfile": "NATIVE_TESTNET",
+      "proofArtifactId": "sha256:c15d85593a492e7cf6584734b331767b5649b450c5bc0117b6ce4674a2b7bf7b"
+    }
+  ],
+  "evidenceConsumptions": [
+    {
+      "envId": "cc3-testnet",
+      "sourceEventId": "0xea6e3b5dce6fad95032d6f8e2552223c809d9156d52a818b59748d900e2b5a6b",
+      "consumerContract": "0x00000000000000000000000000000000000000A9",
+      "nativeVerificationId": "102031:0x1fbda5c08ce73dfb68a062c8c0e3a6c338b3d62a3e8c0cdb327ef5c69f7f3cfa:3",
+      "consumedAt": "2026-09-13T22:05:00Z",
+      "consumedBy": "keeper",
+      "locator": {
+        "chainKey": 1,
+        "height": 9100000,
+        "txIndex": 17,
+        "logOrdinal": 0
+      }
+    },
+    {
+      "envId": "cc3-testnet",
+      "sourceEventId": "0x78c6283d716f3cb2697e14b438b41ca48b7a3dba2a2d8736816e431a1ed4e0c6",
+      "consumerContract": "0x00000000000000000000000000000000000000A9",
+      "nativeVerificationId": "102031:0x1fbda5c08ce73dfb68a062c8c0e3a6c338b3d62a3e8c0cdb327ef5c69f7f3cfa:3",
+      "consumedAt": "2026-09-13T22:05:00Z",
+      "consumedBy": "keeper",
+      "locator": {
+        "chainKey": 1,
+        "height": 9100000,
+        "txIndex": 17,
+        "logOrdinal": 1
+      }
+    }
+  ],
+  "businessEvidence": [
+    {
+      "businessEvidenceId": "F3RD5XC9ZQRTBD3EMSTG3VMHBT",
+      "kind": "SOURCE_EVENT_NATIVE",
+      "refs": {
+        "sourceEventId": "0xea6e3b5dce6fad95032d6f8e2552223c809d9156d52a818b59748d900e2b5a6b",
+        "observationId": null
+      },
+      "verificationMethod": "ATTESTCOIN_NATIVE",
+      "nativeStatus": "CONSUMED",
+      "earningsProvenance": "SIMULATED",
+      "meaning": "OBLIGATION_RECOGNIZED",
+      "amount": {
+        "amount": "12000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "counterparties": {
+        "payer": "MockDePIN Settlement (TEST_ONLY)",
+        "payee": "source-escrow-1"
+      },
+      "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-2026-08-A",
+      "validUntil": "2026-10-13T00:00:00Z",
+      "trust": "PROVEN",
+      "executionProfile": "NATIVE_TESTNET"
+    },
+    {
+      "businessEvidenceId": "4JER5BNFK2503Y66NSZWMVQS6T",
+      "kind": "SOURCE_EVENT_NATIVE",
+      "refs": {
+        "sourceEventId": "0x78c6283d716f3cb2697e14b438b41ca48b7a3dba2a2d8736816e431a1ed4e0c6",
+        "observationId": null
+      },
+      "verificationMethod": "ATTESTCOIN_NATIVE",
+      "nativeStatus": "CONSUMED",
+      "earningsProvenance": "SIMULATED",
+      "meaning": "OBLIGATION_RECOGNIZED",
+      "amount": {
+        "amount": "9000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "counterparties": {
+        "payer": "MockDePIN Settlement (TEST_ONLY)",
+        "payee": "source-escrow-1"
+      },
+      "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/inv-2026-08-B",
+      "validUntil": "2026-10-13T00:00:00Z",
+      "trust": "PROVEN",
+      "executionProfile": "NATIVE_TESTNET"
+    },
+    {
+      "businessEvidenceId": "VCZQNKT50YJ1Y8Q0W2VP12RX1E",
+      "kind": "OUR_ANCHOR",
+      "refs": {
+        "sourceEventId": null,
+        "observationId": "api:mockdepin/statements/2026-09:35f1322f2f4f01e6affff031792e94b01607a527c2337a6a27c8c8bccdae5183"
+      },
+      "verificationMethod": "OFFCHAIN_ASSERTION",
+      "nativeStatus": "NOT_REQUIRED",
+      "earningsProvenance": "UNCLASSIFIED",
+      "meaning": "OBLIGATION_RECOGNIZED",
+      "amount": {
+        "amount": "1000000000",
+        "asset": {
+          "chainId": 11155111,
+          "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+          "symbol": "USDC",
+          "decimals": 6
+        }
+      },
+      "counterparties": {
+        "payer": "MockDePIN Settlement (TEST_ONLY)",
+        "payee": "source-escrow-1"
+      },
+      "economicEventId": "mockdepin-testonly/acct-A/OBLIGATION/stmt-2026-09",
+      "validUntil": null,
+      "trust": "ASSERTED",
+      "executionProfile": "NATIVE_TESTNET"
+    }
+  ]
+}
