@@ -1,8 +1,8 @@
 # Rackline Logo Assets
 
-- `rackline-avatar.png` — square PNG for hackathon submissions, profiles, and social previews.
-- `rackline-mark.svg` — scalable Rackline mark for documents and platforms that accept SVG.
-- `../apps/web/public/` — production favicon and app-icon sizes generated from the same mark.
+- `rackline-avatar.png`: square PNG for hackathon submissions, profiles, and social previews.
+- `rackline-mark.svg`: scalable Rackline mark for documents and platforms that accept SVG.
+- `../apps/web/public/`: production favicon and app-icon sizes generated from the same mark.
 
 Brand colors:
 

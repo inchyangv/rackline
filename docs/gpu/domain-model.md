@@ -14,16 +14,16 @@ and consumption keys. This document fixes names, shapes, enums, and ownership ac
    reference (chain, contract, decimals). No floats, no implicit unit, no cross-asset sums.
 3. **Every time value says what it means and where it came from.** `occurredAt` / `confirmedAt` /
    `observedAt` / `acceptedAt` / `provenAt` are different fields; freshness never derives from
-   `acceptedAt` or `observedAt` alone (R2-D06).
+   `acceptedAt` or `observedAt` alone.
 4. **Five judgments are separate records**, never one boolean: native proof (`nativeStatus`), revenue
    provenance (`earningsProvenance`), unpaid receivable (`Receivable.state` + `unpaidAmount`), payment
-   control (`controlGrade`), cash (`cashState`) (R2-D05).
+   control (`controlGrade`), cash (`cashState`).
 5. **Corrections are new rows.** A correction references the original by ID and carries a signed delta or a
    reversal; original rows are never overwritten.
 6. **Missing upstream data is `null` + provenance**, never a fabricated value; every externally sourced
    field carries a `Provenance`.
 7. **Test data cannot leak into production.** Every evidence-bearing record carries `executionProfile`;
-   production readers reject anything that is not `PRODUCTION` (R2-D12).
+   production readers reject anything that is not `PRODUCTION`.
 
 ## 2. Identifier scheme
 
@@ -32,11 +32,11 @@ and consumption keys. This document fixes names, shapes, enums, and ownership ac
 | `borrowerId`, `legalEntityId`, `facilityId`, `assetId`, `controlAgreementId`, `creditDecisionId`, `recoveryCaseId`, `cashReceiptId`, `settlementId`, `repaymentAllocationId` | economic (ours) | ULID (26 chars, Crockford base32) | forever |
 | `providerId` | economic (registry) | lowercase slug from the provider registry (`aethir`, `gpunet`, `mockdepin-testonly`) | forever |
 | `providerAccountId` | economic (namespaced external) | `{providerId}:{externalAccountId}` | as long as the provider account exists |
-| `economicEventId` | economic (namespaced external) | `{providerId}/{externalAccountId}/{eventType}/{providerEventRef}` — `eventType` ∈ `EconomicEventType`; `providerEventRef` is the provider's own stable reference (invoice/settlement/obligation id). When the provider has no stable ref, the ref is `chain:{chainKey}:{height}:{txIndex}:{logOrdinal}` of the *obligation-bearing* source event. | adapters, schema versions, proof re-submissions |
+| `economicEventId` | economic (namespaced external) | `{providerId}/{externalAccountId}/{eventType}/{providerEventRef}`. `eventType` ∈ `EconomicEventType`; `providerEventRef` is the provider's own stable reference (invoice/settlement/obligation id). When the provider has no stable ref, the ref is `chain:{chainKey}:{height}:{txIndex}:{logOrdinal}` of the *obligation-bearing* source event. | adapters, schema versions, proof re-submissions |
 | `receivableId` | economic | ULID; `economicEventId` of the recognizing event stored on the row | forever |
-| `sourceEventLocator` | technical, proof-bound | `{chainKey, height, txIndex, logOrdinal}` — `txIndex` from the native `calculateTxIndex`, `logOrdinal` = index **inside the receipt's log array** (not the RPC block-global `logIndex`) | env-specific (`chainKey` is per Creditcoin environment) |
-| `sourceEventId` | technical, derived | `keccak256(envId ‖ chainKey ‖ height ‖ txIndex ‖ logOrdinal)`; exact preimage encoding fixed by GPU-076/029 | one destination environment |
-| `proofQueryKey` | technical, cache | `{envId, chainKey, txHash}` — SDK `proof-by-tx` cache key; **never** a consumption key | proof service |
+| `sourceEventLocator` | technical, proof-bound | `{chainKey, height, txIndex, logOrdinal}`. `txIndex` comes from native `calculateTxIndex`; `logOrdinal` is the index inside the receipt's log array, not the RPC block-global `logIndex`. | env-specific (`chainKey` is per Creditcoin environment) |
+| `sourceEventId` | technical, derived | `keccak256(envId ‖ chainKey ‖ height ‖ txIndex ‖ logOrdinal)`; exact preimage encoding is fixed in the implementation and vectors | one destination environment |
+| `proofQueryKey` | technical, cache | `{envId, chainKey, txHash}`; SDK `proof-by-tx` cache key, never a consumption key | proof service |
 | `proofArtifactId` | technical | `sha256` of the canonical proof JSON (`chainKey, headerNumber, txBytes, merkleProof, continuityProof`) | bytes |
 | `nativeVerificationId` | technical | destination `{chainId, txHash, logIndex}` of the app's verification/consumption tx | destination chain |
 | `observationId` | technical | `{source: API|WEBHOOK|CHAIN|MANUAL, sourceRef, sha256(rawPayload)}` | — |
@@ -64,7 +64,7 @@ The same `economicEventId` observed via API, webhook, and chain is reconciled to
 
 ## 4. Entities
 
-Ownership column: **DB** (Postgres, GPU-015/016), **API** (DTO, GPU-045), **SOL** (on-chain, GPU-029~043).
+Ownership column: **DB** (Postgres), **API** (DTO), **SOL** (on-chain).
 PII column marks fields that never leave the access-controlled store.
 
 | Entity | Key fields | Owner | PII |
@@ -77,15 +77,15 @@ PII column marks fields that never leave the access-controlled store.
 | `Encumbrance` | `encumbranceId`, `assetId` or `receivableId`, `holder`, `priority`, `kind` (`LIEN|ASSIGNMENT|LEASE|PLEDGE`), `documentRef`, `validFrom/To` | DB | doc ref only |
 | `ControlAgreement` | `controlAgreementId`, `borrowerId`, `providerAccountId`, `facilityIds[]`, `controlGrade` (E0–E3), `subject[]` (`REWARD_RECEIVER|SERVICE_FEE_RECEIVER|CLAIM_DESTINATION|UNSTAKE|ACCOUNT_RECOVERY|SIGNER`), `receiver{chainId,address}`, `changeAuthority` (`BORROWER_ALONE|PROTOCOL|PARTNER|MULTI`), `agreementHash`, `agreementVersionId`, `effectiveFrom/To`, `precedence`, `lastObservedAt`, `observationProvenance` | DB + SOL (hash, version, grade, expiry) | doc ref only |
 | `Facility` | `facilityId`, `borrowerId`, `vaultId`, `loanAsset` (AssetRef on destination), `state` (`FacilityState`), `approvedCap` (Money), `advanceRateBps`, `termsVersionId`, `policyVersionId`, `requiredVerification` (= `ATTESTCOIN_NATIVE`), `executionProfile`, `principal`, `unpaidInterest`, `fees`, `reservedDraws`, `rateBps`, `accrualBasis` (`ACT_365`), `maturityAt`, `usedReceivableIds[]`, `controlAgreementId` | SOL (ledger) + DB (mirror) | no |
-| `CreditDecision` | `creditDecisionId`, `facilityId`, `decidedBy` (role), `policyVersionId`, `inputs{eligibleReceivableIds[], nativeVerificationIds[], controlAgreementId, provenanceSummary}`, `limit` (Money), `validUntil`, `freshnessCheckpoint` (GPU-076), `status` (`DRAFT|APPROVED|EXPIRED|REVOKED`) | DB + SOL (hash + expiry) | no |
-| `Receivable` | `receivableId`, `economicEventId`, `providerAccountId`, `debtor` (payer entity), `contractRef`, `period{from,to}`, `dueAt`, `gross` (Money), `deductions[]{kind, Money}`, `net` (Money), `paidAmount`, `unpaidAmount`, `state` (`ReceivableState`), `assignment{facilityId, encumbranceId}`, `revision`, `sourceCheckpoint` (GPU-076), `evidence[]` (BusinessEvidence refs) | DB + SOL (aggregate per facility) | no |
+| `CreditDecision` | `creditDecisionId`, `facilityId`, `decidedBy` (role), `policyVersionId`, `inputs{eligibleReceivableIds[], nativeVerificationIds[], controlAgreementId, provenanceSummary}`, `limit` (Money), `validUntil`, `freshnessCheckpoint`, `status` (`DRAFT|APPROVED|EXPIRED|REVOKED`) | DB + SOL (hash + expiry) | no |
+| `Receivable` | `receivableId`, `economicEventId`, `providerAccountId`, `debtor` (payer entity), `contractRef`, `period{from,to}`, `dueAt`, `gross` (Money), `deductions[]{kind, Money}`, `net` (Money), `paidAmount`, `unpaidAmount`, `state` (`ReceivableState`), `assignment{facilityId, encumbranceId}`, `revision`, `sourceCheckpoint`, `evidence[]` (BusinessEvidence refs) | DB + SOL (aggregate per facility) | no |
 | `Settlement` | `settlementId`, `providerAccountId`, `batchRef`, `receivableAllocations[]{receivableId, Money}`, `netPayout` (Money), `state` (`SettlementState`), `payer`, `payee`, `sourceCashReceiptId`, `legs[]` (conversion/bridge legs with `inFlight` Money), `destinationCashReceiptId`, `revision`, `corrections[]` | DB | no |
 | `CashReceipt` | `cashReceiptId`, `where` (`SOURCE_ESCROW|DESTINATION_VAULT|BANK`), `locator` (`{chainId, txHash, logIndex}` or bank ref), `asset`, `amount`, `finality` (`PENDING|FINAL|REORGED`), `escrowId`, `earningsProvenance`, `sourceEventId?`, `cashState` | DB + SOL (destination receipts only) | no |
 | `RepaymentAllocation` | `repaymentAllocationId`, `cashReceiptId`, `facilityId`, `settlementId?`, `fees`, `interest`, `principal`, `excess`, `txRef` (`repayFor`), `at` | SOL + DB | no |
 | `RecoveryCase` | `recoveryCaseId`, `facilityId`, `trigger`, `openedAt`, `reserveUsed`, `recovered[]`, `costs[]`, `writeOff` (Money), `postWriteOffRecoveries[]`, `state` | DB + SOL (impairment/write-off amounts) | no |
 | `PolicyVersion` / `TermsVersion` | id, `approvedBy`, `approvedAt`, parameters (advance, haircuts, caps, freshness, grace, default rate), `TEST_ONLY` flag | DB + SOL (hash) | no |
 
-## 5. Evidence chain (R2 — separate records, separate keys)
+## 5. Evidence chain: separate records and keys
 
 ```text
 SourceEvent ──▶ ProofRequest ──▶ ProofArtifact ──▶ NativeVerification ──▶ EvidenceConsumption ──▶ BusinessEvidence ──▶ Receivable / CashReceipt
@@ -95,13 +95,15 @@ SourceEvent ──▶ ProofRequest ──▶ ProofArtifact ──▶ NativeVerif
 | Record | Key | Fields | Notes |
 | --- | --- | --- | --- |
 | `SourceEvent` | `sourceEventLocator` (+ `sourceEventId`) | `sourceChain` (SourceChainRef), `emitter`, `topic0`, `topics[]`, `data`, `txHash` (claimed), `claimedBlockTime` (claimed), `observation` (Provenance), `executionProfile` | `txHash`/time are worker claims until proven; only the locator is proof-bound |
-| `ProofRequest` | `proofRequestId` (ULID) | `proofQueryKey`, `sourceEventLocator`, `state` (`OBSERVED|WAITING_ATTESTATION|PROOF_READY|SUBMITTED|NATIVE_ACCEPTED|CONSUMED|INVALID|UNSUPPORTED|EXPIRED`), attempts, backoff, `manifestHash` | durable lifecycle (GPU-079) |
+| `ProofRequest` | `proofRequestId` (ULID) | `proofQueryKey`, `sourceEventLocator`, `state` (`OBSERVED|WAITING_ATTESTATION|PROOF_READY|SUBMITTED|NATIVE_ACCEPTED|CONSUMED|INVALID|UNSUPPORTED|EXPIRED`), attempts, backoff, `manifestHash` | durable lifecycle |
 | `ProofArtifact` | `proofArtifactId` | `chainKey`, `headerNumber`, `txBytes`, `merkleProof`, `continuityProof`, `serviceMeta{cached, generatedAt, host}` (untrusted), `sdkVersion`, `manifestHash` | stored as untrusted input |
 | `NativeVerification` | `nativeVerificationId` | destination `{chainId, txHash, blockNumber, logIndex}`, `verifier` (app contract), `precompile`, `result` (`ACCEPTED|REJECTED`), `revertReason?`, `provenTxIndex`, `provenAt` (destination block time), `manifestHash`, `executionProfile` | only this record can set `nativeStatus=NATIVE_ACCEPTED` |
 | `EvidenceConsumption` | `sourceEventId` (unique per env) | `consumerContract`, `nativeVerificationId`, `consumedAt`, `consumedBy` (role) | one consumption per source log; second attempt is `DUPLICATE` |
 | `BusinessEvidence` | `businessEvidenceId` (ULID) | `kind` (`SOURCE_EVENT_NATIVE|PROVIDER_API|PROVIDER_SIGNED_STATEMENT|OUR_ANCHOR|MANUAL_DOCUMENT`), `refs{sourceEventId?, observationId?}`, `verificationMethod`, `nativeStatus`, `earningsProvenance`, `meaning` (`OBLIGATION_RECOGNIZED|ASSIGNMENT_RECOGNIZED|CORRECTION|PAYOUT|PAYMENT_CANCELLED`), `amount` (Money), `counterparties{payer,payee}`, `economicEventId`, `validUntil` (policy), `trust` | `OUR_ANCHOR` can never carry `nativeStatus=NATIVE_ACCEPTED` as *GPU revenue*; it proves only that we posted a hash |
 
-## 6. Enumerations (fixed by this ticket; extension requires a schema version bump)
+## 6. Enumerations
+
+Extending an enumeration requires a schema version bump.
 
 | Enum | Values |
 | --- | --- |
@@ -111,7 +113,7 @@ SourceEvent ──▶ ProofRequest ──▶ ProofArtifact ──▶ NativeVerif
 | `earningsProvenance` | `UNCLASSIFIED`, `PROVIDER_SETTLEMENT`, `PROVIDER_INCENTIVE`, `SELF_TRANSFER`, `THIRD_PARTY_UNKNOWN`, `REFUND_OR_REVERSAL`, `SIMULATED` |
 | `controlGrade` | `E0`, `E1`, `E2`, `E3` |
 | `cashState` | `NONE`, `SOURCE_ESCROW`, `IN_FLIGHT`, `DESTINATION_RECEIVED`, `ALLOCATED`, `RETURNED` |
-| `environmentStatus` | `UNCONFIRMED`, `PROBED`, `UNSUPPORTED` (from GPU-075) |
+| `environmentStatus` | `UNCONFIRMED`, `PROBED`, `UNSUPPORTED` |
 | `FacilityState` | `DRAFT`, `UNDER_REVIEW`, `CONTROL_PENDING`, `ACTIVE`, `DRAW_FROZEN`, `DELINQUENT`, `DEFAULTED`, `RECOVERY`, `REPAID`, `RELEASED`, `CLOSED_WITH_LOSS` |
 | `ReceivableState` | `RECOGNIZED`, `ASSIGNED`, `PARTIALLY_PAID`, `PAID`, `DISPUTED`, `CANCELLED`, `WRITTEN_OFF` |
 | `SettlementState` | `ANNOUNCED`, `PAID_AT_SOURCE`, `CONVERTING`, `RECEIVED_AT_DESTINATION`, `ALLOCATED`, `REVERSED` |
@@ -130,19 +132,19 @@ receivable, E2, or cash. `SIMULATED` provenance is mandatory for TEST_ONLY sourc
 | `occurredAt` | when the economic fact happened at the source (block time / provider period end) | PROVIDER_*, CHAIN_RPC (OBSERVED), or proof-bound height with policy-derived time | period attribution, never freshness by itself |
 | `confirmedAt` | finality/attestation of the source block | CHAIN_RPC, NATIVE_PROOF (height) | attestation wait |
 | `observedAt` | first seen by our system | OUR_SYSTEM | ingestion lag metrics |
-| `acceptedAt` | evidence accepted into a decision | OUR_SYSTEM | audit; **never** extends validity (R2-D06) |
+| `acceptedAt` | evidence accepted into a decision | OUR_SYSTEM | audit; never extends validity |
 | `provenAt` | destination block time of the native verification tx | NATIVE_PROOF | validity window start for the *proof*, not the fact |
 | `validUntil` | policy expiry of the evidence | policy | draw gating |
 
 Official V1 encoding carries no source timestamp inside the proven bytes; a source-time claim must be
-labeled `CLAIMED`/`OBSERVED` and policy uses the proven height plus a checkpoint (GPU-076).
+labeled `CLAIMED`/`OBSERVED`; policy uses the proven height plus a checkpoint.
 
 ## 8. Corrections and revisions
 
 - `Receivable.revision` increments on any provider-side change; each change is a `Correction` row:
   `{correctionId, targetId, targetRevision, kind: REVERSAL|DELTA, delta: Money (signed), reason, provenance}`.
 - Paid/cancelled/refund events reduce `unpaidAmount` and may set `state`; they never delete the receivable
-  or the facility's already-drawn debt (R2-D06/D07; GPU-076 dispute handling).
+  or the facility's already-drawn debt.
 - A correction against a receivable already used in a `CreditDecision` marks the decision `REVOKED` if the
   new eligible amount is below the drawn amount; existing debt is unchanged.
 
@@ -159,15 +161,15 @@ labeled `CLAIMED`/`OBSERVED` and policy uses the proven height plus a checkpoint
 
 | Purpose | Path | Status |
 | --- | --- | --- |
-| v2 contracts / tests | `contracts/gpu/`, `test/gpu/` | confirmed (solc profile ≥ 0.8.28 for official imports — GPU-075 E1) |
-| Python shared domain / DB / connectors | `offchain/gpu/hashcredit_gpu/`, `offchain/gpu/tests/`, `offchain/gpu/migrations/` | confirmed (GPU-015) |
+| v2 contracts / tests | `contracts/gpu/`, `test/gpu/` | confirmed; official imports require solc ≥ 0.8.28 |
+| Python shared domain / DB / connectors | `offchain/gpu/hashcredit_gpu/`, `offchain/gpu/tests/`, `offchain/gpu/migrations/` | confirmed |
 | GPU API / worker | `offchain/api/hashcredit_api/gpu/`, `offchain/prover/hashcredit_prover/gpu/` | confirmed |
-| Official SDK tools / proof client | `offchain/attestcoin/` | exists (GPU-075) |
+| Official SDK tools / proof client | `offchain/attestcoin/` | confirmed |
 | Source event contracts / native verifier | `contracts/gpu/source/`, `contracts/gpu/AttestcoinRevenueVerifier.sol` | confirmed |
-| Official env manifests / fixtures | `config/attestcoin/`, `test/fixtures/gpu/attestcoin/` | exist (GPU-075) |
-| **Domain schemas** | `config/gpu/schema/` | added by this ticket |
-| **Domain / settlement fixtures** | `test/fixtures/gpu/domain/`, `test/fixtures/gpu/settlements/` | added / GPU-014 |
-| **Repo scripts** | `script/gpu/` | added (validator); e2e scripts later (GPU-057/080) |
+| Official env manifests / fixtures | `config/attestcoin/`, `test/fixtures/gpu/attestcoin/` | confirmed |
+| Domain schemas | `config/gpu/schema/` | confirmed |
+| Domain / settlement fixtures | `test/fixtures/gpu/domain/`, `test/fixtures/gpu/settlements/` | confirmed |
+| Repository scripts | `script/gpu/` | validators, deployment, ABI export, and evidence packaging |
 | Public technical documentation | `README.md`, `TECH.md`, `docs/gpu/` | exists |
 
 ## 11. Product API v1
@@ -189,8 +191,8 @@ Errors: `{ "error": { "code": ErrorCode, "message": str, "details": {...}, "requ
 | `/evidence` | GET | underwriter, operator, keeper | evidence chain records by `sourceEventId` / `economicEventId` |
 | `/webhooks/{providerId}` | POST | provider (signed) | signature + timestamp + replay check; never final by itself |
 
-Roles: `borrower`, `lp`, `underwriter`, `operator`, `keeper`, `guardian`, `treasury` (GPU-013 defines
-authority). Keeper can never set `payer`, `payee`, or `beneficiary` fields.
+Roles: `borrower`, `lp`, `underwriter`, `operator`, `keeper`, `guardian`, `treasury`. Keeper can never set
+`payer`, `payee`, or `beneficiary` fields.
 
 `ErrorCode`: `VALIDATION`, `UNAUTHENTICATED`, `FORBIDDEN_SCOPE`, `NOT_FOUND`, `CONFLICT_REVISION`,
 `PROFILE_MISMATCH`, `UNSUPPORTED_SOURCE`, `EVIDENCE_STALE`, `EVIDENCE_INVALID`, `CONTROL_INSUFFICIENT`,
@@ -203,7 +205,7 @@ authority). Keeper can never set `payer`, `payee`, or `beneficiary` fields.
    provider account A to account B (two `AssetAssignment` rows, first closed with reason `MOVE`).
 3. One settlement **split** across two receivables (`receivableAllocations` sums to `netPayout`), with a
    source escrow receipt (`SOURCE_ESCROW`), a conversion leg (`IN_FLIGHT`), and a destination receipt
-   (`DESTINATION_RECEIVED`) followed by a `RepaymentAllocation` — debt changes only on the last.
+   (`DESTINATION_RECEIVED`) followed by a `RepaymentAllocation`; debt changes only on the last.
 4. Evidence chain for **one source tx with two logs** → two `SourceEvent`/`EvidenceConsumption` rows
    sharing `txHash`/`txIndex`, distinct `logOrdinal`; one `ProofArtifact`; one `NativeVerification`.
 5. A `NATIVE_TESTNET` evidence row that a `PRODUCTION` reader must reject (`executionProfile` mismatch).

@@ -2,8 +2,8 @@
 
 TypeScript tooling for the GPU lending evidence path. It pins the **official**
 Attestcoin (ex-USC) SDK, ABIs and Solidity artifacts by version and hash, validates environment manifests
-under `config/attestcoin/`, and runs a **read-only** environment probe. It never signs, broadcasts, or
-holds keys. It is not a proof worker (GPU-079) and not a verifier (GPU-078).
+under `config/attestcoin/`, and runs a read-only environment probe. It never signs, broadcasts, or
+holds keys. The proof worker and on-chain verifier are separate components.
 
 ```
 npm ci --prefix offchain/attestcoin

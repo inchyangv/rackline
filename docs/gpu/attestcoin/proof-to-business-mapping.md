@@ -18,7 +18,7 @@ precompile; everything the worker or the proof service says is `CLAIMED`.**
 | `txIndex` | ignored for consumption (recomputed on-chain) | CLAIMED | sanity check only |
 | `cached`, `generatedAt`, host | `ProofArtifact.serviceMeta` | CLAIMED | ops metrics |
 
-## 2. From the verified bytes (`EvmV1Decoder`, on-chain, GPU-078)
+## 2. From the verified bytes (`EvmV1Decoder`, on-chain)
 
 | Decoder output | Stored as | Trust | Check |
 | --- | --- | --- | --- |
@@ -38,10 +38,10 @@ is a separate `sourceEventId`; unrelated logs in the same receipt are ignored, n
 | Value | Stored as | Trust |
 | --- | --- | --- |
 | tx hash / block / log index of our app's `Verified`/`Consumed` events | `NativeVerification.destination`, `EvidenceConsumption` | PROVEN (destination chain) |
-| destination block time | `NativeVerification.provenAt` | PROVEN (destination) — the *earliest* time we can attach; used for `validUntil` |
+| destination block time | `NativeVerification.provenAt` | PROVEN on the destination; earliest attachment time and the basis for `validUntil` |
 | verifier address, precompile address, manifest hash | `NativeVerification.verifier/precompile/manifestHash` | PROVEN (destination) |
 
-## 4. Business classification (GPU-031/081, off the verified args)
+## 4. Business classification from verified arguments
 
 | Input | Output | Notes |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ is a separate `sourceEventId`; unrelated logs in the same receipt are ignored, n
 3. App tx on CC3 testnet: verifier calls `verifyAndEmit(1, 9100000, txBytes, merkle, continuity)`;
    computes `txIndex=17`; decodes receipt; selects logs by `(escrow, topic0)`; emits
    `Verified(sourceEventId_0)` and `Verified(sourceEventId_1)`; EvidenceBook consumes each once.
-4. Off-chain projector (GPU-073) writes `NativeVerification` (ACCEPTED, provenTxIndex 17, provenAt =
+4. The off-chain projector writes `NativeVerification` (ACCEPTED, provenTxIndex 17, provenAt =
    destination block time) and two `EvidenceConsumption`s; classifier writes two `BusinessEvidence`
    rows (`OBLIGATION_RECOGNIZED`, `PROVEN`, `SIMULATED` provenance for the TEST_ONLY provider).
 5. Receivables inv-A/inv-B are created at revision 1 with `unpaidAmount = net`. They are **not** eligible

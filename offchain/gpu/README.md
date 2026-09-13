@@ -26,10 +26,10 @@ Rules baked into the schema: `required_verification` is always `ATTESTCOIN_NATIV
 provider assignment per asset; E2 agreements need partner change authority, hash, effective date and a
 PoC reference; funded facilities need a pinned agreement version; nothing is `REPAID`/`RELEASED` with debt;
 `execution_profile` is immutable and PRODUCTION rows can never reference TEST_ONLY policies/terms or
-non-production providers (PL/pgSQL triggers). Production schemas come only from migrations — never
+non-production providers (PL/pgSQL triggers). Production schemas come only from migrations, never from
 `metadata.create_all()`.
 
-GPU-016 (`0002_event_cash_job_ledgers`, `hashcredit_gpu/db/ledgers.py`) adds the raw-observation, official-proof
+Migration `0002_event_cash_job_ledgers` and `hashcredit_gpu/db/ledgers.py` add the raw-observation, official-proof
 pipeline (`proof_requests` → `proof_artifacts` → `native_verifications` → `evidence_consumptions`), receivable,
 settlement, destination-cash/allocation, recovery/write-off, audit, cursor, job, outbox, tx-intent and exception
 ledgers. Proof API 200, `eth_call` pre-check, native acceptance and economic consumption are four independent

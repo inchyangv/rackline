@@ -1,9 +1,9 @@
-# Evidence and settlement reconciliation — golden fixtures
+# Evidence and settlement reconciliation fixtures
 
 Reference reconciler: `offchain/gpu/hashcredit_gpu/reconciliation/reference.py`.
 Golden fixtures: `test/fixtures/gpu/settlements/s-01…s-05.json` (executed by
 `offchain/gpu/tests/test_settlement_fixtures.py`), together with
-`domain-model.md` (ids), `accounting.md` (AC-07 pipeline), `attestcoin/evidence-contract.md` (EV vectors).
+`domain-model.md` (IDs), `accounting.md` (cash pipeline), and `attestcoin/evidence-contract.md` (evidence vectors).
 The production reconciler and ledger database must reproduce these fixtures exactly.
 
 ## 1. Identifiers and how they link
@@ -22,7 +22,7 @@ observationId ─┘         │                       │
 | --- | --- | --- |
 | `observationId` (`source`, `ref`, `sha256(raw)`) | one sighting | no |
 | `economicEventId` (`provider/account/eventType/providerRef`) | one economic fact | **yes** |
-| `sourceEventId` (env, chainKey, height, on-chain txIndex, receipt log ordinal) | one consumed source log | no — uniqueness key for consumption |
+| `sourceEventId` (env, chainKey, height, on-chain txIndex, receipt log ordinal) | one consumed source log | no; uniqueness key for consumption |
 | `proofQueryKey` (env, chainKey, txHash) | proof cache | no |
 | `proofArtifactId` (sha256 of proof JSON) | bytes provenance | no |
 | `settlementId` | one payer batch | groups payouts, legs, destination receipts, allocations |

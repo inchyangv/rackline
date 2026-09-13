@@ -1,6 +1,6 @@
 # Permissions, control agreements, and state transitions
 
-This document complements `docs/gpu/domain-model.md` and fixes **who may do what in our system**,
+This document complements `docs/gpu/domain-model.md` and defines who may act,
 how those actions are authenticated, and which state
 transitions are legal. Nothing here grants a partner-side right.
 
@@ -18,8 +18,8 @@ transitions are legal. Nothing here grants a partner-side right.
 | `provider admin` | partner's own authority (external) | partner | be impersonated by our keys; partner actions are observed, never assumed |
 | `lp` | vault depositor | own wallet | anything beyond deposit/withdraw/preview |
 
-Separation rules: the relay gas payer (`oracle`) is never the revenue issuer, the treasury, or an approver
-(R2-D04). No single actor holds two of {underwriter, treasury, guardian}. Key rotation for any role is a
+Separation rules: the relay gas payer (`oracle`) is never the revenue issuer, the treasury, or an approver.
+No single actor holds two of {underwriter, treasury, guardian}. Key rotation for any role is a
 recorded event with a new key epoch; old-epoch signatures are rejected after the epoch's grace window.
 
 ## 2. Authentication and signatures (auxiliary paths, never source facts)
@@ -27,14 +27,14 @@ recorded event with a new key epoch; old-epoch signatures are rejected after the
 All application signatures are EIP-712 typed data with: `domain{name, version, chainId, verifyingContract}`,
 `purpose` (enum below), `subject` (ids), `nonce` (per signer, monotonically consumed), `issuedAt`,
 `expiresAt`, `keyEpoch`. A signature is valid only for one `purpose` and one `verifyingContract`; replay
-across chains, contracts, purposes, or callers is rejected (regression AR-07).
+across chains, contracts, purposes, or callers is rejected.
 
 | Purpose | Signer | Creates | Never creates |
 | --- | --- | --- | --- |
 | `WALLET_LINK` | borrower wallet | proof that the wallet is controlled by the borrower | any source fact |
 | `AGREEMENT_CONSENT` | borrower authorized signer | consent hash for a `TermsVersion` / `ControlAgreement` version | legal effect by itself (recorded, reviewed) |
 | `CREDIT_APPROVAL` | underwriter | `CreditDecision.status=APPROVED` for stated inputs | native acceptance, borrowing base without native evidence |
-| `CONTROL_ATTESTATION` | provider admin or registrar (asserting an observation) | `ControlAgreement.observationProvenance` (ASSERTED) | E2 by itself — E2 requires the PoC (GPU-009) and partner recognition |
+| `CONTROL_ATTESTATION` | provider admin or registrar (asserting an observation) | `ControlAgreement.observationProvenance` (ASSERTED) | E2 by itself; E2 also requires a control test and partner recognition |
 | `RELAY` | oracle keeper | submission of a proof tx | verification result (only the precompile does) |
 | `TREASURY_OP` | treasury multisig | vault/rail parameters via timelock | evidence or credit changes |
 
@@ -50,7 +50,7 @@ purpose). `expiresAt − issuedAt` ≤ policy TTL (default 15 min for approvals,
 | Operation | Who | Preconditions | Effect |
 | --- | --- | --- | --- |
 | create (grade E0/E1 draft) | registrar | borrower `AGREEMENT_CONSENT` on version | agreement exists, not usable for funding |
-| attest grade E2 | underwriter, with GPU-009 PoC record + partner recognition reference | observation provenance `ASSERTED` by provider admin **and** PoC `outcome=PASS` | grade E2, `effectiveFrom` set |
+| attest grade E2 | underwriter, with a control-test record and partner-recognition reference | observation provenance `ASSERTED` by provider admin and control test `outcome=PASS` | grade E2, `effectiveFrom` set |
 | version bump | registrar + borrower consent | active facility debt allowed; new version must not lower grade or shrink `subject[]` while debt > 0 | new `agreementVersionId`; facility records the version it was funded under |
 | observe | oracle/servicer | read-only partner API/RPC | `lastObservedAt`, `controlVersion` updated; stale > policy window ⇒ draws frozen (not default) |
 | revoke / expire | system (expiry) or guardian (incident) | — | grade drops to E1; draws frozen; collections continue |
@@ -58,8 +58,8 @@ purpose). `expiresAt − issuedAt` ≤ policy TTL (default 15 min for approvals,
 
 Rules:
 - The keeper cannot change `receiver`, `payer`, `payee`, or `subject[]`; those come from agreement versions.
-- "Locked" observations older than `controlObservationMaxAge` are stale: a draw against a stale observation
-  is refused even if the last observation said locked (PIVOT §4.3 race).
+- "Locked" observations older than `controlObservationMaxAge` are stale. A draw against a stale observation
+  is refused even if the last observation said locked.
 - An admin/guardian/underwriter/verifier key rotation never changes `controlGrade`, `requiredVerification`,
   or the facility's funded agreement version.
 - Partner `support override` paths are recorded as residual risk on the agreement; they do not lower our
@@ -88,7 +88,7 @@ state). An account observation never directly mutates the facility state; a poli
 | RECOVERY | CLOSED_WITH_LOSS | write-off approved | credit committee + treasury | reserve applied first; recovery rights remain open |
 | ACTIVE | REPAID | debt = 0 | system | |
 | REPAID | RELEASED | release conditions (§3) | servicer + treasury | pending refund/reversal check |
-| any active/recovery | (disputed evidence) | source dispute after draw | underwriter | marks collateral evidence `DISPUTED`, limits new draws; **does not** erase destination debt or received cash (R2-D07) |
+| any active/recovery | (disputed evidence) | source dispute after draw | underwriter | marks collateral evidence `DISPUTED` and limits new draws; destination debt and received cash remain |
 
 Forbidden transitions (must revert / be rejected): `RELEASED` with debt > 0; `ACTIVE` without an approved,
 unexpired decision; any transition triggered by an `oracle` key; `REPAID` on the strength of a source
@@ -101,7 +101,7 @@ receipt, claimable balance, or proof alone; lowering `requiredVerification`; ski
 | `pauseDraws` | new draws, limit increases | repay, repayFor, allocation, recovery | guardian (lift: guardian + underwriter) |
 | `pauseEvidenceIntake` | acceptance of new evidence | use of already-accepted evidence within validity; repayments | guardian |
 | `pauseConversion` | conversion/bridge legs | source collection, destination allocation of already-received cash | treasury |
-| `pauseRepayments` | repayFor | — | **not exposed** in the product path; legacy v1 global pause is not reused (R2-D13) |
+| `pauseRepayments` | repayFor | — | not exposed in the product path; the legacy v1 global pause is not reused |
 
 ## 6. Transition table for the required adversarial cases
 
@@ -115,15 +115,15 @@ receipt, claimable balance, or proof alone; lowering `requiredVerification`; ski
 | Borrowed asset ≠ received asset | destination receives token X while loan asset is Y | receipt recorded `cashState=DESTINATION_RECEIVED` but **not** allocated; treasury conversion or return; no debt reduction |
 | Old release assertion | a signed `AGREEMENT_CONSENT`/release from a previous version replayed | rejected by nonce/version/expiry |
 | Keeper tries to set beneficiary | relay tx includes a different payee | contract ignores caller-supplied payee; payee comes from facility/agreement state |
-| Verifier/decoder upgrade | new verifier address | facility keeps `manifestHash` it was approved under; new evidence must pass the new manifest; old evidence is not re-accepted under the new one (GPU-082) |
+| Verifier/decoder upgrade | new verifier address | facility keeps `manifestHash` it was approved under; new evidence must pass the new manifest; old evidence is not re-accepted under the new one |
 | Debt = 0 with pending refund | borrower owes refund to payer per correction | `REPAID` allowed, `RELEASED` blocked until refund settled or escrowed |
 
-## 7. On-chain vs off-chain authority (implementation guidance for GPU-029~043)
+## 7. On-chain vs off-chain authority
 
 - On-chain roles: `BORROWER` (per facility), `UNDERWRITER`, `GUARDIAN`, `TREASURY`, `RELAYER` (proof submit
   only), `SERVICER`. Role admin is a timelocked multisig; no role can grant itself `UNDERWRITER + TREASURY`.
 - Credit decisions are anchored on-chain as `(decisionHash, validUntil, policyVersion, manifestHash)`;
   `borrow` checks the anchor, the native consumption set, and the control agreement version/expiry.
-- Evidence acceptance and consumption keys are contract state (`EvidenceBook`, GPU-031); admin cannot
+- Evidence acceptance and consumption keys are contract state in `EvidenceBook`; admin cannot
   insert a consumption without a native verification in the same tx.
 - Off-chain services enforce the same guards before building txs but are never the only guard.

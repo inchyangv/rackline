@@ -48,7 +48,7 @@ transaction. A delayed old worker cannot downgrade a newer proof preparation res
 Without `--plans reviewed.json`, the proof service only fetches artifacts and has
 no signing credential. A reviewed submission plan supplies the exact app purpose,
 provider/emitter/topics, source-log instructions, and account/economic-ID bindings.
-Enabling it additionally requires the isolated `GPU_KEEPER_PRIVATE_KEY`; treasury
+Enabling it requires the isolated `GPU_KEEPER_PRIVATE_KEY`; treasury
 purposes cannot be signed by that credential. The dispatcher persists signed bytes
 and nonce before broadcast, reconciles unknown outcomes, and never allocates a new
 nonce solely because a response timed out.

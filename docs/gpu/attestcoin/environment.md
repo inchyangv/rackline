@@ -10,7 +10,7 @@ environment source of truth. "Probed" means a read-only RPC/HTTP check succeeded
 | --- | --- | --- | --- |
 | `@gluwa/usc-sdk` (TS/JS SDK) | **0.18.0** (published 2026-06-22) | npm `sha512-iUEXPAp1gB/HDYkXad+StVJvs0Yz2ZIbzijc8SaBflGJ95hPnVahyY+tsP2PApswSQaX2uIBM7Cb0jpZ+KBzTQ==`; tarball sha256 `b1f7ef61…03d875` | registry.npmjs.org; repo `gluwa/cc-next-query-builder`; MIT |
 | `@gluwa/asc-contracts` (Solidity sources) | **0.2.1** | tarball sha256 `b45fffaf…289dee` | npm; repo `gluwa/asc-contracts`; MIT; depends on `@openzeppelin/contracts 5.1.0` |
-| `@gluwa/usc-contracts` (older name) | 0.2.0 | tarball sha256 `68dc21d3…f710e1` | **not used** — superseded naming (`USC*` → `ASC*`); listed to document the drift |
+| `@gluwa/usc-contracts` (older name) | 0.2.0 | tarball sha256 `68dc21d3…f710e1` | not used; superseded naming (`USC*` → `ASC*`), listed to document the drift |
 | `ethers` | 6.15.0 (SDK declares `^6.15.0`) | lockfile | peer/runtime for the SDK |
 
 Pinned files (sha256; enforced by `ASC-CHECK` and `artifacts.test.ts`):
@@ -29,7 +29,7 @@ Pinned files (sha256; enforced by `ASC-CHECK` and `artifacts.test.ts`):
 Byte-identical copies of the three ABI JSONs live in `test/fixtures/gpu/attestcoin/official/` with
 `PROVENANCE.json` (kind `OFFICIAL_ARTIFACT_COPY`); `fixtures.test.ts` fails if they drift from `node_modules`.
 
-## 2. Native interface facts (from the pinned files — not from TECH/README)
+## 2. Native interface facts from the pinned files
 
 `INativeQueryVerifier` at `0x0000000000000000000000000000000000000FD2` (the "Block Prover precompile";
 docs note it was previously called *Native Query Verifier*, which is why the Solidity name survives):
@@ -69,7 +69,7 @@ ChainInfo precompile at `0x0000000000000000000000000000000000000fd3` (all `view`
 | Paths | `GET /api/v1/proof-by-tx/{chainKey}/{txHash}`, `POST /api/v1/proof-batch-by-tx/{chainKey}` (body: `string[]`), `GET /api/v1/attested-height/{chainKey}` → `{ "attestedHeight": number }` |
 | Single response | `ProofResult{success, data?: ContinuityResponse{chainKey, headerNumber, txIndex, txHash, txBytes, continuityProof{lowerEndpointDigest, roots[]}, merkleProof{root, siblings[{hash,isLeft}]}, cached, generatedAt}, error?}` |
 | Timeouts | axios timeout default 10 s (SDK ctor arg); `waitUntilHeightAttested` polls attested-height every 15 s, 15 min timeout, + extra delay for load-balanced caches |
-| Trust | The proof is **untrusted input**; only the native precompile result counts (R2-D02). `cached`/`generatedAt`/`txHash`/`txIndex` from the service are worker hints, not proven values (GPU-076 §proof-bound fields). |
+| Trust | The proof is untrusted input; only the native precompile result counts. `cached`/`generatedAt`/`txHash`/`txIndex` from the service are worker hints, not proven values. |
 
 Hostnames (CC3 testnet): environments table lists `proof-gen-api.cc3-testnet.creditcoin.network`; SDK docs
 and README use `prover.cc3-testnet.creditcoin.network`. Both answered `/api/v1/attested-height/1` with the
@@ -78,14 +78,14 @@ does not declare them aliases.
 
 ## 4. Environments
 
-### CC3 Testnet — `config/attestcoin/cc3-testnet.sepolia.json` — `environmentStatus=PROBED`
+### CC3 Testnet: `config/attestcoin/cc3-testnet.sepolia.json` (`environmentStatus=PROBED`)
 
 | Item | Docs (2026-09-13) | Probe (2026-09-13T22:14:25Z, finalized block 5,483,080) |
 | --- | --- | --- |
 | Destination chainId | — | `eth_chainId` = **102031** |
 | Destination RPC (read-only allowlist) | `https://rpc.cc3-testnet.creditcoin.network` (SDK docs) | reachable |
 | BlockProver / ChainInfo | `0x…0FD2` / `0x…0fd3` | `calculateTxIndex` vectors PASS; `verify(bogus)` reverts `Merkle proof validation failed`; bytecode 0 bytes (expected) |
-| Decoder contract | `0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f` | 9,598 bytes of code; keccak256 `0xb549c9d8eaf7d361192f8e363fe98717464441e2dd26e2b3bd1e0725df73a065` (pinned in manifest). Source equivalence to `EvmV1Decoder.sol` **not** verified (no verified-source link; GPU-082 may compile-and-compare) |
+| Decoder contract | `0x731c345d79Fb8BbDC541f9DF3b6317585F849F9f` | 9,598 bytes of code; keccak256 `0xb549c9d8eaf7d361192f8e363fe98717464441e2dd26e2b3bd1e0725df73a065` (pinned in manifest). Source equivalence to `EvmV1Decoder.sol` is unverified because no verified-source link was available. |
 | Supported sources | Sepolia chainKey 1 (genesis 0), Ethereum mainnet chainKey 3 (genesis 0) | `get_supported_chains()` = `[(3, 1, "Ethereum", enc 1), (1, 11155111, "Sepolia ethereum", enc 1)]` |
 | Latest attestation (chainKey 1) | — | height 11,698,710, `isAttestation=true`; proof service primary and alternate both `attestedHeight=11698710` (lag 0) |
 | Source RPC (read-only allowlist) | — | `https://ethereum-sepolia-rpc.publicnode.com` → `eth_chainId` 11155111 |
@@ -94,34 +94,34 @@ does not declare them aliases.
 Manifest hash: `sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb`. Probe report:
 `test/fixtures/gpu/attestcoin/probe/cc3-testnet.sepolia.probe.json`.
 
-### CC3 Mainnet — **no manifest yet** — `UNCONFIRMED`
+### CC3 Mainnet: no manifest (`UNCONFIRMED`)
 
 Docs values (2026-09-13): Proof Builder API `https://proofbuilder.cc3-mainnet-usc.creditcoin.network/`,
 decoder `0x9D094C9f22B10FCf842c2fC6A0981630A4F94B5C`, same precompile addresses, supported source Ethereum
 Mainnet chainKey 1 (genesis 0), dashboard `https://dashboard.cc3-mainnet-usc.creditcoin.network/`. The
-mainnet RPC URL is not stated on the environments page and was not invented; the official lib lists chain id
-102030 as a Creditcoin chain id. A `PRODUCTION` manifest is created by GPU-062 only after a read-only probe
-with a confirmed RPC (validator requires `supportConfirmedBy=PROBE` and a pinned decoder code hash).
+mainnet RPC URL is not stated on the environments page and was not inferred; the official library lists chain id
+102030 as a Creditcoin chain id. A `PRODUCTION` manifest requires a read-only probe with a confirmed RPC,
+`supportConfirmedBy=PROBE`, and a pinned decoder code hash.
 
-### LOCAL_MOCK — `config/attestcoin/local-mock.json` — `UNCONFIRMED` by construction
+### LOCAL_MOCK: `config/attestcoin/local-mock.json` (`UNCONFIRMED` by construction)
 
 Anvil chain ids 31337/31338, local URLs allowed **only** because `executionProfile=LOCAL_MOCK`,
-`mock=true`, `verificationMethod=LOCAL_MOCK`. It can never be PROBED, never NATIVE_TESTNET/PRODUCTION, and
-GPU-078's etched precompile double must be wired from this manifest only.
+`mock=true`, `verificationMethod=LOCAL_MOCK`. It cannot be PROBED or used as NATIVE_TESTNET/PRODUCTION.
+The etched precompile double is wired only from this manifest.
 
-## 5. Compatibility items for downstream tickets
+## 5. Compatibility constraints
 
-| # | Item | Owner |
-| --- | --- | --- |
-| E1 | Official Solidity files use `pragma ^0.8.28` (`EvmV1Decoder.sol`, full `INativeQueryVerifier.sol`, `ASCBase.sol`); repo `foundry.toml` pins `solc = 0.8.24` / `evm_version = london`. `contracts/gpu/` needs a Foundry profile with solc ≥ 0.8.28 (and an EVM version the Creditcoin runtime supports — confirm before choosing `cancun`+) or a compatible vendored copy; do not downgrade the official file. | GPU-029 / GPU-078 |
-| E2 | Two `INativeQueryVerifier.sol` copies exist in the package (full vs lean). GPU-078 must import the **full** one (`write-ability/common/`) for `verifyAndEmit`/`calculateTxIndex`; the lean one only has view `verify`. | GPU-078 |
-| E3 | Decoder can be linked as a library or inlined; the on-chain decoder address is informational for the app (the app should decode from the verified bytes with the pinned library, not `delegatecall` an external address it does not control) — decision recorded at GPU-078. | GPU-078 |
-| E4 | `chainName` bytes decoding: SDK comment says name decoding "seems to be failing" in some versions; probe decodes UTF-8 bytes directly (`"Sepolia ethereum"`). Names are informational; identity is `(chainKey, chainId, encoding)`. | GPU-079 |
-| E5 | Proof service `generatedAt`, `cached`, `txHash`, `txIndex` are unproven hints; proof-bound values are `chainKey`, `headerNumber`, `txBytes`, `merkleProof`, `continuityProof` and the on-chain `calculateTxIndex`. | GPU-076 / 079 |
-| E6 | `ProofBuilder.getProof` swallows HTTP errors into `{success:false,error}`; worker must not treat `success:true` as verification. | GPU-079 |
-| E7 | Writability contracts in `asc-contracts` (Outbox/Inbox/…) are out of scope (R2-D09). | — |
+| # | Constraint |
+| --- | --- |
+| E1 | Official Solidity files use `pragma ^0.8.28` (`EvmV1Decoder.sol`, full `INativeQueryVerifier.sol`, `ASCBase.sol`). The GPU Foundry profile must use solc 0.8.28 or newer and an EVM version supported by Creditcoin; official files must not be downgraded. |
+| E2 | Two `INativeQueryVerifier.sol` copies exist in the package. Import the full `write-ability/common/` version for `verifyAndEmit` and `calculateTxIndex`; the lean version only exposes view `verify`. |
+| E3 | Decode verified bytes with the pinned library. The on-chain decoder address is informational and is not a safe `delegatecall` target. |
+| E4 | The SDK notes that `chainName` decoding can fail in some versions. The probe decodes UTF-8 bytes directly (`"Sepolia ethereum"`); identity remains `(chainKey, chainId, encoding)`. |
+| E5 | Proof-service `generatedAt`, `cached`, `txHash`, and `txIndex` values are unproven hints. Proof-bound values are `chainKey`, `headerNumber`, `txBytes`, `merkleProof`, `continuityProof`, and the on-chain `calculateTxIndex`. |
+| E6 | `ProofBuilder.getProof` converts HTTP errors into `{success:false,error}`. A worker must not treat `success:true` as verification. |
+| E7 | Writability contracts in `asc-contracts` (Outbox, Inbox, and related contracts) are outside Rackline's scope. |
 
-## 6. Commands (added by this ticket)
+## 6. Verification commands
 
 | Alias | Command | Network |
 | --- | --- | --- |
