@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir /opt/hashcredit_gpu
 
 # Copy only the API package from the monorepo.
 COPY offchain/api/ ./
+COPY config/attestcoin/ /app/config/attestcoin/
 
 RUN pip install --no-cache-dir -e .
 

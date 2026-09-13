@@ -947,7 +947,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-053 — 로컬/배포 서비스 구성·의존성·키 분리
 
-- 상태: TODO
+- 상태: IN_PROGRESS (2026-09-14, docs/gpu/execution/GPU-053.md; Railway 기동 장애 수정·GPU 배포 구성 진행, 실서비스/공식 proof gate와 분리)
 - 유형/우선순위: CODE / P1
 - 선행: GPU-015, GPU-016, GPU-025, GPU-026, GPU-028, GPU-045, GPU-079
 - 근거/읽기: PIVOT §8, §13; Compose/Railway/Dockerfile/start-worker, `.env.example` 계열.

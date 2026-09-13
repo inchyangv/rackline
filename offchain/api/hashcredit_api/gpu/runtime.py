@@ -13,7 +13,20 @@ from .permissions.ownership import InMemoryOwnership, OwnershipResolver
 from .proofs.manifests import ManifestSummary, load_manifests
 from .secrets import EnvSecretStore, Redactor, SecretStore, install_record_redaction
 
-REPO_MANIFEST_DIR = Path(__file__).resolve().parents[4] / "config" / "attestcoin"
+def discover_manifest_dir(module_file: Path) -> Path:
+    """Support both monorepo and installed/container package layouts.
+
+    A fixed parents[4] crashes at import time in /app/hashcredit_api/gpu.
+    Missing artifacts deliberately yield an empty allowlist, not a mock fallback.
+    """
+    for ancestor in module_file.resolve().parents:
+        candidate = ancestor / "config" / "attestcoin"
+        if candidate.is_dir():
+            return candidate
+    return module_file.resolve().parent / "_missing_attestcoin_manifests"
+
+
+REPO_MANIFEST_DIR = discover_manifest_dir(Path(__file__))
 
 
 @dataclass
