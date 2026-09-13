@@ -116,6 +116,10 @@ contract AttestcoinRevenueVerifier is IRevenueVerifier {
         return _MANIFEST_HASH;
     }
 
+    function providerId() external view override returns (GpuTypes.ProviderId) {
+        return PROVIDER_ID;
+    }
+
     function sourceChain() external view override returns (GpuTypes.SourceChainRef memory) {
         return GpuTypes.SourceChainRef({
             envIdHash: _ENV_ID_HASH,

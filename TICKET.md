@@ -680,7 +680,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-031 — 공식 검증 결과 수용·보조 승인 분리·경제 사건 소비 원장
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 22 tests; envelope 기반 consume·경제 ID dedup; revision↔economicEventId 규칙은 GPU-081 OPEN; docs/gpu/execution/GPU-031.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-014, GPU-029, GPU-030, GPU-078
 - 근거: PIVOT §6.2, §7.

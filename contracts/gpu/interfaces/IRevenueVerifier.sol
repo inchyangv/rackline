@@ -41,6 +41,8 @@ interface IRevenueVerifier {
     error ProviderNotAdmitted(GpuTypes.ProviderId providerId);
 
     function manifestHash() external view returns (bytes32);
+    /// @notice The single provider this adapter is bound to (registry binding checked at construction).
+    function providerId() external view returns (GpuTypes.ProviderId);
     function sourceChain() external view returns (GpuTypes.SourceChainRef memory);
     function executionProfile() external view returns (GpuTypes.ExecutionProfile);
     function verificationMethod() external view returns (GpuTypes.VerificationMethod);

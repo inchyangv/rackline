@@ -1,5 +1,75 @@
 [
   {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "roles",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      },
+      {
+        "name": "providers",
+        "type": "address",
+        "internalType": "contract IProviderRegistry"
+      },
+      {
+        "name": "envIdHash_",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "maxValidity_",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "PROVIDERS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IProviderRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROLES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "bindVerifier",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "verifier",
+        "type": "address",
+        "internalType": "contract IRevenueVerifier"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "function",
     "name": "consume",
     "inputs": [
@@ -299,6 +369,30 @@
   },
   {
     "type": "function",
+    "name": "isSelfAssertedEmitter",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "maxValidity",
     "inputs": [],
     "outputs": [
@@ -427,6 +521,47 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setConsumer",
+    "inputs": [
+      {
+        "name": "consumer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "allowed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSelfAssertedEmitter",
+    "inputs": [
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "selfAsserted",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -639,6 +774,17 @@
   },
   {
     "type": "error",
+    "name": "NotAdmin",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "NotFromVerifier",
     "inputs": [
       {
@@ -696,5 +842,10 @@
         "internalType": "GpuTypes.ProviderId"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
   }
 ]

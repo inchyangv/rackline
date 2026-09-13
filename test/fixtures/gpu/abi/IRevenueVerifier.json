@@ -40,6 +40,19 @@
   },
   {
     "type": "function",
+    "name": "providerId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "sourceChain",
     "inputs": [],
     "outputs": [
