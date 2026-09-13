@@ -496,7 +496,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-017 — 법인·계정·GPU 권리 연결 서비스
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 9 tests, migration 0003; 실제 소유권/리스 서류는 DD; docs/gpu/execution/GPU-017.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-015
 - 근거: PIVOT §6.1, §11.
@@ -520,7 +520,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-019 — ProviderAdapter 계약·capability·mock harness
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 29 tests; 실제 adapter는 GPU-020/021; docs/gpu/execution/GPU-019.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-014, GPU-015
 - 근거: PIVOT §3, §8.1.
@@ -594,7 +594,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-025 — durable jobs·outbox·동시 worker·재시도
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 19 tests, PostgreSQL 2-worker 경쟁; docs/gpu/execution/GPU-025.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-016
 - 근거: PIVOT §8.3; legacy relayer의 failed row 재처리 문제.
