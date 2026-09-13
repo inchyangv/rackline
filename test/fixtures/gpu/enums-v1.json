@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0",
+  "source": "config/gpu/schema/domain-v1.schema.json + docs/gpu/permissions-and-states.md \u00a72",
+  "enums": {
+    "ExecutionProfile": [
+      "LOCAL_MOCK",
+      "NATIVE_TESTNET",
+      "PRODUCTION"
+    ],
+    "VerificationMethod": [
+      "ATTESTCOIN_NATIVE",
+      "LOCAL_MOCK",
+      "OFFCHAIN_ASSERTION"
+    ],
+    "NativeStatus": [
+      "NOT_REQUIRED",
+      "NOT_REQUESTED",
+      "OBSERVED",
+      "WAITING_ATTESTATION",
+      "PROOF_READY",
+      "SUBMITTED",
+      "NATIVE_ACCEPTED",
+      "CONSUMED",
+      "INVALID",
+      "UNSUPPORTED",
+      "EXPIRED"
+    ],
+    "EarningsProvenance": [
+      "UNCLASSIFIED",
+      "PROVIDER_SETTLEMENT",
+      "PROVIDER_INCENTIVE",
+      "SELF_TRANSFER",
+      "THIRD_PARTY_UNKNOWN",
+      "REFUND_OR_REVERSAL",
+      "SIMULATED"
+    ],
+    "ControlGrade": [
+      "E0",
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "CashState": [
+      "NONE",
+      "SOURCE_ESCROW",
+      "IN_FLIGHT",
+      "DESTINATION_RECEIVED",
+      "ALLOCATED",
+      "RETURNED"
+    ],
+    "FacilityState": [
+      "DRAFT",
+      "UNDER_REVIEW",
+      "CONTROL_PENDING",
+      "ACTIVE",
+      "DRAW_FROZEN",
+      "DELINQUENT",
+      "DEFAULTED",
+      "RECOVERY",
+      "REPAID",
+      "RELEASED",
+      "CLOSED_WITH_LOSS"
+    ],
+    "Trust": [
+      "PROVEN",
+      "ASSERTED",
+      "OBSERVED",
+      "CLAIMED"
+    ],
+    "EvidenceMeaning": [
+      "OBLIGATION_RECOGNIZED",
+      "ASSIGNMENT_RECOGNIZED",
+      "CORRECTION",
+      "PAYOUT",
+      "PAYMENT_CANCELLED"
+    ],
+    "AssertionPurpose": [
+      "WALLET_LINK",
+      "AGREEMENT_CONSENT",
+      "CREDIT_APPROVAL",
+      "CONTROL_ATTESTATION",
+      "RELAY",
+      "TREASURY_OP"
+    ]
+  }
+}

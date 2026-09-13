@@ -1,0 +1,409 @@
+[
+  {
+    "type": "function",
+    "name": "executionProfile",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "manifestHash",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxEncodedTransactionBytes",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sourceChain",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.SourceChainRef",
+        "components": [
+          {
+            "name": "envIdHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainKey",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "chainId",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "encoding",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "manifestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "verificationMethod",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.VerificationMethod"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "verifyAndExtract",
+    "inputs": [
+      {
+        "name": "envelope",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.NativeProofEnvelope",
+        "components": [
+          {
+            "name": "chainKey",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "height",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "encodedTransaction",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "merkleRoot",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "siblings",
+            "type": "tuple[]",
+            "internalType": "struct INativeQueryVerifier.MerkleProofEntry[]",
+            "components": [
+              {
+                "name": "hash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "isLeft",
+                "type": "bool",
+                "internalType": "bool"
+              }
+            ]
+          },
+          {
+            "name": "lowerEndpointDigest",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "continuityRoots",
+            "type": "bytes32[]",
+            "internalType": "bytes32[]"
+          }
+        ]
+      },
+      {
+        "name": "expectedEmitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "topic0s",
+        "type": "bytes32[]",
+        "internalType": "bytes32[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "events",
+        "type": "tuple[]",
+        "internalType": "struct GpuTypes.VerifiedSourceEvent[]",
+        "components": [
+          {
+            "name": "id",
+            "type": "bytes32",
+            "internalType": "GpuTypes.SourceEventId"
+          },
+          {
+            "name": "locator",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.SourceEventLocator",
+            "components": [
+              {
+                "name": "chainKey",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "height",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "txIndex",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "logOrdinal",
+                "type": "uint32",
+                "internalType": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "emitter",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "topic0",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "topics",
+            "type": "bytes32[]",
+            "internalType": "bytes32[]"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "manifestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "verifier",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "SourceEventVerified",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.SourceEventId"
+      },
+      {
+        "name": "chainKey",
+        "type": "uint64",
+        "indexed": true,
+        "internalType": "uint64"
+      },
+      {
+        "name": "height",
+        "type": "uint64",
+        "indexed": true,
+        "internalType": "uint64"
+      },
+      {
+        "name": "txIndex",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "logOrdinal",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "emitter",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "ChainKeyMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "actual",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "EmitterNotRegistered",
+    "inputs": [
+      {
+        "name": "emitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "topic0",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "EncodingUnsupported",
+    "inputs": [
+      {
+        "name": "encoding",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InputTooLarge",
+    "inputs": [
+      {
+        "name": "size",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ManifestMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "actual",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MockNotAllowedInProfile",
+    "inputs": [
+      {
+        "name": "profile",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NativeVerificationFailed",
+    "inputs": [
+      {
+        "name": "reason",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoMatchingLogs",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReceiptNotSuccessful",
+    "inputs": [
+      {
+        "name": "status",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TransactionTypeUnsupported",
+    "inputs": [
+      {
+        "name": "txType",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  }
+]

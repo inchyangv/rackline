@@ -656,7 +656,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-029 — Solidity 공통 타입·인터페이스·이벤트
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, solc 0.8.28; docs/gpu/execution/GPU-029.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-011, GPU-012, GPU-013, GPU-014
 - 근거: PIVOT §6~7; 기존 `contracts/interfaces/`는 구조 참고만 사용.

@@ -1,0 +1,510 @@
+[
+  {
+    "type": "function",
+    "name": "accrue",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allocate",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "received",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.RepayResult",
+        "components": [
+          {
+            "name": "requested",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "received",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "applied",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "feePaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "interestPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "principalPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "excess",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "newDebt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "freezeAccrual",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "legalDebtAt",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recordDraw",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "recordFee",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "reason",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setRate",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "rateBps",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "unpaidInterestAt",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "view_",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.FacilityLedgerView",
+        "components": [
+          {
+            "name": "state",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.FacilityState"
+          },
+          {
+            "name": "loanAsset",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.AssetRef",
+            "components": [
+              {
+                "name": "chainId",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "decimals",
+                "type": "uint8",
+                "internalType": "uint8"
+              }
+            ]
+          },
+          {
+            "name": "principal",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "unpaidInterest",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "fees",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reservedDraws",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "rateBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "lastAccrualAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maturityAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "termsVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "policyVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "executionProfile",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.ExecutionProfile"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AccrualFrozen",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "at",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Accrued",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "interestUnits",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "from",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "to",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "rateBps",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Allocated",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "feePaid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "interestPaid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "principalPaid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "excess",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newDebt",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Drawn",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newPrincipal",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeCharged",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "reason",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RateSegmentAdded",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "start",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "rateBps",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AccrualBackwards",
+    "inputs": [
+      {
+        "name": "last",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "requested",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "CapitalizationDisabled",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotLedgerWriter",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAmount",
+    "inputs": []
+  }
+]

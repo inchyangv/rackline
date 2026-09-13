@@ -10,7 +10,7 @@ local starting line for R2 work.
 | Tool | Version | Source |
 | --- | --- | --- |
 | forge / cast / anvil | 1.4.2-stable (commit `828441d`, built 2025-10-18) | `forge --version` |
-| solc (via foundry.toml) | 0.8.24, evm `london`, optimizer 200 runs | `foundry.toml` |
+| solc (via foundry.toml) | 0.8.24 at baseline → **0.8.28 since GPU-029** (official Attestcoin files need ^0.8.28; legacy suite unchanged), evm `london`, optimizer 200 runs | `foundry.toml` |
 | forge-std | v1.14.0 (`1801b05`) | `foundry.lock`, `git submodule status` |
 | node / npm | v22.22.2 / 10.9.7 | `node --version`, `npm --version` |
 | Python (project env) | 3.13.7 in `.venv-py313/` (Homebrew `python@3.13`) | created by GPU-000 |

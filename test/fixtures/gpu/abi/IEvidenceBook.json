@@ -1,0 +1,318 @@
+[
+  {
+    "type": "function",
+    "name": "consume",
+    "inputs": [
+      {
+        "name": "ev",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.VerifiedSourceEvent",
+        "components": [
+          {
+            "name": "id",
+            "type": "bytes32",
+            "internalType": "GpuTypes.SourceEventId"
+          },
+          {
+            "name": "locator",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.SourceEventLocator",
+            "components": [
+              {
+                "name": "chainKey",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "height",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "txIndex",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "logOrdinal",
+                "type": "uint32",
+                "internalType": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "emitter",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "topic0",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "topics",
+            "type": "bytes32[]",
+            "internalType": "bytes32[]"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "manifestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "verifier",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      },
+      {
+        "name": "economicEventId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.EconomicEventId"
+      },
+      {
+        "name": "providerId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.ProviderId"
+      },
+      {
+        "name": "accountKey",
+        "type": "bytes32",
+        "internalType": "GpuTypes.AccountKey"
+      },
+      {
+        "name": "meaning",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.EvidenceMeaning"
+      },
+      {
+        "name": "validUntil",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "economicEventSeen",
+    "inputs": [
+      {
+        "name": "economicEventId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.EconomicEventId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isConsumed",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.SourceEventId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "record",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.SourceEventId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IEvidenceBook.EvidenceRecord",
+        "components": [
+          {
+            "name": "id",
+            "type": "bytes32",
+            "internalType": "GpuTypes.SourceEventId"
+          },
+          {
+            "name": "economicEventId",
+            "type": "bytes32",
+            "internalType": "GpuTypes.EconomicEventId"
+          },
+          {
+            "name": "providerId",
+            "type": "bytes32",
+            "internalType": "GpuTypes.ProviderId"
+          },
+          {
+            "name": "accountKey",
+            "type": "bytes32",
+            "internalType": "GpuTypes.AccountKey"
+          },
+          {
+            "name": "meaning",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.EvidenceMeaning"
+          },
+          {
+            "name": "method",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.VerificationMethod"
+          },
+          {
+            "name": "trust",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.Trust"
+          },
+          {
+            "name": "consumer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "manifestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "provenAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "validUntil",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "EconomicEventFirstSeen",
+    "inputs": [
+      {
+        "name": "economicEventId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.EconomicEventId"
+      },
+      {
+        "name": "firstSourceEventId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.SourceEventId"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SourceEventConsumed",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.SourceEventId"
+      },
+      {
+        "name": "economicEventId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.EconomicEventId"
+      },
+      {
+        "name": "consumer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "meaning",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.EvidenceMeaning"
+      },
+      {
+        "name": "manifestHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AlreadyConsumed",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.SourceEventId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ConsumerNotAllowed",
+    "inputs": [
+      {
+        "name": "consumer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotFromVerifier",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "StaleVerification",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "GpuTypes.SourceEventId"
+      }
+    ]
+  }
+]

@@ -1,0 +1,315 @@
+[
+  {
+    "type": "function",
+    "name": "allocate",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.RepayResult",
+        "components": [
+          {
+            "name": "requested",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "received",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "applied",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "feePaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "interestPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "principalPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "excess",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "newDebt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "received",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "total",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "allocated",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recordDestinationReceipt",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "sourceRef",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refundExcess",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refundable",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AllocationApplied",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "applied",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "excess",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DestinationReceiptRecorded",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sourceRef",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ExcessRefunded",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AllocationExceedsReceipt",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "allocated",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "received",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DuplicateSettlement",
+    "inputs": [
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NothingToRefund",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "WrongAsset",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "actual",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+]

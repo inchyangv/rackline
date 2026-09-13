@@ -4,13 +4,20 @@ out = "out"
 libs = ["lib"]
 test = "test"
 script = "script"
+remappings = ["@gluwa/asc-contracts/contracts/=contracts/gpu/vendor/attestcoin/"]
 
-solc = "0.8.24"
+# 0.8.28: required by the vendored official Attestcoin files (^0.8.28); legacy contracts (^0.8.24) compile unchanged.
+# london: no PUSH0/transient storage; matches the Creditcoin EVM assumption made by the v1 deployment.
+solc = "0.8.28"
 evm_version = "london"
 optimizer = true
 optimizer_runs = 200
+# Read-only access to fixtures for vm.readFile (enum parity, ABI fixtures). No write permissions.
+fs_permissions = [{ access = "read", path = "./test/fixtures" }]
 
 [fmt]
+# Vendored official Attestcoin files are byte-pinned (contracts/gpu/vendor/attestcoin/VENDORED.md).
+ignore = ["contracts/gpu/vendor/**"]
 bracket_spacing = true
 int_types = "long"
 line_length = 120
