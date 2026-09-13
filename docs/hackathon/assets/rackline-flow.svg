@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Rackline settlement to repayment flow</title>
+  <desc id="desc">A five-step flow from a GPU network settlement through controlled escrow and Attestcoin verification to a Rackline credit facility and cash repayment at the vault.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#ef6a2f"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="520" rx="28" fill="#f4f0e8"/>
+  <text x="80" y="75" fill="#161616" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700">Settlement to repayment</text>
+  <text x="80" y="112" fill="#5d5a54" font-family="Arial, Helvetica, sans-serif" font-size="20">Credit opens against a current receivable. Debt falls after the vault receives cash.</text>
+
+  <path d="M330 278 H382" stroke="#ef6a2f" stroke-width="8" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M630 278 H682" stroke="#ef6a2f" stroke-width="8" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M930 278 H982" stroke="#ef6a2f" stroke-width="8" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M1230 278 H1282" stroke="#ef6a2f" stroke-width="8" stroke-linecap="round" marker-end="url(#arrow)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="80" y="175" width="250" height="205" rx="18" fill="#1a1a1a"/>
+    <rect x="380" y="175" width="250" height="205" rx="18" fill="#1a1a1a"/>
+    <rect x="680" y="175" width="250" height="205" rx="18" fill="#1a1a1a"/>
+    <rect x="980" y="175" width="250" height="205" rx="18" fill="#1a1a1a"/>
+    <rect x="1280" y="175" width="240" height="205" rx="18" fill="#1a1a1a"/>
+  </g>
+
+  <g fill="#ef6a2f" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700">
+    <text x="110" y="218">01  EARN</text>
+    <text x="410" y="218">02  CONTROL</text>
+    <text x="710" y="218">03  VERIFY</text>
+    <text x="1010" y="218">04  FINANCE</text>
+    <text x="1310" y="218">05  COLLECT</text>
+  </g>
+
+  <g fill="#f4f0e8" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">
+    <text x="110" y="267">GPU network</text>
+    <text x="410" y="267">Controlled escrow</text>
+    <text x="710" y="267">Attestcoin</text>
+    <text x="1010" y="267">Rackline facility</text>
+    <text x="1310" y="267">Vault receipt</text>
+  </g>
+
+  <g fill="#bdb8af" font-family="Arial, Helvetica, sans-serif" font-size="18">
+    <text x="110" y="307">Confirms an unpaid</text>
+    <text x="110" y="334">operator settlement</text>
+    <text x="410" y="307">Payer-recognized</text>
+    <text x="410" y="334">E2 payment path</text>
+    <text x="710" y="307">Native source-event</text>
+    <text x="710" y="334">proof on Creditcoin</text>
+    <text x="1010" y="307">Borrowing base and</text>
+    <text x="1010" y="334">stablecoin draw</text>
+    <text x="1310" y="307">Cash allocation</text>
+    <text x="1310" y="334">through repayFor</text>
+  </g>
+
+  <text x="80" y="440" fill="#5d5a54" font-family="Arial, Helvetica, sans-serif" font-size="18">SOURCE CHAIN</text>
+  <line x1="80" y1="457" x2="630" y2="457" stroke="#b8b2a8" stroke-width="2"/>
+  <text x="680" y="440" fill="#5d5a54" font-family="Arial, Helvetica, sans-serif" font-size="18">CREDITCOIN</text>
+  <line x1="680" y1="457" x2="1520" y2="457" stroke="#b8b2a8" stroke-width="2"/>
+</svg>
