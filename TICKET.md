@@ -1234,7 +1234,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-077 — source 금융 이벤트·입금 출처·중복 방지 구현
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 20 tests; partnerSourceBinding=UNCONFIGURED, 공개 testnet 배포는 GPU-080; docs/gpu/execution/GPU-077.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-029, GPU-030, GPU-076
 - 근거: GPU-076 event 계약; PIVOT §4/6/10. GPU-037 escrow/waterfall과 순환하지 않도록 여기서는 최소 source 상태/수령/event 모듈을 구현한다.

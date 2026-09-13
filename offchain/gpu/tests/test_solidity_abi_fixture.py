@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 21, [f.name for f in files]  # 13 interfaces + 4 GPU-030 + GPU-078/031/033/032 implementations
+    assert len(files) == 23, [f.name for f in files]  # 13 + ISourceEscrow interfaces, 4 GPU-030 + GPU-078/031/033/032/077 impls
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()
@@ -70,6 +70,16 @@ def test_interface_abis_have_no_btc_fields_and_expected_surface():
     assert {"createAgreement", "bumpVersion", "observe", "revoke", "release", "isEffective", "isFresh"} <= cnames
     # no proof/lock-event input and no automatic E2 promotion path on the control registry (R2)
     assert not {"recordLockProof", "promoteToE2", "setGradeFromProof"} & cnames
+    escrow = json.loads((ABI_DIR / "SourceEscrow.json").read_text())
+    enames = {e.get("name") for e in escrow}
+    assert {"settle", "recognizeObligation", "correctObligation", "anchorStatement", "partnerSourceBinding"} <= enames
+    assert "notify" not in enames and "reportBalance" not in enames  # no arbitrary notify(amount) path (GPU-077)
+    topic_fixture = json.loads((REPO / "test" / "fixtures" / "gpu" / "attestcoin" / "source-events-v1.abi.json").read_text())
+    escrow_events = {e["name"]: e for e in escrow if e.get("type") == "event"}
+    for ev in topic_fixture["events"]:
+        assert ev["name"] in escrow_events, ev["name"]
+        sig = ev["name"] + "(" + ",".join(i["type"] for i in escrow_events[ev["name"]]["inputs"]) + ")"
+        assert sig == ev["signature"], sig
     impl_book = json.loads((ABI_DIR / "EvidenceBook.json").read_text())
     inames = {e.get("name") for e in impl_book}
     assert bnames - {None} <= inames
