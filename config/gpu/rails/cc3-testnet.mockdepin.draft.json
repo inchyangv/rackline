@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "railId": "cc3-testnet.mockdepin.draft.v1",
+  "executionProfile": "NATIVE_TESTNET",
+  "railStatus": "TEST_ONLY",
+  "partnerSourceBinding": "UNCONFIGURED",
+  "providerSlug": "mockdepin-testonly",
+  "evidence": {
+    "attestcoinManifestId": "cc3-testnet.sepolia.v1",
+    "attestcoinManifestHash": "sha256:2b0162d0c206f421138269a721c6338d8cf294d67dc644bb8b35ebb9bfbff6bb",
+    "requiredVerification": "ATTESTCOIN_NATIVE"
+  },
+  "debtChain": {
+    "name": "Creditcoin CC3 testnet",
+    "chainId": 102031,
+    "rpcUrls": ["https://rpc.cc3-testnet.creditcoin.network"],
+    "explorerUrls": [],
+    "finality": "finalized"
+  },
+  "sourceChain": {
+    "name": "Sepolia",
+    "chainId": 11155111,
+    "chainKey": 1,
+    "encoding": 1,
+    "attestationGenesis": 0,
+    "rpcUrls": ["https://ethereum-sepolia-rpc.publicnode.com"],
+    "explorerUrls": [],
+    "finality": "attestation",
+    "supportStatus": "PROBED"
+  },
+  "assets": {
+    "sourceToken": { "symbol": "TEST_ONLY-USDC", "address": null, "decimals": 6, "issuerRef": "test token deployed by GPU-080 under approval", "status": "UNCONFIRMED" },
+    "loanToken": { "symbol": "TEST_ONLY-mUSDT", "address": null, "decimals": 6, "issuerRef": "legacy testnet fixture token; production loan currency = SR-O01", "status": "UNCONFIRMED" }
+  },
+  "escrow": {
+    "contract": "contracts/gpu/source/SourceEscrow.sol",
+    "address": null,
+    "deploymentTx": null,
+    "codeHash": null,
+    "status": "UNCONFIRMED"
+  },
+  "conversion": {
+    "kind": "none-in-testnet (source token == loan-currency equivalent for the technical test)",
+    "status": "DISABLED",
+    "counterparty": null,
+    "contract": null,
+    "feeModel": null,
+    "failureOwner": "TREASURY",
+    "recoveryProcedure": null,
+    "limits": { "minOutBps": null, "maxSlippageBps": null, "priceValiditySeconds": null, "perLegCapBaseUnits": null }
+  },
+  "settlement": {
+    "kind": "manual test transfer to the destination vault (settlement=NOT_TESTED until GPU-080/056)",
+    "status": "UNCONFIRMED",
+    "counterparty": null,
+    "contract": null,
+    "feeModel": null,
+    "failureOwner": "TREASURY",
+    "recoveryProcedure": null
+  },
+  "notes": [
+    "TEST_ONLY rail for the G-ASC technical test (GPU-080). partnerRevenue=SIMULATED; no partner, no E2, no real cash path.",
+    "A PRODUCTION rail needs SR-O01..O04 answers, a GPU-062 read-only probe, and every leg status != UNCONFIRMED (validator rule)."
+  ]
+}

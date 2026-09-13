@@ -15,6 +15,7 @@ import { BLOCK_PROVER_MUTABILITY, EXPECTED_BLOCK_PROVER_SIGNATURES, EXPECTED_CHA
 import { type Manifest, computeManifestHash, validateManifest } from "./manifest";
 import { probeManifest } from "./probe";
 import { renderWireFixtures } from "./wire-fixtures";
+import { loadRail, railManifestDir, validateRail } from "./rails";
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const MANIFEST_DIR = path.join(REPO_ROOT, "config", "attestcoin");
@@ -75,6 +76,36 @@ function cmdCheck(): number {
       failed ||= !v.ok;
     } catch (e) {
       console.log(`manifest ${f}: unreadable: ${(e as Error).message}`);
+      failed = true;
+    }
+  }
+  // settlement rails (GPU-008): every rail must reference an existing, hash-matching attestcoin manifest
+  const railDir = railManifestDir(REPO_ROOT);
+  let rails: string[] = [];
+  try {
+    rails = readdirSync(railDir).filter((f) => f.endsWith(".json"));
+  } catch {
+    rails = [];
+  }
+  for (const f of rails) {
+    try {
+      const rail = loadRail(path.join(railDir, f));
+      let ref: Manifest | null = null;
+      for (const mf of manifests) {
+        try {
+          const m = readManifest(path.join(MANIFEST_DIR, mf));
+          if (m.manifestId === rail.evidence?.attestcoinManifestId) ref = m;
+        } catch {
+          /* reported above */
+        }
+      }
+      const v = validateRail(rail, ref);
+      console.log(`rail ${f}: ${v.ok ? "VALID" : "INVALID"} profile=${rail.executionProfile} status=${rail.railStatus} binding=${rail.partnerSourceBinding}`);
+      for (const e of v.errors) console.log(`  error: ${e}`);
+      for (const w of v.warnings) console.log(`  warn: ${w}`);
+      failed ||= !v.ok;
+    } catch (e) {
+      console.log(`rail ${f}: unreadable: ${(e as Error).message}`);
       failed = true;
     }
   }

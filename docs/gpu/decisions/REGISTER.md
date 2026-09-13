@@ -9,6 +9,7 @@ Ledgers this register indexes (do not duplicate their text; edit them in place):
 - `attestcoin-first.md` — R2 architecture decisions R2-D01…D14 (FIXED) and R2-O01…O09 (OPEN/DECIDED).
 - `../product-term-sheet.md` — first-product terms (DRAFT v0.1) with TS-O01…O11.
 - `../accounting-regressions.md` — AR-01…AR-08 correct-value constants (acceptance expectations).
+- `settlement-rails.md` — GPU-008 ADR (DRAFT v0.1): SR-D01…D08 (FIXED baseline rails) and SR-O01…O06 (OPEN, mostly aliases of R2-O0x/TS-O02).
 
 ## 1. Product decisions — FIXED
 
@@ -53,6 +54,7 @@ Ledgers this register indexes (do not duplicate their text; edit them in place):
 | R2-O07 | Legacy `RelayerSigVerifier` retire vs. repurpose for OFFCHAIN_ASSERTION | OPEN — GPU-013/029/060 |
 | R2-O08 | Hackathon-facing docs | see ledger §3 (resolution recorded there by GPU-065) |
 | R2-O09 | Approved public-testnet budget for GPU-080 | OPEN — external approval |
+| SR-O01…O06 | Settlement rails: loan token issuer, partner payout/obligation contracts, bridge/settlement partner, conversion venues/limits, API-only fallback decision, alternate vault chain | OPEN — `settlement-rails.md` §7 (GPU-008 DRAFT; production rail manifest cannot be created until resolved) |
 
 ## 4. Change control
 

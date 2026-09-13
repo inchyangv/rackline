@@ -381,7 +381,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-008 — Creditcoin·공식 source 적합성·자산·환전·결제 레일 ADR
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, DRAFT v0.1 + OPEN SR-O01~O06; rail schema/validator ASC-CHECK 통합; 파트너 rail 전부 UNCONFIRMED/DISABLED; docs/gpu/execution/GPU-008.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-003, GPU-075
 - 선택 선행: 실제 source 결정을 확정할 때 GPU-004 또는 GPU-005의 선택 파트너 자료 필요. 초안/지원표는 먼저 작성 가능.

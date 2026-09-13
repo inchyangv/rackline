@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rackline.dev/schema/settlement-rails-v1.schema.json",
+  "title": "Settlement rail manifest v1 (GPU-008)",
+  "description": "One rail per (provider, environment): where facts are proven (Attestcoin manifest), where money moves (source escrow -> conversion -> bridge/settlement -> Creditcoin destination). Facts and funds are separate rails; only destination receipt + allocation reduces debt (SR-D03). null is the only honest value for an unknown address/URL.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "railId", "executionProfile", "railStatus", "partnerSourceBinding", "providerSlug", "evidence", "debtChain", "sourceChain", "assets", "escrow", "conversion", "settlement", "notes"],
+  "$defs": {
+    "status": { "type": "string", "enum": ["UNCONFIRMED", "PROBED", "APPROVED", "DISABLED"] },
+    "address": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{40}$" },
+    "hexHash": { "type": ["string", "null"], "pattern": "^0x[0-9a-fA-F]{64}$" },
+    "urlList": { "type": "array", "items": { "type": "string", "pattern": "^https?://" } },
+    "leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "status", "counterparty", "contract", "feeModel", "failureOwner", "recoveryProcedure"],
+      "properties": {
+        "kind": { "type": "string" },
+        "status": { "$ref": "#/$defs/status" },
+        "counterparty": { "type": ["string", "null"] },
+        "contract": { "$ref": "#/$defs/address" },
+        "feeModel": { "type": ["string", "null"] },
+        "failureOwner": { "type": ["string", "null"], "description": "role that owns retry/recovery for this leg" },
+        "recoveryProcedure": { "type": ["string", "null"] },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minOutBps": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+            "maxSlippageBps": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+            "priceValiditySeconds": { "type": ["integer", "null"], "minimum": 0 },
+            "perLegCapBaseUnits": { "type": ["string", "null"], "pattern": "^[0-9]+$" }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "railId": { "type": "string", "pattern": "^[a-z0-9.-]+$" },
+    "executionProfile": { "type": "string", "enum": ["LOCAL_MOCK", "NATIVE_TESTNET", "PRODUCTION"] },
+    "railStatus": { "type": "string", "enum": ["TEST_ONLY", "DISABLED", "PILOT_APPROVED"] },
+    "partnerSourceBinding": { "type": "string", "enum": ["UNCONFIGURED", "VERIFIED"] },
+    "providerSlug": { "type": "string" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attestcoinManifestId", "attestcoinManifestHash", "requiredVerification"],
+      "properties": {
+        "attestcoinManifestId": { "type": "string" },
+        "attestcoinManifestHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "requiredVerification": { "const": "ATTESTCOIN_NATIVE" }
+      }
+    },
+    "debtChain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "chainId", "rpcUrls", "explorerUrls", "finality"],
+      "properties": {
+        "name": { "type": "string" },
+        "chainId": { "type": "integer", "enum": [31337, 102030, 102031, 102032] },
+        "rpcUrls": { "$ref": "#/$defs/urlList" },
+        "explorerUrls": { "$ref": "#/$defs/urlList" },
+        "finality": { "type": "string", "enum": ["finalized"] }
+      }
+    },
+    "sourceChain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "chainId", "chainKey", "encoding", "attestationGenesis", "rpcUrls", "explorerUrls", "finality", "supportStatus"],
+      "properties": {
+        "name": { "type": "string" },
+        "chainId": { "type": "integer", "minimum": 1 },
+        "chainKey": { "type": "integer", "minimum": 1 },
+        "encoding": { "const": 1 },
+        "attestationGenesis": { "type": ["integer", "null"], "minimum": 0 },
+        "rpcUrls": { "$ref": "#/$defs/urlList" },
+        "explorerUrls": { "$ref": "#/$defs/urlList" },
+        "finality": { "type": "string", "enum": ["attestation"], "description": "facts exist only at attested heights" },
+        "supportStatus": { "$ref": "#/$defs/status" }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceToken", "loanToken"],
+      "properties": {
+        "sourceToken": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["symbol", "address", "decimals", "issuerRef", "status"],
+          "properties": {
+            "symbol": { "type": "string" },
+            "address": { "$ref": "#/$defs/address" },
+            "decimals": { "type": ["integer", "null"], "minimum": 0, "maximum": 36 },
+            "issuerRef": { "type": ["string", "null"] },
+            "status": { "$ref": "#/$defs/status" }
+          }
+        },
+        "loanToken": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["symbol", "address", "decimals", "issuerRef", "status"],
+          "properties": {
+            "symbol": { "type": "string" },
+            "address": { "$ref": "#/$defs/address" },
+            "decimals": { "type": ["integer", "null"], "minimum": 0, "maximum": 36 },
+            "issuerRef": { "type": ["string", "null"] },
+            "status": { "$ref": "#/$defs/status" }
+          }
+        }
+      }
+    },
+    "escrow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "address", "deploymentTx", "codeHash", "status"],
+      "properties": {
+        "contract": { "type": "string" },
+        "address": { "$ref": "#/$defs/address" },
+        "deploymentTx": { "$ref": "#/$defs/hexHash" },
+        "codeHash": { "$ref": "#/$defs/hexHash" },
+        "status": { "$ref": "#/$defs/status" }
+      }
+    },
+    "conversion": { "$ref": "#/$defs/leg" },
+    "settlement": { "$ref": "#/$defs/leg" },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}
