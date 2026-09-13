@@ -4,6 +4,8 @@
  *   probe --manifest <path> [--out <path>] [--allow-mock]
  *                                      — read-only RPC/API probe of one manifest; writes a JSON report
  *   hash --manifest <path>             — print the canonical manifestHash for a manifest
+ *   gen-wire [--check]                 — regenerate the SYNTHETIC GPU-078 wire fixture with the pinned SDK encoder
+ *                                        (--check: compare only, exit 1 on drift). No network.
  * Exit codes: 0 ok, 1 check/validation failure, 2 usage error, 3 probe found FAIL/UNSUPPORTED.
  */
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -12,9 +14,11 @@ import { loadPinnedAbi, signatureSetHash } from "./abi";
 import { BLOCK_PROVER_MUTABILITY, EXPECTED_BLOCK_PROVER_SIGNATURES, EXPECTED_CHAIN_INFO_SIGNATURES, checkArtifacts } from "./artifacts";
 import { type Manifest, computeManifestHash, validateManifest } from "./manifest";
 import { probeManifest } from "./probe";
+import { renderWireFixtures } from "./wire-fixtures";
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const MANIFEST_DIR = path.join(REPO_ROOT, "config", "attestcoin");
+const WIRE_FIXTURE = path.join(REPO_ROOT, "test", "fixtures", "gpu", "attestcoin", "wire", "synthetic-obligation-v1.json");
 /** `npm --prefix <pkg> run …` sets cwd to the package; resolve user paths against where npm was invoked. */
 const USER_CWD = process.env.INIT_CWD ?? process.cwd();
 const userPath = (p: string): string => path.resolve(USER_CWD, p);
@@ -112,6 +116,24 @@ function cmdHash(args: string[]): number {
   return 0;
 }
 
+function cmdGenWire(args: string[]): number {
+  const rendered = renderWireFixtures();
+  if (args.includes("--check")) {
+    let current: string | null = null;
+    try {
+      current = readFileSync(WIRE_FIXTURE, "utf8");
+    } catch {
+      current = null;
+    }
+    const ok = current === rendered;
+    console.log(`wire fixture ${path.relative(REPO_ROOT, WIRE_FIXTURE)}: ${ok ? "REPRODUCIBLE" : "DRIFT"}`);
+    return ok ? 0 : 1;
+  }
+  writeFileSync(WIRE_FIXTURE, rendered);
+  console.log(`wrote ${path.relative(REPO_ROOT, WIRE_FIXTURE)}`);
+  return 0;
+}
+
 async function main(): Promise<number> {
   const [cmd, ...rest] = process.argv.slice(2);
   switch (cmd) {
@@ -121,8 +143,10 @@ async function main(): Promise<number> {
       return cmdProbe(rest);
     case "hash":
       return cmdHash(rest);
+    case "gen-wire":
+      return cmdGenWire(rest);
     default:
-      console.error("usage: cli <check|probe|hash> ...");
+      console.error("usage: cli <check|probe|hash|gen-wire> ...");
       return 2;
   }
 }

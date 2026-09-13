@@ -32,18 +32,20 @@ Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.
 
 ## Where to start (R2)
 
-Done (17): GPU-000/074/075/001/002/003/011/013/015/007/012/076/014/029/030 + records in
-`docs/gpu/execution/GPU-NNN.md`. READY next: GPU-078 (native verifier), GPU-016, GPU-017/018, GPU-032, GPU-008,
-GPU-060; DD tickets 004/005/006 need partner input. Toolchain: solc 0.8.28 / evm london; OpenZeppelin 5.5 is
+Done (18): GPU-000/074/075/001/002/003/011/013/015/007/012/076/014/029/030/078 + records in
+`docs/gpu/execution/GPU-NNN.md`. READY next: GPU-077 (source module), GPU-031 (EvidenceBook), GPU-032, GPU-033,
+GPU-016, GPU-017/018, GPU-008, GPU-060; DD tickets 004/005/006 need partner input. Toolchain: solc 0.8.28 / evm london; OpenZeppelin 5.5 is
 Cancun-only (mcopy) and is NOT used by `contracts/gpu` — official Attestcoin files are vendored under
 `contracts/gpu/vendor/attestcoin/` (hash-pinned). Follow each ticket's `선행`. v1 accounting defects are
 pinned in `test/diagnostic/AccountingRegressions.t.sol` (`RUN_RED_DIAGNOSTICS=true` = v2 acceptance).
 API profile rule: production API holds no key (`API_PROFILE=production` default); demo grants only under
 `testnet_demo` with `DEMO_*` vars. Status ledger = each ticket's `상태` field in `TICKET.md`.
 
-`contracts/gpu/` now has types, 13 interfaces, roles/registries/authorization verifier and a TEST_ONLY
-`MockBlockProver`; the native verifier (GPU-078), EvidenceBook (GPU-031), ledger/vault/manager and the proof
-worker (GPU-079) are still unimplemented. No native proof has been submitted (G-ASC = GPU-080).
+`contracts/gpu/` now has types, 13 interfaces, roles/registries/authorization verifier, a TEST_ONLY
+`MockBlockProver` and the native adapter `AttestcoinRevenueVerifier` (GPU-078, LOCAL_MOCK-tested only); EvidenceBook
+(GPU-031), source module (GPU-077), ledger/vault/manager and the proof worker (GPU-079) are still unimplemented.
+No native proof has been submitted (G-ASC = GPU-080). Synthetic wire fixtures are regenerated with
+`npm --prefix offchain/attestcoin run gen-wire -- --check`.
 
 ## Verification commands (existing today)
 

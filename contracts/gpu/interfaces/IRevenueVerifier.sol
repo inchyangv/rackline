@@ -35,6 +35,10 @@ interface IRevenueVerifier {
     error NoMatchingLogs();
     error InputTooLarge(uint256 size, uint256 max);
     error MockNotAllowedInProfile(GpuTypes.ExecutionProfile profile);
+    /// @notice The verified bytes could not be decoded by the official decoder (reason = decoder revert data).
+    error MalformedEncoding(bytes reason);
+    /// @notice The bound provider exists but admission is switched off (guardian/underwriter decision).
+    error ProviderNotAdmitted(GpuTypes.ProviderId providerId);
 
     function manifestHash() external view returns (bytes32);
     function sourceChain() external view returns (GpuTypes.SourceChainRef memory);

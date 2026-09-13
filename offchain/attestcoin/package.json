@@ -13,7 +13,8 @@
     "check": "tsc -p tsconfig.json --noEmit && tsx ./src/cli.ts check",
     "test": "vitest",
     "probe": "tsx ./src/cli.ts probe",
-    "hash": "tsx ./src/cli.ts hash"
+    "hash": "tsx ./src/cli.ts hash",
+    "gen-wire": "tsx ./src/cli.ts gen-wire"
   },
   "dependencies": {
     "@gluwa/asc-contracts": "0.2.1",

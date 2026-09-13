@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 17, [f.name for f in files]  # 13 interfaces + 4 GPU-030 implementations
+    assert len(files) == 18, [f.name for f in files]  # 13 interfaces + 4 GPU-030 + 1 GPU-078 implementation
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()
@@ -49,6 +49,12 @@ def test_interface_abis_have_no_btc_fields_and_expected_surface():
     verifier = json.loads((ABI_DIR / "IRevenueVerifier.json").read_text())
     vnames = {e.get("name") for e in verifier}
     assert "verifyAndExtract" in vnames and "verifySingle" not in vnames
+    assert {"NativeVerificationFailed", "MalformedEncoding", "ProviderNotAdmitted", "MockNotAllowedInProfile"} <= vnames
+    native = json.loads((ABI_DIR / "AttestcoinRevenueVerifier.json").read_text())
+    nnames = {e.get("name") for e in native}
+    assert vnames - {None} <= nnames  # implements the whole interface surface
+    # no signature / admin / SPV fallback entry points on the native adapter (R2-D03)
+    assert not {"verifyWithSignature", "adminAccept", "setResult", "forceVerified", "verifySpv"} & nnames
     book = json.loads((ABI_DIR / "IEvidenceBook.json").read_text())
     assert {"consume", "isConsumed", "economicEventSeen"} <= {e.get("name") for e in book}
 

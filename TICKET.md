@@ -1248,7 +1248,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-078 — 공식 AttestcoinRevenueVerifier·native 검증·엄격한 event 추출
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 41 tests, mock BlockProver만 — native PASS는 GPU-080; docs/gpu/execution/GPU-078.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-029, GPU-030, GPU-075, GPU-076
 - 근거: §0.9 및 GPU-075에서 고정한 공식 BlockProver interface/decoder. GPU-077 구현 자체는 선행이 아니며 확정 ABI fixture로 독립 개발한다.
