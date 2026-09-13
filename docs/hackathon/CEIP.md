@@ -1,6 +1,6 @@
 # CEIP (Creditcoin Ecosystem Investment Program) 리서치
 
-> 2026-03 v1(HashCredit) 수상 직후 작성한 리서치를 2026-09-14 v2(Rackline, GPU 매출채권 금융, R2) 기준으로 갱신했다. 프로그램 사실은 원문 유지, 우리 제품 관련 항목(§3·§4·§6·§7)만 갱신. 상태 근거는 `docs/gpu/execution/ATTESTCOIN_GAP.md`.
+> 2026-03 v1(HashCredit) 2위 수상 직후 작성한 리서치를 2026-09-14 v2(Rackline, GPU 매출채권 금융, R2) 기준으로 갱신했다. 프로그램 사실은 원문 유지, 우리 제품 관련 항목(§3·§4·§6·§7)만 갱신. 상태 근거는 `docs/gpu/execution/ATTESTCOIN_GAP.md`.
 
 ## 1. 프로그램 개요
 
@@ -151,7 +151,7 @@ BUIDL CTC 해커톤 **Top 3 수상팀**은 CEIP **Fast Track** 대상이다.
 ## 7. 타임라인 추정
 
 ```
-2026-03 중순  Demo Day (서울) — v1 수상, CEIP Fast Track 대화 시작
+2026-03 중순  Demo Day (서울) — v1 2위, CEIP Fast Track 대화 시작; BTC 마이닝 풀 협업 불가로 v1 상품화 보류
 2026-09       GPU 매출채권 금융으로 피벗 결정(R2), BUIDL CTC 2026 Fall
 2026-Q4       G-ASC(공개 테스트넷 native 검증) + 첫 파트너 실사·E2 통제 시험 → G1
 2026-Q4~27-Q1 금융 코어(G2), 단일 파트너 E2E(G3) → CEIP DD 자료 완성

@@ -1,6 +1,6 @@
 # Why We Pivoted: From Bitcoin Hashrate to GPU Receivables
 
-> Rackline v1 (then HashCredit) won BUIDL CTC Spring 2026 and issued stablecoin credit against SPV-proven Bitcoin mining payouts.
+> Rackline v1 (then HashCredit) placed 2nd at BUIDL CTC Spring 2026 (top-3 → CEIP fast track) and issued stablecoin credit against SPV-proven Bitcoin mining payouts on testnet. We did not commercialize it — §2.1 explains why.
 > Rackline (v2, formerly HashCredit) lends stablecoin working capital to GPU operators on DePIN compute networks, secured by **confirmed, unpaid receivables** assigned to a **controlled payment path**, with source-chain settlement events verified on Creditcoin through the official Attestcoin Protocol.
 >
 > Same mission: turn verifiable machine revenue into on-chain credit. Different asset, because the asset is what decides whether the lender ever gets paid.
@@ -31,7 +31,7 @@ v1 proved payouts beautifully — PoW header chains, Merkle inclusion, on-chain 
 
 Our honest answer was that enforcement lived in a contract with the mining pool that did not exist. A miner can switch pools or payout addresses in minutes. The repayment path was entirely voluntary (`repay()` pulls tokens from the caller). The "pool withholds X%" and "pool redirects hashrate" story required pools to build lender-specific infrastructure with no economic reason to do so.
 
-A credit product where the borrower alone decides whether cash reaches the lender is not a credit product. This became the first design rule for v2: **no loan unless the contracted repayment can be collected without the borrower's further consent.** The second rule followed from the same post-mortem: **no borrowing base on a source-chain fact we cannot verify natively on Creditcoin.**
+We took that answer seriously. The fast track was open, but we did not take v1 to market or raise for it: we approached the mining side and no pool had a reason to integrate a lender, so there was no counterparty to build enforcement with. A credit product where the borrower alone decides whether cash reaches the lender is not a credit product. This became the first design rule for v2: **no loan unless the contracted repayment can be collected without the borrower's further consent.** The second rule followed from the same post-mortem: **no borrowing base on a source-chain fact we cannot verify natively on Creditcoin.**
 
 ### 2.2 Our customers pivoted before we did
 
@@ -44,6 +44,8 @@ The mid-market miner we targeted is disappearing into GPU hosting:
 The machines our borrowers run are becoming GPUs. Following the revenue means following the GPU.
 
 ### 2.3 GPU receivables are financeable. Hashrate is not.
+
+What makes v2 a business rather than a second demo is the counterparty. DePIN GPU networks such as Aethir and GPU.net are named payers with published settlement schedules, operator programs and on-chain payouts — something we can integrate with, not a pool we have to persuade. Aethir's own RWA Capital program shows the payer side is open to financing partners. None of this is a partnership claim; it is why the first-partner due diligence and E2 control test are stage 0–1 of the plan.
 
 Traditional finance already lends against GPUs at scale: CoreWeave's $2.3B (2023) and $7.5B (2024) facilities led by Blackstone and Magnetar, Lambda's $500M Macquarie facility (the first GPU asset-backed structure, 2024) and its $1B facility in 2026, Fluidstack's up-to-$10B capacity, Crusoe's $425M. Neoclouds hold more than $20B of GPU-collateralized debt.
 

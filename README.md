@@ -2,7 +2,7 @@
 
 **Working capital for GPU operators, secured by revenue they have already earned — on Creditcoin.**
 
-_Formerly HashCredit (v1, BUIDL CTC Spring 2026 winner)._
+_Formerly HashCredit (v1, 2nd place at BUIDL CTC Spring 2026)._
 
 Rackline (v2) lends stablecoin working capital to operators supplying GPUs to DePIN compute networks, secured by **confirmed, unpaid receivables** assigned to a **controlled payment path**. Source-chain settlement events are verified on Creditcoin through the **official Attestcoin Protocol** (native BlockProver verification, no substitutes), and debt is reduced only when actual settlement cash reaches the vault.
 
@@ -13,7 +13,7 @@ Borrowing base = eligible unpaid receivables × advance rate → operator draws 
 Escrow receipt → approved settlement rail → vault receives loan currency → repayFor → debt falls
 ```
 
-> **Pivot notice (Sep 2026).** Rackline v1 (then HashCredit) — credit against SPV-proven Bitcoin mining payouts — won BUIDL CTC Spring 2026. We pivoted to GPU receivables because v1 could prove revenue but could not collect on it, and renamed the protocol Rackline. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the design is in [`TECH.md`](TECH.md); the product basis is `PIVOT.md`; the execution ledger is `TICKET.md` (R2); the fixed decisions are in [`docs/gpu/decisions/attestcoin-first.md`](docs/gpu/decisions/attestcoin-first.md). The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
+> **Pivot notice (Sep 2026).** Rackline v1 (then HashCredit) — credit against SPV-proven Bitcoin mining payouts — placed 2nd at BUIDL CTC Spring 2026 (top-3 → CEIP fast track). We deliberately did not commercialize v1: it could prove revenue but could not collect on it, because collection depended on Bitcoin mining pools that had no reason to integrate a lender. We pivoted to GPU receivables — where the payer is a named DePIN network with published settlement rules, on-chain payouts and an assignable receivable — and renamed the protocol Rackline. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the design is in [`TECH.md`](TECH.md); the product basis is `PIVOT.md`; the execution ledger is `TICKET.md` (R2); the fixed decisions are in [`docs/gpu/decisions/attestcoin-first.md`](docs/gpu/decisions/attestcoin-first.md). The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
 >
 > An earlier v2 draft ("GPU NFT credit": tokenized deployments, NFT lien / foreclosure, trailing-payout limits) was retired on 2026-09-14 (R2-D10/D14). NFT-collateral products are a separate, deferred decision.
 
