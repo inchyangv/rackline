@@ -1,5 +1,83 @@
 [
   {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "roles",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      },
+      {
+        "name": "control",
+        "type": "address",
+        "internalType": "contract ControlRegistry"
+      },
+      {
+        "name": "source",
+        "type": "address",
+        "internalType": "contract ISourceEscrowOwner"
+      },
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "AGREEMENT_ID",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "CONTROL",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ControlRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROLES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "SOURCE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ISourceEscrowOwner"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
     "type": "function",
     "name": "accountKey",
     "inputs": [],
@@ -8,6 +86,49 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claim",
+    "inputs": [
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "measured",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimedBalance",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -27,6 +148,42 @@
   },
   {
     "type": "function",
+    "name": "currentVersion",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "forwardClaimed",
+    "inputs": [
+      {
+        "name": "obligationRef",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "settlementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "isReleased",
     "inputs": [],
     "outputs": [
@@ -40,6 +197,258 @@
   },
   {
     "type": "function",
+    "name": "isSwept",
+    "inputs": [
+      {
+        "name": "payoutSeq",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "refundPending",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "refundUnattributed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refundableUnattributed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "release",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "returnTo",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "reserveBalance",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setRefundPending",
+    "inputs": [
+      {
+        "name": "pending",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setWaterfall",
+    "inputs": [
+      {
+        "name": "w",
+        "type": "tuple",
+        "internalType": "struct IRevenueEscrow.Waterfall",
+        "components": [
+          {
+            "name": "version",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "operatingBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "operatingCapPerSweep",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "operatingRecipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "reserveTarget",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "settlementLeg",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "residualRecipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "facilities",
+            "type": "tuple[]",
+            "internalType": "struct IRevenueEscrow.FacilityAllocation[]",
+            "components": [
+              {
+                "name": "facilityId",
+                "type": "bytes32",
+                "internalType": "GpuTypes.FacilityId"
+              },
+              {
+                "name": "target",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "claimTargets",
+            "type": "tuple[]",
+            "internalType": "struct IRevenueEscrow.ClaimTarget[]",
+            "components": [
+              {
+                "name": "target",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "selector",
+                "type": "bytes4",
+                "internalType": "bytes4"
+              },
+              {
+                "name": "recipientArgIndex",
+                "type": "uint8",
+                "internalType": "uint8"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settlementIdOf",
+    "inputs": [
+      {
+        "name": "payoutSeq",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "version",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "settlementSeq",
     "inputs": [],
     "outputs": [
@@ -47,6 +456,151 @@
         "name": "",
         "type": "uint64",
         "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sweep",
+    "inputs": [
+      {
+        "name": "payoutSeq",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "sweepCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sweptToFacility",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "waterfall",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "w",
+        "type": "tuple",
+        "internalType": "struct IRevenueEscrow.Waterfall",
+        "components": [
+          {
+            "name": "version",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "operatingBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "operatingCapPerSweep",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "operatingRecipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "reserveTarget",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "settlementLeg",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "residualRecipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "facilities",
+            "type": "tuple[]",
+            "internalType": "struct IRevenueEscrow.FacilityAllocation[]",
+            "components": [
+              {
+                "name": "facilityId",
+                "type": "bytes32",
+                "internalType": "GpuTypes.FacilityId"
+              },
+              {
+                "name": "target",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "claimTargets",
+            "type": "tuple[]",
+            "internalType": "struct IRevenueEscrow.ClaimTarget[]",
+            "components": [
+              {
+                "name": "target",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "selector",
+                "type": "bytes4",
+                "internalType": "bytes4"
+              },
+              {
+                "name": "recipientArgIndex",
+                "type": "uint8",
+                "internalType": "uint8"
+              }
+            ]
+          }
+        ]
       }
     ],
     "stateMutability": "view"

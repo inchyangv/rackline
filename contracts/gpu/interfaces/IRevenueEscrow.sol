@@ -65,4 +65,68 @@ interface IRevenueEscrow {
     function settlementSeq() external view returns (uint64);
     function controller() external view returns (address);
     function isReleased() external view returns (bool);
+
+    // ------------------------------------------------------------------ GPU-037 additions (controlled account)
+
+    /// @notice Debt-sweep priority entry: seniority by array order, each facility up to `target` (asserted cap).
+    struct FacilityAllocation {
+        GpuTypes.FacilityId facilityId;
+        uint256 target;
+    }
+
+    /// @notice Allowed upstream claim: exact (target, selector); the recipient argument at `recipientArgIndex`
+    ///         (0-based ABI word index) must be this escrow. Claim success is never control evidence.
+    struct ClaimTarget {
+        address target;
+        bytes4 selector;
+        uint8 recipientArgIndex;
+    }
+
+    /// @notice Waterfall for one control-agreement version. Order is fixed: operating allowance → reserve →
+    ///         debt sweep (to the settlement leg, by facility seniority) → residual to the borrower.
+    struct Waterfall {
+        uint32 version;
+        address token;
+        uint16 operatingBps;
+        uint256 operatingCapPerSweep;
+        address operatingRecipient;
+        uint256 reserveTarget;
+        address settlementLeg;
+        address residualRecipient;
+        FacilityAllocation[] facilities;
+        ClaimTarget[] claimTargets;
+    }
+
+    event WaterfallSet(bytes32 indexed agreementId, uint32 indexed version, address token, address settlementLeg);
+    event PayoutSwept(
+        uint64 indexed payoutSeq,
+        uint32 indexed version,
+        uint256 amount,
+        uint256 operating,
+        uint256 reserve,
+        uint256 debt,
+        uint256 residual
+    );
+    event SweptToSettlement(
+        GpuTypes.FacilityId indexed facilityId, bytes32 indexed settlementId, uint64 indexed payoutSeq, uint256 amount
+    );
+    event ClaimExecuted(address indexed target, bytes4 indexed selector, uint256 measuredDelta);
+    event ClaimForwarded(bytes32 indexed obligationRef, bytes32 indexed settlementId, uint256 amount);
+    event UnattributedRefunded(address indexed token, address indexed to, uint256 amount);
+    event RefundPendingSet(bool pending, string reason);
+
+    error NotRole(bytes32 role, address caller);
+    error NoWaterfall(uint32 version);
+    error WaterfallExists(uint32 version);
+    error WaterfallVersionMismatch(uint32 registryVersion, uint32 given);
+    error InvalidWaterfall(string reason);
+    error PayoutNotSweepable(uint64 payoutSeq, string reason);
+    error AlreadySwept(uint64 payoutSeq);
+    error ClaimNotAllowed(address target, bytes4 selector);
+    error ClaimRecipientMismatch(address expected, address actual);
+    error ClaimFailed(bytes reason);
+    error AlreadyReleased();
+    error Reentrancy();
+    error TransferFailed();
+    error MeasuredDeltaMismatch(uint256 expected, uint256 measured);
 }
