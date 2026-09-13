@@ -1194,7 +1194,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-074 — R2 결정 원장·현재 구현 inventory·문서 충돌 정리
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, docs/gpu/execution/GPU-074.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-000
 - 근거/읽기: 사용자 공식 Attestcoin 요구, 이 문서 §0.9; PIVOT §1/10, TECH §3, README, `docs/specs/USC_ADAPTER.md`, `docs/hackathon/HACKATHON_MVP_SCOPE.md`, 실제 contracts/offchain/deploy scripts.

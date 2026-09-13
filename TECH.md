@@ -2,6 +2,8 @@
 
 > Rackline, formerly HashCredit. GPU NFT credit on Creditcoin: Attestcoin-proven revenue, on-chain payment control, self-repaying facilities.
 > v1 (Bitcoin SPV) technical note is archived in git history and under `archive/v1-btc/` (local).
+>
+> **R2 note (2026-09-14).** This note describes the hackathon/v2 design. The production execution ledger is `TICKET.md` (R2) and the fixed decisions are in `docs/gpu/decisions/attestcoin-first.md`. Where this note conflicts with R2 — attested/self-signed fallback (none exists), trailing-payout borrowing base (first product is confirmed *unpaid* receivables), NFT lien/foreclosure as enforcement (E2 is partner/legal control), transaction-level replay key (log-level consumption key) — the R2 ledger prevails. **None of the v2 components below are implemented in this repository as of 2026-09-14**; see `docs/gpu/execution/ATTESTCOIN_GAP.md`.
 
 ---
 
@@ -35,7 +37,7 @@ Sustained default → GpuNodeNFT forecloses to the vault
 | `GpuNodeNFT` (ERC-721) | One token per registered deployment. Stores `provider`, `sku`, `unitCount`, `hardwareHash`, `sourceChainKey`, `nodeAccount`, `status`. `lock(tokenId)` / `unlock(tokenId)` callable only by the credit manager; transfers revert while locked; `foreclose(tokenId, to)` moves a defaulted token to the vault. Duplicate `hardwareHash` mints revert. |
 | `IRevenueVerifier` | `verifyRevenue(bytes proof) returns (RevenueEvidence)`. Successor of v1's `IVerifierAdapter`; provider- and chain-neutral. |
 | `AttestcoinRevenueVerifier` | Implements `IRevenueVerifier` over the BlockProver precompile. See §3. |
-| `RelayerSigVerifier` (v1, retained) | EIP-712 attested evidence for chains Attestcoin does not cover yet. Evidence from this adapter is labeled *attested*, never *proven*, and gets a lower advance rate in `RiskConfig`. |
+| `RelayerSigVerifier` (v1, legacy) | Not a v2 evidence adapter. Under R2 there is no attested evidence class and no lower advance rate: sources Attestcoin does not support are `UNSUPPORTED_SOURCE`. Auxiliary signatures (wallet auth, agreement consent, underwriting approval) use separate domains and never create borrowing base. |
 | `GpuCreditManager` | Facilities keyed by `tokenId`. Records evidence (replay-protected), maintains trailing net revenue, computes the limit, executes `borrow`, `repay`, `repayFor`, draw freeze, default and foreclosure. Separate `pauseDraws()` and `pauseRepayments()`; the latter is never used in normal incidents. |
 | `LendingVault` (v2) | Stablecoin LP pool. Single ledger for principal / accrued interest / fees per facility; partial interest payments preserve the unpaid balance; APR changes never apply retroactively; first-loss `reserve`; `recognizeLoss` / `recordRecovery`; withdrawals limited to available cash. |
 | `RiskConfig` (v2) | `advanceRateBps` (per evidence class), `trailingWindow`, `evidenceMaxAge`, `perNodeCap`, `perProviderCap`, `globalCap`, `reserveBps`, `sweepBps`, `defaultGraceSeconds`. |
@@ -87,7 +89,7 @@ struct RevenueEvidence {
     uint64  blockHeight;
     uint32  txIndex;
     uint64  timestamp;      // source block timestamp
-    uint8   evidenceClass;  // 0 = Attestcoin-proven, 1 = relayer-attested
+    uint8   evidenceClass;  // R2: only native-proven evidence enters the borrowing base; no attested class
 }
 ```
 
@@ -97,7 +99,7 @@ Rules enforced in the verifier:
 - Replay key = `keccak256(chainKey, blockHeight, txIndex)` at the verifier; the manager additionally keys on `(tokenId, chainKey, blockHeight, txIndex)`.
 - Token allow-list per provider (`RiskConfig`); unknown payout tokens are recorded but excluded from the borrowing base.
 
-Environments (from Attestcoin docs, 2026-09): CC3 testnet sources are Ethereum Sepolia (chainkey 1) and Ethereum mainnet (chainkey 3); CC3 mainnet source is Ethereum mainnet (chainkey 1). Precompiles: BlockProver `0x...0FD2`, ChainInfo `0x...0FD3`. SDK: `@gluwa/usc-sdk`. Chains not yet supported (e.g. Arbitrum) fall back to the attested adapter with a lower advance rate.
+Environments (from Attestcoin docs, 2026-09): CC3 testnet sources are Ethereum Sepolia (chainkey 1) and Ethereum mainnet (chainkey 3); CC3 mainnet source is Ethereum mainnet (chainkey 1). Precompiles: BlockProver `0x...0FD2`, ChainInfo `0x...0FD3`. SDK: `@gluwa/usc-sdk`. These values are doc-confirmed, not runtime-verified (GPU-075 pins them). Chains not supported by Attestcoin are `UNSUPPORTED_SOURCE`: no admission and no fallback adapter (R2-D08).
 
 ---
 
@@ -157,7 +159,7 @@ Regression vectors from the v1 review (e.g. $5,000 at 10% for one year, $250 par
 | `HashCreditManager` | `GpuCreditManager` (facility-per-NFT, `repayFor`, lien, separate pauses) |
 | `LendingVault` | `LendingVault` v2 (corrected accounting, reserve, loss recognition) |
 | `RiskConfig` | `RiskConfig` v2 (GPU policy, evidence classes, freshness) |
-| `RelayerSigVerifier` | retained as the attested adapter |
+| `RelayerSigVerifier` | legacy; not a v2 evidence path (no attested substitute for native proof) |
 | `BtcSpvVerifier`, `CheckpointManager`, `BitcoinLib`, prover worker | legacy; not deployed on the v2 path |
 | Wallet UX, Zustand stores, shared UI, Foundry invariants, Railway / Vercel | reused |
 
@@ -172,7 +174,7 @@ Regression vectors from the v1 review (e.g. $5,000 at 10% for one year, $250 par
 | Partner receiver lock (E2) | Enforced at the `NodeAccount` controller only; partner-level lock is the Phase 1 PoC |
 | Provider statements | Fixture data in the API |
 
-Everything else — mint, Attestcoin verification, limit computation, draw, lien, sweep, `repayFor`, LP accounting — runs as real contracts on Creditcoin CC3 testnet.
+Everything else — mint, Attestcoin verification, limit computation, draw, lien, sweep, `repayFor`, LP accounting — is designed to run as real contracts on Creditcoin CC3 testnet. As of 2026-09-14 none of it is implemented or deployed from this repository (planned; `docs/gpu/execution/ATTESTCOIN_GAP.md`).
 
 ---
 

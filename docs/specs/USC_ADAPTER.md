@@ -3,6 +3,8 @@
 > How Rackline (formerly HashCredit) mirrors Creditcoin's Universal Smart Contract architecture,
 > why our BTC SPV implementation is a valid instantiation of the same pattern,
 > and how we transition to native USC when it ships.
+>
+> **Legacy v1 reference — superseded by R2 (2026-09-14).** This document is not the official ABI ledger. The interface names, endpoint, and encoding shown here come from earlier docs and are UNCONFIRMED until GPU-075 pins the official Attestcoin artifacts. Under R2 (`docs/gpu/decisions/attestcoin-first.md`) BTC SPV, EIP-712 attestation, and adapter hot-swap are not substitutes for official native verification; the "same pattern" argument below is historical rationale, not a production path.
 
 ---
 

@@ -15,16 +15,16 @@ Next payout → sweep → repayFor(tokenId) → debt falls
 Sustained default → NFT forecloses to the vault
 ```
 
-> **Pivot notice (Sep 2026).** Rackline v1 (then HashCredit) — credit against SPV-proven Bitcoin mining payouts — won BUIDL CTC Spring 2026. We pivoted to GPU NFTs because v1 could prove revenue but could not collect on it, and renamed the protocol Rackline to match the asset. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the v2 design is in [`TECH.md`](TECH.md); the production plan is in `PIVOT.md` / `TICKET.md`. The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
+> **Pivot notice (Sep 2026).** Rackline v1 (then HashCredit) — credit against SPV-proven Bitcoin mining payouts — won BUIDL CTC Spring 2026. We pivoted to GPU NFTs because v1 could prove revenue but could not collect on it, and renamed the protocol Rackline to match the asset. Contract, env and API identifiers keep their legacy `HashCredit*` names. The reasoning is in [`docs/hackathon/WHY_WE_PIVOTED.md`](docs/hackathon/WHY_WE_PIVOTED.md); the v2 design is in [`TECH.md`](TECH.md); the production plan is in `PIVOT.md` / `TICKET.md`; the fixed production decisions (R2, official Attestcoin native verification required) are in `docs/gpu/decisions/attestcoin-first.md`. The v1 contracts remain in this repository and on Creditcoin testnet as legacy.
 
 ## Status
 
 | Layer | v2 Rackline (GPU NFT) | v1 HashCredit (Bitcoin SPV, legacy) |
 |---|---|---|
-| Contracts | `GpuNodeNFT`, `AttestcoinRevenueVerifier`, `GpuCreditManager`, `LendingVault` v2, `RiskConfig` v2 — *hackathon vertical slice, see `docs/hackathon/HACKATHON_MVP_SCOPE.md`* | `HashCreditManager`, `LendingVault`, `BtcSpvVerifier`, `CheckpointManager`, `RiskConfig`, `PoolRegistry` — live on testnet |
-| Source chain | `NodeAccount` (+ registry), `MockDePINPayout` on Sepolia | — |
-| Off-chain | keeper (proof fetch → record → sweep → repayFor) | FastAPI proof builder, SPV prover worker |
-| Frontend | Operator / Node / Pool tabs | Dashboard / Pool tabs |
+| Contracts | `GpuNodeNFT`, `AttestcoinRevenueVerifier`, `GpuCreditManager`, `LendingVault` v2, `RiskConfig` v2 — *planned; not implemented in this repository as of 2026-09-14 (hackathon slice: `docs/hackathon/HACKATHON_MVP_SCOPE.md`; gap inventory: `docs/gpu/execution/ATTESTCOIN_GAP.md`)* | `HashCreditManager`, `LendingVault`, `BtcSpvVerifier`, `CheckpointManager`, `RiskConfig`, `PoolRegistry` — deployed to testnet (v1) |
+| Source chain | `NodeAccount` (+ registry), `MockDePINPayout` on Sepolia — *planned* | — |
+| Off-chain | keeper (proof fetch → record → sweep → repayFor) — *planned* | FastAPI proof builder, SPV prover worker |
+| Frontend | Operator / Node / Pool tabs — *planned* | Dashboard / Pool tabs |
 
 Live demo: https://hashcredit.studioliq.com · API: https://api-hashcredit.studioliq.com · Chain: Creditcoin CC3 Testnet (`102031`)
 
@@ -77,7 +77,7 @@ Enforcement is graded E0 (read-only) → E1 (escrow set, revocable) → E2 (paym
 - Proof: `GET https://prover.cc3-testnet.creditcoin.network/proof-by-tx/{chainKey}/{txHash}` (`@gluwa/usc-sdk`).
 - Verify: `INativeQueryVerifier(0x0FD2).verifyAndEmit(chainKey, blockHeight, encodedTx, merkleProof, continuityProof)` → `EvmV1Decoder.decodeReceiptFields` → `require(receiptStatus == 1)` → `PayoutReceived` log from the registered `NodeAccount` → `RevenueEvidence`.
 - Replay: `keccak256(chainKey, blockHeight, txIndex)`.
-- Fallback: the v1 EIP-712 `RelayerSigVerifier` remains as an *attested* (not proven) adapter for unsupported chains, at a lower advance rate.
+- No fallback: a source chain Attestcoin does not support is `UNSUPPORTED_SOURCE` (no admission). Self-signed / relayer-attested evidence never substitutes native verification and there is no lower-advance-rate evidence class (R2-D03/D08 in `docs/gpu/decisions/attestcoin-first.md`).
 
 Details: [`TECH.md`](TECH.md).
 
@@ -99,7 +99,7 @@ Every draw re-checks fresh evidence and valid control state. Credit is never der
 | `HashCreditManager` | `GpuCreditManager` (facility per NFT, `repayFor`, lien, separate draw / repayment pauses) |
 | `LendingVault` | `LendingVault` v2 (single principal / interest ledger, partial interest preserved, reserve, loss recognition) |
 | `RiskConfig` | `RiskConfig` v2 |
-| `RelayerSigVerifier` | retained as attested adapter |
+| `RelayerSigVerifier` | legacy — not a v2 evidence path (auxiliary signatures only, never a native substitute) |
 | `BtcSpvVerifier`, `CheckpointManager`, `BitcoinLib`, SPV prover | legacy — not on the v2 path |
 
 ---
@@ -112,7 +112,7 @@ Every draw re-checks fresh evidence and valid control state. Credit is never der
 | Sepolia → Creditcoin settlement (bridge / partner) | keeper executes the leg with a mock bridge |
 | Partner receiver lock (E2) | enforced at the `NodeAccount` controller only; partner-level lock is the Phase 1 PoC |
 
-Mint, Attestcoin verification, limit computation, draw, lien, sweep, `repayFor` and LP accounting run as real contracts on Creditcoin CC3 testnet. Debt is reduced only when the vault actually receives stablecoin.
+Mint, Attestcoin verification, limit computation, draw, lien, sweep, `repayFor` and LP accounting are designed to run as real contracts on Creditcoin CC3 testnet; as of 2026-09-14 none of the v2 contracts are implemented or deployed from this repository (planned — see `docs/gpu/execution/ATTESTCOIN_GAP.md`). Debt is reduced only when the vault actually receives stablecoin.
 
 ---
 
@@ -169,20 +169,20 @@ docker compose up
 ## Project structure
 
 ```
-contracts/             v1 contracts (legacy) · contracts/gpu/ for v2 (GpuNodeNFT, verifier, manager, vault v2)
-test/                  Foundry tests · test/gpu/ for v2
+contracts/             v1 contracts (legacy) · contracts/gpu/ planned for v2 (not present yet)
+test/                  Foundry tests · test/gpu/ planned for v2 (not present yet)
 script/                deploy scripts
 offchain/
   api/                 FastAPI (v1 proof builder; v2 provider connectors)
   prover/              v1 SPV worker (legacy)
-  relayer/             EIP-712 signer utility (v2 attested adapter)
-  keeper/              v2 keeper (proof fetch → record → sweep → repayFor)
+  relayer/             v1 EIP-712 relayer (legacy; not a v2 evidence path)
+  keeper/              planned v2 worker (not present yet; see TICKET.md GPU-079)
 apps/web/              React 19 frontend
 docs/
   hackathon/           WHY_WE_PIVOTED, HACKATHON_MVP_SCOPE, submission checklist & templates
   specs/               v1 protocol specs (legacy)
   adr/                 architecture decision records
-PIVOT.md / TICKET.md   v2 production plan and execution tickets
+PIVOT.md / TICKET.md   v2 production plan and execution tickets (R2) · docs/gpu/ decisions and execution records
 ```
 
 ## Documentation

@@ -14,6 +14,9 @@ Repo policy (`AGENT.md`): English commit subjects; never commit `keys/`, `DEPLOY
 
 ## R2 decisions (fixed — do not re-litigate in code)
 
+Ledger with IDs (R2-D01…D14 fixed, R2-O01…O09 open): `docs/gpu/decisions/attestcoin-first.md`.
+Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.md`. Cite decision IDs in records.
+
 - Loan ledger and execution chain: **Creditcoin**. External source-chain facts are verified only via
   the **official Attestcoin native path** (BlockProver precompile + official SDK/decoder, pinned versions).
 - No self-signed EIP-712 oracle, admin approval, BTC SPV, or mock verifier may substitute native
@@ -29,9 +32,9 @@ Repo policy (`AGENT.md`): English commit subjects; never commit `keys/`, `DEPLOY
 
 ## Where to start (R2)
 
-GPU-000 is done (see `docs/gpu/execution/GPU-000.md`, `BASELINE.md`). Next: **GPU-074** (decision
-ledger + gap inventory) and **GPU-075** (official SDK/ABI/manifest + read-only probe), then tickets whose
-`선행` are actually satisfied. Status ledger = each ticket's `상태` field in `TICKET.md`.
+GPU-000 and GPU-074 are done (`docs/gpu/execution/GPU-000.md`, `GPU-074.md`, `BASELINE.md`). Next:
+**GPU-075** (official SDK/ABI/manifest + read-only probe), GPU-001/002, then tickets whose `선행` are
+actually satisfied. Status ledger = each ticket's `상태` field in `TICKET.md`.
 
 Current code has **no** Attestcoin/USC implementation (`AttestcoinRevenueVerifier`, `offchain/attestcoin/`,
 `config/attestcoin/` do not exist). README/TECH present-tense claims are planned/unverified.

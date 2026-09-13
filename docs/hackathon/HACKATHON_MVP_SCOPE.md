@@ -2,6 +2,8 @@
 
 > Purpose: the **thinnest vertical slice** that makes every claim in `DORAHACKS.md` and `DECK.md` demonstrable on Creditcoin CC3 testnet + Sepolia.
 > This is a demo scope with TEST_ONLY parameters. The production path (partner due diligence, E2 control PoC, accounting core, audit) stays in `TICKET.md` / `PIVOT.md` and is not replaced by this document.
+>
+> **R2 note (2026-09-14).** Several demo constructs below do **not** satisfy R2 production rules (`docs/gpu/decisions/attestcoin-first.md`; conflict register in `docs/gpu/execution/ATTESTCOIN_GAP.md` §2): `notify(token, amount)` callable by anyone after a balance check (C09), the transaction-level replay key (C10), a `MockNativeQueryVerifier` that returns `true` (LOCAL-only test double, never a native/testnet profile, C13), NFT lien as collateral/enforcement (C07), and trailing-payout limits (C08). Any public-testnet deployment or broadcast requires the GPU-080 approval scope. Nothing in this scope is implemented in the repository as of 2026-09-14.
 
 ## 0. Non-negotiables (from the v1 post-mortem)
 - No testnet auto-grant credit in the v2 path. Credit comes only from recorded `RevenueEvidence`.
