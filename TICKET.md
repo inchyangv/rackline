@@ -434,7 +434,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-012 — 금융 회계 명세와 독립 reference model
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, 15 vectors pass; docs/gpu/execution/GPU-012.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-002, GPU-003, GPU-007, GPU-011
 - 근거: PIVOT §2.2, §5~7, §12.

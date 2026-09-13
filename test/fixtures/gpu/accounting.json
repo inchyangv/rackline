@@ -1,0 +1,602 @@
+{
+ "schemaVersion": "1.0",
+ "testOnly": true,
+ "note": "GPU-012 accounting vectors. Amounts in 6-dp base units; times in seconds; expectations are hand-derived from docs/gpu/accounting.md formulas, not from the model.",
+ "vectors": [
+  {
+   "id": "AC-01 partial interest payment preserves unpaid interest (AR-01 correct value)",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     1000000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     5000000000
+    ],
+    [
+     "repay_for",
+     "f1",
+     31536000,
+     250000000,
+     "third_party"
+    ]
+   ],
+   "expect": {
+    "f1.principal": 5000000000,
+    "f1.unpaid_interest": 250000000,
+    "f1.legal_debt": 5250000000,
+    "vault.cash": 995250000000,
+    "vault.nav": 1000500000000
+   }
+  },
+  {
+   "id": "AC-02 rate segments: 10,000 at 10% for exactly half a year then 20% -> 1,500",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     1000000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     10000000000
+    ],
+    [
+     "set_rate",
+     "f1",
+     15768000,
+     2000
+    ],
+    [
+     "accrue",
+     "f1",
+     31536000
+    ]
+   ],
+   "expect": {
+    "f1.unpaid_interest": 1500000000,
+    "f1.legal_debt": 11500000000
+   }
+  },
+  {
+   "id": "AC-03 accrual frequency does not change interest (daily vs one-shot)",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     1000000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "open",
+     "f2",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     10000000000
+    ],
+    [
+     "draw",
+     "f2",
+     0,
+     10000000000
+    ],
+    [
+     "accrue_daily",
+     "f1",
+     365
+    ],
+    [
+     "accrue",
+     "f2",
+     31536000
+    ]
+   ],
+   "expect": {
+    "f1.unpaid_interest": 1000000000,
+    "f2.unpaid_interest": 1000000000
+   }
+  },
+  {
+   "id": "AC-04 re-borrow does not capitalize interest (single ledger for manager and vault)",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     1000000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     5000000000
+    ],
+    [
+     "draw",
+     "f1",
+     31536000,
+     1000000000
+    ]
+   ],
+   "expect": {
+    "f1.principal": 6000000000,
+    "f1.unpaid_interest": 500000000,
+    "f1.legal_debt": 6500000000,
+    "vault.performing_principal": 6000000000
+   }
+  },
+  {
+   "id": "AC-05 two borrowers: one pays interest, the other is untouched; NAV = cash + principal + interest",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     100000000000
+    ],
+    [
+     "open",
+     "a",
+     1000
+    ],
+    [
+     "open",
+     "b",
+     1200
+    ],
+    [
+     "draw",
+     "a",
+     0,
+     5000000000
+    ],
+    [
+     "draw",
+     "b",
+     0,
+     3000000000
+    ],
+    [
+     "repay_for",
+     "a",
+     31536000,
+     250000000,
+     "third_party"
+    ],
+    [
+     "accrue",
+     "b",
+     31536000
+    ]
+   ],
+   "expect": {
+    "a.principal": 5000000000,
+    "a.unpaid_interest": 250000000,
+    "b.principal": 3000000000,
+    "b.unpaid_interest": 360000000,
+    "vault.cash": 92250000000,
+    "vault.nav": 100860000000,
+    "vault.total_legal_debt": 8610000000
+   }
+  },
+  {
+   "id": "AC-06 overpayment: excess is borrower-refundable, not NAV, not another facility",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     100000000000
+    ],
+    [
+     "open",
+     "a",
+     1000
+    ],
+    [
+     "open",
+     "b",
+     1000
+    ],
+    [
+     "draw",
+     "a",
+     0,
+     1000000000
+    ],
+    [
+     "draw",
+     "b",
+     0,
+     1000000000
+    ],
+    [
+     "repay_for",
+     "a",
+     15768000,
+     1200000000,
+     "third_party"
+    ]
+   ],
+   "expect": {
+    "a.principal": 0,
+    "a.unpaid_interest": 0,
+    "a.legal_debt": 0,
+    "b.principal": 1000000000,
+    "vault.borrower_refundable.a": 150000000,
+    "vault.cash": 99050000000,
+    "vault.nav": 100100000000
+   }
+  },
+  {
+   "id": "AC-07 source receipt / in-flight / destination receipt do not reduce debt; allocation does",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     100000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     5000000000
+    ],
+    [
+     "source_receipt",
+     "s1",
+     6000000000
+    ],
+    [
+     "check",
+     "f1.legal_debt",
+     5000000000
+    ],
+    [
+     "start_leg",
+     "s1",
+     3600000000
+    ],
+    [
+     "check",
+     "f1.legal_debt",
+     5000000000
+    ],
+    [
+     "destination_receipt",
+     "s1",
+     3600000000
+    ],
+    [
+     "check",
+     "f1.legal_debt",
+     5000000000
+    ],
+    [
+     "check",
+     "vault.cash",
+     98600000000
+    ],
+    [
+     "repay_for",
+     "f1",
+     0,
+     3600000000,
+     "destination"
+    ]
+   ],
+   "expect": {
+    "f1.principal": 1400000000,
+    "f1.legal_debt": 1400000000,
+    "vault.source_escrow.s1": 2400000000,
+    "vault.in_flight.s1": 0,
+    "vault.nav": 100000000000
+   }
+  },
+  {
+   "id": "AC-08 write-off after reserve: legal debt persists, NAV drops, recovery is cash in",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     100000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     5000000000
+    ],
+    [
+     "fund_reserve",
+     "f1",
+     250000000
+    ],
+    [
+     "accrue",
+     "f1",
+     31536000
+    ],
+    [
+     "write_off",
+     "f1",
+     31536000
+    ],
+    [
+     "check",
+     "vault.nav",
+     95250000000
+    ],
+    [
+     "check",
+     "f1.legal_debt",
+     5250000000
+    ],
+    [
+     "recover",
+     "f1",
+     63072000,
+     400000000
+    ]
+   ],
+   "expect": {
+    "f1.legal_debt": 4850000000,
+    "vault.cash": 95650000000,
+    "vault.nav": 95650000000,
+    "vault.performing_principal": 0,
+    "vault.borrower_reserve.f1": 0
+   }
+  },
+  {
+   "id": "AC-09 total loss then a new LP enters at the post-loss price (old LP bears the loss)",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     10000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     10000000000
+    ],
+    [
+     "write_off",
+     "f1",
+     31536000
+    ],
+    [
+     "check",
+     "vault.nav",
+     0
+    ],
+    [
+     "deposit",
+     "lp2",
+     5000000000
+    ]
+   ],
+   "expect": {
+    "vault.cash": 5000000000,
+    "vault.nav": 5000000000,
+    "lp2.redeemable_ge": 4999000000,
+    "lp1.redeemable_le": 1000000
+   }
+  },
+  {
+   "id": "AC-10 first-depositor donation is unprofitable with the virtual offset (AR-08 correct direction)",
+   "steps": [
+    [
+     "deposit",
+     "att",
+     1
+    ],
+    [
+     "donate",
+     1000000000
+    ],
+    [
+     "deposit",
+     "victim",
+     2000000000
+    ]
+   ],
+   "expect": {
+    "victim.redeemable_ge": 1999000000,
+    "attacker.redeemable_le": 1001000000,
+    "attacker.loss_gt_victim_loss": true
+   }
+  },
+  {
+   "id": "AC-11 borrowing base: paid receivable and proof-only receivable contribute 0; ledger untouched by evidence",
+   "receivables": [
+    {
+     "id": "r1",
+     "unpaid": 7000000000,
+     "state": "PARTIALLY_PAID",
+     "nativeStatus": "CONSUMED"
+    },
+    {
+     "id": "r2",
+     "unpaid": 0,
+     "state": "PAID",
+     "nativeStatus": "CONSUMED"
+    },
+    {
+     "id": "r3",
+     "unpaid": 9000000000,
+     "state": "RECOGNIZED",
+     "nativeStatus": "PROOF_READY"
+    },
+    {
+     "id": "r4",
+     "unpaid": 1000000000,
+     "state": "RECOGNIZED",
+     "nativeStatus": "NOT_REQUIRED"
+    }
+   ],
+   "base": {
+    "advanceRateBps": 5000,
+    "approvedCap": 8000000000,
+    "debt": 3000000000,
+    "reserved": 1000000000
+   },
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     100000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     3000000000
+    ]
+   ],
+   "expect": {
+    "base.eligible": 7000000000,
+    "base.limit": 3500000000,
+    "base.room": 0,
+    "f1.legal_debt": 3000000000,
+    "vault.nav": 100000000000
+   }
+  },
+  {
+   "id": "AC-12 native outage: direct third-party repayFor still allocates fees -> interest -> principal",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     100000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     5000000000
+    ],
+    [
+     "fee",
+     "f1",
+     15768000,
+     20000000
+    ],
+    [
+     "repay_for",
+     "f1",
+     31536000,
+     300000000,
+     "third_party"
+    ]
+   ],
+   "expect": {
+    "last_alloc": {
+     "fees": 20000000,
+     "interest": 280000000,
+     "principal": 0,
+     "excess": 0
+    },
+    "f1.unpaid_interest": 220000000,
+    "f1.principal": 5000000000
+   }
+  },
+  {
+   "id": "AC-13 withdrawal limited to cash; impairment lowers NAV but not legal debt",
+   "steps": [
+    [
+     "deposit",
+     "lp1",
+     10000000000
+    ],
+    [
+     "open",
+     "f1",
+     1000
+    ],
+    [
+     "draw",
+     "f1",
+     0,
+     8000000000
+    ],
+    [
+     "impair",
+     "f1",
+     1000000000
+    ],
+    [
+     "check",
+     "vault.nav",
+     9000000000
+    ],
+    [
+     "check",
+     "f1.legal_debt",
+     8000000000
+    ],
+    [
+     "withdraw_expect_fail",
+     "lp1",
+     5000000000
+    ]
+   ],
+   "expect": {
+    "vault.cash": 2000000000,
+    "vault.nav": 9000000000
+   }
+  }
+ ]
+}
