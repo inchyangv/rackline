@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 19, [f.name for f in files]  # 13 interfaces + 4 GPU-030 + GPU-078 + GPU-031 implementations
+    assert len(files) == 20, [f.name for f in files]  # 13 interfaces + 4 GPU-030 + GPU-078/031/033 implementations
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()
@@ -61,6 +61,10 @@ def test_interface_abis_have_no_btc_fields_and_expected_surface():
     consume = next(e for e in book if e.get("name") == "consume")
     # the book verifies natively itself: the only event input is an untrusted proof envelope, never a caller-built event
     assert [i["name"] for i in consume["inputs"]] == ["providerId", "envelope", "expectedEmitter", "topic0s", "instructions"]
+    ledger = json.loads((ABI_DIR / "DebtLedger.json").read_text())
+    lnames = {e.get("name") for e in ledger}
+    assert {"open", "accrue", "setRate", "recordDraw", "recordFee", "allocate", "freezeAccrual", "capitalize", "legalDebtAt"} <= lnames
+    assert "forgiveDebt" not in lnames and "resetAccrual" not in lnames
     impl_book = json.loads((ABI_DIR / "EvidenceBook.json").read_text())
     inames = {e.get("name") for e in impl_book}
     assert bnames - {None} <= inames

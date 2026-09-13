@@ -12,6 +12,21 @@ import { GpuTypes } from "../types/GpuTypes.sol";
  *      Allocation order: fees -> unpaid interest -> principal -> excess.
  */
 interface IDebtLedger {
+    /// @notice Facility terms fixed at open (GPU-033). `capitalizeUnpaidInterest` defaults to false (TS-O05).
+    struct Terms {
+        GpuTypes.AssetRef loanAsset;
+        uint32 rateBps;
+        uint64 maturityAt;
+        bytes32 termsVersionId;
+        bytes32 policyVersionId;
+        GpuTypes.ExecutionProfile executionProfile;
+        bool capitalizeUnpaidInterest;
+    }
+
+    event FacilityOpened(
+        GpuTypes.FacilityId indexed facilityId, bytes32 termsVersionId, uint32 rateBps, uint64 openedAt
+    );
+    event Capitalized(GpuTypes.FacilityId indexed facilityId, uint256 interestUnits, uint256 newPrincipal);
     event Accrued(
         GpuTypes.FacilityId indexed facilityId, uint256 interestUnits, uint64 from, uint64 to, uint32 rateBps
     );
@@ -32,8 +47,15 @@ interface IDebtLedger {
     error ZeroAmount();
     error CapitalizationDisabled();
     error NotLedgerWriter(address caller);
+    error FacilityExists(GpuTypes.FacilityId facilityId);
+    error FacilityUnknown(GpuTypes.FacilityId facilityId);
+    error AccrualFrozenError(GpuTypes.FacilityId facilityId);
 
+    function open(GpuTypes.FacilityId facilityId, Terms calldata terms) external;
+    function terms(GpuTypes.FacilityId facilityId) external view returns (Terms memory);
     function view_(GpuTypes.FacilityId facilityId) external view returns (GpuTypes.FacilityLedgerView memory);
+    /// @notice Sum of `legalDebtAt` over every opened facility, including accrued-but-unrecorded interest.
+    function totalLegalDebtAt(uint64 at) external view returns (uint256);
     function unpaidInterestAt(GpuTypes.FacilityId facilityId, uint64 at) external view returns (uint256);
     function legalDebtAt(GpuTypes.FacilityId facilityId, uint64 at) external view returns (uint256);
     function accrue(GpuTypes.FacilityId facilityId) external;
@@ -43,4 +65,6 @@ interface IDebtLedger {
     /// @notice Apply received loan-currency cash to the facility; returns the split.
     function allocate(GpuTypes.FacilityId facilityId, uint256 received) external returns (GpuTypes.RepayResult memory);
     function freezeAccrual(GpuTypes.FacilityId facilityId) external;
+    /// @notice Fold unpaid interest into principal; reverts `CapitalizationDisabled` unless the terms allow it.
+    function capitalize(GpuTypes.FacilityId facilityId) external;
 }

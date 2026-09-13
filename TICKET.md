@@ -703,7 +703,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-033 — 단일 채무 원장과 정확한 이자 계산
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 22 tests, GPU-012 AC-01~06 vectors; docs/gpu/execution/GPU-033.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-012, GPU-029
 - 근거: PIVOT §2.2, §7, §12.
