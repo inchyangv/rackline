@@ -319,7 +319,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-003 — 첫 상품 term sheet와 결정 원장
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, DRAFT v0.1 + OPEN TS-O01~O11; docs/gpu/execution/GPU-003.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-000, GPU-074
 - 근거: PIVOT §1, §5, §6, §11.
