@@ -31,7 +31,8 @@ services:
 
   rackline-api:
     build:
-      context: ./offchain/api
+      # Repo root context: the API installs the local `hashcredit-gpu` package from offchain/gpu (GPU-015).
+      context: .
       dockerfile: Dockerfile
     container_name: rackline-api
     depends_on:
@@ -51,8 +52,9 @@ services:
 
   rackline-prover-legacy:
     build:
-      context: ./offchain/prover
-      dockerfile: Dockerfile
+      # Repo root context (root Dockerfile.prover installs the local `hashcredit-gpu` package first).
+      context: .
+      dockerfile: Dockerfile.prover
     container_name: rackline-prover-legacy
     depends_on:
       db:

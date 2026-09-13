@@ -9,6 +9,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN pip install --no-cache-dir --upgrade pip
 
+# The prover depends on the shared local package `hashcredit-gpu` (offchain/gpu, GPU-015); install it first.
+# Build with the repository root as the build context.
+COPY offchain/gpu/ /opt/hashcredit_gpu/
+RUN pip install --no-cache-dir /opt/hashcredit_gpu
+
 # Copy only the prover package from the monorepo.
 COPY offchain/prover/ ./
 

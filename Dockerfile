@@ -12,6 +12,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 RUN pip install --no-cache-dir --upgrade pip
 
+# The API depends on the shared local package `hashcredit-gpu` (offchain/gpu, GPU-015), which is not on
+# PyPI. Install it from the monorepo first, then the API itself. This Dockerfile must therefore be built
+# with the repository root as the build context (root `railway.toml` / `docker-compose.yml` do that).
+COPY offchain/gpu/ /opt/hashcredit_gpu/
+RUN pip install --no-cache-dir /opt/hashcredit_gpu
+
 # Copy only the API package from the monorepo.
 COPY offchain/api/ ./
 

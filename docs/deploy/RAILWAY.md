@@ -77,7 +77,7 @@ Each service has its own Dockerfile:
 - `offchain/prover/Dockerfile`
 
 Set Root Directories in Railway:
-- `rackline-api` → `offchain/api`
+- `rackline-api` → **repo root** (the root `Dockerfile` installs the local `hashcredit-gpu` package from `offchain/gpu` before the API; `offchain/api/Dockerfile` alone no longer builds since GPU-015)
 - `rackline-prover-legacy` → `offchain/prover`
 
 ### (Optional) Config as Code
@@ -204,9 +204,28 @@ The prover does not expose HTTP endpoints. Disable Public Networking in Railway 
    - Worker: `/offchain/prover/railway.toml`
 3. Dockerfile-based deployment works without `railway.toml` — the config files are optional optimizations.
 
-## 9. Rackline domain and fresh deployment (checklist, 2026-09-14)
+## 9. Rackline domain and fresh deployment (2026-09-14 — executed)
 
-Order matters: domain → Vercel project → Railway project → env → DNS → smoke test.
+Decision (owner, 2026-09-14): reuse the `studioliq.com` zone (GoDaddy DNS, `ns23/ns24.domaincontrol.com`).
+
+| Surface | Domain | Platform | State (2026-09-14) |
+| --- | --- | --- | --- |
+| Web | `rackline.studioliq.com` | Vercel team `elouanics-projects`, project `rackline`, root `apps/web`, framework Vite, GitHub `inchyangv/rackline` connected (production branch `main`) | Production deployed from CLI; domain attached and verified in Vercel; **DNS record pending at GoDaddy** |
+| API | `api-rackline.studioliq.com` | Railway workspace "Incheol Yang's Projects", project `rackline`, service `rackline-api` (root `railway.toml` → root `Dockerfile`, `API_PROFILE=production`, no admin key) | First deployment uploaded from the local checkout (`railway up`); custom domain attached; **DNS + verification records pending at GoDaddy**; GitHub auto-deploy not connected (Railway app could not see the renamed repo — attach in the Railway UI) |
+
+DNS records to create at GoDaddy (zone `studioliq.com`):
+
+| Type | Name | Value |
+| --- | --- | --- |
+| A | `rackline` | `76.76.21.21` (Vercel; a CNAME to `cname.vercel-dns.com` also works) |
+| CNAME | `api-rackline` | `820l5mzl.up.railway.app` |
+| TXT | `_railway-verify.api-rackline` | `railway-verify=a8aeb3d9dc65dbe7a56cb87e319da04b1fce041c19683566da5b3e7d592a70f1` |
+
+The retired `hashcredit` / `api-hashcredit` CNAMEs can be deleted once the new ones resolve.
+
+Vercel `VITE_API_URL` (production + preview) = `https://api-rackline.studioliq.com`. Railway `ALLOWED_ORIGINS` includes `https://rackline.studioliq.com`. `CLAIM_SECRET` was generated with `openssl rand -hex 32` and stored only in Railway (never in the repo). The old `apps/web/.vercel` link (project `ctc-hashcredit`) was replaced by a repo-root `.vercel` link to `rackline` (gitignored).
+
+Original checklist (kept for the next environment):
 
 1. **Domain.** Register `rackline.<tld>` (on 2026-09-14 `.com`, `.io`, `.xyz` were already registered; `.co`
    was free; check `.finance` / `.credit` / `.capital` at the registrar). One apex for the web app, `api.` for
