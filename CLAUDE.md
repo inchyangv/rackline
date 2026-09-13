@@ -32,9 +32,10 @@ Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.
 
 ## Where to start (R2)
 
-GPU-000, GPU-074, GPU-075 are done (`docs/gpu/execution/GPU-000.md`, `GPU-074.md`, `GPU-075.md`,
-`BASELINE.md`). Next: GPU-001/002 (prereq GPU-000), GPU-003 (SPEC), then GPU-011~013 → GPU-076; follow each
-ticket's `선행`. Status ledger = each ticket's `상태` field in `TICKET.md`.
+GPU-000, GPU-074, GPU-075, GPU-001 are done (`docs/gpu/execution/GPU-NNN.md`, `BASELINE.md`). Next:
+GPU-002 (prereq GPU-000), GPU-003 (SPEC), then GPU-011~013 → GPU-076; follow each ticket's `선행`.
+API profile rule: production API holds no key (`API_PROFILE=production` default); demo grants only under
+`testnet_demo` with `DEMO_*` vars. Status ledger = each ticket's `상태` field in `TICKET.md`.
 
 Current code has **no** native verifier/proof worker yet (`AttestcoinRevenueVerifier`, `contracts/gpu/`,
 keeper do not exist). `offchain/attestcoin/` + `config/attestcoin/` hold only pinned official artifacts,

@@ -7,6 +7,9 @@ Provides REST endpoints for:
 - Verifying borrower claim signatures (POST /claim/complete, verify-only)
 - Querying BTC address history (GET /btc/address-history)
 - Health checks (GET /health)
+
+The production profile holds no signing key and has no admin route. The testnet demo
+register-and-grant path lives in `demo.py` and is mounted only with API_PROFILE=testnet_demo.
 """
 
 import uvicorn
@@ -15,7 +18,7 @@ from typing import AsyncGenerator
 
 import httpx
 import structlog
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
@@ -38,8 +41,6 @@ from .models import (
     ExtractSigParamsRequest,
     ExtractSigParamsResponse,
     HealthResponse,
-    RegisterAndGrantRequest,
-    RegisterAndGrantResponse,
     SetCheckpointRequest,
     SetCheckpointResponse,
 )
@@ -77,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     global _bitcoin_rpc, _evm_client, _btc_indexer
 
-    settings = get_settings()
+    settings: Settings = app.state.settings
 
     # Initialize Bitcoin RPC
     _bitcoin_rpc = BitcoinRPC(
@@ -88,8 +89,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
     )
 
-    # Initialize EVM client
+    # Initialize EVM client (read-only; never holds a key)
     _evm_client = EVMClient(settings)
+    # The demo admin signer exists only under API_PROFILE=testnet_demo (GPU-001).
+    if settings.is_demo:
+        from .demo import DemoAdminClient
+
+        app.state.demo_admin = DemoAdminClient(settings, _evm_client)
     _btc_indexer = BtcIndexer(
         BtcIndexerConfig(
             base_url=settings.btc_indexer_base_url,
@@ -100,6 +106,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(
         "API started",
         version=__version__,
+        api_profile=settings.api_profile,
         host=settings.host,
         port=settings.port,
         bitcoin_rpc=settings.bitcoin_rpc_url,
@@ -118,24 +125,42 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("API stopped")
 
 
-# Create FastAPI app
-app = FastAPI(
-    title="HashCredit API",
-    description="HTTP bridge for Frontend to Bitcoin Core/Prover",
-    version=__version__,
-    lifespan=lifespan,
-)
+def create_app(settings: Settings) -> FastAPI:
+    """
+    Build the FastAPI app for a given settings profile.
+
+    production   -> read-only + claim/proof helpers; no admin key, no register-and-grant route (404).
+    testnet_demo -> additionally mounts `demo_router` (guarded register-and-grant with a demo-only key).
+    """
+    application = FastAPI(
+        title="HashCredit API",
+        description="HTTP bridge for Frontend to Bitcoin Core/Prover",
+        version=__version__,
+        lifespan=lifespan,
+    )
+    application.state.settings = settings
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    application.include_router(router)
+    if settings.is_demo:
+        from .demo import demo_router
+
+        application.include_router(demo_router)
+    return application
 
 
-# Add CORS middleware
-_settings = get_settings()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Routes below are registered on this router so `create_app` can assemble profile-specific apps.
+router = APIRouter()
+
+
+def get_app_settings(request: Request) -> Settings:
+    """Settings bound to the running app (not the process-global cache)."""
+    return request.app.state.settings
 
 
 # ============================================================================
@@ -143,8 +168,8 @@ app.add_middleware(
 # ============================================================================
 
 
-@app.get("/health", response_model=HealthResponse)
-async def health_check(settings: Settings = Depends(get_settings)) -> HealthResponse:
+@router.get("/health", response_model=HealthResponse)
+async def health_check(settings: Settings = Depends(get_app_settings)) -> HealthResponse:
     """
     Check API health and connectivity.
 
@@ -169,6 +194,7 @@ async def health_check(settings: Settings = Depends(get_settings)) -> HealthResp
     return HealthResponse(
         status="ok" if (bitcoin_ok and evm_ok) else "degraded",
         version=__version__,
+        api_profile=settings.api_profile,
         bitcoin_rpc=bitcoin_ok,
         btc_indexer=btc_indexer_ok,
         evm_rpc=evm_ok,
@@ -185,7 +211,7 @@ async def health_check(settings: Settings = Depends(get_settings)) -> HealthResp
 # ============================================================================
 
 
-@app.get(
+@router.get(
     "/btc/address-history",
     response_model=BtcAddressHistoryResponse,
 )
@@ -242,7 +268,7 @@ async def btc_address_history(address: str, limit: int = 25, mining_only: bool =
 # ============================================================================
 
 
-@app.post(
+@router.post(
     "/spv/build-proof",
     response_model=BuildProofResponse,
 )
@@ -298,7 +324,7 @@ async def build_proof(request: BuildProofRequest) -> BuildProofResponse:
 # ============================================================================
 
 
-@app.post(
+@router.post(
     "/checkpoint/build",
     response_model=SetCheckpointResponse,
 )
@@ -351,10 +377,10 @@ async def build_checkpoint(
 # ============================================================================
 
 
-@app.post("/claim/start", response_model=ClaimStartResponse)
+@router.post("/claim/start", response_model=ClaimStartResponse)
 async def claim_start(
     request: ClaimStartRequest,
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_app_settings),
 ) -> ClaimStartResponse:
     """
     Start a borrower claim.
@@ -418,10 +444,10 @@ async def claim_start(
     )
 
 
-@app.post("/claim/complete", response_model=ClaimCompleteResponse)
+@router.post("/claim/complete", response_model=ClaimCompleteResponse)
 async def claim_complete(
     request: ClaimCompleteRequest,
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_app_settings),
 ) -> ClaimCompleteResponse:
     """
     Verify a borrower claim:
@@ -514,52 +540,7 @@ async def claim_complete(
 # ============================================================================
 
 
-@app.post("/claim/register-and-grant", response_model=RegisterAndGrantResponse)
-async def register_and_grant(request: RegisterAndGrantRequest) -> RegisterAndGrantResponse:
-    """
-    Admin endpoint: register a borrower and grant testnet credit.
-
-    Uses ADMIN_PRIVATE_KEY (contract owner) to send two transactions:
-    1. registerBorrower(borrower, keccak256(btcAddress))
-    2. grantTestnetCredit(borrower, 1_000_000_000)  (= 1,000 mUSDT)
-    """
-    if _evm_client is None:
-        return RegisterAndGrantResponse(success=False, error="EVM client not initialized")
-
-    if not _evm_client.has_admin_key:
-        return RegisterAndGrantResponse(success=False, error="ADMIN_PRIVATE_KEY not configured on server")
-
-    try:
-        borrower = Web3.to_checksum_address(request.borrower.strip())
-    except Exception:
-        return RegisterAndGrantResponse(success=False, error="Invalid borrower EVM address")
-
-    btc_payout_key_hash = Web3.keccak(text=request.btc_address.strip())
-
-    try:
-        result = await _evm_client.register_and_grant(
-            borrower=borrower,
-            btc_payout_key_hash=btc_payout_key_hash,
-        )
-        logger.info(
-            "Borrower registered and credit granted",
-            borrower=borrower,
-            register_tx=result["register_tx"],
-            grant_tx=result["grant_tx"],
-        )
-        return RegisterAndGrantResponse(
-            success=True,
-            borrower=borrower,
-            register_tx=result["register_tx"],
-            grant_tx=result["grant_tx"],
-            credit_amount="1,000 mUSDT",
-        )
-    except Exception as e:
-        logger.error("register_and_grant failed", borrower=borrower, error=str(e))
-        return RegisterAndGrantResponse(success=False, borrower=borrower, error=str(e))
-
-
-@app.post("/claim/extract-sig-params", response_model=ExtractSigParamsResponse)
+@router.post("/claim/extract-sig-params", response_model=ExtractSigParamsResponse)
 async def extract_sig_params(request: ExtractSigParamsRequest) -> ExtractSigParamsResponse:
     """
     Extract on-chain verification parameters from a BIP-137 BTC signature.
@@ -581,6 +562,10 @@ async def extract_sig_params(request: ExtractSigParamsRequest) -> ExtractSigPara
 # ============================================================================
 # Entry Point
 # ============================================================================
+
+
+# Default application (profile from environment; production unless API_PROFILE=testnet_demo).
+app = create_app(get_settings())
 
 
 def run() -> None:

@@ -1,60 +1,50 @@
 """
-EVM client utilities for HashCredit API.
+Read-only EVM client for HashCredit API.
 
-Supports read-only connectivity checks and admin transactions
-(registerBorrower / grantTestnetCredit) via ADMIN_PRIVATE_KEY.
+This client never holds a signing key. Health checks and on-chain reads live here; the testnet
+demo admin path (the only place the API ever signs) is in `demo.py` and is mounted only when
+`API_PROFILE=testnet_demo` (GPU-001).
 """
 
 from web3 import AsyncHTTPProvider, AsyncWeb3
-from eth_account import Account
 
 from .config import Settings
 
-# Minimal ABI fragments needed for admin calls
-MANAGER_ABI = [
+# Read-only ABI fragments used by the API.
+MANAGER_READ_ABI = [
     {
-        "inputs": [
-            {"name": "borrower", "type": "address"},
-            {"name": "btcPayoutKeyHash", "type": "bytes32"},
-        ],
-        "name": "registerBorrower",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "inputs": [],
+        "name": "stablecoin",
+        "outputs": [{"name": "", "type": "address"}],
+        "stateMutability": "view",
         "type": "function",
     },
+]
+
+VERIFIER_READ_ABI = [
     {
-        "inputs": [
-            {"name": "borrower", "type": "address"},
-            {"name": "creditLimitAmount", "type": "uint128"},
-        ],
-        "name": "grantTestnetCredit",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "inputs": [{"name": "", "type": "address"}],
+        "name": "borrowerPubkeyHash",
+        "outputs": [{"name": "", "type": "bytes20"}],
+        "stateMutability": "view",
         "type": "function",
     },
 ]
 
 
 class EVMClient:
-    """Async EVM client for connectivity checks and admin transactions."""
+    """Async EVM client for connectivity checks and read-only contract queries."""
 
     def __init__(self, settings: Settings):
         self.w3 = AsyncWeb3(AsyncHTTPProvider(settings.evm_rpc_url))
         self.chain_id = settings.chain_id
         self.manager_address = settings.hash_credit_manager
-
-        pk = settings.admin_private_key
-        if pk:
-            pk = pk.strip()
-            if not pk.startswith("0x"):
-                pk = "0x" + pk
-            self.account = Account.from_key(pk)
-        else:
-            self.account = None
+        self.verifier_address = settings.btc_spv_verifier
 
     @property
     def has_admin_key(self) -> bool:
-        return self.account is not None
+        """The read-only client never has a key (kept for callers that used to check it)."""
+        return False
 
     async def check_connectivity(self) -> bool:
         """Check whether the configured EVM RPC endpoint is reachable."""
@@ -64,61 +54,22 @@ class EVMClient:
         except Exception:
             return False
 
-    async def register_and_grant(
-        self,
-        borrower: str,
-        btc_payout_key_hash: bytes,
-        credit_amount: int = 1_000_000_000,
-    ) -> dict:
-        """
-        Call registerBorrower + grantTestnetCredit from the admin wallet.
+    async def get_chain_id(self) -> int:
+        return int(await self.w3.eth.chain_id)
 
-        Returns dict with tx hashes for both transactions.
-        """
-        if not self.account:
-            raise RuntimeError("ADMIN_PRIVATE_KEY not configured")
+    async def read_manager_stablecoin(self) -> str:
         if not self.manager_address:
             raise RuntimeError("HASH_CREDIT_MANAGER address not configured")
+        contract = self.w3.eth.contract(
+            address=self.w3.to_checksum_address(self.manager_address), abi=MANAGER_READ_ABI
+        )
+        return str(await contract.functions.stablecoin().call())
 
-        manager_addr = self.w3.to_checksum_address(self.manager_address)
-        borrower_addr = self.w3.to_checksum_address(borrower)
-        contract = self.w3.eth.contract(address=manager_addr, abi=MANAGER_ABI)
-
-        # --- registerBorrower ---
-        nonce = await self.w3.eth.get_transaction_count(self.account.address)
-        register_tx = await contract.functions.registerBorrower(
-            borrower_addr,
-            btc_payout_key_hash,
-        ).build_transaction({
-            "from": self.account.address,
-            "nonce": nonce,
-            "chainId": self.chain_id,
-            "gas": 200_000,
-        })
-        signed_register = self.account.sign_transaction(register_tx)
-        register_hash = await self.w3.eth.send_raw_transaction(signed_register.raw_transaction)
-        register_receipt = await self.w3.eth.wait_for_transaction_receipt(register_hash, timeout=60)
-        if register_receipt["status"] != 1:
-            raise RuntimeError(f"registerBorrower reverted (tx: {register_hash.hex()})")
-
-        # --- grantTestnetCredit ---
-        nonce2 = await self.w3.eth.get_transaction_count(self.account.address)
-        grant_tx = await contract.functions.grantTestnetCredit(
-            borrower_addr,
-            credit_amount,
-        ).build_transaction({
-            "from": self.account.address,
-            "nonce": nonce2,
-            "chainId": self.chain_id,
-            "gas": 200_000,
-        })
-        signed_grant = self.account.sign_transaction(grant_tx)
-        grant_hash = await self.w3.eth.send_raw_transaction(signed_grant.raw_transaction)
-        grant_receipt = await self.w3.eth.wait_for_transaction_receipt(grant_hash, timeout=60)
-        if grant_receipt["status"] != 1:
-            raise RuntimeError(f"grantTestnetCredit reverted (tx: {grant_hash.hex()})")
-
-        return {
-            "register_tx": register_hash.hex(),
-            "grant_tx": grant_hash.hex(),
-        }
+    async def read_verifier_pubkey_hash(self, borrower: str) -> bytes:
+        if not self.verifier_address:
+            raise RuntimeError("BTC_SPV_VERIFIER address not configured")
+        contract = self.w3.eth.contract(
+            address=self.w3.to_checksum_address(self.verifier_address), abi=VERIFIER_READ_ABI
+        )
+        raw = await contract.functions.borrowerPubkeyHash(self.w3.to_checksum_address(borrower)).call()
+        return bytes(raw)

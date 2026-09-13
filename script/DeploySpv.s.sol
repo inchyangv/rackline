@@ -27,6 +27,10 @@ import { TestnetMintableERC20 } from "../contracts/TestnetMintableERC20.sol";
  *   PRIVATE_KEY         - Deployer private key (required)
  *   STABLECOIN_ADDRESS  - Existing stablecoin address (optional, deploys test token if not set)
  *   INITIAL_LIQUIDITY   - Initial liquidity in stablecoin smallest unit (optional, default 1M)
+ *
+ * Auto-grant demo credit (GPU-001): only set when this script deployed its own TEST_ONLY token
+ * AND the chain is an allowlisted test chain. Never with an external stablecoin, never on
+ * mainnet. `autoGrantCreditAmount` stays 0 otherwise.
  */
 contract DeploySpv is Script {
     // ============================================
@@ -40,13 +44,33 @@ contract DeploySpv is Script {
     uint128 constant NEW_BORROWER_CAP = 10_000_000_000; // $10,000 (6 decimals)
     uint64 constant MIN_PAYOUT_SATS = 10_000; // 0.0001 BTC
     uint256 constant DEFAULT_INITIAL_LIQUIDITY = 1_000_000_000_000; // 1M (6 decimals)
+    uint128 constant DEMO_AUTO_GRANT = 1_000_000_000; // 1000 mUSDT (6 decimals), TEST_ONLY
+
+    /// @dev Set by `run()` so in-process tests can inspect the deployment (GPU-001 auto-grant checks).
+    address public lastManager;
+    address public lastStablecoin;
+
+    /// @notice Chains on which the demo auto-grant may be enabled (Creditcoin CC3 testnet, Anvil).
+    function isDemoChain(uint256 chainId) public pure returns (bool) {
+        return chainId == 102_031 || chainId == 31_337;
+    }
+
+    /// @notice Demo auto-grant is permitted only for a script-deployed TEST_ONLY token on a demo chain.
+    function demoAutoGrantAllowed(bool deployedTestToken, uint256 chainId) public pure returns (bool) {
+        return deployedTestToken && isDemoChain(chainId);
+    }
 
     function run() external {
+        // Optional: use existing stablecoin (an empty STABLECOIN_ADDRESS= line counts as unset)
+        string memory stablecoinEnv = vm.envOr("STABLECOIN_ADDRESS", string(""));
+        address stablecoinAddr = bytes(stablecoinEnv).length == 0 ? address(0) : vm.parseAddress(stablecoinEnv);
+        runWith(stablecoinAddr);
+    }
+
+    /// @notice Deploy with an explicit stablecoin choice (address(0) = deploy a TEST_ONLY token).
+    function runWith(address stablecoinAddr) public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-
-        // Optional: use existing stablecoin
-        address stablecoinAddr = vm.envOr("STABLECOIN_ADDRESS", address(0));
         uint256 initialLiquidity = vm.envOr("INITIAL_LIQUIDITY", DEFAULT_INITIAL_LIQUIDITY);
 
         console.log("=== HashCredit SPV Mode Deployment ===");
@@ -104,15 +128,21 @@ contract DeploySpv is Script {
             address(spvVerifier), address(vault), address(riskConfig), address(poolRegistry), address(stablecoin)
         );
         console.log("[7/7] HashCreditManager deployed:", address(manager));
+        lastManager = address(manager);
+        lastStablecoin = address(stablecoin);
 
         // Configure vault to accept manager
         vault.setManager(address(manager));
         console.log("");
         console.log("Vault manager configured");
 
-        // Auto-grant 1000 mUSDT credit on borrower registration (testnet)
-        manager.setAutoGrantCredit(1_000_000_000); // 1000 mUSDT (6 decimals)
-        console.log("Auto-grant credit set: 1000 mUSDT");
+        // Demo auto-grant (GPU-001): TEST_ONLY token deployed by this script + demo chain only.
+        if (demoAutoGrantAllowed(stablecoinAddr == address(0), block.chainid)) {
+            manager.setAutoGrantCredit(DEMO_AUTO_GRANT);
+            console.log("Auto-grant credit set (TEST_ONLY token, demo chain): 1000 mUSDT");
+        } else {
+            console.log("Auto-grant credit NOT set (external stablecoin or non-demo chain)");
+        }
 
         // Mint initial liquidity if deploying test token
         if (stablecoinAddr == address(0) && initialLiquidity > 0) {

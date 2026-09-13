@@ -17,14 +17,32 @@ On-chain transactions are wallet-side only.
 | `POST` | `/claim/complete` | Verify signatures and return derived hashes (no tx) |
 | `POST` | `/claim/extract-sig-params` | Extract on-chain params (pubKeyX/Y, btcMsgHash, v, r, s) from BIP-137 signature for `BtcSpvVerifier.claimBtcAddress()` |
 
-## Wallet-only policy
+## Wallet-only policy (production profile)
 
 - Removed server-side write flow:
   - no server-side `submitPayout`
   - no server-side `setCheckpoint`
   - no server-side `setBorrowerPubkeyHash`
-  - no server-side `registerBorrower`
-- API does not send EVM transactions.
+  - no server-side `registerBorrower` / `grantTestnetCredit`
+- The production API process holds **no** signing key. `ADMIN_PRIVATE_KEY` is rejected at startup in
+  every profile; `DEMO_ADMIN_PRIVATE_KEY` is rejected in production.
+- `/claim/register-and-grant` does not exist in production (404).
+
+## Testnet demo profile (`API_PROFILE=testnet_demo`, TEST_ONLY)
+
+A separate profile mounts `hashcredit_api/demo.py`:
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/claim/demo-auth-message` | Message the borrower signs to authorize its own demo registration |
+| `POST` | `/claim/register-and-grant` | Guarded `registerBorrower` + capped `grantTestnetCredit` with `DEMO_ADMIN_PRIVATE_KEY` |
+
+Guards before anything is signed: borrower EVM signature over a message bound to (borrower, BTC
+address, chain id, manager, expiry); the BTC address must already be linked on-chain
+(`BtcSpvVerifier.borrowerPubkeyHash`); RPC chain id must equal `CHAIN_ID` and be in
+`DEMO_ALLOWED_CHAIN_IDS` (mainnet ids 102030/1 are always refused); the manager's stablecoin must be in
+`DEMO_ALLOWED_STABLECOINS` (external stablecoins refused); amount ≤ `DEMO_GRANT_CAP`.
+This path is a v1 testnet convenience only and is not part of the GPU production design (TICKET.md GPU-001).
 
 ## Configuration
 
@@ -42,6 +60,10 @@ Important variables:
 - `ALLOWED_ORIGINS`
 - `BORROWER_MAPPING_MODE`
 - `CLAIM_SECRET` (required for claim mode)
+- `API_PROFILE` (`production` default | `testnet_demo`)
+- Demo profile only: `DEMO_ADMIN_PRIVATE_KEY`, `DEMO_ALLOWED_CHAIN_IDS` (JSON list, default `[102031, 31337]`),
+  `DEMO_ALLOWED_STABLECOINS` (JSON list of TEST_ONLY token addresses; empty = demo grants refused),
+  `DEMO_GRANT_CAP` (base units, default 1000e6), `DEMO_AUTH_TTL_SECONDS` (default 300)
 
 ## Run
 

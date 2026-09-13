@@ -295,7 +295,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-001 — 공개 관리자 등록/신용 부여 경로와 데모 권한 격리
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, docs/gpu/execution/GPU-001.md; 실서비스 secret/profile 재배포는 GPU-063)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-000
 - 근거/읽기: PIVOT §2.2, §8; `offchain/api/hashcredit_api/main.py`, `evm.py`, `config.py`, `tests/test_api.py`, web `claim-section.tsx`, `script/DeploySpv.s.sol`.

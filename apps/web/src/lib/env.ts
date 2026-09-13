@@ -20,6 +20,9 @@ const defaults = {
   apiUrl: 'https://api-hashcredit.studioliq.com',
   explorerBase: 'https://creditcoin-testnet.blockscout.com',
   explorerApiBase: 'https://creditcoin-testnet.blockscout.com/api',
+  // 'production' (default): no self-service demo registration/credit request is ever sent.
+  // 'testnet_demo': the API's guarded demo register-and-grant path is used (TEST_ONLY).
+  apiProfile: 'production',
 } as const;
 
 export const env = {
@@ -32,4 +35,8 @@ export const env = {
   apiUrl: getEnvString('VITE_API_URL', defaults.apiUrl),
   explorerBase: getEnvString('VITE_EXPLORER_BASE', defaults.explorerBase),
   explorerApiBase: getEnvString('VITE_EXPLORER_API_BASE', defaults.explorerApiBase),
+  apiProfile: getEnvString('VITE_API_PROFILE', defaults.apiProfile) === 'testnet_demo' ? 'testnet_demo' : 'production',
 } as const;
+
+/** True only when this build is explicitly configured against a TEST_ONLY demo API. */
+export const isTestnetDemo = env.apiProfile === 'testnet_demo';

@@ -3,8 +3,14 @@ Configuration for HashCredit API.
 """
 
 from functools import lru_cache
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+API_PROFILES = ("production", "testnet_demo")
+
+# Chain ids on which demo admin transactions are never allowed, whatever the allowlist says.
+# 102030 = Creditcoin CC3 mainnet, 1 = Ethereum mainnet.
+MAINNET_CHAIN_IDS = frozenset({102030, 1})
 
 
 class Settings(BaseSettings):
@@ -81,11 +87,45 @@ class Settings(BaseSettings):
         description="EVM RPC URL (Creditcoin testnet)"
     )
     chain_id: int = Field(default=102031, description="EVM chain ID")
-    # Admin key (owner of HashCreditManager, used for registerBorrower/grantTestnetCredit)
+
+    # Execution profile (GPU-001). The production API never holds an owner/admin key and does not
+    # expose the register-and-grant route. The testnet demo path is a separate profile with its own
+    # key name, a chain allowlist, a TEST_ONLY stablecoin allowlist, and a grant cap.
+    api_profile: str = Field(
+        default="production",
+        description="production | testnet_demo",
+        alias="API_PROFILE",
+    )
+    # Legacy variable: rejected in every profile so an owner key can never be loaded by mistake.
     admin_private_key: str | None = Field(
         default=None,
-        description="Private key for the contract owner (hex, no 0x prefix ok)",
+        description="DEPRECATED - must be unset. Use DEMO_ADMIN_PRIVATE_KEY only with API_PROFILE=testnet_demo",
         alias="ADMIN_PRIVATE_KEY",
+    )
+    demo_admin_private_key: str | None = Field(
+        default=None,
+        description="Demo-only signer for registerBorrower/grantTestnetCredit (testnet_demo profile)",
+        alias="DEMO_ADMIN_PRIVATE_KEY",
+    )
+    demo_allowed_chain_ids: list[int] = Field(
+        default=[102031, 31337],
+        description="Chain ids on which the demo admin path may send transactions (JSON list)",
+        alias="DEMO_ALLOWED_CHAIN_IDS",
+    )
+    demo_allowed_stablecoins: list[str] = Field(
+        default=[],
+        description="TEST_ONLY stablecoin addresses the manager must use for demo grants (JSON list)",
+        alias="DEMO_ALLOWED_STABLECOINS",
+    )
+    demo_grant_cap: int = Field(
+        default=1_000_000_000,
+        description="Maximum demo credit grant in stablecoin base units (1000e6 = 1,000 mUSDT)",
+        alias="DEMO_GRANT_CAP",
+    )
+    demo_auth_ttl_seconds: int = Field(
+        default=300,
+        description="Validity window of the borrower's demo authorization signature",
+        alias="DEMO_AUTH_TTL_SECONDS",
     )
 
     # Contracts (for UI hints/health metadata)
@@ -101,6 +141,37 @@ class Settings(BaseSettings):
         default=None,
         description="BtcSpvVerifier contract address"
     )
+
+    @property
+    def is_demo(self) -> bool:
+        return self.api_profile == "testnet_demo"
+
+    @model_validator(mode="after")
+    def _enforce_profile(self) -> "Settings":
+        if self.api_profile not in API_PROFILES:
+            raise ValueError(f"API_PROFILE must be one of {API_PROFILES}, got {self.api_profile!r}")
+        if self.admin_private_key:
+            raise ValueError(
+                "ADMIN_PRIVATE_KEY is no longer accepted by the API. Unset it. "
+                "Demo deployments use DEMO_ADMIN_PRIVATE_KEY with API_PROFILE=testnet_demo."
+            )
+        if self.api_profile == "production":
+            if self.demo_admin_private_key:
+                raise ValueError("DEMO_ADMIN_PRIVATE_KEY must not be set on a production API process")
+            return self
+        # testnet_demo
+        blocked = MAINNET_CHAIN_IDS.intersection(self.demo_allowed_chain_ids)
+        if blocked:
+            raise ValueError(f"DEMO_ALLOWED_CHAIN_IDS contains mainnet chain ids {sorted(blocked)}")
+        if self.chain_id in MAINNET_CHAIN_IDS:
+            raise ValueError(f"CHAIN_ID {self.chain_id} is a mainnet; testnet_demo refuses to start")
+        if self.chain_id not in self.demo_allowed_chain_ids:
+            raise ValueError(
+                f"CHAIN_ID {self.chain_id} is not in DEMO_ALLOWED_CHAIN_IDS {self.demo_allowed_chain_ids}"
+            )
+        if self.demo_grant_cap <= 0:
+            raise ValueError("DEMO_GRANT_CAP must be positive")
+        return self
 
 
 @lru_cache

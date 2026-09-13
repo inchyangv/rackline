@@ -17,7 +17,8 @@ import type { Facility } from '@/hooks/use-facility'
 import { BtcSpvVerifierAbi } from '@/lib/abis'
 import { copyToClipboard } from '@/lib/clipboard'
 import { STABLECOIN_SYMBOL } from '@/lib/constants'
-import { describeTxError, getErrorMessage } from '@/lib/ethereum'
+import { isTestnetDemo } from '@/lib/env'
+import { describeTxError, getErrorMessage, getEthereum } from '@/lib/ethereum'
 import { sameAddress, shortAddr } from '@/lib/format'
 import type { ActionCtx } from '@/lib/reasons'
 import { commonReason } from '@/lib/reasons'
@@ -35,12 +36,14 @@ type Props = {
 type StageKey = 'sig' | 'chain' | 'register'
 type StageState = 'idle' | 'active' | 'done' | 'failed'
 
-const ORDER: StageKey[] = ['sig', 'chain', 'register']
+// The 'register' stage (demo register-and-grant) exists only on TEST_ONLY demo builds.
+// Production builds never ask the API to register or grant credit (GPU-001).
+const ORDER: StageKey[] = isTestnetDemo ? ['sig', 'chain', 'register'] : ['sig', 'chain']
 
 const STAGE_LABEL: Record<StageKey, string> = {
   sig: 'Check signature',
   chain: 'Verify on-chain (wallet transaction)',
-  register: 'Register facility',
+  register: 'Register facility (testnet demo)',
 }
 
 const STAGE_TEXT: Record<StageState, string> = {
@@ -218,12 +221,36 @@ export function SetupPanel({ facility, viewed, onView }: Props) {
         setStage('chain', 'done')
       }
 
-      if (start <= 2) {
+      if (isTestnetDemo && start <= 2) {
         setStage('register', 'active')
         try {
-          const raw = await apiRequest('/claim/register-and-grant', {
+          // The demo API only registers a borrower that signs an authorization for itself,
+          // bound to this chain, manager and an expiry (auxiliary wallet-auth signature).
+          const auth = await apiRequest('/claim/demo-auth-message', {
             method: 'POST',
             body: JSON.stringify({ borrower: walletAccount, btc_address: claimBtcAddress.trim() }),
+          })
+          if (!isRecord(auth) || typeof auth.message !== 'string' || typeof auth.expires_at !== 'number') {
+            fail('register', 'The demo API did not return an authorization message.')
+            return
+          }
+          const ethereum = getEthereum()
+          if (!ethereum) {
+            fail('register', 'No wallet available to sign the demo authorization.')
+            return
+          }
+          const signature = (await ethereum.request({
+            method: 'personal_sign',
+            params: [auth.message, walletAccount],
+          })) as string
+          const raw = await apiRequest('/claim/register-and-grant', {
+            method: 'POST',
+            body: JSON.stringify({
+              borrower: walletAccount,
+              btc_address: claimBtcAddress.trim(),
+              evm_signature: signature,
+              expires_at: auth.expires_at,
+            }),
           })
           const problem = apiFailure(raw, 'Registration did not complete.')
           if (problem !== null) {
@@ -391,7 +418,7 @@ export function SetupPanel({ facility, viewed, onView }: Props) {
                 disabled={blocked !== null}
                 onClick={() => void run('sig')}
               >
-                Verify and register
+                {isTestnetDemo ? 'Verify and register' : 'Verify payout address'}
               </Button>
               {blocked ? <Reason tone="muted">{blocked}</Reason> : null}
 
@@ -443,14 +470,21 @@ export function SetupPanel({ facility, viewed, onView }: Props) {
             ) : undefined
           }
           helper={
-            <>
-              On this testnet a{' '}
-              <span className="num">
-                <Figure>1,000.00</Figure>
-              </span>{' '}
-              {STABLECOIN_SYMBOL} limit is granted automatically when registration confirms.
-              Production limits are set per facility from settlement history.
-            </>
+            isTestnetDemo ? (
+              <>
+                On this testnet demo a{' '}
+                <span className="num">
+                  <Figure>1,000.00</Figure>
+                </span>{' '}
+                {STABLECOIN_SYMBOL} TEST_ONLY limit is granted when registration confirms.
+                Production limits are set per facility from settlement history.
+              </>
+            ) : (
+              <>
+                Registration and limits are set by the operator desk after review. This build
+                never requests credit on your behalf.
+              </>
+            )
           }
         >
           {limitState === 'done' ? (

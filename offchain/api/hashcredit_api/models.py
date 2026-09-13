@@ -131,11 +131,25 @@ class ClaimCompleteResponse(BaseModel):
 # ============================================================================
 
 
-class RegisterAndGrantRequest(BaseModel):
-    """Request for backend to register borrower + grant testnet credit."""
+class DemoAuthMessageRequest(BaseModel):
+    """TESTNET DEMO ONLY: ask for the exact authorization message to sign."""
 
     borrower: str = Field(..., description="Borrower EVM address (0x...)")
     btc_address: str = Field(..., description="Borrower BTC payout address")
+
+
+class DemoAuthMessageResponse(BaseModel):
+    message: str = Field(..., description="Message the borrower signs with its EVM wallet")
+    expires_at: int = Field(..., description="Unix time after which the authorization is invalid")
+
+
+class RegisterAndGrantRequest(BaseModel):
+    """TESTNET DEMO ONLY: register borrower + grant capped demo credit (API_PROFILE=testnet_demo)."""
+
+    borrower: str = Field(..., description="Borrower EVM address (0x...)")
+    btc_address: str = Field(..., description="Borrower BTC payout address")
+    evm_signature: str = Field(..., description="Borrower EVM signature over the demo auth message")
+    expires_at: int = Field(..., description="expires_at from /claim/demo-auth-message")
 
 
 class RegisterAndGrantResponse(BaseModel):
@@ -215,6 +229,7 @@ class HealthResponse(BaseModel):
 
     status: str = Field(..., description="Service status")
     version: str = Field(..., description="API version")
+    api_profile: str = Field("production", description="production | testnet_demo")
     bitcoin_rpc: bool = Field(..., description="Bitcoin RPC connectivity")
     btc_indexer: Optional[bool] = Field(None, description="External BTC indexer connectivity")
     evm_rpc: bool = Field(..., description="EVM RPC connectivity")
