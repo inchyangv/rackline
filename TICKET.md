@@ -737,7 +737,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-036 — facility 승인·신규 draw의 원자적 실행
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 27 tests; 출시 조건 GPU-010/063 유지; docs/gpu/execution/GPU-036.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-030, GPU-031, GPU-032, GPU-033, GPU-034, GPU-035
 - 근거: PIVOT §5, §7.
@@ -750,7 +750,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-037 — source escrow·waterfall·잔여금·완제 해제
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, LOCAL; 18 tests; settlement leg=GPU-040, 실제 upstream claim=GPU-009/038; docs/gpu/execution/GPU-037.md)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-012, GPU-013, GPU-029, GPU-030, GPU-032, GPU-077
 - 근거: PIVOT §4~5, §7, §10.

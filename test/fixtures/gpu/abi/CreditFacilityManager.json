@@ -1,0 +1,1659 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "roles",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      },
+      {
+        "name": "ledger",
+        "type": "address",
+        "internalType": "contract IDebtLedger"
+      },
+      {
+        "name": "vault",
+        "type": "address",
+        "internalType": "contract ILendingVaultV2"
+      },
+      {
+        "name": "accounts",
+        "type": "address",
+        "internalType": "contract IAccountRegistry"
+      },
+      {
+        "name": "control",
+        "type": "address",
+        "internalType": "contract IControlRegistry"
+      },
+      {
+        "name": "exposure",
+        "type": "address",
+        "internalType": "contract IExposureController"
+      },
+      {
+        "name": "policy",
+        "type": "address",
+        "internalType": "contract GpuRiskPolicy"
+      },
+      {
+        "name": "book",
+        "type": "address",
+        "internalType": "contract IReceivableBook"
+      },
+      {
+        "name": "evidence",
+        "type": "address",
+        "internalType": "contract IEvidenceBook"
+      },
+      {
+        "name": "auth",
+        "type": "address",
+        "internalType": "contract IAuthorizationVerifier"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ACCOUNTS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IAccountRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ADMIN_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "AUTH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IAuthorizationVerifier"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "BOOK",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IReceivableBook"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "CONTROL",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IControlRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "EVIDENCE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IEvidenceBook"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "EXPOSURE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IExposureController"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "LEDGER",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IDebtLedger"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "POLICY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract GpuRiskPolicy"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ROLES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IProtocolRoles"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "VAULT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ILendingVaultV2"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "anchor",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct CreditFacilityManager.Anchor",
+        "components": [
+          {
+            "name": "auth",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.CreditAuthorization",
+            "components": [
+              {
+                "name": "facilityId",
+                "type": "bytes32",
+                "internalType": "GpuTypes.FacilityId"
+              },
+              {
+                "name": "decisionHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "limit",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "validUntil",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "policyVersionId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "manifestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "controlAgreementVersionHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "signer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "epoch",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "anchoredAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "anchorAuthorization",
+    "inputs": [
+      {
+        "name": "auth",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.CreditAuthorization",
+        "components": [
+          {
+            "name": "facilityId",
+            "type": "bytes32",
+            "internalType": "GpuTypes.FacilityId"
+          },
+          {
+            "name": "decisionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "limit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "validUntil",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "policyVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "manifestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "controlAgreementVersionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      },
+      {
+        "name": "underwriterApproval",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.SupplementaryAssertion",
+        "components": [
+          {
+            "name": "purpose",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.AssertionPurpose"
+          },
+          {
+            "name": "subject",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "signer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "keyEpoch",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "nonce",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "issuedAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "expiresAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "signature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "authorizationSubject",
+    "inputs": [
+      {
+        "name": "auth",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.CreditAuthorization",
+        "components": [
+          {
+            "name": "facilityId",
+            "type": "bytes32",
+            "internalType": "GpuTypes.FacilityId"
+          },
+          {
+            "name": "decisionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "limit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "validUntil",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "policyVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "manifestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "controlAgreementVersionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "borrow",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minReceived",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimRefund",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "controlVersionHash",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "version",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "drawsPaused",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "evaluateDraw",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "e",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.DrawEvaluation",
+        "components": [
+          {
+            "name": "eligibleReceivables",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "receivableLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "facilityLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "facilityRoom",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "headroom",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "vaultCash",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "availableDraw",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "evidenceValidUntil",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "checkpointAge",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "executeReservedDraw",
+    "inputs": [
+      {
+        "name": "reservationId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "minReceived",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "facility",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "v",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.FacilityLedgerView",
+        "components": [
+          {
+            "name": "state",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.FacilityState"
+          },
+          {
+            "name": "loanAsset",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.AssetRef",
+            "components": [
+              {
+                "name": "chainId",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "decimals",
+                "type": "uint8",
+                "internalType": "uint8"
+              }
+            ]
+          },
+          {
+            "name": "principal",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "unpaidInterest",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "fees",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reservedDraws",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "rateBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "lastAccrualAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maturityAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "termsVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "policyVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "executionProfile",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.ExecutionProfile"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "facilityInfo",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct CreditFacilityManager.Facility",
+        "components": [
+          {
+            "name": "borrowerId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "wallet",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "providerId",
+            "type": "bytes32",
+            "internalType": "GpuTypes.ProviderId"
+          },
+          {
+            "name": "controlAgreementId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "controlVersion",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "profile",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.ExecutionProfile"
+          },
+          {
+            "name": "state",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.FacilityState"
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "freezeDraws",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "trigger",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isTransitionAllowed",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      },
+      {
+        "name": "to",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "openFacility",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "borrowerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "terms",
+        "type": "tuple",
+        "internalType": "struct IDebtLedger.Terms",
+        "components": [
+          {
+            "name": "loanAsset",
+            "type": "tuple",
+            "internalType": "struct GpuTypes.AssetRef",
+            "components": [
+              {
+                "name": "chainId",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "decimals",
+                "type": "uint8",
+                "internalType": "uint8"
+              }
+            ]
+          },
+          {
+            "name": "rateBps",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "maturityAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "termsVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "policyVersionId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "executionProfile",
+            "type": "uint8",
+            "internalType": "enum GpuTypes.ExecutionProfile"
+          },
+          {
+            "name": "capitalizeUnpaidInterest",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      },
+      {
+        "name": "controlAgreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "controlVersion",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "pauseDraws",
+    "inputs": [
+      {
+        "name": "paused",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "repayFor",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "r",
+        "type": "tuple",
+        "internalType": "struct GpuTypes.RepayResult",
+        "components": [
+          {
+            "name": "requested",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "received",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "applied",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "feePaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "interestPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "principalPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "excess",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "newDebt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "reserveDraw",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "ttl",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "reservationId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "state",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transition",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "to",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      },
+      {
+        "name": "trigger",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AuthorizationAnchored",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "decisionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "validUntil",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "manifestHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Borrowed",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newDebt",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "decisionHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DrawReserved",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "reservationId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "expiresAt",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DrawsPaused",
+    "inputs": [
+      {
+        "name": "by",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "paused",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ExcessRefunded",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FacilityFrozen",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "by",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "trigger",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FacilityOpened",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "borrowerId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "profile",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      },
+      {
+        "name": "termsVersionId",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Repaid",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "payer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "requested",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "received",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "applied",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "excess",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newDebt",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "StateChanged",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "from",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.FacilityState"
+      },
+      {
+        "name": "to",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum GpuTypes.FacilityState"
+      },
+      {
+        "name": "trigger",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "authority",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AuthorizationFacilityMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "actual",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AuthorizationManifestMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "actual",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AuthorizationMissingOrExpired",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "BookFacilityMismatch",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ControlAgreementMismatch",
+    "inputs": [
+      {
+        "name": "agreementId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "borrowerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ControlInsufficientOrStale",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DebtOutstanding",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "debt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DrawsArePaused",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ExceedsAvailableDraw",
+    "inputs": [
+      {
+        "name": "requested",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "available",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ExposureAuthorizationMismatch",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "field",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FacilityExists",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FacilityNotActive",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "state",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FacilityUnknown",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "IllegalTransition",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      },
+      {
+        "name": "to",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.FacilityState"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientReceived",
+    "inputs": [
+      {
+        "name": "minReceived",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "received",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NativeEvidenceRequired",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotBorrower",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      },
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NothingToRefund",
+    "inputs": [
+      {
+        "name": "facilityId",
+        "type": "bytes32",
+        "internalType": "GpuTypes.FacilityId"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "PolicyVersionStale",
+    "inputs": [
+      {
+        "name": "policyVersionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ProfileMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      },
+      {
+        "name": "actual",
+        "type": "uint8",
+        "internalType": "enum GpuTypes.ExecutionProfile"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "Reentrancy",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReservationUnknown",
+    "inputs": [
+      {
+        "name": "reservationId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TransferFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "WalletNotLinked",
+    "inputs": [
+      {
+        "name": "borrowerId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroAmount",
+    "inputs": []
+  }
+]

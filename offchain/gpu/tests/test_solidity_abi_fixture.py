@@ -33,7 +33,7 @@ def test_vendored_official_files_are_byte_pinned():
 
 def test_interface_abis_have_no_btc_fields_and_expected_surface():
     files = sorted(ABI_DIR.glob("*.json"))
-    assert len(files) == 29, [f.name for f in files]  # 16 interfaces + 4 GPU-030 + GPU-078/031/033/032/077/034 + 3 GPU-035 impls
+    assert len(files) == 31, [f.name for f in files]  # 16 interfaces + 4 GPU-030 + GPU-078/031/033/032/077/034/037/036 + 3 GPU-035 impls
     for f in files:
         abi = json.loads(f.read_text())
         text = json.dumps(abi).lower()
@@ -89,6 +89,18 @@ def test_interface_abis_have_no_btc_fields_and_expected_surface():
     assert "ingest" in rnames and not {"setUnpaid", "recognizeDirect", "registerReceivable"} & rnames  # balances only via EvidenceBook
     policy = json.loads((ABI_DIR / "GpuRiskPolicy.json").read_text())
     assert "CapNotSet" in {e.get("name") for e in policy}  # cap=0 is never an unlimited sentinel
+    escrow_r = json.loads((ABI_DIR / "RevenueEscrow.json").read_text())
+    ernames = {e.get("name") for e in escrow_r}
+    assert {"sweep", "release"} & ernames or {"sweepPayout", "release"} & ernames
+    assert not {"execute", "approveToken", "setModule", "allocate", "repayFor"} & ernames  # no admin bypass, no ledger writes
+    mgr_impl = json.loads((ABI_DIR / "CreditFacilityManager.json").read_text())
+    mnames = {e.get("name") for e in mgr_impl}
+    assert {"borrow", "repayFor", "anchorAuthorization", "pauseDraws"} <= mnames
+    assert not {"pauseRepayments", "grantTestnetCredit", "increaseLimit", "borrowTo"} & mnames
+    borrow = next(e for e in mgr_impl if e.get("name") == "borrow")
+    assert [i["name"] for i in borrow["inputs"]] == ["facilityId", "amount", "minReceived"]  # recipient is never a parameter
+    import filecmp
+    assert filecmp.cmp(REPO / "config" / "gpu" / "schema" / "facility-transitions-v1.json", REPO / "test" / "fixtures" / "gpu" / "facility-transitions-v1.json", shallow=False)
     impl_book = json.loads((ABI_DIR / "EvidenceBook.json").read_text())
     inames = {e.get("name") for e in impl_book}
     assert bnames - {None} <= inames
