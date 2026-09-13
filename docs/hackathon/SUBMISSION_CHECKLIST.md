@@ -14,7 +14,7 @@ Status as of 2026-09-14: official artifacts pinned and testnet probed; **no v2 c
 ## 2. Project information (DoraHacks BUIDL form)
 Source: `DORAHACKS.md` (paste-ready) + `docs/hackathon/SUBMISSION_VALUES.md`.
 - [ ] Project name: Rackline (formerly HashCredit)
-- [ ] Logo URL (`logo/logo.png` hosted publicly)
+- [ ] Logo URL (`logo/rackline-avatar.png` hosted publicly)
 - [ ] Track: RWA (mention DePIN / DeFi fit in the description)
 - [ ] Description (One-liner + Problem + Why we pivoted + Solution + Why Creditcoin)
 - [ ] GitHub repo URL with updated `README.md`

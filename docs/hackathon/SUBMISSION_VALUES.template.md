@@ -7,7 +7,7 @@ Copy to `docs/hackathon/SUBMISSION_VALUES.md` and fill in. Leave `TODO — not d
 | Field | Value |
 |-------|-------|
 | Project name | Rackline (formerly HashCredit) |
-| Logo URL | TODO (host `logo/logo.png`) |
+| Logo URL | https://raw.githubusercontent.com/inchyangv/rackline/main/logo/rackline-avatar.png |
 | Track | RWA (also DePIN, DeFi) |
 | One-liner | Working capital for GPU operators, secured by revenue they have already earned. |
 | Description | Paste from `DORAHACKS.md` (One-liner → Why Creditcoin) |
