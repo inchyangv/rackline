@@ -188,6 +188,12 @@ class GpuAsset(Base):
     parent_asset_id: Mapped[str | None] = mapped_column(ULID, ForeignKey("gpu_assets.asset_id", ondelete="RESTRICT"))
     eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    # GPU-017 (migration 0003): lifecycle, RMA lineage and the *separate* ownership review result.
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="ACTIVE")
+    replaces_asset_id: Mapped[str | None] = mapped_column(ULID, ForeignKey("gpu_assets.asset_id", ondelete="RESTRICT"))
+    ownership_review: Mapped[str] = mapped_column(String(16), nullable=False, server_default="UNVERIFIED")
+    identity_confidence: Mapped[str] = mapped_column(String(8), nullable=False, server_default="LOW")
+    review_ref: Mapped[str | None] = mapped_column(Text)
     __table_args__ = (
         CheckConstraint(f"asset_id {ULID_CHECK}", name="ck_gpu_assets_ulid"),
         CheckConstraint(f"kind IN {_in(E.AssetKind)}", name="ck_gpu_assets_kind"),
@@ -196,6 +202,16 @@ class GpuAsset(Base):
         CheckConstraint("parent_asset_id IS NULL OR parent_asset_id <> asset_id", name="ck_gpu_assets_no_self_parent"),
         # Ownership must be confirmed before an asset can be eligible (GPU-017 sets it; DB refuses the shortcut).
         CheckConstraint("NOT eligible OR ownership <> 'UNKNOWN'", name="ck_gpu_assets_eligible_requires_ownership"),
+        CheckConstraint("status IN ('ACTIVE','RETIRED')", name="ck_gpu_assets_status"),
+        CheckConstraint("replaces_asset_id IS NULL OR replaces_asset_id <> asset_id", name="ck_gpu_assets_no_self_replace"),
+        CheckConstraint("ownership_review IN ('UNVERIFIED','VERIFIED','REJECTED')", name="ck_gpu_assets_ownership_review"),
+        CheckConstraint("identity_confidence IN ('LOW','MEDIUM','HIGH')", name="ck_gpu_assets_identity_confidence"),
+        CheckConstraint("review_ref IS NULL OR review_ref ~ '^(vault|secret|doc)://'", name="ck_gpu_assets_review_ref"),
+        # Identity confidence and ownership review are different facts; only a VERIFIED, ACTIVE asset may be eligible.
+        CheckConstraint(
+            "NOT eligible OR (ownership_review = 'VERIFIED' AND status = 'ACTIVE')",
+            name="ck_gpu_assets_eligible_requires_review",
+        ),
     )
 
 
@@ -206,10 +222,14 @@ class AssetIdentityKey(Base):
     scheme: Mapped[str] = mapped_column(String(16), nullable=False)
     value: Mapped[str] = mapped_column(String(200), nullable=False)
     provenance: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    # GPU-017: keys have a lifetime (NIC change, RMA move) — the *active* key is unique per physical identity.
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
-        CheckConstraint("scheme IN ('GPU_UUID','SERIAL','HOST_ID','GROUP_ID','NFT_TOKEN')", name="ck_asset_identity_keys_scheme"),
-        # The same physical identity cannot be listed as two assets.
-        UniqueConstraint("scheme", "value", name="uq_asset_identity_keys_value"),
+        CheckConstraint("scheme IN ('GPU_UUID','SERIAL','HOST_ID','GROUP_ID','NFT_TOKEN','NIC_MAC')", name="ck_asset_identity_keys_scheme"),
+        CheckConstraint("retired_at IS NULL OR retired_at >= recorded_at", name="ck_asset_identity_keys_lifetime"),
+        # The same physical identity cannot be *actively* listed as two assets; history rows keep the old value.
+        Index("uq_asset_identity_keys_active", "scheme", "value", unique=True, postgresql_where="retired_at IS NULL"),
     )
 
 
@@ -243,8 +263,21 @@ class AssetEncumbrance(Base):
     document_ref: Mapped[str | None] = mapped_column(Text)
     valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # GPU-017: which facility (if ours) holds it and whether it is still open; released rows are history.
+    facility_id: Mapped[str | None] = mapped_column(ULID, ForeignKey("facilities.facility_id", ondelete="RESTRICT"))
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="OPEN")
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     __table_args__ = (
         CheckConstraint(f"encumbrance_id {ULID_CHECK}", name="ck_asset_encumbrances_ulid"),
+        CheckConstraint("status IN ('OPEN','RELEASED')", name="ck_asset_encumbrances_status"),
+        CheckConstraint("(status = 'RELEASED') = (released_at IS NOT NULL)", name="ck_asset_encumbrances_released"),
+        # One open facility-held encumbrance per asset: no double financing of the same GPU (GPU-017).
+        Index(
+            "uq_asset_encumbrances_open_facility",
+            "asset_id",
+            unique=True,
+            postgresql_where="status = 'OPEN' AND facility_id IS NOT NULL AND asset_id IS NOT NULL",
+        ),
         CheckConstraint("asset_id IS NOT NULL OR receivable_id IS NOT NULL", name="ck_asset_encumbrances_target"),
         CheckConstraint("priority > 0", name="ck_asset_encumbrances_priority"),
         CheckConstraint("kind IN ('LIEN','ASSIGNMENT','LEASE','PLEDGE')", name="ck_asset_encumbrances_kind"),
@@ -458,3 +491,5 @@ TRIGGER_NAMES = (
 
 # GPU-016 ledgers register themselves on the same metadata (import for side effects).
 from . import ledgers as _ledgers  # noqa: E402,F401
+# GPU-017 account-link history and asset review flags (migration 0003).
+from . import assets_models as _assets_models  # noqa: E402,F401

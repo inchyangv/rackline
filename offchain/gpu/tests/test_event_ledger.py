@@ -19,6 +19,7 @@ from hashcredit_gpu.db.cli import current, downgrade, schema_diff, upgrade
 from hashcredit_gpu.db.ledgers import LEDGER_TRIGGER_NAMES
 
 from .conftest import _dsn
+from .test_migrations import HEAD
 from .test_schema import ADDR1, ADDR2, HASH1, MUSDT, ULID_B, ULID_C, ULID_D, insert_e2_agreement, insert_facility, run, seed_base
 
 NOW = datetime(2026, 9, 14, 12, 0, tzinfo=timezone.utc)
@@ -125,7 +126,7 @@ def expect(conn, exc, sql, params=None, match=None):
 
 def test_head_is_0002_with_ledger_tables_triggers_view(fresh_db_url):
     upgrade(fresh_db_url, "head")
-    assert current(fresh_db_url) == "0002"
+    assert current(fresh_db_url) == HEAD  # head moves with later migrations (0003 = GPU-017); 0002 tables persist
     assert schema_diff(fresh_db_url) == []
     with psycopg2.connect(_dsn(fresh_db_url)) as c, c.cursor() as cur:
         cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'")
@@ -142,7 +143,7 @@ def test_head_is_0002_with_ledger_tables_triggers_view(fresh_db_url):
         "recovery_events", "writeoffs", "audit_log", "correction_links", "ingest_cursors", "jobs", "outbox", "tx_intents", "exceptions",
     }
     assert expected <= tables
-    assert len(tables) == 19 + 20  # 0001 (18 + alembic_version) + 0002 (20)
+    assert len(tables) == 19 + 20 + 2  # 0001 (18 + alembic_version) + 0002 (20) + 0003 (2, GPU-017)
     assert set(LEDGER_TRIGGER_NAMES) <= triggers
     assert views == {"v_cash_ownership"}
     # 0002 -> 0001 leaves the core schema intact, then back to head with no drift
@@ -520,7 +521,7 @@ def test_backup_restore_preserves_ledger_totals(pg_server_url, fresh_db_url, pg_
         cc.commit()
     subprocess.run([str(pg_bindir / "pg_restore"), "--dbname", _dsn(fresh_db_url), "--no-owner"], input=dump, capture_output=True, check=True)
     assert snapshot(fresh_db_url) == before
-    assert current(fresh_db_url) == "0002"
+    assert current(fresh_db_url) == HEAD
     assert schema_diff(fresh_db_url) == []
     # triggers survive: the audit log is still append-only after restore
     with psycopg2.connect(_dsn(fresh_db_url)) as cc, cc.cursor() as cur:
