@@ -306,7 +306,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-002 — 알려진 금융·주소 귀속 결함의 재현 벡터
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, docs/gpu/execution/GPU-002.md; RED 모드 0/8 → v2 인수 기준)
 - 유형/우선순위: CODE / P0
 - 선행: GPU-000
 - 근거/읽기: PIVOT §2.2, §12; `HashCreditManager.sol`, `LendingVault.sol`, `BtcSpvVerifier.sol`, `test/HashCreditManager.t.sol`, `test/invariant/Invariant.t.sol`.

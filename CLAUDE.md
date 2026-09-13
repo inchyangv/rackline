@@ -32,8 +32,9 @@ Doc-vs-code inventory and conflict register: `docs/gpu/execution/ATTESTCOIN_GAP.
 
 ## Where to start (R2)
 
-GPU-000, GPU-074, GPU-075, GPU-001 are done (`docs/gpu/execution/GPU-NNN.md`, `BASELINE.md`). Next:
-GPU-002 (prereq GPU-000), GPU-003 (SPEC), then GPU-011~013 → GPU-076; follow each ticket's `선행`.
+GPU-000, GPU-074, GPU-075, GPU-001, GPU-002 are done (`docs/gpu/execution/GPU-NNN.md`, `BASELINE.md`).
+Next: GPU-003 (SPEC), then GPU-011~013 → GPU-076; follow each ticket's `선행`. v1 accounting defects are
+pinned in `test/diagnostic/AccountingRegressions.t.sol` (`RUN_RED_DIAGNOSTICS=true` = v2 acceptance).
 API profile rule: production API holds no key (`API_PROFILE=production` default); demo grants only under
 `testnet_demo` with `DEMO_*` vars. Status ledger = each ticket's `상태` field in `TICKET.md`.
 
