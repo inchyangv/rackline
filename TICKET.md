@@ -369,7 +369,7 @@ Writability는 확인한 공식 문서상 테스트·감사 단계다. 현재 �
 
 ### GPU-007 — 자금 공급·신용 정책·단위 경제성 결정 자료
 
-- 상태: TODO
+- 상태: DONE (2026-09-14, DRAFT/TEST_ONLY; docs/gpu/execution/GPU-007.md)
 - 유형/우선순위: SPEC / P0
 - 선행: GPU-003
 - 근거: PIVOT §6.3, §11.

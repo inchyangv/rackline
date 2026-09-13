@@ -1,0 +1,37 @@
+{
+  "testOnly": true,
+  "note": "GPU-007 illustration only. Every number is a placeholder for the sensitivity/stress model; approved values are recorded in docs/gpu/decisions/REGISTER.md (TS-O04..O08) before any pilot. Amounts are 6-dp base units; rates are basis points.",
+  "borrowingBase": {
+    "unpaidReceivables": "20000000000",
+    "deductions": { "disputes": "500000000", "platformFees": "1000000000", "sla": "0", "senior": "0" },
+    "haircutsBps": { "overdue": 500, "concentration": 500, "fx": 0, "collectability": 1000 },
+    "advanceRateBps": 5000,
+    "approvedCap": "8000000000",
+    "outstandingDebt": "0",
+    "reservedDraws": "0",
+    "concentrationHeadroom": "6000000000",
+    "vaultCash": "50000000000"
+  },
+  "baseDraw": "5000000000",
+  "tenorDays": 60,
+  "expectedCashDays": 60,
+  "pricing": {
+    "borrowerAprBps": 1800,
+    "originationFeeBps": 100,
+    "servicingFeeBps": 200,
+    "lpCostBps": 900,
+    "expectedLossBps": 300,
+    "conversionCostBps": 30,
+    "underwritingFixedCost": "40000000",
+    "collectionFixedCost": "10000000",
+    "expectedCashAvailable": "7000000000"
+  },
+  "sensitivitySizes": ["1000000000", "2500000000", "5000000000", "10000000000", "25000000000"],
+  "stresses": [
+    { "name": "settlement delayed +45 days", "addDays": { "expectedCashDays": 45 } },
+    { "name": "reward token -50% (FX haircut 50%)", "set": { "borrowingBase.haircutsBps.fx": 5000 } },
+    { "name": "utilization/price -40% (receivables -40%)", "scaleBps": { "borrowingBase.unpaidReceivables": 6000, "pricing.expectedCashAvailable": 6000 } },
+    { "name": "platform deductions doubled", "scaleBps": { "borrowingBase.deductions.platformFees": 20000, "borrowingBase.deductions.disputes": 20000 } },
+    { "name": "combined: delay + token -50% + receivables -40% + deductions x2", "addDays": { "expectedCashDays": 45 }, "set": { "borrowingBase.haircutsBps.fx": 5000 }, "scaleBps": { "borrowingBase.unpaidReceivables": 6000, "pricing.expectedCashAvailable": 6000, "borrowingBase.deductions.platformFees": 20000, "borrowingBase.deductions.disputes": 20000 } }
+  ]
+}
