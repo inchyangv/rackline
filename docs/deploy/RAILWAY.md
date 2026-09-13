@@ -221,7 +221,7 @@ DNS records to create at GoDaddy (zone `studioliq.com`):
 | CNAME | `api-rackline` | `820l5mzl.up.railway.app` |
 | TXT | `_railway-verify.api-rackline` | `railway-verify=a8aeb3d9dc65dbe7a56cb87e319da04b1fce041c19683566da5b3e7d592a70f1` |
 
-The retired `hashcredit` / `api-hashcredit` CNAMEs still existed on 2026-09-14 and can be deleted.
+Keep the old records. `hashcredit.studioliq.com` is attached to the Vercel project `rackline` as a **308 redirect** to `rackline.studioliq.com` (its existing CNAME already pointed at Vercel; verified 2026-09-14 09:00 KST), so links in the Spring submission, DoraHacks, Discord and CEIP mail keep working. `api-hashcredit.studioliq.com` still points at the retired Railway service and is dead; it was never a user-facing link. To revive it, re-point its CNAME to `820l5mzl.up.railway.app` and add it as a second domain on `rackline-api`.
 
 Vercel `VITE_API_URL` (production + preview) = `https://api-rackline.studioliq.com`. Railway `ALLOWED_ORIGINS` includes `https://rackline.studioliq.com`. `CLAIM_SECRET` was generated with `openssl rand -hex 32` and stored only in Railway (never in the repo). The old `apps/web/.vercel` link (project `ctc-hashcredit`) was replaced by a repo-root `.vercel` link to `rackline` (gitignored).
 
