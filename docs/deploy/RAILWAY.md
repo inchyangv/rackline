@@ -210,8 +210,8 @@ Decision (owner, 2026-09-14): reuse the `studioliq.com` zone (GoDaddy DNS, `ns23
 
 | Surface | Domain | Platform | State (2026-09-14) |
 | --- | --- | --- | --- |
-| Web | `rackline.studioliq.com` | Vercel team `elouanics-projects`, project `rackline`, root `apps/web`, framework Vite, GitHub `inchyangv/rackline` connected (production branch `main`) | Production deployed from CLI; domain attached and verified in Vercel; **DNS record pending at GoDaddy** |
-| API | `api-rackline.studioliq.com` | Railway workspace "Incheol Yang's Projects", project `rackline`, service `rackline-api` (root `railway.toml` → root `Dockerfile`, `API_PROFILE=production`, no admin key) | First deployment uploaded from the local checkout (`railway up`); custom domain attached; **DNS + verification records pending at GoDaddy**; GitHub auto-deploy not connected (Railway app could not see the renamed repo — attach in the Railway UI) |
+| Web | `rackline.studioliq.com` | Vercel team `elouanics-projects`, project `rackline`, root `apps/web`, framework Vite, GitHub `inchyangv/rackline` connected (production branch `main`) | **Live** (2026-09-14 08:56 KST): DNS A record set, Let's Encrypt cert issued (`vercel certs issue` forced it), HTTP 200, title `Rackline` |
+| API | `api-rackline.studioliq.com` | Railway workspace "Incheol Yang's Projects", project `rackline`, service `rackline-api` (root `railway.toml` → root `Dockerfile`, `API_PROFILE=production`, no admin key) | **Live** (2026-09-14 08:50 KST): CNAME + TXT set, cert issued, `GET /health` → `api_profile: production`, CORS allows `https://rackline.studioliq.com`, `/claim/register-and-grant` → 404. Deployed from the local checkout (`railway up`); GitHub auto-deploy not connected (Railway app could not see the renamed repo — attach in the Railway UI) |
 
 DNS records to create at GoDaddy (zone `studioliq.com`):
 
@@ -221,7 +221,7 @@ DNS records to create at GoDaddy (zone `studioliq.com`):
 | CNAME | `api-rackline` | `820l5mzl.up.railway.app` |
 | TXT | `_railway-verify.api-rackline` | `railway-verify=a8aeb3d9dc65dbe7a56cb87e319da04b1fce041c19683566da5b3e7d592a70f1` |
 
-The retired `hashcredit` / `api-hashcredit` CNAMEs can be deleted once the new ones resolve.
+The retired `hashcredit` / `api-hashcredit` CNAMEs still existed on 2026-09-14 and can be deleted.
 
 Vercel `VITE_API_URL` (production + preview) = `https://api-rackline.studioliq.com`. Railway `ALLOWED_ORIGINS` includes `https://rackline.studioliq.com`. `CLAIM_SECRET` was generated with `openssl rand -hex 32` and stored only in Railway (never in the repo). The old `apps/web/.vercel` link (project `ctc-hashcredit`) was replaced by a repo-root `.vercel` link to `rackline` (gitignored).
 

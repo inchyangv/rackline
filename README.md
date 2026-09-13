@@ -26,12 +26,12 @@ Escrow receipt → approved settlement rail → vault receives loan currency →
 | Credit / vault contracts | debt ledger, facility manager, `LendingVault` v2, `RiskConfig` v2, `repayFor` router — *planned* (GPU-029~043, 081) | `HashCreditManager`, `LendingVault`, `RiskConfig`, `PoolRegistry` |
 | Source chain | controlled escrow / source event contract, TEST_ONLY `MockDePINSettlement` — *planned* (GPU-077, GPU-080) | — |
 | Off-chain | official-SDK proof worker, provider connectors, receivable / cash ledgers, settlement adapter — *planned* (GPU-079, 015~028, 040) | FastAPI proof builder, SPV prover worker, EIP-712 relayer |
-| Frontend | operator facility / LP / operator console — *planned* (GPU-047~052) | Rackline-branded Borrow / Lend on the v1 contracts (builds; not currently deployed) |
+| Frontend | operator facility / LP / operator console — *planned* (GPU-047~052) | Rackline-branded Borrow / Lend on the v1 contracts — live at https://rackline.studioliq.com |
 | Native proof evidence | **none yet** — G-ASC (GPU-080) is the first real public-testnet native verification | n/a |
 
 Implementation inventory and doc-conflict register: [`docs/gpu/execution/ATTESTCOIN_GAP.md`](docs/gpu/execution/ATTESTCOIN_GAP.md). Status ledger: each ticket's `상태` in `TICKET.md`.
 
-Repo: https://github.com/inchyangv/rackline (renamed from `ctc-hashcredit` / `hashcredit` on 2026-09-14; old URLs redirect) · Chain: Creditcoin CC3 Testnet (`102031`) · Deployment: the previous `hashcredit.studioliq.com` / `api-hashcredit.studioliq.com` deployment was taken down on 2026-09-14; redeploy under the Rackline domain follows `docs/deploy/RAILWAY.md` §9 (GPU-066/053).
+Repo: https://github.com/inchyangv/rackline (renamed from `ctc-hashcredit` / `hashcredit` on 2026-09-14; old URLs redirect) · Chain: Creditcoin CC3 Testnet (`102031`) · Web: https://rackline.studioliq.com (Vercel, v1 contracts, Rackline UI) · API: https://api-rackline.studioliq.com (Railway, `API_PROFILE=production`; `GET /health`) — both checked live 2026-09-14 (`docs/gpu/execution/GPU-066.md`). The previous `hashcredit.studioliq.com` deployment was retired the same day.
 
 ---
 
