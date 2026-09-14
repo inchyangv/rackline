@@ -841,7 +841,11 @@ await scenario("K9", "lp", "LP read parity after the persona cycles: API positio
 const recoveryInterface = new Interface(abi("RecoveryManager"));
 const vaultInterface = new Interface(abi("LendingVaultV2"));
 const treasuryWallet = new Wallet(roles.treasury.privateKey, provider);
-const recoveryRefs = { epoch: "epoch-5", amount: "12000000", draw: unit(4) };
+// A second drill (e.g. to observe DEFAULTED / RECOVERY in the browser) uses a fresh facility and epoch:
+// GPU_QA_RECOVERY_FACILITY=gpu080-facility-v9 GPU_QA_RECOVERY_AGREEMENT=… GPU_QA_RECOVERY_EPOCH=epoch-6
+const recoveryRefs = { epoch: process.env.GPU_QA_RECOVERY_EPOCH || "epoch-5", amount: "12000000", draw: unit(4) };
+const recoveryCheckpoint = `qa-checkpoint-${(process.env.GPU_QA_RECOVERY_EPOCH || "c").replace(/^epoch-/, "r")}`;
+const recoveryPause = Number(process.env.GPU_QA_RECOVERY_PAUSE_MS || 0);
 
 await scenario("R0", "operator", "recovery-drill facility is open on chain, registered in the API and bound to the recovery manager", async (t) => {
   const f = facilities.recovery;
@@ -890,16 +894,16 @@ await scenario("R2", "borrower", "checkpoint C makes epoch-5 eligible; the opera
   if ((await ledger.legalDebtAt(f.id, await chainNow())) > 0n) t.skip("drill facility already has debt");
   while ((await sepolia.getBlock("latest")).timestamp < Number(await escrow.protectedUntil(accountKey)) + 5) await sleep(15000);
   const stats = await book.accountStats(providerId, accountKey);
-  const checkpoint = await sim(["checkpoint", "--name", "qa-checkpoint-c"]);
+  const checkpoint = await sim(["checkpoint", "--name", recoveryCheckpoint]);
   checkpointC = checkpoint;
   t.evidence.source = checkpoint;
   console.log(`  checkpoint window closes ${new Date(checkpoint.protectedUntil * 1000).toISOString()}`);
-  const proof = await officialProof("qa-checkpoint-c", checkpoint.protectedUntil - 150);
+  const proof = await officialProof(recoveryCheckpoint, checkpoint.protectedUntil - 150);
   t.check("official proof became PROOF_READY inside the reservation window", Boolean(proof));
   if (!proof) return;
   const observe = await run("node", ["script/gpu/native_tools.mjs", "observe", "--agreement", f.agreement, "--broadcast", approval], { timeoutMs: 180000 });
   t.check("control observation refreshed on chain", observe.code === 0 && observe.stdout.split("\n").some((row) => row.startsWith("{")), { code: observe.code, stderr: observe.stderr.slice(-200) });
-  const outcome = await consumeStep("reserveCheckpoint", "qa-checkpoint-c", f.name);
+  const outcome = await consumeStep("reserveCheckpoint", recoveryCheckpoint, f.name);
   t.evidence.consumption = outcome.row;
   t.check("checkpoint C consumed and audited proof-only", outcome.ok, { status: outcome.row?.status, stderr: outcome.stderr });
   if (!outcome.ok) return;
@@ -997,6 +1001,7 @@ await scenario("R4", "underwriter", "no repayment: schedule → DELINQUENT → d
   const fresh = await login(borrowerWallet);
   const listed = await pollApi("/v1/facilities?limit=100", fresh.token, (data) => data.some((item) => item.facilityId === f.apiId && item.state === "DEFAULTED"), 240000, "API DEFAULTED");
   t.check("API projects DEFAULTED", listed.data.some((item) => item.facilityId === f.apiId && item.state === "DEFAULTED"));
+  if (recoveryPause) { console.log(`  holding DEFAULTED for ${recoveryPause} ms (browser observation window)`); await sleep(recoveryPause); }
 });
 
 await scenario("R5", "servicer", "recovery: a pledged reserve is applied to the debt through the router; the reserve cannot be pulled back while debt remains", async (t) => {
@@ -1032,6 +1037,7 @@ await scenario("R5", "servicer", "recovery: a pledged reserve is applied to the 
   const context = await pollApi(`/v1/facilities/${f.apiId}/transaction-context`, fresh.token, (data, meta) => meta.canonicalBlock.number >= applied.blockNumber, 180000, "API after applyReserve");
   t.evidence.api = { debt: context.data.debt, principal: context.data.principal };
   t.check("API debt equals the chain debt after the reserve was applied", BigInt(context.data.debt) === debtAfter, t.evidence.api);
+  if (recoveryPause) { console.log(`  holding RECOVERY for ${recoveryPause} ms (browser observation window)`); await sleep(recoveryPause); }
 });
 
 await scenario("R6", "treasury", "loss: the underwriter impairs the remainder (LP NAV falls), the treasury writes off → CLOSED_WITH_LOSS; the legal debt survives", async (t) => {
@@ -1040,8 +1046,8 @@ await scenario("R6", "treasury", "loss: the underwriter impairs the remainder (L
   if (STATES[Number(await manager.state(f.id))] !== "RECOVERY") t.skip("facility is not in RECOVERY");
   const debt = await ledger.legalDebtAt(f.id, await chainNow());
   const navBefore = await vault.nav();
-  const impairId = id("qa-loss-epoch-5-impairment");
-  const writeOffId = id("qa-loss-epoch-5-writeoff");
+  const impairId = id(`qa-loss-${recoveryRefs.epoch}-impairment`);
+  const writeOffId = id(`qa-loss-${recoveryRefs.epoch}-writeoff`);
   const tooMuch = await expectRevert(() => recovery.connect(underwriterWallet).impair.staticCall(f.id, impairId, debt + 1n), [recoveryInterface, vaultInterface]);
   t.check("impairment above the exposure is refused (ImpairmentExceedsExposure)", tooMuch === "ImpairmentExceedsExposure", { observed: tooMuch });
   const impaired = await sendTx(underwriterWallet, recovery, "impair", [f.id, impairId, debt], "impair");
