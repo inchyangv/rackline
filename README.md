@@ -4,7 +4,7 @@
 
 Rackline finances revenue that GPU operators have earned but not yet received. A controlled source escrow records settlement events, Creditcoin verifies those events through the official Attestcoin native path, and the lending system turns eligible unpaid receivables into a borrowing base. Debt falls only after loan currency reaches the destination vault.
 
-> Status (2026-09-14): hackathon prototype. The repository contains the full implementation, a browser demo, and a TEST_ONLY deployment on Creditcoin CC3 Testnet. The native technical path has been exercised with simulated source revenue. This is not a production launch, a live lending pool, a partner integration, or proof of real GPU revenue.
+> Status (2026-09-17): hackathon prototype. The repository contains the full implementation, a browser demo, and a TEST_ONLY deployment on Creditcoin CC3 Testnet. The native technical path has been exercised with simulated source revenue, including a live QA of every product path — draws, repayments, freezes, delinquency and the non-payment path to write-off — against the deployed environment. This is not a production launch, a live lending pool, a partner integration, or proof of real GPU revenue.
 
 [TEST_ONLY application](https://rackline.studioliq.com/app) · [Fixture demo](https://rackline.studioliq.com/demo) · [API health](https://api-rackline.studioliq.com/health) · [Indexer readiness](https://api-rackline.studioliq.com/ready)
 
@@ -87,6 +87,16 @@ Browser-driven financial flows on the same deployment, using faucet test tokens:
 - [LP browser audit](evidence/native-testnet/lp-browser-20260914.json): nine transactions (faucet, approval, deposit, queue, cancel, re-queue, process, claim, final withdrawal). Final LP shares are zero; desktop and mobile views agree with the chain.
 - [Borrower browser audit](evidence/native-testnet/borrower-browser-20260914.json), enabled by a [fresh native checkpoint](https://creditcoin-testnet.blockscout.com/tx/0x39dadbd7f24581069d40d5dee2d9f8148191c61ad95affbdd68c7bee0c77bba6): [borrow 1 tUSD](https://creditcoin-testnet.blockscout.com/tx/0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee), then [repay 1.000002 tUSD](https://creditcoin-testnet.blockscout.com/tx/0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78). The 1.001 tUSD cap transferred only principal plus execution-time interest. Legal debt is zero on-chain and in both views. Repayment succeeded after source protection had expired.
 - [Live scenario suite](evidence/native-testnet/scenarios-20260914.json): 25 persona scenarios (visitor, unknown wallet, LP, borrower, keeper, misuse) passed against the deployed environment. Catalog: [docs/gpu/scenarios/live-user-scenarios.md](docs/gpu/scenarios/live-user-scenarios.md).
+
+### Live QA with simulated network payers (2026-09-14 → 2026-09-17)
+
+Two payer personas were deployed as `MockDePINPayout` contracts registered as PAYER on the TEST_ONLY Sepolia escrow — `SIM-AETHIR` (one reward obligation per epoch, paid in full after the epoch closes, QoS adjustments as signed corrections) and `SIM-GPUNET` (one invoice per job, streamed partial settlements, a chargeback, a dispute that cancels an invoice, an invoice overdue before financing). They imitate settlement behaviour only; they are not partner integrations.
+
+- Thirty source transitions of every escrow event kind (recognition, assignment, correction, payout, payout cancellation, checkpoint) were proven through the official Attestcoin path and consumed on Creditcoin; every consumption was audited proof-only, and afterwards the destination ledger matched the source escrow exactly (revision, open and paid totals). A replay of a consumed log is refused by the tool and reverts on chain.
+- The borrowing base followed the receivables: a paid epoch dropped out, a corrected epoch counted at its reduced amount, a charged-back settlement reopened the unpaid balance, an overdue invoice was haircut 10 %, a cancelled invoice was excluded; the eligible amount, the 50 % advance and the API's `availableDraw` agreed to the unit on every facility.
+- On five facilities opened for the run: draws inside the checkpoint window, an over-limit draw refused, guardian freeze and underwriter resume, partial repayment with interest accrued at the contract rate, third-party `repayFor`, an installment schedule that went delinquent and was cured, full repayment to `REPAID`, and the non-payment path — `DELINQUENT` → approved default → `DEFAULTED` with accrual frozen → `RECOVERY` with a pledged reserve applied through the router → impairment lowering LP NAV by exactly the impaired amount → treasury write-off to `CLOSED_WITH_LOSS`, the legal debt still on the ledger.
+- 60 scenarios executed against the deployed app, API and both chains (23 user, 23 payer-persona and credit, 7 non-payment drill on each of two facilities), plus browser checks of every non-performing state; all pass. Two fixes the run surfaced are in `main`: the API's receivable and repayment history is projected from finalized chain events (migration `0006`) instead of manual imports, and the app explains each non-performing state. About 180 real transactions, faucet tokens only.
+- Catalog: [docs/gpu/scenarios/live-payer-scenarios.md](docs/gpu/scenarios/live-payer-scenarios.md). Evidence with every check and transaction hash: [evidence/native-testnet/qa-20260915/](evidence/native-testnet/qa-20260915/). Persona registry: [config/gpu/scenarios/payer-personas.json](config/gpu/scenarios/payer-personas.json).
 
 ## Architecture
 
@@ -195,6 +205,7 @@ Components and operations
 - [Attestcoin tooling](offchain/attestcoin/README.md)
 - [Web application](apps/web/README.md) and [browser verification](apps/web/tests/README.md)
 - [Live user scenarios](docs/gpu/scenarios/live-user-scenarios.md)
+- [Live payer-persona and credit-operation scenarios](docs/gpu/scenarios/live-payer-scenarios.md)
 
 ## License
 

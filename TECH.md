@@ -2,7 +2,7 @@
 
 Rackline is a receivables-backed lending system for GPU operators. Verified revenue evidence may increase borrowing capacity; only measured destination cash may reduce debt.
 
-This document describes the implemented prototype and its public native-testnet evidence as of 2026-09-14. Partner integration, real GPU revenue, and production approval are outside the current evidence set. Detailed specifications live under `docs/gpu/`; this document is the map.
+This document describes the implemented prototype and its public native-testnet evidence as of 2026-09-17. Partner integration, real GPU revenue, and production approval are outside the current evidence set. Detailed specifications live under `docs/gpu/`; this document is the map.
 
 ## 1. System boundaries
 
@@ -111,7 +111,7 @@ PostgreSQL stores append-only observations, proof artifacts, native-verification
 | --- | --- |
 | Ingestion | Accepts signed webhooks or backfills source observations |
 | Proof worker | Fetches and stores official proof artifacts, prepares deployment-bound calldata, tracks native acceptance separately from business consumption |
-| Chain indexer | Projects finalized contract logs and handles reorgs |
+| Chain indexer | Projects finalized contract logs and handles reorgs; replays facility, evidence, receivable and repayment read models from the canonical journal on every sync (the API merges them with reviewed ledger imports, labelled by `recordOrigin`) |
 | Reconciliation | Compares source cash, destination cash, ledger allocations, and projected contract state |
 | Control monitor | Records control-state changes without granting financial authority |
 
@@ -135,13 +135,11 @@ The web client obtains deployment identity and contract addresses from `/v1/conf
 
 Every evidence-bearing record carries its profile. Production readers reject anything that is not `PRODUCTION`.
 
-## 9. Current evidence (2026-09-14)
+## 9. Current evidence (2026-09-17)
 
 - TEST_ONLY deployment on Creditcoin CC3 Testnet at block 5,484,231, bound by manifest to a TEST_ONLY Sepolia source escrow.
-- Four source-event consumptions through the official Attestcoin path; each proof-only transaction changed neither debt nor vault cash.
-- LP browser cycle (deposit, queue, cancel, process, claim, withdraw) returning shares to zero.
-- Borrower cycle: 1 tUSD draw followed by 1.000002 tUSD measured repayment returning legal debt to zero; source-protection expiry blocked new draws but not repayment.
-- 25 live persona scenarios passed against the deployed environment, including wrong-chain, bad-signature, nonce-replay, foreign-resource, and staff-scope denials.
+- 2026-09-14: four source-event consumptions through the official Attestcoin path; each proof-only transaction changed neither debt nor vault cash. LP browser cycle (deposit, queue, cancel, process, claim, withdraw) returning shares to zero. Borrower cycle: 1 tUSD draw followed by 1.000002 tUSD measured repayment returning legal debt to zero; source-protection expiry blocked new draws but not repayment. 25 live persona scenarios passed, including wrong-chain, bad-signature, nonce-replay, foreign-resource, and staff-scope denials.
+- 2026-09-14 → 17, live QA with simulated network payers (`SIM-AETHIR` epoch rewards, `SIM-GPUNET` job invoices; our own PAYER contracts on the TEST_ONLY escrow): thirty source transitions of every escrow event kind proven and consumed, ledgers reconciling exactly on both chains; the borrowing base tracking corrections, chargebacks, overdue haircuts and cancellations to the unit; on five facilities, draws, an over-limit refusal, freeze and resume, partial repayment with accrued interest, third-party `repayFor`, delinquency and cure, full repayment to `REPAID`, and the non-payment path through `DEFAULTED`, `RECOVERY` (reserve applied through the router), impairment and write-off to `CLOSED_WITH_LOSS`. 60 scenarios plus browser checks of the non-performing states, all passing. Two fixes surfaced by the run are in `main`: chain-projected receivable and repayment history (migration `0006`) and the credit-status explanation for non-performing facilities. Catalog `docs/gpu/scenarios/live-payer-scenarios.md`, evidence `evidence/native-testnet/qa-20260915/`.
 
 Source revenue is simulated and partner payment control is unconfigured, so none of this is partner, production, or real-revenue evidence. Links and hashes: `README.md`, `evidence/`.
 
@@ -155,6 +153,7 @@ Source revenue is simulated and partner payment control is unconfigured, so none
 | Python | `pytest` in `offchain/gpu`, `offchain/api`, `offchain/prover` | Accounting and reconciliation vectors, migrations and triggers, API auth and scopes, worker lifecycle |
 | Web | `npm --prefix apps/web run test:unit`, `test:e2e` | Demo store, client helpers, connected app against HTTP/EIP-1193 fixtures at desktop and mobile widths |
 | Live scenarios (opt-in) | `apps/web/scripts/live-scenarios.mjs` | Deployed environment, real test-token transactions, native refresh |
+| Live payer personas and credit operations (opt-in) | `apps/web/scripts/live-payer-scenarios.mjs`, `script/gpu/payer_sim.mjs` | Simulated network payers on the Sepolia escrow, proof consumption of every event kind, borrowing-base arithmetic, draws, freezes, delinquency, third-party repayment, default, recovery, impairment and write-off |
 
 ## 11. Legacy isolation
 
