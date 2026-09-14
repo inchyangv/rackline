@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "partnerRevenue": "SIMULATED",
+  "partnerSourceBinding": "UNCONFIGURED",
+  "note": "Simulated payer personas for QA on the TEST_ONLY source escrow. They imitate the settlement BEHAVIOUR of DePIN GPU networks (epoch rewards, per-job invoices, adjustments, chargebacks). They are not Aethir or GPU.net, carry no partner authorization and every amount is faucet test USD.",
+  "providerId": "mockdepin-testonly",
+  "accountName": "native-integration",
+  "personas": {
+    "sim-aethir": {
+      "label": "SIM-AETHIR (Cloud Host reward epochs)",
+      "imitates": "Aethir-style reward flow: the network recognises one reward obligation per epoch for a Cloud Host, pays each epoch in full after it closes, and applies QoS/uptime adjustments as signed corrections before payment.",
+      "cadence": "epoch",
+      "obligationPrefix": "sim-aethir-epoch",
+      "payoutStyle": "FULL_AFTER_EPOCH",
+      "adjustments": [
+        "SLA"
+      ],
+      "chargebacks": false
+    },
+    "sim-gpunet": {
+      "label": "SIM-GPUNET (marketplace job invoices)",
+      "imitates": "GPU.net-style marketplace flow: one invoice per rendered job, partial settlements as jobs stream, disputes that cancel an invoice, and a chargeback that reverses an already-paid settlement.",
+      "cadence": "job",
+      "obligationPrefix": "sim-gpunet-job",
+      "payoutStyle": "PARTIAL_STREAMING",
+      "adjustments": [
+        "DISPUTE",
+        "CANCEL"
+      ],
+      "chargebacks": true
+    }
+  },
+  "deployed": {
+    "sim-aethir": {
+      "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103",
+      "deployTxHash": "0x0a419c98f73aa193a890aca6a5445f44a79fd60873c753d73d565454e30cd736",
+      "deployBlock": 11703932,
+      "chainId": 11155111,
+      "registerTxHash": "0x7d90ae76d63cbe691923432e3aa20548db01e85046038dca80e97bdf4ecdc945",
+      "fundTxHash": "0x98e27e594bae935f58ddabcb1066ce6c5ff8bd2071d236e886cac5649ffe2668"
+    },
+    "sim-gpunet": {
+      "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982",
+      "deployTxHash": "0x79c7053c18f0343b2ec976373b2abc89a877a14bf0fbd4c412a10617d9b3c6d7",
+      "deployBlock": 11703935,
+      "chainId": 11155111,
+      "registerTxHash": "0xe85f94c7329d109a56559f389563e3a6fe7551781517a369cf31c3d3c68af6e9",
+      "fundTxHash": "0x1af128f64271772f1bd3017f381ecfc15e538b09f06e874eeda8f1d3b4e509aa"
+    }
+  }
+}

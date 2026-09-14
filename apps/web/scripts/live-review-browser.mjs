@@ -376,14 +376,21 @@ try {
     }
     await page.getByRole("button", { name: "Refresh", exact: true }).click();
   };
+  // A polling read tolerates one transient transport failure (ECONNRESET, timeout); the deadline still bounds it.
+  async function pollRead(url) {
+    try {
+      return await fetch(url, { headers: { Authorization: `Bearer ${sessionToken}` } });
+    } catch (error) {
+      console.log(`RETRY_READ_ONLY_RPC transient API read failure: ${error?.cause?.code ?? error?.code ?? error?.message}`);
+      return null;
+    }
+  }
   async function waitLp(predicate) {
     const deadline = Date.now() + 120000;
     while (Date.now() < deadline) {
       await ensureSession();
-      const response = await fetch(`${apiUrl}/v1/lp`, {
-        headers: { Authorization: `Bearer ${sessionToken}` },
-      });
-      if (response.ok) {
+      const response = await pollRead(`${apiUrl}/v1/lp`);
+      if (response?.ok) {
         const result = await response.json();
         assert.equal(result.meta.deploymentId, config.deploymentId);
         assert.equal(result.meta.executionProfile, "NATIVE_TESTNET");
@@ -437,11 +444,10 @@ try {
       const deadline = Date.now() + 120000;
       while (Date.now() < deadline) {
         await ensureSession();
-        const response = await fetch(
+        const response = await pollRead(
           `${apiUrl}/v1/facilities/${encodeURIComponent(facilityId)}/transaction-context`,
-          { headers: { Authorization: `Bearer ${sessionToken}` } },
         );
-        if (response.ok) {
+        if (response?.ok) {
           const result = await response.json();
           assert.equal(result.meta.deploymentId, config.deploymentId);
           assert.equal(result.meta.executionProfile, "NATIVE_TESTNET");
