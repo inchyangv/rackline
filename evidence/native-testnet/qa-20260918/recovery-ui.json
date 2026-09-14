@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "scope": "LIVE_RECOVERY_STATE_UI",
+  "webUrl": "https://rackline.studioliq.com",
+  "apiUrl": "https://api-rackline.studioliq.com",
+  "chainId": 102031,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "at": "2026-09-17T23:39:47.113Z",
+  "chainBlockTime": 1789688355,
+  "wallets": {
+    "borrower": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+    "lp": "0xee684316539c3996855AA01415555D7f5Af3Ada6"
+  },
+  "partnerRevenue": "SIMULATED",
+  "transactionsSubmitted": 0,
+  "totals": {
+    "pass": 20,
+    "fail": 0
+  },
+  "checks": [
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: badge shows Closed with loss",
+      "ok": true,
+      "detail": {
+        "badge": "Closed with loss"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: Borrow is disabled",
+      "ok": true
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: Available to borrow shows 0",
+      "ok": true,
+      "detail": {
+        "availableText": "0 tUSD"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: Current chain debt shows the ledger's legal debt (3.000013)",
+      "ok": true,
+      "detail": {
+        "debtText": "3.000013 tUSD"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: Repay directly stays enabled while legal debt remains (recovery collections)",
+      "ok": true
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: draw-blocked notice names the state gate in words (FACILITY_NOT_ACTIVE)",
+      "ok": true,
+      "detail": {
+        "noticeText": "This facility was written off. New borrowing is unavailable. Direct repayment remains available when the facility binding is valid.FACILITY_NOT_ACTIVE"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: credit status section explains the CLOSED_WITH_LOSS state",
+      "ok": true,
+      "detail": {
+        "creditText": "Why this facility is closed with lossWritten off on 9/18/2026, 8:02:00 AM: the vault recognised a loss of 3.000013 tUSD (reference 0x96a5…f61f). Write-off is not forgiveness — the legal debt of 3.0000"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: credit status mentions /Written off on/i",
+      "ok": true,
+      "detail": {
+        "creditText": "Why this facility is closed with lossWritten off on 9/18/2026, 8:02:00 AM: the vault recognised a loss of 3.000013 tUSD (reference 0x96a5…f61f). Write-off is not forgiveness — the legal debt of 3.000013 tUSD remains payable and any repayment is recovered for lenders.Installment due9/18/2026, 7:51:45"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: credit status mentions /loss of/i",
+      "ok": true,
+      "detail": {
+        "creditText": "Why this facility is closed with lossWritten off on 9/18/2026, 8:02:00 AM: the vault recognised a loss of 3.000013 tUSD (reference 0x96a5…f61f). Write-off is not forgiveness — the legal debt of 3.000013 tUSD remains payable and any repayment is recovered for lenders.Installment due9/18/2026, 7:51:45"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: credit status mentions /Write-off is not forgiveness/i",
+      "ok": true,
+      "detail": {
+        "creditText": "Why this facility is closed with lossWritten off on 9/18/2026, 8:02:00 AM: the vault recognised a loss of 3.000013 tUSD (reference 0x96a5…f61f). Write-off is not forgiveness — the legal debt of 3.000013 tUSD remains payable and any repayment is recovered for lenders.Installment due9/18/2026, 7:51:45"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: credit status mentions /Loss written off/",
+      "ok": true,
+      "detail": {
+        "creditText": "Why this facility is closed with lossWritten off on 9/18/2026, 8:02:00 AM: the vault recognised a loss of 3.000013 tUSD (reference 0x96a5…f61f). Write-off is not forgiveness — the legal debt of 3.000013 tUSD remains payable and any repayment is recovered for lenders.Installment due9/18/2026, 7:51:45"
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: state timeline lists the transitions with triggers and transaction links",
+      "ok": true,
+      "detail": {
+        "timeline": [
+          "Closed with loss from recovery · reference 0x96a5…f61f9/18/2026, 8:02:00 AM · 0xd803…d89e",
+          "Recovery from defaulted · recovery opened9/18/2026, 7:56:30 AM · 0xe992…e975",
+          "Defaulted from delinquent · reference 0xa980…59e49/18/2026, 7:54:45 AM · 0x3cfc…5d10",
+          "Delinquent from active · installment overdue9/18/2026, 7:52:15 AM · 0x97d9…01f3",
+          "Active from control pending · TEST ONLY simulated control9/18/2026, 5:19:15 AM · 0xf775…93d6"
+        ]
+      }
+    },
+    {
+      "name": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK: the timeline reaches back to the delinquency (installment overdue)",
+      "ok": true,
+      "detail": {
+        "timeline": [
+          "Closed with loss from recovery · reference 0x96a5…f61f9/18/2026, 8:02:00 AM · 0xd803…d89e",
+          "Recovery from defaulted · recovery opened9/18/2026, 7:56:30 AM · 0xe992…e975",
+          "Defaulted from delinquent · reference 0xa980…59e49/18/2026, 7:54:45 AM · 0x3cfc…5d10",
+          "Delinquent from active · installment overdue9/18/2026, 7:52:15 AM · 0x97d9…01f3",
+          "Active from control pending · TEST ONLY simulated control9/18/2026, 5:19:15 AM · 0xf775…93d6",
+          "Control pending from under review · TEST ONLY native approval9/18/2026, 5:19:00 AM · 0x547f…261a"
+        ]
+      }
+    },
+    {
+      "name": "activity lists repayment 0xd473c07d…",
+      "ok": true,
+      "detail": {
+        "found": [
+          "https://creditcoin-testnet.blockscout.com/tx/0xd473c07d632296051eaac97a3bfb2ca35241553beadad6892ef7bb4178d0db1c"
+        ]
+      }
+    },
+    {
+      "name": "every listed allocation is marked as a finalized event",
+      "ok": true,
+      "detail": {
+        "allocations": 18
+      }
+    },
+    {
+      "name": "borrower session requested no transaction",
+      "ok": true
+    },
+    {
+      "name": "no page errors (borrower)",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "Earn page shows the impaired vault NAV equal to the chain (after write-off)",
+      "ok": true,
+      "detail": {
+        "navText": "991.000034 tUSD",
+        "chainNav": "991000034",
+        "totalImpairment": "0",
+        "writtenOffCount": "3"
+      }
+    },
+    {
+      "name": "no page errors (LP)",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "facility panel fits a 400 px viewport without horizontal scroll",
+      "ok": true
+    }
+  ],
+  "evidence": {
+    "facilities": [
+      {
+        "apiId": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK",
+        "state": "CLOSED_WITH_LOSS",
+        "debt": "3000013",
+        "badge": "Closed with loss",
+        "borrowDisabled": true,
+        "repayDisabled": false,
+        "debtText": "3.000013 tUSD",
+        "availableText": "0 tUSD",
+        "noticeText": "This facility was written off. New borrowing is unavailable. Direct repayment remains available when the facility binding is valid.FACILITY_NOT_ACTIVE",
+        "creditText": "Why this facility is closed with lossWritten off on 9/18/2026, 8:02:00 AM: the vault recognised a loss of 3.000013 tUSD (reference 0x96a5…f61f). Write-off is not forgiveness — the legal debt of 3.000013 tUSD remains payable and any repayment is recovered for lenders.Installment due9/18/2026, 7:51:45 AMInstallment1 tUSDGrace period1 minDefault approved9/18/2026, 7:54:15 AMRecovery reserve0 tUSD pledged · 1 tUSD appliedLoss written off3.000013 tUSDInterest accrualFrozenClosed with loss from recovery · reference 0x96a5…f61f9/18/2026, 8:02:00 AM · 0xd803…d89e Recovery from defaulted · recovery ope",
+        "timeline": [
+          "Closed with loss from recovery · reference 0x96a5…f61f9/18/2026, 8:02:00 AM · 0xd803…d89e",
+          "Recovery from defaulted · recovery opened9/18/2026, 7:56:30 AM · 0xe992…e975",
+          "Defaulted from delinquent · reference 0xa980…59e49/18/2026, 7:54:45 AM · 0x3cfc…5d10",
+          "Delinquent from active · installment overdue9/18/2026, 7:52:15 AM · 0x97d9…01f3",
+          "Active from control pending · TEST ONLY simulated control9/18/2026, 5:19:15 AM · 0xf775…93d6",
+          "Control pending from under review · TEST ONLY native approval9/18/2026, 5:19:00 AM · 0x547f…261a",
+          "Under review from draft · TEST ONLY onboarding9/18/2026, 5:18:15 AM · 0xb9a7…ea3a"
+        ]
+      }
+    ],
+    "activity": {
+      "allocations": 18,
+      "links": 18
+    },
+    "lp": {
+      "navText": "991.000034 tUSD",
+      "chainNav": "991000034",
+      "totalImpairment": "0",
+      "writtenOffCount": "3"
+    }
+  },
+  "screenshots": "/private/tmp/claude-501/-Users-inch-Projects-ctc-btc-miner/7ee3493a-5cb4-455b-b713-8e4fa9aba8cf/scratchpad/ui2/"
+}

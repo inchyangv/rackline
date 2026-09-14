@@ -1,0 +1,1600 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "scope": "LIVE_USER_SCENARIOS",
+  "webUrl": "https://rackline.studioliq.com",
+  "apiUrl": "https://api-rackline.studioliq.com",
+  "chainId": 102031,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "startedAt": "2026-09-17T23:20:48.009Z",
+  "updatedAt": "2026-09-17T23:38:42.426Z",
+  "runs": [
+    "2026-09-17T23:20:48.009Z",
+    "2026-09-17T23:38:12.756Z"
+  ],
+  "wallets": {
+    "lp": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+    "borrower": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+    "keeper": "0x0013B177FF9fedB1781769F5F0f01fF9f79dB233"
+  },
+  "partnerRevenue": "SIMULATED",
+  "nativeProofAcceptance": "NOT_ASSERTED",
+  "totals": {
+    "pass": 23,
+    "fail": 0,
+    "skipped": 4
+  },
+  "scenarios": [
+    {
+      "id": "A1",
+      "persona": "visitor",
+      "title": "public pages render at desktop and mobile widths",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "GET / is 200 HTML",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "GET /app is 200 HTML",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "GET /demo is 200 HTML",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "/ fits 1440px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app fits 1440px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app shows Connect wallet at 1440px",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors at 1440px",
+          "ok": true,
+          "detail": []
+        },
+        {
+          "name": "/ fits 390px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app fits 390px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app shows Connect wallet at 390px",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors at 390px",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:20:48.010Z",
+      "finishedAt": "2026-09-17T23:20:55.052Z"
+    },
+    {
+      "id": "A2",
+      "persona": "visitor",
+      "title": "fixture demo makes no API or RPC calls",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "demo renders interactive controls",
+          "ok": true,
+          "detail": {
+            "buttons": 21
+          }
+        },
+        {
+          "name": "no API or RPC origin request from /demo",
+          "ok": true,
+          "detail": []
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {
+        "requestsObserved": []
+      },
+      "startedAt": "2026-09-17T23:20:55.053Z",
+      "finishedAt": "2026-09-17T23:20:56.340Z"
+    },
+    {
+      "id": "A3",
+      "persona": "visitor",
+      "title": "public API binding equals the committed deployment manifest",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/health alive",
+          "ok": true,
+          "detail": {
+            "status": "alive",
+            "service": "rackline-gpu-api",
+            "schemaVersion": "1.0"
+          }
+        },
+        {
+          "name": "/ready ready and FRESH",
+          "ok": true,
+          "detail": {
+            "status": "ready",
+            "freshness": "FRESH",
+            "block": 5506336
+          }
+        },
+        {
+          "name": "/ready deployment matches manifest",
+          "ok": true
+        },
+        {
+          "name": "/v1/config deployment matches manifest",
+          "ok": true
+        },
+        {
+          "name": "config.contracts.vault matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0x864f7ca37a640766d6e0a662c0a356d9b5813e75",
+            "manifest": "0x864f7ca37a640766d6e0a662c0a356d9b5813e75"
+          }
+        },
+        {
+          "name": "config.contracts.manager matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d",
+            "manifest": "0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d"
+          }
+        },
+        {
+          "name": "config.contracts.repaymentRouter matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0xd4dcecfbb505a428e3c99363c23e58bfdb37949b",
+            "manifest": "0xd4dcecfbb505a428e3c99363c23e58bfdb37949b"
+          }
+        },
+        {
+          "name": "config.contracts.ledger matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0xe045da25b405f994802d7b5a32ed4331a3db1ecb",
+            "manifest": "0xe045da25b405f994802d7b5a32ed4331a3db1ecb"
+          }
+        },
+        {
+          "name": "config.contracts.roles matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0x421b075c3713339f57daf4c4564bc991cbeedb20",
+            "manifest": "0x421b075c3713339f57daf4c4564bc991cbeedb20"
+          }
+        },
+        {
+          "name": "config.contracts.asset matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0x03115387f28660088faa6a9b00aa21cc2ad1ade5",
+            "manifest": "0x03115387f28660088faa6a9b00aa21cc2ad1ade5"
+          }
+        },
+        {
+          "name": "config asset matches manifest",
+          "ok": true
+        },
+        {
+          "name": "LendingVaultV2 on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "CreditFacilityManager on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "RepaymentRouter on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "DebtLedger on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "ReceivableBook on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "EvidenceBook on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "AttestcoinRevenueVerifier on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "GpuTestToken on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "vault asset is the configured test token",
+          "ok": true
+        },
+        {
+          "name": "token is TEST_ONLY",
+          "ok": true
+        },
+        {
+          "name": "ready block is at or behind RPC head",
+          "ok": true,
+          "detail": {
+            "ready": 5506336,
+            "head": 5506342
+          }
+        }
+      ],
+      "evidence": {
+        "rpcHead": 5506342
+      },
+      "startedAt": "2026-09-17T23:20:56.341Z",
+      "finishedAt": "2026-09-17T23:21:01.110Z"
+    },
+    {
+      "id": "A4",
+      "persona": "visitor",
+      "title": "unauthenticated and garbage-token requests are denied",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/me without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/me garbage token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/lp without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/lp garbage token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/facilities without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/facilities garbage token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/operations without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/operations garbage token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/connection-requests without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/connection-requests garbage token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/proofs without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/proofs garbage token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "POST /v1/onboarding without token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "unsigned JWT-shaped token → 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:21:01.112Z",
+      "finishedAt": "2026-09-17T23:21:06.843Z"
+    },
+    {
+      "id": "B1",
+      "persona": "misuse",
+      "title": "wallet on Ethereum mainnet must switch before sign-in",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "rejected switch shows an error",
+          "ok": true,
+          "detail": {
+            "alertText": "User rejected the network switch."
+          }
+        },
+        {
+          "name": "rejected switch issued no challenge",
+          "ok": true,
+          "detail": [
+            "GET /v1/config"
+          ]
+        },
+        {
+          "name": "no Overview without the correct chain",
+          "ok": true
+        },
+        {
+          "name": "switch was requested",
+          "ok": true
+        },
+        {
+          "name": "accepted switch asks to connect again",
+          "ok": true
+        },
+        {
+          "name": "no challenge before the second connect",
+          "ok": true
+        },
+        {
+          "name": "sign-in succeeds after the switch",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:21:06.845Z",
+      "finishedAt": "2026-09-17T23:21:12.656Z"
+    },
+    {
+      "id": "B2",
+      "persona": "misuse",
+      "title": "challenge signed by a different key is rejected",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "verify rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:21:12.657Z",
+      "finishedAt": "2026-09-17T23:21:13.749Z"
+    },
+    {
+      "id": "B3",
+      "persona": "misuse",
+      "title": "nonce replay is rejected",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "first verify succeeds",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "replayed verify rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:21:13.750Z",
+      "finishedAt": "2026-09-17T23:21:14.920Z"
+    },
+    {
+      "id": "B4",
+      "persona": "misuse",
+      "title": "unknown nonce and mismatched chain are rejected",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "unknown nonce rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "mainnet chainId rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:21:14.921Z",
+      "finishedAt": "2026-09-17T23:21:15.959Z"
+    },
+    {
+      "id": "B5",
+      "persona": "unknown-wallet",
+      "title": "first sign-in shows an empty, honest state",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/me roles empty and no borrower",
+          "ok": true,
+          "detail": {
+            "wallet": "0x25dA05960f19B90092ed7A0F165D3C2CAbF61af7",
+            "borrowerId": null,
+            "roles": []
+          }
+        },
+        {
+          "name": "borrow view asks to register a profile",
+          "ok": true
+        },
+        {
+          "name": "vault position is 0 tUSD",
+          "ok": true,
+          "detail": {
+            "position": "0 tUSD"
+          }
+        },
+        {
+          "name": "withdraw disabled with zero shares",
+          "ok": true
+        },
+        {
+          "name": "operations scope denied for unknown wallet",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "fits 1440px",
+          "ok": true
+        },
+        {
+          "name": "fits 390px",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:21:15.965Z",
+      "finishedAt": "2026-09-17T23:21:22.245Z"
+    },
+    {
+      "id": "C1",
+      "persona": "lp",
+      "title": "read-only LP position parity between chain, API and UI",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/lp 200 for this deployment",
+          "ok": true
+        },
+        {
+          "name": "API shares equal chain shares",
+          "ok": true,
+          "detail": {
+            "chain": {
+              "shares": "0",
+              "walletBalance": "9994999996",
+              "nav": "991000033",
+              "totalShares": "1000000000000"
+            },
+            "api": {
+              "shares": "0",
+              "walletBalance": "9994999996",
+              "nav": "991000033",
+              "totalShares": "1000000000000"
+            }
+          }
+        },
+        {
+          "name": "API wallet balance equals chain balance",
+          "ok": true
+        },
+        {
+          "name": "API NAV equals chain NAV",
+          "ok": true
+        },
+        {
+          "name": "API total shares equal chain supply",
+          "ok": true
+        },
+        {
+          "name": "UI position equals API share assets",
+          "ok": true,
+          "detail": {
+            "position": "0 tUSD",
+            "shareAssets": "0"
+          }
+        },
+        {
+          "name": "prior withdrawal history is visible in the API",
+          "ok": true,
+          "detail": {
+            "rows": 7
+          }
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {
+        "chain": {
+          "shares": "0",
+          "walletBalance": "9994999996",
+          "nav": "991000033",
+          "totalShares": "1000000000000"
+        },
+        "api": {
+          "shares": "0",
+          "walletBalance": "9994999996",
+          "nav": "991000033",
+          "totalShares": "1000000000000"
+        }
+      },
+      "startedAt": "2026-09-17T23:21:22.246Z",
+      "finishedAt": "2026-09-17T23:21:29.128Z"
+    },
+    {
+      "id": "C3",
+      "persona": "lp",
+      "title": "over-withdraw is blocked in the UI and by the contract",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Withdraw button disabled",
+          "ok": true
+        },
+        {
+          "name": "Join withdrawal queue disabled",
+          "ok": true
+        },
+        {
+          "name": "static withdraw of 1 share reverts with zero balance",
+          "ok": true,
+          "detail": "execution reverted (unknown custom error)"
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "revert": "execution reverted (unknown custom error)"
+      },
+      "startedAt": "2026-09-17T23:21:29.128Z",
+      "finishedAt": "2026-09-17T23:21:34.260Z"
+    },
+    {
+      "id": "C2",
+      "persona": "lp",
+      "title": "full liquidity cycle with real testnet transactions",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "live LP browser flow passed",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "tail": "b9ee2ef28bee5\"},{\"action\":\"processWithdrawals\",\"hash\":\"0x66c189d36bf891aa671d9a9ed3263c38127ed1f4ffcf5bab8ca6c1f7b6b018ca\"},{\"action\":\"claimWithdrawal\",\"hash\":\"0xe38839d55fdb76a40897917c6b57a10abc39b98bef0845ce0ecb76ab9cb0efdb\"},{\"action\":\"withdraw\",\"hash\":\"0xcfd8b827bb73def52ec866094fd4dcfd138cddb5fd97647f0b9a60849c3d7165\"}],\"nativeProofAcceptance\":\"NOT_ASSERTED\",\"partnerRevenue\":\"NOT_ASSERTED\"}\n"
+          }
+        },
+        {
+          "name": "approve receipt 0xd91ccaa0… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506347
+          }
+        },
+        {
+          "name": "deposit receipt 0x522f3817… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506349
+          }
+        },
+        {
+          "name": "requestWithdrawal receipt 0x67651e77… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506357
+          }
+        },
+        {
+          "name": "cancelWithdrawal receipt 0x36d922f6… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506365
+          }
+        },
+        {
+          "name": "requestWithdrawal receipt 0x59073d94… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506373
+          }
+        },
+        {
+          "name": "processWithdrawals receipt 0x66c189d3… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506381
+          }
+        },
+        {
+          "name": "claimWithdrawal receipt 0xe38839d5… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506388
+          }
+        },
+        {
+          "name": "withdraw receipt 0xcfd8b827… succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5506395
+          }
+        },
+        {
+          "name": "cycle includes approve",
+          "ok": true
+        },
+        {
+          "name": "cycle includes deposit",
+          "ok": true
+        },
+        {
+          "name": "cycle includes requestWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "cycle includes cancelWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "cycle includes requestWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "cycle includes processWithdrawals",
+          "ok": true
+        },
+        {
+          "name": "cycle includes claimWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "final LP shares are zero",
+          "ok": true,
+          "detail": {
+            "shares": "0"
+          }
+        },
+        {
+          "name": "token balance returned within 1 tUSD of the start (queue fill may round)",
+          "ok": true,
+          "detail": {
+            "transactions": [
+              {
+                "action": "approve",
+                "hash": "0xd91ccaa07531455ff4769d38b5889d7c525516ff883a24f21c6a79dea88488ea",
+                "block": 5506347,
+                "status": 1
+              },
+              {
+                "action": "deposit",
+                "hash": "0x522f38176a9d5033ee1cf8d3b99f23d01cf1c4b58953e89721ce38fb375238b5",
+                "block": 5506349,
+                "status": 1
+              },
+              {
+                "action": "requestWithdrawal",
+                "hash": "0x67651e77012662cc8099493b39920a85a5cc4f58bdf2adacce2e6fbe0d3d106f",
+                "block": 5506357,
+                "status": 1
+              },
+              {
+                "action": "cancelWithdrawal",
+                "hash": "0x36d922f6db2cceaa31ad86617ae7672ba91038e7da935d314c6659d8c54a23b1",
+                "block": 5506365,
+                "status": 1
+              },
+              {
+                "action": "requestWithdrawal",
+                "hash": "0x59073d94fbd22e99cbc58e66490ba852d7abb6850f686bfafb4b9ee2ef28bee5",
+                "block": 5506373,
+                "status": 1
+              },
+              {
+                "action": "processWithdrawals",
+                "hash": "0x66c189d36bf891aa671d9a9ed3263c38127ed1f4ffcf5bab8ca6c1f7b6b018ca",
+                "block": 5506381,
+                "status": 1
+              },
+              {
+                "action": "claimWithdrawal",
+                "hash": "0xe38839d55fdb76a40897917c6b57a10abc39b98bef0845ce0ecb76ab9cb0efdb",
+                "block": 5506388,
+                "status": 1
+              },
+              {
+                "action": "withdraw",
+                "hash": "0xcfd8b827bb73def52ec866094fd4dcfd138cddb5fd97647f0b9a60849c3d7165",
+                "block": 5506395,
+                "status": 1
+              }
+            ],
+            "walletBalanceBefore": "9994999996",
+            "walletBalanceAfter": "9994999995",
+            "gasSpentWei": "1954653500000000"
+          }
+        }
+      ],
+      "evidence": {
+        "transactions": [
+          {
+            "action": "approve",
+            "hash": "0xd91ccaa07531455ff4769d38b5889d7c525516ff883a24f21c6a79dea88488ea",
+            "block": 5506347,
+            "status": 1
+          },
+          {
+            "action": "deposit",
+            "hash": "0x522f38176a9d5033ee1cf8d3b99f23d01cf1c4b58953e89721ce38fb375238b5",
+            "block": 5506349,
+            "status": 1
+          },
+          {
+            "action": "requestWithdrawal",
+            "hash": "0x67651e77012662cc8099493b39920a85a5cc4f58bdf2adacce2e6fbe0d3d106f",
+            "block": 5506357,
+            "status": 1
+          },
+          {
+            "action": "cancelWithdrawal",
+            "hash": "0x36d922f6db2cceaa31ad86617ae7672ba91038e7da935d314c6659d8c54a23b1",
+            "block": 5506365,
+            "status": 1
+          },
+          {
+            "action": "requestWithdrawal",
+            "hash": "0x59073d94fbd22e99cbc58e66490ba852d7abb6850f686bfafb4b9ee2ef28bee5",
+            "block": 5506373,
+            "status": 1
+          },
+          {
+            "action": "processWithdrawals",
+            "hash": "0x66c189d36bf891aa671d9a9ed3263c38127ed1f4ffcf5bab8ca6c1f7b6b018ca",
+            "block": 5506381,
+            "status": 1
+          },
+          {
+            "action": "claimWithdrawal",
+            "hash": "0xe38839d55fdb76a40897917c6b57a10abc39b98bef0845ce0ecb76ab9cb0efdb",
+            "block": 5506388,
+            "status": 1
+          },
+          {
+            "action": "withdraw",
+            "hash": "0xcfd8b827bb73def52ec866094fd4dcfd138cddb5fd97647f0b9a60849c3d7165",
+            "block": 5506395,
+            "status": 1
+          }
+        ],
+        "walletBalanceBefore": "9994999996",
+        "walletBalanceAfter": "9994999995",
+        "gasSpentWei": "1954653500000000"
+      },
+      "startedAt": "2026-09-17T23:21:34.261Z",
+      "finishedAt": "2026-09-17T23:35:48.864Z"
+    },
+    {
+      "id": "D1",
+      "persona": "borrower",
+      "title": "read-only facility history and finalized repayment evidence",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "read-only borrower audit passed (debt 0, Repaid allocation, activity link)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "tail": "\":\"borrower\",\"resumedCancelledRequest\":null,\"resumedPendingRequest\":null,\"resumedBorrowerRepay\":false,\"expectedRepaymentHash\":\"0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78\",\"chainId\":102031,\"deploymentId\":\"01K54G0000QN0QHY2GCA10HGXN\",\"wallet\":\"0x42E46697957766fFad9b7f55621260f99Dc204B7\",\"transactions\":[],\"nativeProofAcceptance\":\"NOT_ASSERTED\",\"partnerRevenue\":\"NOT_ASSERTED\"}\n"
+          }
+        },
+        {
+          "name": "read-only run submitted nothing",
+          "ok": true
+        },
+        {
+          "name": "facility is REPAID with zero recorded principal",
+          "ok": true,
+          "detail": {
+            "state": "REPAID"
+          }
+        },
+        {
+          "name": "prior Repaid log: principal 1 tUSD, interest 2 units, no excess, debt 0",
+          "ok": true,
+          "detail": {
+            "facilityId": "0x2515ccdafaee79ff908308cb41af249ed0b88f5baf64d187d28d7eebf0e76bc3",
+            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "requested": "1000002",
+            "received": "1000002",
+            "applied": "1000002",
+            "feePaid": "0",
+            "interestPaid": "2",
+            "principalPaid": "1000000",
+            "excess": "0",
+            "newDebt": "0"
+          }
+        }
+      ],
+      "evidence": {
+        "priorRepaymentHash": "0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78"
+      },
+      "startedAt": "2026-09-17T23:38:12.775Z",
+      "finishedAt": "2026-09-17T23:38:32.607Z"
+    },
+    {
+      "id": "D2",
+      "persona": "borrower",
+      "title": "draw is blocked while source protection is expired; repayment path stays honest",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "transaction-context 200",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "API reports a draw-block reason (FACILITY_NOT_ACTIVE for a repaid facility, else NO_ELIGIBLE_DRAW) with zero availableDraw",
+          "ok": true,
+          "detail": {
+            "availableDraw": "0",
+            "drawBlockedReason": "FACILITY_NOT_ACTIVE",
+            "debt": "0"
+          }
+        },
+        {
+          "name": "chain eligibleUnpaid is zero",
+          "ok": true
+        },
+        {
+          "name": "debt is zero",
+          "ok": true
+        },
+        {
+          "name": "static borrow reverts on chain",
+          "ok": true,
+          "detail": "execution reverted (unknown custom error)"
+        },
+        {
+          "name": "UI shows the blocked reason",
+          "ok": true
+        },
+        {
+          "name": "Borrow button disabled",
+          "ok": true
+        },
+        {
+          "name": "Repay directly disabled with zero debt",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "chainEligibility": {
+          "eligible": "0",
+          "evidenceValidUntil": "0",
+          "checkpointAge": "0",
+          "at": 1789688310
+        },
+        "api": {
+          "availableDraw": "0",
+          "drawBlockedReason": "FACILITY_NOT_ACTIVE",
+          "debt": "0"
+        },
+        "borrowRevert": "execution reverted (unknown custom error)"
+      },
+      "startedAt": "2026-09-17T23:38:32.608Z",
+      "finishedAt": "2026-09-17T23:38:42.361Z"
+    },
+    {
+      "id": "D3",
+      "persona": "operator",
+      "title": "new source transitions (payout, new obligation) are proven and consumed without touching debt or cash",
+      "status": "SKIPPED",
+      "checks": [],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:24.642Z",
+      "reason": "superseded by the payer-persona suite in this run (same paths on fresh facilities: K8 browser draw/repay on v13, R2 checkpoint/draw on v14)"
+    },
+    {
+      "id": "D3b",
+      "persona": "operator",
+      "title": "native checkpoint refresh makes receivables eligible on chain",
+      "status": "SKIPPED",
+      "checks": [],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:24.642Z",
+      "reason": "superseded by the payer-persona suite in this run (same paths on fresh facilities: K8 browser draw/repay on v13, R2 checkpoint/draw on v14)"
+    },
+    {
+      "id": "D4",
+      "persona": "borrower",
+      "title": "a REPAID facility cannot draw again even with fresh evidence and a fresh checkpoint",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "facility is REPAID (terminal: only RELEASED follows)",
+          "ok": true,
+          "detail": "REPAID"
+        },
+        {
+          "name": "availableDraw is 0 (eligibility gates stale at this time; state gate tested directly)",
+          "ok": true,
+          "detail": {
+            "eligibleReceivables": "0",
+            "receivableLimit": "0",
+            "availableDraw": "0",
+            "evidenceValidUntil": "0",
+            "checkpointAge": "0"
+          }
+        },
+        {
+          "name": "static borrow reverts with FacilityNotActive (state gate precedes eligibility)",
+          "ok": true,
+          "detail": "FacilityNotActive"
+        },
+        {
+          "name": "API reports REPAID and blocks the draw",
+          "ok": true,
+          "detail": {
+            "state": "REPAID",
+            "availableDraw": "0",
+            "drawBlockedReason": "FACILITY_NOT_ACTIVE",
+            "debt": "0"
+          }
+        },
+        {
+          "name": "UI Borrow disabled",
+          "ok": true
+        },
+        {
+          "name": "UI Repay disabled with zero debt",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "chain": {
+          "block": 5506404,
+          "at": 1789688175,
+          "facilityState": "REPAID",
+          "managerEvaluation": {
+            "eligibleReceivables": "0",
+            "receivableLimit": "0",
+            "availableDraw": "0",
+            "evidenceValidUntil": "0",
+            "checkpointAge": "0"
+          },
+          "exposureEvaluation": {
+            "eligibleReceivables": "0",
+            "availableDraw": "0"
+          },
+          "controlObservation": {
+            "lastObservedAt": "1789358955",
+            "ageSeconds": 329220,
+            "maxAge": 900
+          },
+          "eligibilityFresh": false
+        },
+        "borrowRevert": "FacilityNotActive",
+        "api": {
+          "state": "REPAID",
+          "availableDraw": "0",
+          "drawBlockedReason": "FACILITY_NOT_ACTIVE",
+          "debt": "0"
+        }
+      },
+      "startedAt": "2026-09-17T23:36:24.642Z",
+      "finishedAt": "2026-09-17T23:36:33.499Z"
+    },
+    {
+      "id": "D5",
+      "persona": "operator",
+      "title": "an additional facility is opened on chain, registered in the API and receives its own consumed obligation",
+      "status": "SKIPPED",
+      "checks": [],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:33.500Z",
+      "reason": "superseded by the payer-persona suite in this run (same paths on fresh facilities: K8 browser draw/repay on v13, R2 checkpoint/draw on v14)"
+    },
+    {
+      "id": "D6",
+      "persona": "borrower",
+      "title": "real draw and repayment on the new facility through the browser",
+      "status": "SKIPPED",
+      "checks": [],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:33.500Z",
+      "reason": "superseded by the payer-persona suite in this run (same paths on fresh facilities: K8 browser draw/repay on v13, R2 checkpoint/draw on v14)"
+    },
+    {
+      "id": "E1",
+      "persona": "unknown-wallet",
+      "title": "borrower onboarding through the app is persisted and idempotent",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "UI confirms pending review",
+          "ok": true
+        },
+        {
+          "name": "exactly one onboarding POST",
+          "ok": true,
+          "detail": [
+            "GET /v1/config",
+            "POST /gpu/auth/challenge",
+            "POST /gpu/auth/verify",
+            "GET /v1/lp",
+            "GET /v1/providers",
+            "POST /v1/onboarding",
+            "GET /v1/providers"
+          ]
+        },
+        {
+          "name": "/v1/me shows borrower role after reconnect",
+          "ok": true,
+          "detail": {
+            "wallet": "0x25dA05960f19B90092ed7A0F165D3C2CAbF61af7",
+            "borrowerId": "01M2RVNCEBD47WQ26ZNC3R752N",
+            "roles": [
+              "borrower"
+            ]
+          }
+        },
+        {
+          "name": "already-linked wallet returns the same borrower (201)",
+          "ok": true,
+          "detail": {
+            "status": 201
+          }
+        },
+        {
+          "name": "identical replay returns the identical response",
+          "ok": true,
+          "detail": {
+            "data": {
+              "state": "PENDING_REVIEW",
+              "borrowerId": "01M2RVNCEBD47WQ26ZNC3R752N",
+              "refreshSession": true
+            },
+            "schemaVersion": "1.0",
+            "financialAuthorization": false
+          }
+        },
+        {
+          "name": "same key with a different payload → 409 IDEMPOTENCY_CONFLICT",
+          "ok": true,
+          "detail": {
+            "status": 409,
+            "code": "IDEMPOTENCY_CONFLICT"
+          }
+        },
+        {
+          "name": "stale pre-onboarding token remains usable for reads only until expiry",
+          "ok": true
+        },
+        {
+          "name": "no localStorage token persistence",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {
+        "borrowerId": "01M2RVNCEBD47WQ26ZNC3R752N"
+      },
+      "startedAt": "2026-09-17T23:36:33.500Z",
+      "finishedAt": "2026-09-17T23:36:40.818Z"
+    },
+    {
+      "id": "E2",
+      "persona": "new-borrower",
+      "title": "provider connection request is persisted across reload",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "UI confirms the request",
+          "ok": true
+        },
+        {
+          "name": "request listed as PENDING_REVIEW",
+          "ok": true,
+          "detail": {
+            "applicationId": "01M2RVNMT45C9413QXBBWFSJWJ",
+            "providerId": "mockdepin-testonly",
+            "externalAccountId": "scenario-e2-1789688205435",
+            "state": "PENDING_REVIEW",
+            "createdAt": "2026-09-17T23:36:46.139288+00:00"
+          }
+        },
+        {
+          "name": "request visible after reload as pending review",
+          "ok": true
+        },
+        {
+          "name": "duplicate account request returns the same application",
+          "ok": true,
+          "detail": {
+            "status": 202,
+            "id": "01M2RVNMT45C9413QXBBWFSJWJ"
+          }
+        },
+        {
+          "name": "credentialConfigured stays false",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        },
+        {
+          "name": "fits 1440px",
+          "ok": true
+        },
+        {
+          "name": "fits 390px",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "applicationId": "01M2RVNMT45C9413QXBBWFSJWJ"
+      },
+      "startedAt": "2026-09-17T23:36:40.819Z",
+      "finishedAt": "2026-09-17T23:36:51.818Z"
+    },
+    {
+      "id": "E3",
+      "persona": "new-borrower",
+      "title": "proof request for a foreign provider account is refused",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "foreign provider account → 404",
+          "ok": true,
+          "detail": {
+            "status": 404,
+            "code": "NOT_FOUND"
+          }
+        },
+        {
+          "name": "no proof request recorded for this wallet",
+          "ok": true,
+          "detail": {
+            "count": 0
+          }
+        },
+        {
+          "name": "another borrower's facility is not readable",
+          "ok": true,
+          "detail": {
+            "status": 404
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:51.819Z",
+      "finishedAt": "2026-09-17T23:36:53.856Z"
+    },
+    {
+      "id": "F1",
+      "persona": "lp-and-borrower",
+      "title": "staff scopes are denied to customer wallets",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "lp /v1/operations → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "lp /v1/recoveries → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "lp operations action → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "borrower /v1/operations → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "borrower /v1/recoveries → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "borrower operations action → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "LP cannot read the borrower's facility",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "LP cannot read the borrower's transaction context",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:53.859Z",
+      "finishedAt": "2026-09-17T23:36:59.337Z"
+    },
+    {
+      "id": "F2",
+      "persona": "keeper-underwriter-treasury",
+      "title": "staff roles are not inferred from deployment keys",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "keeper wallet has no API roles",
+          "ok": true,
+          "detail": {
+            "roles": []
+          }
+        },
+        {
+          "name": "keeper /v1/operations → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "underwriter wallet has no API roles",
+          "ok": true,
+          "detail": {
+            "roles": []
+          }
+        },
+        {
+          "name": "underwriter /v1/operations → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "treasury wallet has no API roles",
+          "ok": true,
+          "detail": {
+            "roles": []
+          }
+        },
+        {
+          "name": "treasury /v1/operations → 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:36:59.338Z",
+      "finishedAt": "2026-09-17T23:37:03.054Z"
+    },
+    {
+      "id": "G1",
+      "persona": "any",
+      "title": "CORS echoes only the allowed origin",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "allowed origin echoed",
+          "ok": true,
+          "detail": {
+            "header": "https://rackline.studioliq.com"
+          }
+        },
+        {
+          "name": "foreign origin not echoed",
+          "ok": true,
+          "detail": {
+            "header": null
+          }
+        },
+        {
+          "name": "foreign preflight not allowed",
+          "ok": true,
+          "detail": {
+            "status": 400
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:37:03.055Z",
+      "finishedAt": "2026-09-17T23:37:04.188Z"
+    },
+    {
+      "id": "G2",
+      "persona": "any",
+      "title": "session lifetime is bounded",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "session lifetime ≤ 1 hour",
+          "ok": true,
+          "detail": {
+            "lifetime": 900
+          }
+        }
+      ],
+      "evidence": {
+        "lifetimeSeconds": 900
+      },
+      "startedAt": "2026-09-17T23:37:04.189Z",
+      "finishedAt": "2026-09-17T23:37:04.999Z"
+    },
+    {
+      "id": "G3",
+      "persona": "any",
+      "title": "authenticated reads carry consistent deployment metadata",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/facilities bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/facilities never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/receivables bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/receivables never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/settlements bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/settlements never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/repayments bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/repayments never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/connections bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/connections never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/control-agreements bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/control-agreements never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/lp bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/lp never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/providers bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5506400,
+            "head": 5506407,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/providers never claims financial authorization",
+          "ok": true
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T23:37:04.999Z",
+      "finishedAt": "2026-09-17T23:37:10.604Z"
+    }
+  ]
+}

@@ -180,6 +180,42 @@ Activity lists the reserve repayments (`0x2b9153d8…` v8, `0x8f076d01…` v9) a
 the RecoveryManager as payer; the Earn page shows "Vault net assets" 994.000021 tUSD equal to the chain after two
 write-offs (`ui/earn-vault-nav.png`); the facility panel fits a 400 px viewport.
 
+## Second full execution — 2026-09-17 19:06 → 23:39 UTC (2026-09-18 KST), fresh facilities v11–v14
+
+Requested as a complete re-run after the credit-status and indexer changes. Evidence
+[`evidence/native-testnet/qa-20260918/`](../../../evidence/native-testnet/qa-20260918/): `payer-personas.json`
+(30 scenarios, cycle tag `c3` → obligations `c3-epoch-N` / `c3-job-N`), `regression.json` (27 user scenarios),
+`recovery-ui.json` (v14 browser check, 20/20).
+
+| Suite | PASS | FAIL | SKIPPED | Note |
+| --- | --- | --- | --- | --- |
+| Payer personas + credit operations + non-payment drill (P/N/K/R, 30) | 30 | 0 | 0 | N4 and K1 carry an `ENVIRONMENT` amendment: their API-mirror polls ran while the indexer was down (see below); every on-chain check passed and the same mirror was verified afterwards (K3/K5/K6/K7). K2/K4/K7 on v12 ran after the run with a dedicated checkpoint (`qa-c3-checkpoint-k2`). |
+| User scenarios (A–G, 27) | 23 | 0 | 4 | First pass (19:06 UTC) hit the public RPC outage (7 timeouts) and was discarded after its stray 1 tUSD LP deposit was withdrawn; the re-run at 23:20 UTC passed. D3/D3b/D5/D6 superseded by K8 (v13) and R2 (v14). D1/D2 expectations updated for the history projection and `FACILITY_NOT_ACTIVE`. |
+
+Facilities: v11 (API `2TF58GXAJ7XW7ZCXV762DQPS5J`, SIM-AETHIR) and v12 (`4M70T38AZY52X35SXV5B6JW6HW`, SIM-GPUNET)
+REPAID; v13 (`35PW9TVSK1Z1ARDABPEKHJGEWV`) REPAID through the browser; v14 (`5BJN4NVJ4SEF7M2CRBH0Q3DQYK`)
+CLOSED_WITH_LOSS after default → recovery reserve → impairment → write-off (loss 3.000013; vault NAV
+994.000045 → 991.000034, three written-off facilities). Approval nonces 10–13 (nonce 9 / facility v10 was
+consumed by an opening that the RPC outage interrupted after its `openFacility`; v10 is unusable and unused).
+
+What the environment did during the run (all recorded, none hidden):
+
+1. **Public CC3 RPC outage, 19:07 → ~20:15 UTC.** Connection resets and `-32603 Expect block number from id`
+   from lagging replicas broke browser reads, ethers polls and every forge dry run. Mitigations now in the
+   tooling: `GPU_FORK_BLOCK_LAG` pins the opening dry run a few blocks behind the head, `native_tools`
+   re-asks for a receipt a lagging peer answers `null` for, K7 walks `eth_getLogs` in 2000-block windows
+   (the RPC caps at 2048).
+2. **Indexer crash loop, 19:29 → 21:47 UTC.** A `chain_blocks` row (5505414, PENDING) existed above the
+   committed cursor, so every sync died on the primary key; with the API answering `EVIDENCE_STALE` the N4/K1
+   API polls failed. Fixed by removing the orphan row and, permanently, by sweeping journal rows above the
+   cursor at the start of every sync (regression test). The muted alerter logged `indexer-crash` /
+   `indexer-stale` as designed.
+3. **Two operator mistakes, both corrected on chain.** An aborted first attempt (before the cycle tag was
+   wired) applied two extra SLA corrections to the old `epoch-2` obligation and a probe recognised
+   `c2-epoch-1`; the destination refused the account's later events with `RevisionGap` until those three
+   source events were recorded and consumed in order (`qa-stray-*`). A run killed during K3 left v12
+   `DRAW_FROZEN`; it was observed and reactivated by the underwriter before the retry.
+
 ### Findings
 
 1. **API history mirrors are import-only (product gap, medium).** `/v1/receivables` and `/v1/repayments` show

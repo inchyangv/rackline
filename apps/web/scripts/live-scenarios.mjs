@@ -615,7 +615,8 @@ await scenario("D2", "borrower", "draw is blocked while source protection is exp
   t.evidence.chainEligibility = { eligible: String(eligible), evidenceValidUntil: String(validUntil), checkpointAge: String(age), at: now };
   t.evidence.api = { availableDraw: context.json.data.availableDraw, drawBlockedReason: context.json.data.drawBlockedReason, debt: context.json.data.debt };
   if (eligible > 0n) t.skip(`checkpoint currently fresh (eligible ${eligible}); blocked-draw scenario not observable now`);
-  t.check("API reports NO_ELIGIBLE_DRAW with zero availableDraw", context.json.data.drawBlockedReason === "NO_ELIGIBLE_DRAW" && context.json.data.availableDraw === "0", t.evidence.api);
+  // A REPAID facility reports the state gate first (FACILITY_NOT_ACTIVE); an ACTIVE one with an expired checkpoint NO_ELIGIBLE_DRAW.
+  t.check("API reports a draw-block reason (FACILITY_NOT_ACTIVE for a repaid facility, else NO_ELIGIBLE_DRAW) with zero availableDraw", ["NO_ELIGIBLE_DRAW", "FACILITY_NOT_ACTIVE"].includes(context.json.data.drawBlockedReason) && context.json.data.availableDraw === "0", t.evidence.api);
   t.check("chain eligibleUnpaid is zero", eligible === 0n);
   t.check("debt is zero", context.json.data.debt === "0");
   let reverted = false;

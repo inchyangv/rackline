@@ -682,7 +682,8 @@ try {
     const panel = page
       .getByRole("heading", { name: "Facility repayment allocations" })
       .locator("..");
-    await expect(panel.getByText("Applied · finalized event")).toBeVisible();
+    // Every finalized Repaid leg is listed since the history projection; at least one must be marked finalized.
+    await expect(panel.getByText("Applied · finalized event").first()).toBeVisible();
     await expect(
       panel.locator(`a[href$="/tx/${expectedRepaymentHash}"]`),
     ).toBeVisible();

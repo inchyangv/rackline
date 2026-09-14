@@ -1,0 +1,2822 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "scope": "LIVE_PAYER_PERSONA_AND_CREDIT_OPERATIONS",
+  "webUrl": "https://rackline.studioliq.com",
+  "apiUrl": "https://api-rackline.studioliq.com",
+  "chainId": 102031,
+  "sourceChainId": 11155111,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "startedAt": "2026-09-17T20:24:25.604Z",
+  "updatedAt": "2026-09-17T23:20:31.221Z",
+  "runs": [
+    "2026-09-17T20:24:25.604Z",
+    "2026-09-17T20:40:55.476Z",
+    "2026-09-17T21:15:16.002Z",
+    "2026-09-17T21:18:47.465Z",
+    "2026-09-17T23:15:43.662Z"
+  ],
+  "personas": {
+    "sim-aethir": {
+      "label": "SIM-AETHIR (Cloud Host reward epochs)",
+      "imitates": "Aethir-style reward flow: the network recognises one reward obligation per epoch for a Cloud Host, pays each epoch in full after it closes, and applies QoS/uptime adjustments as signed corrections before payment.",
+      "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+    },
+    "sim-gpunet": {
+      "label": "SIM-GPUNET (marketplace job invoices)",
+      "imitates": "GPU.net-style marketplace flow: one invoice per rendered job, partial settlements as jobs stream, disputes that cancel an invoice, and a chargeback that reverses an already-paid settlement.",
+      "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+    }
+  },
+  "facilities": {
+    "aethir": {
+      "name": "gpu080-facility-v11",
+      "id": "0x14b5c926fbc4530f7d618d3662d6364f2e76e2ed9aaa4cd0066d9141d01e2ac8",
+      "apiId": "2TF58GXAJ7XW7ZCXV762DQPS5J"
+    },
+    "gpunet": {
+      "name": "gpu080-facility-v12",
+      "id": "0x521c991bb31daeca4a49d7745ab5e07eca6ee0499f7733ab6aa98d7b9b8304fd",
+      "apiId": "4M70T38AZY52X35SXV5B6JW6HW"
+    },
+    "browser": {
+      "name": "gpu080-facility-v13",
+      "id": "0x6ff2532f94c1a097e55817eadeaa04afb8454a579ba5d0f3684bcd2c23d4652c",
+      "apiId": "35PW9TVSK1Z1ARDABPEKHJGEWV"
+    },
+    "recovery": {
+      "name": "gpu080-facility-v14",
+      "id": "0xdf2ba9634e5a6588661937142e255d02440ba07368e30ae23a0e8fc457d96497",
+      "apiId": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK"
+    }
+  },
+  "wallets": {
+    "lp": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+    "borrower": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+    "keeper": "0x0013B177FF9fedB1781769F5F0f01fF9f79dB233",
+    "underwriter": "0xEbb392e7fF37Bc6aeF6D33aD4a58CB23EDC8501b",
+    "operator": "0x8B05D473158913a034376D749ECdEbd48040d6Aa"
+  },
+  "partnerRevenue": "SIMULATED",
+  "partnerSourceBinding": "UNCONFIGURED",
+  "totals": {
+    "pass": 30,
+    "fail": 0,
+    "skipped": 0
+  },
+  "scenarios": [
+    {
+      "id": "P0",
+      "persona": "operator",
+      "title": "persona payers are deployed, registered as PAYER on the escrow and funded with faucet tokens",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "sim-aethir: payer contract recorded",
+          "ok": true,
+          "detail": {
+            "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103",
+            "deployTxHash": "0x0a419c98f73aa193a890aca6a5445f44a79fd60873c753d73d565454e30cd736"
+          }
+        },
+        {
+          "name": "sim-aethir: registered payer bound to the escrow, declares simulatedRevenue=true",
+          "ok": true,
+          "detail": {
+            "label": "SIM-AETHIR (Cloud Host reward epochs)",
+            "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103",
+            "codeSize": 1200,
+            "registered": true,
+            "simulatedRevenue": true,
+            "measuredPayouts": true,
+            "sourceContract": "0x9e00a3a453704e6948689eb68a4f65649af30a97",
+            "balance": "164000000"
+          }
+        },
+        {
+          "name": "sim-aethir: payer holds faucet tokens for settlements and is not the borrower wallet",
+          "ok": true
+        },
+        {
+          "name": "sim-gpunet: payer contract recorded",
+          "ok": true,
+          "detail": {
+            "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982",
+            "deployTxHash": "0x79c7053c18f0343b2ec976373b2abc89a877a14bf0fbd4c412a10617d9b3c6d7"
+          }
+        },
+        {
+          "name": "sim-gpunet: registered payer bound to the escrow, declares simulatedRevenue=true",
+          "ok": true,
+          "detail": {
+            "label": "SIM-GPUNET (marketplace job invoices)",
+            "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982",
+            "codeSize": 1200,
+            "registered": true,
+            "simulatedRevenue": true,
+            "measuredPayouts": true,
+            "sourceContract": "0x9e00a3a453704e6948689eb68a4f65649af30a97",
+            "balance": "197000000"
+          }
+        },
+        {
+          "name": "sim-gpunet: payer holds faucet tokens for settlements and is not the borrower wallet",
+          "ok": true
+        },
+        {
+          "name": "persona registry is explicit about simulation (no partner claim)",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "sim-aethir": {
+          "label": "SIM-AETHIR (Cloud Host reward epochs)",
+          "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103",
+          "codeSize": 1200,
+          "registered": true,
+          "simulatedRevenue": true,
+          "measuredPayouts": true,
+          "sourceContract": "0x9e00a3a453704e6948689eb68a4f65649af30a97",
+          "balance": "164000000"
+        },
+        "sim-gpunet": {
+          "label": "SIM-GPUNET (marketplace job invoices)",
+          "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982",
+          "codeSize": 1200,
+          "registered": true,
+          "simulatedRevenue": true,
+          "measuredPayouts": true,
+          "sourceContract": "0x9e00a3a453704e6948689eb68a4f65649af30a97",
+          "balance": "197000000"
+        }
+      },
+      "startedAt": "2026-09-17T20:24:27.233Z",
+      "finishedAt": "2026-09-17T20:24:28.038Z"
+    },
+    {
+      "id": "P1",
+      "persona": "sim-aethir",
+      "title": "epoch reward obligations are recognised by the issuer and assigned to the operator's facilities",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "c3-epoch-1: recognised for the SIM-AETHIR payer and assigned to gpu080-facility-v11",
+          "ok": true,
+          "detail": {
+            "txHashes": [
+              "0x72fcfb0e3f4d61a56724058b5b665b7c606f8056be6e075b4e0ab30323350365",
+              "0x743dd2d2d44d894dfdb8b3331621fa79c5ecfc1790deb4db90159d1c16a0a8e7"
+            ],
+            "revision": "2"
+          }
+        },
+        {
+          "name": "c3-epoch-2: recognised for the SIM-AETHIR payer and assigned to gpu080-facility-v11",
+          "ok": true,
+          "detail": {
+            "txHashes": [
+              "0xf57e82b0d77fb4e3d4867f63f3b337ffb8c4728895845161ca566a799a518f92",
+              "0xbd48a789a3017a52db52b5a9d3c4e1123dbe61599102ecf0f5c71da7cbf63dde"
+            ],
+            "revision": "2"
+          }
+        },
+        {
+          "name": "c3-epoch-3: recognised for the SIM-AETHIR payer and assigned to gpu080-facility-v11",
+          "ok": true,
+          "detail": {
+            "txHashes": [
+              "0x68c1c3bfa8aaa16f4dace3c6d0675d6128c4aeae1e4a07c87bd47604dc4fbf57",
+              "0xed043b8336ea43010f5faba3cef7d265e94eb6e2225b9fb8e7e374741d2e3866"
+            ],
+            "revision": "2"
+          }
+        },
+        {
+          "name": "c3-epoch-4: recognised for the SIM-AETHIR payer and assigned to gpu080-facility-v13",
+          "ok": true,
+          "detail": {
+            "txHashes": [
+              "0x1f9f8f891cb2968ad378e37619c05ad14994ed34c78cd30f347c2432a318fe66",
+              "0x55346151e9682f20be333fc5f06b2d9479b24f26a065775a50f03b1cbf0c732f"
+            ],
+            "revision": "2"
+          }
+        },
+        {
+          "name": "account revision advanced by two per epoch and open amount by the recognised total",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "source": {
+          "before": {
+            "revision": "40",
+            "open": "174000000"
+          },
+          "events": [
+            {
+              "name": "qa-c3-aethir-c3-epoch-1-recognize",
+              "step": "recognizeObligation",
+              "persona": "sim-aethir",
+              "txHash": "0x72fcfb0e3f4d61a56724058b5b665b7c606f8056be6e075b4e0ab30323350365",
+              "blockNumber": 11726039,
+              "facilityName": "gpu080-facility-v11",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-1-assign",
+              "step": "assignObligation",
+              "persona": "sim-aethir",
+              "txHash": "0x743dd2d2d44d894dfdb8b3331621fa79c5ecfc1790deb4db90159d1c16a0a8e7",
+              "blockNumber": 11726040,
+              "facilityName": "gpu080-facility-v11",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-2-recognize",
+              "step": "recognizeObligation",
+              "persona": "sim-aethir",
+              "txHash": "0xf57e82b0d77fb4e3d4867f63f3b337ffb8c4728895845161ca566a799a518f92",
+              "blockNumber": 11726042,
+              "facilityName": "gpu080-facility-v11",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-2-assign",
+              "step": "assignObligation",
+              "persona": "sim-aethir",
+              "txHash": "0xbd48a789a3017a52db52b5a9d3c4e1123dbe61599102ecf0f5c71da7cbf63dde",
+              "blockNumber": 11726043,
+              "facilityName": "gpu080-facility-v11",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-3-recognize",
+              "step": "recognizeObligation",
+              "persona": "sim-aethir",
+              "txHash": "0x68c1c3bfa8aaa16f4dace3c6d0675d6128c4aeae1e4a07c87bd47604dc4fbf57",
+              "blockNumber": 11726044,
+              "facilityName": "gpu080-facility-v11",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-3-assign",
+              "step": "assignObligation",
+              "persona": "sim-aethir",
+              "txHash": "0xed043b8336ea43010f5faba3cef7d265e94eb6e2225b9fb8e7e374741d2e3866",
+              "blockNumber": 11726045,
+              "facilityName": "gpu080-facility-v11",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-4-recognize",
+              "step": "recognizeObligation",
+              "persona": "sim-aethir",
+              "txHash": "0x1f9f8f891cb2968ad378e37619c05ad14994ed34c78cd30f347c2432a318fe66",
+              "blockNumber": 11726046,
+              "facilityName": "gpu080-facility-v13",
+              "consumed": false
+            },
+            {
+              "name": "qa-c3-aethir-c3-epoch-4-assign",
+              "step": "assignObligation",
+              "persona": "sim-aethir",
+              "txHash": "0x55346151e9682f20be333fc5f06b2d9479b24f26a065775a50f03b1cbf0c732f",
+              "blockNumber": 11726047,
+              "facilityName": "gpu080-facility-v13",
+              "consumed": false
+            }
+          ],
+          "after": {
+            "revision": "48",
+            "open": "220000000"
+          }
+        }
+      },
+      "startedAt": "2026-09-17T20:24:28.039Z",
+      "finishedAt": "2026-09-17T20:26:27.561Z"
+    },
+    {
+      "id": "P2",
+      "persona": "sim-aethir",
+      "title": "the network pays epoch-1 in full after the epoch closes (measured payout through the token path)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "payout was measured at exactly the declared amount and closed the obligation (PAID)",
+          "ok": true,
+          "detail": {
+            "net": "12000000",
+            "paid": "12000000",
+            "status": 2,
+            "settlementSeq": "9"
+          }
+        },
+        {
+          "name": "tokens actually left the persona payer",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "event": {
+          "name": "qa-c3-aethir-epoch-1-payout",
+          "step": "settle",
+          "persona": "sim-aethir",
+          "txHash": "0x27e6e20855d7f3897a000e2f287032ffccf9cc1dcde6c6b97870837254153f23",
+          "blockNumber": 11726049,
+          "facilityName": "gpu080-facility-v11",
+          "consumed": false
+        },
+        "obligation": {
+          "net": "12000000",
+          "paid": "12000000",
+          "status": 2,
+          "settlementSeq": "9"
+        }
+      },
+      "startedAt": "2026-09-17T20:26:27.561Z",
+      "finishedAt": "2026-09-17T20:26:53.276Z"
+    },
+    {
+      "id": "P3",
+      "persona": "sim-aethir",
+      "title": "a QoS/uptime adjustment reduces epoch-2 by a signed correction (SLA)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "epoch-2 net is 10 tUSD after the −2 tUSD SLA correction and stays OPEN/assigned",
+          "ok": true,
+          "detail": {
+            "net": "10000000",
+            "paid": "0",
+            "revision": "3",
+            "status": 1
+          }
+        }
+      ],
+      "evidence": {
+        "event": {
+          "name": "qa-c3-aethir-epoch-2-correct",
+          "step": "correctObligation",
+          "persona": "sim-aethir",
+          "txHash": "0xafe726509cfbc8ca6adda99cb6a9240a4f3dcac3b056be5339508e8aa3effae2",
+          "blockNumber": 11726051,
+          "facilityName": "gpu080-facility-v11",
+          "consumed": false
+        },
+        "obligation": {
+          "net": "10000000",
+          "paid": "0",
+          "revision": "3",
+          "status": 1
+        }
+      },
+      "startedAt": "2026-09-17T20:26:53.277Z",
+      "finishedAt": "2026-09-17T20:27:14.823Z"
+    },
+    {
+      "id": "P4",
+      "persona": "sim-gpunet",
+      "title": "marketplace job invoices are recognised and assigned; one falls due before financing",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "c3-job-1: recognised for the SIM-GPUNET payer and assigned to gpu080-facility-v12",
+          "ok": true,
+          "detail": {
+            "dueAt": "1789763232",
+            "txHashes": [
+              "0x3b58f58c700b5637743cda72945f925e25ccabab81e7b58e9e2448df3dd745f8",
+              "0xe3ddca0373558a695fa046eed89a798ed3e37d7d0f72bab38e54d36a19ca66eb"
+            ]
+          }
+        },
+        {
+          "name": "c3-job-2: recognised for the SIM-GPUNET payer and assigned to gpu080-facility-v12",
+          "ok": true,
+          "detail": {
+            "dueAt": "1789676901",
+            "txHashes": [
+              "0xa018923ba89df78f792f5ebec937bbf1156261152a9efec5cc24629a8be4bbdc",
+              "0xeba2636896bc1036175e58348046f3d1ce0a5a8d06beb2679c651dbad97abe83"
+            ]
+          }
+        },
+        {
+          "name": "c3-job-3: recognised for the SIM-GPUNET payer and assigned to gpu080-facility-v12",
+          "ok": true,
+          "detail": {
+            "dueAt": "1789763304",
+            "txHashes": [
+              "0xd3d5856467bbbb516dfc6aa71f4cfb5cf4650b23e8c924ea7d97bf9fd2f85e6f",
+              "0x7e1ae7fe9e95ede74322ec632348110c5bde73131bc62e727efc5ec5b5ecf3cb"
+            ]
+          }
+        }
+      ],
+      "evidence": {
+        "events": [
+          {
+            "name": "qa-c3-gpunet-c3-job-1-recognize",
+            "step": "recognizeObligation",
+            "persona": "sim-gpunet",
+            "txHash": "0x3b58f58c700b5637743cda72945f925e25ccabab81e7b58e9e2448df3dd745f8",
+            "blockNumber": 11726052,
+            "facilityName": "gpu080-facility-v12",
+            "consumed": false
+          },
+          {
+            "name": "qa-c3-gpunet-c3-job-1-assign",
+            "step": "assignObligation",
+            "persona": "sim-gpunet",
+            "txHash": "0xe3ddca0373558a695fa046eed89a798ed3e37d7d0f72bab38e54d36a19ca66eb",
+            "blockNumber": 11726053,
+            "facilityName": "gpu080-facility-v12",
+            "consumed": false
+          },
+          {
+            "name": "qa-c3-gpunet-c3-job-2-recognize",
+            "step": "recognizeObligation",
+            "persona": "sim-gpunet",
+            "txHash": "0xa018923ba89df78f792f5ebec937bbf1156261152a9efec5cc24629a8be4bbdc",
+            "blockNumber": 11726055,
+            "facilityName": "gpu080-facility-v12",
+            "consumed": false
+          },
+          {
+            "name": "qa-c3-gpunet-c3-job-2-assign",
+            "step": "assignObligation",
+            "persona": "sim-gpunet",
+            "txHash": "0xeba2636896bc1036175e58348046f3d1ce0a5a8d06beb2679c651dbad97abe83",
+            "blockNumber": 11726057,
+            "facilityName": "gpu080-facility-v12",
+            "consumed": false
+          },
+          {
+            "name": "qa-c3-gpunet-c3-job-3-recognize",
+            "step": "recognizeObligation",
+            "persona": "sim-gpunet",
+            "txHash": "0xd3d5856467bbbb516dfc6aa71f4cfb5cf4650b23e8c924ea7d97bf9fd2f85e6f",
+            "blockNumber": 11726058,
+            "facilityName": "gpu080-facility-v12",
+            "consumed": false
+          },
+          {
+            "name": "qa-c3-gpunet-c3-job-3-assign",
+            "step": "assignObligation",
+            "persona": "sim-gpunet",
+            "txHash": "0x7e1ae7fe9e95ede74322ec632348110c5bde73131bc62e727efc5ec5b5ecf3cb",
+            "blockNumber": 11726060,
+            "facilityName": "gpu080-facility-v12",
+            "consumed": false
+          }
+        ]
+      },
+      "startedAt": "2026-09-17T20:27:14.824Z",
+      "finishedAt": "2026-09-17T20:29:03.871Z"
+    },
+    {
+      "id": "P5",
+      "persona": "sim-gpunet",
+      "title": "streaming partial settlements on job-1 (3 tUSD, then 2 tUSD) by the persona payer",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "job-1 shows 5 of 8 tUSD paid and remains OPEN",
+          "ok": true,
+          "detail": {
+            "net": "8000000",
+            "paid": "5000000",
+            "status": 1,
+            "seqs": [
+              "10",
+              "11"
+            ]
+          }
+        },
+        {
+          "name": "settlement sequence numbers are distinct and increasing",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "first": {
+          "name": "qa-c3-gpunet-job-1-payout-1",
+          "step": "settle",
+          "persona": "sim-gpunet",
+          "txHash": "0xbf3edd60eceb623abb7a14a43751425c431e989b388800c893675b671d17b13f",
+          "blockNumber": 11726061,
+          "facilityName": "gpu080-facility-v12",
+          "consumed": false
+        },
+        "second": {
+          "name": "qa-c3-gpunet-job-1-payout-2",
+          "step": "settle",
+          "persona": "sim-gpunet",
+          "txHash": "0x8dd652dd17302118eb4ca995963c54a62ccfdc5a595b274a27b9edf53c036ff5",
+          "blockNumber": 11726062,
+          "facilityName": "gpu080-facility-v12",
+          "consumed": false
+        },
+        "obligation": {
+          "net": "8000000",
+          "paid": "5000000",
+          "status": 1,
+          "seqs": [
+            "10",
+            "11"
+          ]
+        }
+      },
+      "startedAt": "2026-09-17T20:29:03.872Z",
+      "finishedAt": "2026-09-17T20:29:26.350Z"
+    },
+    {
+      "id": "P6",
+      "persona": "sim-gpunet",
+      "title": "chargeback: the issuer reverses the second stream settlement and tokens return to the payer",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "job-1 paid amount fell back to 3 tUSD",
+          "ok": true,
+          "detail": {
+            "net": "8000000",
+            "paid": "3000000",
+            "status": 1
+          }
+        },
+        {
+          "name": "the reversed 2 tUSD actually returned to the persona payer",
+          "ok": true
+        },
+        {
+          "name": "the same settlement cannot be reversed twice (static)",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "event": {
+          "name": "qa-c3-gpunet-job-1-chargeback",
+          "step": "cancelPayout",
+          "persona": "sim-gpunet",
+          "txHash": "0xa2faf387245fcea589afcbdb61753b45adb292f0707cf83f91a6e1776d8e21b0",
+          "blockNumber": 11726064,
+          "facilityName": "gpu080-facility-v12",
+          "consumed": false
+        },
+        "obligation": {
+          "net": "8000000",
+          "paid": "3000000",
+          "status": 1
+        }
+      },
+      "startedAt": "2026-09-17T20:29:26.351Z",
+      "finishedAt": "2026-09-17T20:29:52.274Z"
+    },
+    {
+      "id": "P7",
+      "persona": "sim-gpunet",
+      "title": "dispute: job-3 is cancelled by a full negative correction (CANCEL must zero the open amount)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "job-3 is CANCELLED with net 0",
+          "ok": true,
+          "detail": {
+            "net": "0",
+            "paid": "0",
+            "status": 3,
+            "revision": "3"
+          }
+        },
+        {
+          "name": "a cancelled obligation can no longer be paid (static)",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "event": {
+          "name": "qa-c3-gpunet-job-3-cancel",
+          "step": "correctObligation",
+          "persona": "sim-gpunet",
+          "txHash": "0x0b5c9a0e20daf6a021e78199ff4160b2d31e6c73743a3f1100ff0a485e5be2a4",
+          "blockNumber": 11726065,
+          "facilityName": "gpu080-facility-v12",
+          "consumed": false
+        },
+        "obligation": {
+          "net": "0",
+          "paid": "0",
+          "status": 3,
+          "revision": "3"
+        }
+      },
+      "startedAt": "2026-09-17T20:29:52.275Z",
+      "finishedAt": "2026-09-17T20:30:05.676Z"
+    },
+    {
+      "id": "P8",
+      "persona": "misuse",
+      "title": "source-side misuse is rejected by the escrow (unregistered payer, stranger issuer, overpayment, bad cancel, unknown account/token)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "unregistered payer cannot settle",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "NotRegisteredPayer",
+            "observed": "NotRegisteredPayer"
+          }
+        },
+        {
+          "name": "stranger cannot recognise obligations",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "NotIssuer",
+            "observed": "NotIssuer"
+          }
+        },
+        {
+          "name": "stranger cannot cancel a settlement",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "NotIssuer",
+            "observed": "NotIssuer"
+          }
+        },
+        {
+          "name": "persona payer cannot pay an unknown obligation",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "ObligationNotOpen",
+            "observed": "ObligationNotOpen"
+          }
+        },
+        {
+          "name": "unknown source account is rejected",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "AccountUnknown",
+            "observed": "AccountUnknown"
+          }
+        },
+        {
+          "name": "non-admitted token is rejected",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "TokenNotAdmitted",
+            "observed": "TokenNotAdmitted"
+          }
+        },
+        {
+          "name": "overpayment of an open obligation is rejected",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "Overpayment",
+            "observed": "Overpayment"
+          }
+        },
+        {
+          "name": "cancel correction that leaves an open amount is rejected",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "CancelMustZeroOpenAmount",
+            "observed": "CancelMustZeroOpenAmount"
+          }
+        },
+        {
+          "name": "negative suite exited cleanly",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        }
+      ],
+      "evidence": {
+        "checks": {
+          "unregistered payer cannot settle": {
+            "ok": true,
+            "expected": "NotRegisteredPayer",
+            "observed": "NotRegisteredPayer"
+          },
+          "stranger cannot recognise obligations": {
+            "ok": true,
+            "expected": "NotIssuer",
+            "observed": "NotIssuer"
+          },
+          "stranger cannot cancel a settlement": {
+            "ok": true,
+            "expected": "NotIssuer",
+            "observed": "NotIssuer"
+          },
+          "persona payer cannot pay an unknown obligation": {
+            "ok": true,
+            "expected": "ObligationNotOpen",
+            "observed": "ObligationNotOpen"
+          },
+          "unknown source account is rejected": {
+            "ok": true,
+            "expected": "AccountUnknown",
+            "observed": "AccountUnknown"
+          },
+          "non-admitted token is rejected": {
+            "ok": true,
+            "expected": "TokenNotAdmitted",
+            "observed": "TokenNotAdmitted"
+          },
+          "overpayment of an open obligation is rejected": {
+            "ok": true,
+            "expected": "Overpayment",
+            "observed": "Overpayment"
+          },
+          "cancel correction that leaves an open amount is rejected": {
+            "ok": true,
+            "expected": "CancelMustZeroOpenAmount",
+            "observed": "CancelMustZeroOpenAmount"
+          }
+        }
+      },
+      "startedAt": "2026-09-17T20:30:05.677Z",
+      "finishedAt": "2026-09-17T20:30:06.801Z"
+    },
+    {
+      "id": "P9",
+      "persona": "stranger",
+      "title": "a direct deposit by a non-payer is bucketed as unattributed and never becomes a payout",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "deposit recorded with a deposit sequence and THIRD_PARTY_UNKNOWN origin (deployer is not a borrower wallet)",
+          "ok": true,
+          "detail": {
+            "record": "qa-c3-unattributed-deposit",
+            "step": "depositUnattributed",
+            "txHash": "0x6bcef12c5bc5d94f685236db0acce49be151a6787d9e4ba235310a1e5213e42f",
+            "blockNumber": 11726068,
+            "amount": "1000000",
+            "depositSeq": "3",
+            "origin": 1,
+            "unattributedBalance": "3000000"
+          }
+        },
+        {
+          "name": "unattributed balance holds the deposit",
+          "ok": true
+        },
+        {
+          "name": "account paid total and revision are untouched (not a payout, not evidence)",
+          "ok": true
+        },
+        {
+          "name": "the UnattributedDeposit topic is not a registered evidence meaning on Creditcoin",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "deposit": {
+          "record": "qa-c3-unattributed-deposit",
+          "step": "depositUnattributed",
+          "txHash": "0x6bcef12c5bc5d94f685236db0acce49be151a6787d9e4ba235310a1e5213e42f",
+          "blockNumber": 11726068,
+          "amount": "1000000",
+          "depositSeq": "3",
+          "origin": 1,
+          "unattributedBalance": "3000000"
+        }
+      },
+      "startedAt": "2026-09-17T20:30:06.802Z",
+      "finishedAt": "2026-09-17T20:30:53.926Z"
+    },
+    {
+      "id": "N1",
+      "persona": "keeper",
+      "title": "every persona source transition is proven by the official Attestcoin service",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "official proofs became PROOF_READY for all 1 pending source transitions",
+          "ok": true,
+          "detail": []
+        },
+        {
+          "name": "proof artifacts are bound to the release manifest and NATIVE_TESTNET profile",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "proofs": [
+          {
+            "name": "qa-stray-c2-epoch-1-recognize",
+            "txHash": "0x1d2ba3870c33a9274728c093e62e92d065a0d8e855ae8c64cbe0ae4b6fd61d1f",
+            "height": "11726019",
+            "status": "PROOF_READY"
+          }
+        ]
+      },
+      "startedAt": "2026-09-17T21:15:17.570Z",
+      "finishedAt": "2026-09-17T21:15:18.841Z"
+    },
+    {
+      "id": "N2",
+      "persona": "keeper",
+      "title": "persona transitions are consumed in source order and the destination ledger mirrors the source",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "qa-stray-c2-epoch-1-recognize (recognizeObligation) consumed on Creditcoin, audited proof-only",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "destination eventsConsumed equals the source account revision (no gap, no lag)",
+          "ok": true,
+          "detail": {
+            "eventsConsumed": "60",
+            "openAmount": "217000000",
+            "paidCumulative": "81000000",
+            "source": {
+              "revision": "60",
+              "open": "217000000",
+              "paid": "81000000"
+            }
+          }
+        },
+        {
+          "name": "destination open and paid totals reconcile with the source escrow",
+          "ok": true,
+          "detail": {
+            "eventsConsumed": "60",
+            "openAmount": "217000000",
+            "paidCumulative": "81000000",
+            "source": {
+              "revision": "60",
+              "open": "217000000",
+              "paid": "81000000"
+            }
+          }
+        },
+        {
+          "name": "SIM-AETHIR: epoch-1 PAID in full, epoch-2 corrected to 10 tUSD, epoch-3 untouched, all with the persona payer",
+          "ok": true,
+          "detail": [
+            {
+              "id": "0x6862866f18d5823b47b23a2159912c2d3e4ffb4387b4a791faa572eb9c7ffaf1",
+              "net": "12000000",
+              "paid": "12000000",
+              "state": "PAID",
+              "revision": "3",
+              "dueAt": "1789763064",
+              "evidenceValidUntil": "1789699530",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            },
+            {
+              "id": "0x4ba14ba924644bb5d7acf17e701b0d1d068849dd50532809d8343221e40a9b87",
+              "net": "10000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "3",
+              "dueAt": "1789763100",
+              "evidenceValidUntil": "1789700250",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            },
+            {
+              "id": "0x7d2c555c69f978d5147a7d75435c3c14a61776b12d84dbe5e9d7b0dfc2e022f6",
+              "net": "12000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789763136",
+              "evidenceValidUntil": "1789699890",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            }
+          ]
+        },
+        {
+          "name": "SIM-GPUNET: job-1 paid 3 tUSD after the chargeback, job-2 open, job-3 CANCELLED with net 0",
+          "ok": true,
+          "detail": [
+            {
+              "id": "0xd098c2326cceec379963c763c62b399f2d9090675a26fd48563a1ca476c54584",
+              "net": "8000000",
+              "paid": "3000000",
+              "state": "ASSIGNED",
+              "revision": "5",
+              "dueAt": "1789763232",
+              "evidenceValidUntil": "1789700430",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            },
+            {
+              "id": "0xa862bbd98c23fedf25af3878954acc2f7001edd3c94b1a654452ea0e2a5c0dc6",
+              "net": "6000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789676901",
+              "evidenceValidUntil": "1789700610",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            },
+            {
+              "id": "0x1b2690d39b31e29ea3ea5835870632bd8ea800435d6acfa3bdbbd329b40b00b4",
+              "net": "0",
+              "paid": "0",
+              "state": "CANCELLED",
+              "revision": "3",
+              "dueAt": "1789763304",
+              "evidenceValidUntil": "1789701150",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            }
+          ]
+        },
+        {
+          "name": "proof consumption created no destination debt on either facility",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "before": {
+          "eventsConsumed": "59",
+          "openAmount": "205000000",
+          "paidCumulative": "81000000"
+        },
+        "consumptions": [
+          {
+            "step": "recognizeObligation",
+            "name": "qa-stray-c2-epoch-1-recognize",
+            "sourceTxHash": "0x1d2ba3870c33a9274728c093e62e92d065a0d8e855ae8c64cbe0ae4b6fd61d1f",
+            "sourceEventId": "0x8b4b5ab736edd0365ba02b7d1d7e7e513d3e0c5140948c0c6d5592b89f3f10cd",
+            "destinationTxHash": "0x5d00d1050e84bd6dcaaf1325dac333d9780e694e18f139488f17ce042b2555e4",
+            "destinationBlock": 5505842,
+            "status": "NATIVE_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5505841,
+                "afterBlock": 5505842,
+                "blockHash": "0x041a2d9d70cc7e4de13dd6d9a87c4501a396c6a8c8239e67f5d49744c78e22a7",
+                "cashBefore": "994000022",
+                "cashAfter": "994000022",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          }
+        ],
+        "after": {
+          "eventsConsumed": "60",
+          "openAmount": "217000000",
+          "paidCumulative": "81000000",
+          "source": {
+            "revision": "60",
+            "open": "217000000",
+            "paid": "81000000"
+          }
+        },
+        "facilities": {
+          "aethir": [
+            {
+              "id": "0x6862866f18d5823b47b23a2159912c2d3e4ffb4387b4a791faa572eb9c7ffaf1",
+              "net": "12000000",
+              "paid": "12000000",
+              "state": "PAID",
+              "revision": "3",
+              "dueAt": "1789763064",
+              "evidenceValidUntil": "1789699530",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            },
+            {
+              "id": "0x4ba14ba924644bb5d7acf17e701b0d1d068849dd50532809d8343221e40a9b87",
+              "net": "10000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "3",
+              "dueAt": "1789763100",
+              "evidenceValidUntil": "1789700250",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            },
+            {
+              "id": "0x7d2c555c69f978d5147a7d75435c3c14a61776b12d84dbe5e9d7b0dfc2e022f6",
+              "net": "12000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789763136",
+              "evidenceValidUntil": "1789699890",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            }
+          ],
+          "gpunet": [
+            {
+              "id": "0xd098c2326cceec379963c763c62b399f2d9090675a26fd48563a1ca476c54584",
+              "net": "8000000",
+              "paid": "3000000",
+              "state": "ASSIGNED",
+              "revision": "5",
+              "dueAt": "1789763232",
+              "evidenceValidUntil": "1789700430",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            },
+            {
+              "id": "0xa862bbd98c23fedf25af3878954acc2f7001edd3c94b1a654452ea0e2a5c0dc6",
+              "net": "6000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789676901",
+              "evidenceValidUntil": "1789700610",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            },
+            {
+              "id": "0x1b2690d39b31e29ea3ea5835870632bd8ea800435d6acfa3bdbbd329b40b00b4",
+              "net": "0",
+              "paid": "0",
+              "state": "CANCELLED",
+              "revision": "3",
+              "dueAt": "1789763304",
+              "evidenceValidUntil": "1789701150",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            }
+          ]
+        }
+      },
+      "startedAt": "2026-09-17T21:15:18.842Z",
+      "finishedAt": "2026-09-17T21:16:55.636Z"
+    },
+    {
+      "id": "N3",
+      "persona": "misuse",
+      "title": "a consumed source log cannot be consumed twice (replay of the same proof)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "EvidenceBook marks the source event as consumed",
+          "ok": true
+        },
+        {
+          "name": "the consumption tool refuses to resubmit and re-audits the canonical receipt (ALREADY_CONSUMED)",
+          "ok": true,
+          "detail": {
+            "step": "recognizeObligation",
+            "name": "qa-aethir-epoch-1-recognize",
+            "sourceTxHash": "0x9db731cbf7fb9141bee1effbc0bbbe4396c3de7c41430336c4ddd24d91ce2248",
+            "sourceEventId": "0xc6297107dd18d4320dfce8b7bed96f0303aacb3ea244d5a61db2aa209c07a5f8",
+            "destinationTxHash": "0x284ee269f1781c6006599790c018db293043185e20cdd793247bcfc8f064b456",
+            "destinationBlock": 5487435,
+            "status": "ALREADY_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5487434,
+                "afterBlock": 5487435,
+                "blockHash": "0xeb44a2fc28bef5d4acb2b0ac494e107111914615e6bdb78c29dc1a4c7040b3d6",
+                "cashBefore": "1001000004",
+                "cashAfter": "1001000004",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          }
+        },
+        {
+          "name": "replaying the identical ingest calldata reverts on chain (static)",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "replayed": {
+          "name": "qa-aethir-epoch-1-recognize",
+          "sourceEventId": "0xc6297107dd18d4320dfce8b7bed96f0303aacb3ea244d5a61db2aa209c07a5f8"
+        },
+        "tool": {
+          "step": "recognizeObligation",
+          "name": "qa-aethir-epoch-1-recognize",
+          "sourceTxHash": "0x9db731cbf7fb9141bee1effbc0bbbe4396c3de7c41430336c4ddd24d91ce2248",
+          "sourceEventId": "0xc6297107dd18d4320dfce8b7bed96f0303aacb3ea244d5a61db2aa209c07a5f8",
+          "destinationTxHash": "0x284ee269f1781c6006599790c018db293043185e20cdd793247bcfc8f064b456",
+          "destinationBlock": 5487435,
+          "status": "ALREADY_CONSUMED",
+          "financialAudit": {
+            "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+            "debtMutationEvents": 0,
+            "vaultMutationEvents": 0,
+            "vaultAssetTransfers": 0,
+            "cash": {
+              "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+              "beforeBlock": 5487434,
+              "afterBlock": 5487435,
+              "blockHash": "0xeb44a2fc28bef5d4acb2b0ac494e107111914615e6bdb78c29dc1a4c7040b3d6",
+              "cashBefore": "1001000004",
+              "cashAfter": "1001000004",
+              "externalTransactionCashDelta": "0",
+              "proofTransactionCashDelta": "0",
+              "externalTransfers": []
+            }
+          }
+        }
+      },
+      "startedAt": "2026-09-17T21:16:55.637Z",
+      "finishedAt": "2026-09-17T21:17:08.538Z"
+    },
+    {
+      "id": "N4",
+      "persona": "keeper",
+      "title": "checkpoint A: reserve → official proof → control observations → consumption makes persona receivables eligible",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "while reserved, the account rejects source mutations (AccountReserved)",
+          "ok": true,
+          "detail": {
+            "ok": true,
+            "expected": "AccountReserved",
+            "observed": "AccountReserved"
+          }
+        },
+        {
+          "name": "official proof became PROOF_READY inside the reservation window",
+          "ok": true
+        },
+        {
+          "name": "control observation refreshed for gpu080-facility-v11",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "name": "control observation refreshed for gpu080-facility-v12",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "name": "checkpoint consumed on Creditcoin and audited proof-only",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "consumed checkpoint revision equals consumed events",
+          "ok": true,
+          "detail": {
+            "latestRevision": "60",
+            "eventsConsumed": "60"
+          }
+        },
+        {
+          "name": "SIM-AETHIR facility: eligibleUnpaid = 22 tUSD (paid epoch excluded, SLA correction applied) and availableDraw = 11 tUSD",
+          "ok": true,
+          "detail": {
+            "eligible": "22000000",
+            "evaluation": {
+              "eligibleReceivables": "22000000",
+              "receivableLimit": "11000000",
+              "facilityLimit": "37500000",
+              "availableDraw": "11000000",
+              "evidenceValidUntil": "1789681378",
+              "checkpointAge": "585"
+            }
+          }
+        },
+        {
+          "name": "SIM-GPUNET facility: eligibleUnpaid = 10.4 tUSD (partial payment, chargeback, overdue haircut, cancelled job) and availableDraw = 5.2 tUSD",
+          "ok": true,
+          "detail": {
+            "eligible": "10400000",
+            "evaluation": {
+              "eligibleReceivables": "10400000",
+              "receivableLimit": "5200000",
+              "facilityLimit": "37500000",
+              "availableDraw": "5200000",
+              "evidenceValidUntil": "1789681378",
+              "checkpointAge": "585"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "source": {
+          "record": "qa-c3-checkpoint-a",
+          "step": "reserveCheckpoint",
+          "txHash": "0x3429689d900c51456e68d3373c3c67865d64aa9a723c5ea7f1ebf3a9a2805391",
+          "blockNumber": 11726349,
+          "protectedUntil": 1789681378
+        },
+        "observe_gpu080-facility-v11": {
+          "controlObservation": "0xae28efa06885a40db43e822d4ee9950bacb088cdaacdce0c9a1aab9dcd4bab7b",
+          "block": 5505926,
+          "agreement": "0xe438ab90efe3f377767977c12f07e5ffb9ff6924f8d4c4635d73c0cf2b186ec7"
+        },
+        "observe_gpu080-facility-v12": {
+          "controlObservation": "0x8590be1718f8ccffecb3cbc71480ba10005273eb318f558a3b4f5077328bc115",
+          "block": 5505928,
+          "agreement": "0x49b1c0d8dc900811c584b9430d538ff63fff80a6bc59013ac0e0652f6acc67d6"
+        },
+        "consumption": {
+          "step": "reserveCheckpoint",
+          "name": "qa-c3-checkpoint-a",
+          "sourceTxHash": "0x3429689d900c51456e68d3373c3c67865d64aa9a723c5ea7f1ebf3a9a2805391",
+          "sourceEventId": "0x7c8020ea1966cfd535464a0a066a7e06fc6492955dc4d25ff90e39596a269f2f",
+          "destinationTxHash": "0x83183eeab5b0ba5251ccffcd1a87d6a9d9c357b7c4a70110ead2c82f324ed316",
+          "destinationBlock": 5505930,
+          "status": "NATIVE_CONSUMED",
+          "financialAudit": {
+            "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+            "debtMutationEvents": 0,
+            "vaultMutationEvents": 0,
+            "vaultAssetTransfers": 0,
+            "cash": {
+              "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+              "beforeBlock": 5505929,
+              "afterBlock": 5505930,
+              "blockHash": "0xf6ee17f294f104875f81c92b01e60d6988f28619e65c4a791c16e36a6f5c6a34",
+              "cashBefore": "994000022",
+              "cashAfter": "994000022",
+              "externalTransactionCashDelta": "0",
+              "proofTransactionCashDelta": "0",
+              "externalTransfers": []
+            }
+          }
+        },
+        "aethir": {
+          "at": 1789681125,
+          "state": "ACTIVE",
+          "wallet": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+          "debt": "0",
+          "receivables": [
+            {
+              "id": "0x6862866f18d5823b47b23a2159912c2d3e4ffb4387b4a791faa572eb9c7ffaf1",
+              "net": "12000000",
+              "paid": "12000000",
+              "state": "PAID",
+              "revision": "3",
+              "dueAt": "1789763064",
+              "evidenceValidUntil": "1789699530",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            },
+            {
+              "id": "0x4ba14ba924644bb5d7acf17e701b0d1d068849dd50532809d8343221e40a9b87",
+              "net": "10000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "3",
+              "dueAt": "1789763100",
+              "evidenceValidUntil": "1789700250",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            },
+            {
+              "id": "0x7d2c555c69f978d5147a7d75435c3c14a61776b12d84dbe5e9d7b0dfc2e022f6",
+              "net": "12000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789763136",
+              "evidenceValidUntil": "1789699890",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            }
+          ],
+          "eligibleUnpaid": "22000000",
+          "evidenceValidUntil": "1789681378",
+          "checkpointAge": "585",
+          "evaluation": {
+            "eligibleReceivables": "22000000",
+            "receivableLimit": "11000000",
+            "facilityLimit": "37500000",
+            "availableDraw": "11000000",
+            "evidenceValidUntil": "1789681378",
+            "checkpointAge": "585"
+          },
+          "controlObservationAge": 135
+        },
+        "gpunet": {
+          "at": 1789681125,
+          "state": "ACTIVE",
+          "wallet": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+          "debt": "0",
+          "receivables": [
+            {
+              "id": "0xd098c2326cceec379963c763c62b399f2d9090675a26fd48563a1ca476c54584",
+              "net": "8000000",
+              "paid": "3000000",
+              "state": "ASSIGNED",
+              "revision": "5",
+              "dueAt": "1789763232",
+              "evidenceValidUntil": "1789700430",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            },
+            {
+              "id": "0xa862bbd98c23fedf25af3878954acc2f7001edd3c94b1a654452ea0e2a5c0dc6",
+              "net": "6000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789676901",
+              "evidenceValidUntil": "1789700610",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            },
+            {
+              "id": "0x1b2690d39b31e29ea3ea5835870632bd8ea800435d6acfa3bdbbd329b40b00b4",
+              "net": "0",
+              "paid": "0",
+              "state": "CANCELLED",
+              "revision": "3",
+              "dueAt": "1789763304",
+              "evidenceValidUntil": "1789701150",
+              "payer": "0xdd8a4237bff5978fbb63d42480937b58c64c9982"
+            }
+          ],
+          "eligibleUnpaid": "10400000",
+          "evidenceValidUntil": "1789681378",
+          "checkpointAge": "585",
+          "evaluation": {
+            "eligibleReceivables": "10400000",
+            "receivableLimit": "5200000",
+            "facilityLimit": "37500000",
+            "availableDraw": "5200000",
+            "evidenceValidUntil": "1789681378",
+            "checkpointAge": "585"
+          },
+          "controlObservationAge": 105
+        }
+      },
+      "startedAt": "2026-09-17T21:18:49.010Z",
+      "error": "API canonical block past consumption (aethir) did not reach the expected state: {\"schemaVersion\":\"1.0\",\"data\":{\"facilityId\":\"2TF58GXAJ7XW7ZCXV762DQPS5J\",\"canonicalFacilityId\":\"0x14b5c926fbc4530f7d618d3662d6364f2e76e2ed9aaa4cd0066d9141d01e2ac8\",\"wallet\":\"0x42E46697957766fFad9b7f55621260f99Dc204B7\",\"chainId\":102031,\"asset\":{\"chainId\":102031,\"address\":\"0x03115387f28660088faa6a9b00",
+      "finishedAt": "2026-09-17T21:41:59.882Z",
+      "originalStatus": "FAIL",
+      "amendment": {
+        "kind": "ENVIRONMENT",
+        "reason": "The API poll ran while the Railway indexer was down (orphan chain_blocks row 5505414 crash loop, 19:29–21:47 UTC; API answered EVIDENCE_STALE), so the mirror could not be read. Every on-chain check in this scenario passed. The same API mirror was verified afterwards with the indexer restored: K3 (v12 states), K5/K6 (v11), K7 (debt 0 on both facilities and every finalized Repaid leg, including the K1 draw, listed with matching amounts). Indexer fix: orphan rows above the cursor are now swept (commit 894f49c).",
+        "amendedAt": "2026-09-17T23:39:11.850Z"
+      }
+    },
+    {
+      "id": "K1",
+      "persona": "borrower",
+      "title": "SIM-AETHIR facility: 5 tUSD draw inside the window; a draw above availableDraw is refused",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "a 12 tUSD draw (> availableDraw 11) reverts with ExceedsAvailableDraw",
+          "ok": true,
+          "detail": {
+            "observed": "ExceedsAvailableDraw"
+          }
+        },
+        {
+          "name": "a non-borrower wallet cannot draw (NotBorrower)",
+          "ok": true,
+          "detail": {
+            "observed": "NotBorrower"
+          }
+        },
+        {
+          "name": "Borrowed event: 5 tUSD, debt 5 tUSD",
+          "ok": true,
+          "detail": {
+            "txHash": "0x863c0dd198970405dbba7501ee0e600d88e743de8cfaa2b9551c2b3cb46cadd0",
+            "block": 5505949,
+            "amount": "5000000",
+            "newDebt": "5000000"
+          }
+        },
+        {
+          "name": "borrower received exactly 5 tUSD",
+          "ok": true
+        },
+        {
+          "name": "availableDraw fell to ≈ 6 tUSD (11 − 5 − seconds of accrued interest)",
+          "ok": true,
+          "detail": {
+            "debt": "5000000",
+            "availableDraw": "6000000"
+          }
+        }
+      ],
+      "evidence": {
+        "borrow": {
+          "txHash": "0x863c0dd198970405dbba7501ee0e600d88e743de8cfaa2b9551c2b3cb46cadd0",
+          "block": 5505949,
+          "amount": "5000000",
+          "newDebt": "5000000"
+        },
+        "after": {
+          "debt": "5000000",
+          "availableDraw": "6000000"
+        }
+      },
+      "startedAt": "2026-09-17T21:41:59.885Z",
+      "error": "API debt after draw did not reach the expected state: {\"schemaVersion\":\"1.0\",\"data\":{\"facilityId\":\"2TF58GXAJ7XW7ZCXV762DQPS5J\",\"canonicalFacilityId\":\"0x14b5c926fbc4530f7d618d3662d6364f2e76e2ed9aaa4cd0066d9141d01e2ac8\",\"wallet\":\"0x42E46697957766fFad9b7f55621260f99Dc204B7\",\"chainId\":102031,\"asset\":{\"chainId\":102031,\"address\":\"0x03115387f28660088faa6a9b00",
+      "finishedAt": "2026-09-17T21:45:37.890Z",
+      "originalStatus": "FAIL",
+      "amendment": {
+        "kind": "ENVIRONMENT",
+        "reason": "The API poll ran while the Railway indexer was down (orphan chain_blocks row 5505414 crash loop, 19:29–21:47 UTC; API answered EVIDENCE_STALE), so the mirror could not be read. Every on-chain check in this scenario passed. The same API mirror was verified afterwards with the indexer restored: K3 (v12 states), K5/K6 (v11), K7 (debt 0 on both facilities and every finalized Repaid leg, including the K1 draw, listed with matching amounts). Indexer fix: orphan rows above the cursor are now swept (commit 894f49c).",
+        "amendedAt": "2026-09-17T23:39:11.851Z"
+      }
+    },
+    {
+      "id": "K2",
+      "persona": "borrower",
+      "title": "SIM-GPUNET facility: 3 tUSD draw against partially paid, haircut and cancelled invoices",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Borrowed event: 3 tUSD, debt 3 tUSD",
+          "ok": true,
+          "detail": {
+            "txHash": "0xcefec0cd69a260dfbb3405b9fc38bf599bf1ab02cbeaabde2a16abdca755fb7c",
+            "block": 5506323,
+            "amount": "3000000",
+            "newDebt": "3000000",
+            "availableBefore": "5200000"
+          }
+        },
+        {
+          "name": "availableDraw fell to ≈ 2.2 tUSD (5.2 − 3 − seconds of accrued interest)",
+          "ok": true,
+          "detail": {
+            "availableDraw": "2200000",
+            "windowClosed": false
+          }
+        }
+      ],
+      "evidence": {
+        "borrow": {
+          "txHash": "0xcefec0cd69a260dfbb3405b9fc38bf599bf1ab02cbeaabde2a16abdca755fb7c",
+          "block": 5506323,
+          "amount": "3000000",
+          "newDebt": "3000000",
+          "availableBefore": "5200000"
+        }
+      },
+      "startedAt": "2026-09-17T23:15:45.191Z",
+      "finishedAt": "2026-09-17T23:16:22.220Z"
+    },
+    {
+      "id": "K3",
+      "persona": "guardian",
+      "title": "SIM-GPUNET facility: guardian freeze blocks draws; the underwriter reactivates",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "facility is DRAW_FROZEN",
+          "ok": true
+        },
+        {
+          "name": "a draw while frozen reverts",
+          "ok": true,
+          "detail": {
+            "observed": "FacilityNotActive"
+          }
+        },
+        {
+          "name": "repayment stays available while frozen (static repayExact is not blocked by the freeze)",
+          "ok": true,
+          "detail": {
+            "observed": "NothingToRepay",
+            "debt": "0"
+          }
+        },
+        {
+          "name": "API projects DRAW_FROZEN",
+          "ok": true
+        },
+        {
+          "name": "a non-underwriter cannot reactivate (NotRole)",
+          "ok": true,
+          "detail": {
+            "observed": "NotRole"
+          }
+        },
+        {
+          "name": "facility is ACTIVE again",
+          "ok": true
+        },
+        {
+          "name": "API projects ACTIVE again",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "freeze": {
+          "txHash": "0x3a95db31c532e0df27f65f48de10fc8a1b96603b5991d318b949e33d920262de",
+          "block": 5505963
+        },
+        "resume": {
+          "txHash": "0x62c3893bb2191441f42d9a7e82bbad056ce4537fe362ce9bc718930ada73922a",
+          "block": 5505970
+        }
+      },
+      "startedAt": "2026-09-17T21:45:40.316Z",
+      "finishedAt": "2026-09-17T21:49:04.311Z"
+    },
+    {
+      "id": "K4",
+      "persona": "third-party",
+      "title": "SIM-GPUNET facility: a settlement-rail stand-in repays 1 tUSD with repayFor (payer ≠ borrower)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Repaid event: 1 tUSD applied (interest first, then principal) by a third-party payer",
+          "ok": true,
+          "detail": {
+            "txHash": "0xf52e60cb23e76c878c871453b9f413f6b14662de617bff38c595948abc7b8715",
+            "block": 5506326,
+            "facilityId": "0x521c991bb31daeca4a49d7745ab5e07eca6ee0499f7733ab6aa98d7b9b8304fd",
+            "payer": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+            "settlementRef": "0x2c195a588104c01fb060019ab8bfa8b7beced758a30c14112a7475eafc41267d",
+            "requested": "1000000",
+            "received": "1000000",
+            "applied": "1000000",
+            "feePaid": "0",
+            "interestPaid": "0",
+            "principalPaid": "1000000",
+            "excess": "0",
+            "newDebt": "2000000"
+          }
+        },
+        {
+          "name": "the Repaid payer is the third-party wallet, not the borrower",
+          "ok": true
+        },
+        {
+          "name": "API principal reflects the third-party repayment (< 3 tUSD)",
+          "ok": true,
+          "detail": {
+            "debt": "2000000",
+            "principal": "2000000"
+          }
+        }
+      ],
+      "evidence": {
+        "repayFor": {
+          "txHash": "0xf52e60cb23e76c878c871453b9f413f6b14662de617bff38c595948abc7b8715",
+          "block": 5506326,
+          "facilityId": "0x521c991bb31daeca4a49d7745ab5e07eca6ee0499f7733ab6aa98d7b9b8304fd",
+          "payer": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+          "settlementRef": "0x2c195a588104c01fb060019ab8bfa8b7beced758a30c14112a7475eafc41267d",
+          "requested": "1000000",
+          "received": "1000000",
+          "applied": "1000000",
+          "feePaid": "0",
+          "interestPaid": "0",
+          "principalPaid": "1000000",
+          "excess": "0",
+          "newDebt": "2000000"
+        },
+        "api": {
+          "debt": "2000000",
+          "principal": "2000000"
+        }
+      },
+      "startedAt": "2026-09-17T23:16:22.223Z",
+      "finishedAt": "2026-09-17T23:18:23.820Z"
+    },
+    {
+      "id": "K5",
+      "persona": "borrower",
+      "title": "SIM-AETHIR facility: partial repayment of 2 tUSD; interest accrues on the remainder",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Repaid event: 2 tUSD applied, debt reduced, no excess",
+          "ok": true,
+          "detail": {
+            "txHash": "0x38263ac26a9f29a953b3d2a0a51efc10d8ad0c5db79c52edc0d8f76cd66011d9",
+            "block": 5505978,
+            "facilityId": "0x14b5c926fbc4530f7d618d3662d6364f2e76e2ed9aaa4cd0066d9141d01e2ac8",
+            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "requested": "2000000",
+            "received": "2000000",
+            "applied": "2000000",
+            "feePaid": "0",
+            "interestPaid": "6",
+            "principalPaid": "1999994",
+            "excess": "0",
+            "newDebt": "3000006"
+          }
+        },
+        {
+          "name": "remaining legal debt ≈ 3 tUSD plus accrued interest (10 % APR, ACT/365)",
+          "ok": true,
+          "detail": {
+            "debtAfter": "3000007",
+            "principal": "3000006",
+            "at": 1789681785
+          }
+        },
+        {
+          "name": "one day ahead the ledger projects ~0.000822 tUSD more interest on 3 tUSD (rate 1000 bps)",
+          "ok": true,
+          "detail": {
+            "projectedDelta": "821"
+          }
+        }
+      ],
+      "evidence": {
+        "repay": {
+          "txHash": "0x38263ac26a9f29a953b3d2a0a51efc10d8ad0c5db79c52edc0d8f76cd66011d9",
+          "block": 5505978,
+          "facilityId": "0x14b5c926fbc4530f7d618d3662d6364f2e76e2ed9aaa4cd0066d9141d01e2ac8",
+          "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+          "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "requested": "2000000",
+          "received": "2000000",
+          "applied": "2000000",
+          "feePaid": "0",
+          "interestPaid": "6",
+          "principalPaid": "1999994",
+          "excess": "0",
+          "newDebt": "3000006"
+        },
+        "ledger": {
+          "debtAfter": "3000007",
+          "principal": "3000006",
+          "at": 1789681785
+        }
+      },
+      "startedAt": "2026-09-17T21:49:05.083Z",
+      "finishedAt": "2026-09-17T21:49:49.312Z"
+    },
+    {
+      "id": "K6",
+      "persona": "underwriter",
+      "title": "SIM-AETHIR facility: installment schedule → overdue → DELINQUENT → paid → cured back to ACTIVE",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "before the due time markDelinquent reverts (NotDue)",
+          "ok": true,
+          "detail": {
+            "observed": "NotDue"
+          }
+        },
+        {
+          "name": "facility is DELINQUENT after the installment is overdue",
+          "ok": true
+        },
+        {
+          "name": "draws are refused while DELINQUENT",
+          "ok": true,
+          "detail": {
+            "observed": "FacilityNotActive"
+          }
+        },
+        {
+          "name": "API projects DELINQUENT",
+          "ok": true
+        },
+        {
+          "name": "cure is refused until the installment is paid (NotDue)",
+          "ok": true,
+          "detail": {
+            "observed": "NotDue"
+          }
+        },
+        {
+          "name": "facility is ACTIVE again after the installment was paid and cured",
+          "ok": true
+        },
+        {
+          "name": "API projects ACTIVE after the cure",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "schedule": {
+          "txHash": "0x898592865ece2e61df81e3fb61c560a2fd51e8679b810da4b56b16c853836d76",
+          "dueAt": 1789681875,
+          "grace": 3600,
+          "dueAmount": "1000000"
+        },
+        "delinquent": {
+          "txHash": "0xd0069634223772a11af8e7163b9c132e37164a69fe5388ce5db49fd3359297ba",
+          "block": 5505987
+        },
+        "installment": {
+          "txHash": "0x4a4d20b1afb01a9b6bdc39283f648b03549db2d7e34d9800151c2e71425e62c9",
+          "block": 5505995
+        },
+        "cure": {
+          "txHash": "0x729b2241fe1fe6abdebbb10d7ea2646a16eb584867617f92ce17642186fa2792",
+          "block": 5505997
+        }
+      },
+      "startedAt": "2026-09-17T21:49:49.313Z",
+      "finishedAt": "2026-09-17T21:55:50.841Z"
+    },
+    {
+      "id": "K7",
+      "persona": "borrower",
+      "title": "both persona facilities are repaid in full; REPAID is reached and LP NAV grew by the interest",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "aethir: already debt-free",
+          "ok": true
+        },
+        {
+          "name": "gpunet: Repaid event ends with debt 0 and no excess transferred",
+          "ok": true,
+          "detail": {
+            "txHash": "0xd8ecda645c0c827895cfb716304982b6a29325e84134a4c92ebf5e3144d24aa2",
+            "block": 5506334,
+            "facilityId": "0x521c991bb31daeca4a49d7745ab5e07eca6ee0499f7733ab6aa98d7b9b8304fd",
+            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "requested": "2000001",
+            "received": "2000001",
+            "applied": "2000001",
+            "feePaid": "0",
+            "interestPaid": "1",
+            "principalPaid": "2000000",
+            "excess": "0",
+            "newDebt": "0"
+          }
+        },
+        {
+          "name": "gpunet: facility is REPAID (terminal)",
+          "ok": true
+        },
+        {
+          "name": "gpunet: a further draw on the REPAID facility reverts",
+          "ok": true,
+          "detail": {
+            "observed": "FacilityNotActive"
+          }
+        },
+        {
+          "name": "vault NAV did not fall through the cycle (interest accrues to LPs)",
+          "ok": true,
+          "detail": {
+            "navBefore": "991000032",
+            "navAfter": "991000033"
+          }
+        },
+        {
+          "name": "API debt is zero on gpu080-facility-v11",
+          "ok": true
+        },
+        {
+          "name": "API debt is zero on gpu080-facility-v12",
+          "ok": true
+        },
+        {
+          "name": "API repayment history lists all 5 finalized Repaid legs of both facilities with matching amounts and payer",
+          "ok": true,
+          "detail": {
+            "count": 18,
+            "missing": []
+          }
+        }
+      ],
+      "evidence": {
+        "navBefore": "991000032",
+        "gpunet": {
+          "txHash": "0xd8ecda645c0c827895cfb716304982b6a29325e84134a4c92ebf5e3144d24aa2",
+          "block": 5506334,
+          "facilityId": "0x521c991bb31daeca4a49d7745ab5e07eca6ee0499f7733ab6aa98d7b9b8304fd",
+          "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+          "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "requested": "2000001",
+          "received": "2000001",
+          "applied": "2000001",
+          "feePaid": "0",
+          "interestPaid": "1",
+          "principalPaid": "2000000",
+          "excess": "0",
+          "newDebt": "0"
+        },
+        "navAfter": "991000033",
+        "interestPaidNow": "1",
+        "apiRepayments": 18,
+        "repaidOnChain": 5,
+        "repaidMissingFromApi": []
+      },
+      "startedAt": "2026-09-17T23:18:23.822Z",
+      "finishedAt": "2026-09-17T23:20:31.216Z"
+    },
+    {
+      "id": "K8",
+      "persona": "borrower",
+      "title": "browser regression on a fresh facility: checkpoint B → observation → consumption → borrow 1 / repay through the UI",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "official proof became PROOF_READY inside the window",
+          "ok": true
+        },
+        {
+          "name": "control observation refreshed on chain",
+          "ok": true
+        },
+        {
+          "name": "checkpoint B consumed and audited proof-only",
+          "ok": true,
+          "detail": {
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "consumed checkpoint revision equals consumed events",
+          "ok": true
+        },
+        {
+          "name": "browser facility: eligibleUnpaid = 10 tUSD (epoch-4) and availableDraw = 5 tUSD",
+          "ok": true,
+          "detail": {
+            "eligibleUnpaid": "10000000",
+            "availableDraw": "5000000"
+          }
+        },
+        {
+          "name": "live borrower browser flow passed (borrow 1 tUSD, repay with 1.001 cap, debt 0)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "tail": "621260f99Dc204B7\",\"transactions\":[{\"action\":\"borrow\",\"hash\":\"0xceef5e21becadfebdad5fce86bdf439f1b4bceb085c60013fd56ed56ffab9b62\"},{\"action\":\"approve\",\"hash\":\"0x982568409428f73ce49e1af47eaa20068aba8946808392988e3ac36c02624655\"},{\"action\":\"repayExact\",\"hash\":\"0xb9a864873fb72f806c3aebdad4df4f3c4be2472e5f8ca3c1a19e3317aee07970\"}],\"nativeProofAcceptance\":\"NOT_ASSERTED\",\"partnerRevenue\":\"NOT_ASSERTED\"}\n"
+          }
+        },
+        {
+          "name": "borrow receipt 0xceef5e21… succeeded",
+          "ok": true
+        },
+        {
+          "name": "approve receipt 0x98256840… succeeded",
+          "ok": true
+        },
+        {
+          "name": "repayExact receipt 0xb9a86487… succeeded",
+          "ok": true
+        },
+        {
+          "name": "Repaid log: principal 1 tUSD, no excess, debt 0",
+          "ok": true,
+          "detail": {
+            "facilityId": "0x6ff2532f94c1a097e55817eadeaa04afb8454a579ba5d0f3684bcd2c23d4652c",
+            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "requested": "1000000",
+            "received": "1000000",
+            "applied": "1000000",
+            "feePaid": "0",
+            "interestPaid": "0",
+            "principalPaid": "1000000",
+            "excess": "0",
+            "newDebt": "0"
+          }
+        },
+        {
+          "name": "net token cost equals interest + fees only",
+          "ok": true,
+          "detail": {
+            "delta": "0"
+          }
+        },
+        {
+          "name": "browser facility is REPAID",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "source": {
+          "record": "qa-c3-checkpoint-b",
+          "step": "reserveCheckpoint",
+          "txHash": "0xc39882f9d2cf3e45a10aa45854d99eda093e4883671bf33591b3bf05bc1d132e",
+          "blockNumber": 11726489,
+          "protectedUntil": 1789683130
+        },
+        "consumption": {
+          "step": "reserveCheckpoint",
+          "name": "qa-c3-checkpoint-b",
+          "sourceTxHash": "0xc39882f9d2cf3e45a10aa45854d99eda093e4883671bf33591b3bf05bc1d132e",
+          "sourceEventId": "0xd6639b3ceeed04e62e01a2f4cea2de88ec3826e419363703382a100930709ff6",
+          "destinationTxHash": "0x02b9911d9a4d811d4855b6e9f515ade234ff1eb82e7ffa8ef659763998785763",
+          "destinationBlock": 5506046,
+          "status": "NATIVE_CONSUMED",
+          "financialAudit": {
+            "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+            "debtMutationEvents": 0,
+            "vaultMutationEvents": 0,
+            "vaultAssetTransfers": 0,
+            "cash": {
+              "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+              "beforeBlock": 5506045,
+              "afterBlock": 5506046,
+              "blockHash": "0x89b82661e1655a3165449ed1151c91b40f8620dc9058961113a8e08b6f1db147",
+              "cashBefore": "994000032",
+              "cashAfter": "994000032",
+              "externalTransactionCashDelta": "0",
+              "proofTransactionCashDelta": "0",
+              "externalTransfers": []
+            }
+          }
+        },
+        "eligible": {
+          "eligibleUnpaid": "10000000",
+          "availableDraw": "5000000"
+        },
+        "transactions": [
+          {
+            "action": "borrow",
+            "hash": "0xceef5e21becadfebdad5fce86bdf439f1b4bceb085c60013fd56ed56ffab9b62",
+            "block": 5506054,
+            "status": 1
+          },
+          {
+            "action": "approve",
+            "hash": "0x982568409428f73ce49e1af47eaa20068aba8946808392988e3ac36c02624655",
+            "block": 5506061,
+            "status": 1
+          },
+          {
+            "action": "repayExact",
+            "hash": "0xb9a864873fb72f806c3aebdad4df4f3c4be2472e5f8ca3c1a19e3317aee07970",
+            "block": 5506063,
+            "status": 1
+          }
+        ],
+        "repaid": {
+          "facilityId": "0x6ff2532f94c1a097e55817eadeaa04afb8454a579ba5d0f3684bcd2c23d4652c",
+          "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+          "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "requested": "1000000",
+          "received": "1000000",
+          "applied": "1000000",
+          "feePaid": "0",
+          "interestPaid": "0",
+          "principalPaid": "1000000",
+          "excess": "0",
+          "newDebt": "0"
+        }
+      },
+      "startedAt": "2026-09-17T21:58:01.794Z",
+      "finishedAt": "2026-09-17T22:12:26.496Z"
+    },
+    {
+      "id": "K9",
+      "persona": "lp",
+      "title": "LP read parity after the persona cycles: API position equals chain and the vault holds no borrower-owned residue",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/lp responds",
+          "ok": true
+        },
+        {
+          "name": "API shares equal chain shares",
+          "ok": true,
+          "detail": {
+            "apiShares": "0",
+            "chainShares": "0",
+            "apiNav": "994000032",
+            "chainNav": "994000032",
+            "borrowerOwned": "0",
+            "availableCash": "994000032"
+          }
+        },
+        {
+          "name": "API NAV is within one block of the chain NAV",
+          "ok": true,
+          "detail": {
+            "apiShares": "0",
+            "chainShares": "0",
+            "apiNav": "994000032",
+            "chainNav": "994000032",
+            "borrowerOwned": "0",
+            "availableCash": "994000032"
+          }
+        },
+        {
+          "name": "no borrower-owned residue (unclaimed excess) after the cycles",
+          "ok": true,
+          "detail": {
+            "apiShares": "0",
+            "chainShares": "0",
+            "apiNav": "994000032",
+            "chainNav": "994000032",
+            "borrowerOwned": "0",
+            "availableCash": "994000032"
+          }
+        }
+      ],
+      "evidence": {
+        "apiShares": "0",
+        "chainShares": "0",
+        "apiNav": "994000032",
+        "chainNav": "994000032",
+        "borrowerOwned": "0",
+        "availableCash": "994000032"
+      },
+      "startedAt": "2026-09-17T22:12:26.497Z",
+      "finishedAt": "2026-09-17T22:12:28.960Z"
+    },
+    {
+      "id": "R0",
+      "persona": "operator",
+      "title": "recovery-drill facility is open on chain, registered in the API and bound to the recovery manager",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "gpu080-facility-v14 exists and is ACTIVE with the borrower wallet",
+          "ok": true,
+          "detail": {
+            "state": "ACTIVE",
+            "wallet": "0x42E46697957766fFad9b7f55621260f99Dc204B7"
+          }
+        },
+        {
+          "name": "CreditFacilityManager and LendingVaultV2 are bound to the deployed RecoveryManager",
+          "ok": true,
+          "detail": {
+            "bound": "0xb9cc16695203d1a63ebba0010cb8d46defa62489"
+          }
+        },
+        {
+          "name": "the drill wallets hold UNDERWRITER / GUARDIAN / SERVICER / TREASURY",
+          "ok": true,
+          "detail": {
+            "underwriter": true,
+            "guardian": true,
+            "servicer": true,
+            "treasury": true
+          }
+        },
+        {
+          "name": "API lists the facility",
+          "ok": true,
+          "detail": {
+            "apiId": "5BJN4NVJ4SEF7M2CRBH0Q3DQYK"
+          }
+        },
+        {
+          "name": "no debt, no receivables yet",
+          "ok": true
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-17T22:12:28.970Z",
+      "finishedAt": "2026-09-17T22:12:32.294Z"
+    },
+    {
+      "id": "R1",
+      "persona": "sim-aethir",
+      "title": "epoch-5 reward is recognised for the drill facility, proven and consumed (financing basis exists)",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "official proofs became PROOF_READY for the recognition and the assignment",
+          "ok": true
+        },
+        {
+          "name": "qa-c3-aethir-c3-epoch-5-recognize consumed on Creditcoin, audited proof-only",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "qa-c3-aethir-c3-epoch-5-assign consumed on Creditcoin, audited proof-only",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "the drill facility holds one ASSIGNED 12 tUSD receivable payable by SIM-AETHIR",
+          "ok": true,
+          "detail": [
+            {
+              "id": "0xcc82bf8ce512edaf0d70c8a7d53ca36d80b4505c9c2e73f947aa1af599309230",
+              "net": "12000000",
+              "paid": "0",
+              "state": "ASSIGNED",
+              "revision": "2",
+              "dueAt": "1789769544",
+              "evidenceValidUntil": "1789705410",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            }
+          ]
+        }
+      ],
+      "evidence": {
+        "source": [
+          {
+            "name": "qa-c3-aethir-c3-epoch-5-recognize",
+            "step": "recognizeObligation",
+            "persona": "sim-aethir",
+            "txHash": "0x6f235d6d59f9c2cfb3f171007121fbe7bd09d671aeb24fcb9542c07f49bf6f81",
+            "blockNumber": 11726560,
+            "facilityName": "gpu080-facility-v14",
+            "consumed": true,
+            "destinationTxHash": "0xe553404896cfbfdfaee9f18d25a5b2bbfc60f449220ae3383c199c0495eb87c7",
+            "sourceEventId": "0x894f21a292cb8dff70719125b4085608e204302b51e882bc42b59d7fa965b3fc"
+          },
+          {
+            "name": "qa-c3-aethir-c3-epoch-5-assign",
+            "step": "assignObligation",
+            "persona": "sim-aethir",
+            "txHash": "0xca4b6815dfe21e595c78975a00f6d57e9922ed4cef204a5c4bc09e895c018737",
+            "blockNumber": 11726561,
+            "facilityName": "gpu080-facility-v14",
+            "consumed": true,
+            "destinationTxHash": "0xfc37d17341a6330172ce563f5028fe2de47903c4ffaaee8c84c3aa2ea4f28632",
+            "sourceEventId": "0x69429c1843fce4467f049999f3703b3c4b5aaeda561416be6986c7a5df4d0c53"
+          }
+        ],
+        "consumptions": [
+          {
+            "step": "recognizeObligation",
+            "name": "qa-c3-aethir-c3-epoch-5-recognize",
+            "sourceTxHash": "0x6f235d6d59f9c2cfb3f171007121fbe7bd09d671aeb24fcb9542c07f49bf6f81",
+            "sourceEventId": "0x894f21a292cb8dff70719125b4085608e204302b51e882bc42b59d7fa965b3fc",
+            "destinationTxHash": "0xe553404896cfbfdfaee9f18d25a5b2bbfc60f449220ae3383c199c0495eb87c7",
+            "destinationBlock": 5506108,
+            "status": "NATIVE_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5506107,
+                "afterBlock": 5506108,
+                "blockHash": "0xb82ba43ff1f7bff320b14600a58ac28ab6f5cfcd52fd8d38d09b69302103e5cd",
+                "cashBefore": "994000032",
+                "cashAfter": "994000032",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          },
+          {
+            "step": "assignObligation",
+            "name": "qa-c3-aethir-c3-epoch-5-assign",
+            "sourceTxHash": "0xca4b6815dfe21e595c78975a00f6d57e9922ed4cef204a5c4bc09e895c018737",
+            "sourceEventId": "0x69429c1843fce4467f049999f3703b3c4b5aaeda561416be6986c7a5df4d0c53",
+            "destinationTxHash": "0xfc37d17341a6330172ce563f5028fe2de47903c4ffaaee8c84c3aa2ea4f28632",
+            "destinationBlock": 5506114,
+            "status": "NATIVE_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5506113,
+                "afterBlock": 5506114,
+                "blockHash": "0x175311efa01d507947b44ec9f6460cb8925ecf40392b7857197d4c49ed3a6c20",
+                "cashBefore": "994000032",
+                "cashAfter": "994000032",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          }
+        ],
+        "receivables": [
+          {
+            "id": "0xcc82bf8ce512edaf0d70c8a7d53ca36d80b4505c9c2e73f947aa1af599309230",
+            "net": "12000000",
+            "paid": "0",
+            "state": "ASSIGNED",
+            "revision": "2",
+            "dueAt": "1789769544",
+            "evidenceValidUntil": "1789705410",
+            "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+          }
+        ]
+      },
+      "startedAt": "2026-09-17T22:12:32.297Z",
+      "finishedAt": "2026-09-17T22:25:06.924Z"
+    },
+    {
+      "id": "R2",
+      "persona": "borrower",
+      "title": "checkpoint C makes epoch-5 eligible; the operator draws 4 tUSD against it",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "official proof became PROOF_READY inside the reservation window",
+          "ok": true
+        },
+        {
+          "name": "control observation refreshed on chain",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "name": "checkpoint C consumed and audited proof-only",
+          "ok": true,
+          "detail": {
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "consumed checkpoint revision equals consumed events",
+          "ok": true
+        },
+        {
+          "name": "eligibleUnpaid = 12 tUSD and availableDraw = 6 tUSD (50 % advance rate)",
+          "ok": true,
+          "detail": {
+            "eligibleUnpaid": "12000000",
+            "availableDraw": "6000000"
+          }
+        },
+        {
+          "name": "Borrowed event: 4 tUSD, debt 4 tUSD",
+          "ok": true,
+          "detail": {
+            "txHash": "0xf1e90e0937bdf2b337f3f40f72cb5a7f5cf1e43db439dbe99ee37581bba4f7d0",
+            "block": 5506167,
+            "amount": "4000000",
+            "newDebt": "4000000"
+          }
+        },
+        {
+          "name": "API mirrors principal 4 tUSD",
+          "ok": true,
+          "detail": {
+            "debt": "4000000",
+            "principal": "4000000",
+            "availableDraw": "2000000"
+          }
+        }
+      ],
+      "evidence": {
+        "source": {
+          "record": "qa-checkpoint-c3-epoch-5",
+          "step": "reserveCheckpoint",
+          "txHash": "0x98ae052bbc05487643a6dc1c16500c62da26b86e16159e157211db0491658914",
+          "blockNumber": 11726622,
+          "protectedUntil": 1789684750
+        },
+        "consumption": {
+          "step": "reserveCheckpoint",
+          "name": "qa-checkpoint-c3-epoch-5",
+          "sourceTxHash": "0x98ae052bbc05487643a6dc1c16500c62da26b86e16159e157211db0491658914",
+          "sourceEventId": "0x9f4ed063eecfbe7ec3c6d57f279db3eddd4f915e98fb1d681dd7f047150b0071",
+          "destinationTxHash": "0x032b7ed935036f5a433d160e50e2bed03193099bea10d78ded8c369d852cc5eb",
+          "destinationBlock": 5506161,
+          "status": "NATIVE_CONSUMED",
+          "financialAudit": {
+            "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+            "debtMutationEvents": 0,
+            "vaultMutationEvents": 0,
+            "vaultAssetTransfers": 0,
+            "cash": {
+              "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+              "beforeBlock": 5506160,
+              "afterBlock": 5506161,
+              "blockHash": "0xef3643e031c82520aa30895298ba6ecc62a149c5f15be41ea9c976696bae53f5",
+              "cashBefore": "994000032",
+              "cashAfter": "994000032",
+              "externalTransactionCashDelta": "0",
+              "proofTransactionCashDelta": "0",
+              "externalTransfers": []
+            }
+          }
+        },
+        "eligible": {
+          "eligibleUnpaid": "12000000",
+          "availableDraw": "6000000"
+        },
+        "borrow": {
+          "txHash": "0xf1e90e0937bdf2b337f3f40f72cb5a7f5cf1e43db439dbe99ee37581bba4f7d0",
+          "block": 5506167,
+          "amount": "4000000",
+          "newDebt": "4000000"
+        },
+        "api": {
+          "debt": "4000000",
+          "principal": "4000000",
+          "availableDraw": "2000000"
+        }
+      },
+      "startedAt": "2026-09-17T22:25:06.929Z",
+      "finishedAt": "2026-09-17T22:38:39.283Z"
+    },
+    {
+      "id": "R3",
+      "persona": "sim-aethir",
+      "title": "the network pays epoch-5 to the operator after financing: the receivable is PAID, the borrowing base collapses, the debt does not move",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "source: payout measured at 12 tUSD and the obligation is PAID",
+          "ok": true,
+          "detail": {
+            "measured": "12000000",
+            "status": 2
+          }
+        },
+        {
+          "name": "official proof became PROOF_READY",
+          "ok": true
+        },
+        {
+          "name": "payout consumed on Creditcoin, audited proof-only (no debt or cash mutation)",
+          "ok": true,
+          "detail": {
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "destination: epoch-5 is PAID in full",
+          "ok": true,
+          "detail": [
+            {
+              "id": "0xcc82bf8ce512edaf0d70c8a7d53ca36d80b4505c9c2e73f947aa1af599309230",
+              "net": "12000000",
+              "paid": "12000000",
+              "state": "PAID",
+              "revision": "3",
+              "dueAt": "1789769544",
+              "evidenceValidUntil": "1789705410",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            }
+          ]
+        },
+        {
+          "name": "borrowing base is now 0 (a paid receivable is not collateral) and no further draw is available",
+          "ok": true,
+          "detail": {
+            "eligibleUnpaid": "0",
+            "availableDraw": "0"
+          }
+        },
+        {
+          "name": "legal debt is unchanged by the source payout (debt falls only on a destination receipt)",
+          "ok": true,
+          "detail": {
+            "debt": "4000009"
+          }
+        },
+        {
+          "name": "API shows availableDraw 0 with a blocked reason while the debt stays at 4 tUSD",
+          "ok": true,
+          "detail": {
+            "availableDraw": "0",
+            "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+            "debt": "4000008"
+          }
+        }
+      ],
+      "evidence": {
+        "source": {
+          "name": "qa-c3-aethir-c3-epoch-5-payout",
+          "step": "settle",
+          "persona": "sim-aethir",
+          "txHash": "0x4cd10239c5337de5df4edd21e045db27c4b1f1b7b9887676116e8942caf9d4ee",
+          "blockNumber": 11726692,
+          "facilityName": "gpu080-facility-v14",
+          "consumed": true,
+          "destinationTxHash": "0x013032fa4065a298374628c82502bb08f20da4eb126a843b7ae142552c78e165",
+          "sourceEventId": "0x056c2284dedeeeb8dd3479f4f02dc82acc379e2355ca8213bedbb5514cb1fe8a"
+        },
+        "consumption": {
+          "step": "settle",
+          "name": "qa-c3-aethir-c3-epoch-5-payout",
+          "sourceTxHash": "0x4cd10239c5337de5df4edd21e045db27c4b1f1b7b9887676116e8942caf9d4ee",
+          "sourceEventId": "0x056c2284dedeeeb8dd3479f4f02dc82acc379e2355ca8213bedbb5514cb1fe8a",
+          "destinationTxHash": "0x013032fa4065a298374628c82502bb08f20da4eb126a843b7ae142552c78e165",
+          "destinationBlock": 5506214,
+          "status": "NATIVE_CONSUMED",
+          "financialAudit": {
+            "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+            "debtMutationEvents": 0,
+            "vaultMutationEvents": 0,
+            "vaultAssetTransfers": 0,
+            "cash": {
+              "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+              "beforeBlock": 5506213,
+              "afterBlock": 5506214,
+              "blockHash": "0x5cfabf50d94df6a9c69de0adefba0bc4566d048d5c993e608aca51971de02f33",
+              "cashBefore": "990000032",
+              "cashAfter": "990000032",
+              "externalTransactionCashDelta": "0",
+              "proofTransactionCashDelta": "0",
+              "externalTransfers": []
+            }
+          }
+        },
+        "after": {
+          "debt": "4000009",
+          "receivables": [
+            {
+              "id": "0xcc82bf8ce512edaf0d70c8a7d53ca36d80b4505c9c2e73f947aa1af599309230",
+              "net": "12000000",
+              "paid": "12000000",
+              "state": "PAID",
+              "revision": "3",
+              "dueAt": "1789769544",
+              "evidenceValidUntil": "1789705410",
+              "payer": "0x0a2586d583acdd3aff95e5aac0f1f9dd754e5103"
+            }
+          ],
+          "eligibleUnpaid": "0",
+          "evaluation": {
+            "eligibleReceivables": "0",
+            "receivableLimit": "0",
+            "facilityLimit": "37500000",
+            "availableDraw": "0",
+            "evidenceValidUntil": "0",
+            "checkpointAge": "0"
+          }
+        },
+        "api": {
+          "availableDraw": "0",
+          "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+          "debt": "4000008"
+        }
+      },
+      "startedAt": "2026-09-17T22:38:39.285Z",
+      "finishedAt": "2026-09-17T22:50:25.141Z"
+    },
+    {
+      "id": "R4",
+      "persona": "underwriter",
+      "title": "no repayment: schedule → DELINQUENT → dispute blocks default → approved default → DEFAULTED with accrual frozen",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "facility is DELINQUENT once the installment is overdue",
+          "ok": true
+        },
+        {
+          "name": "inside the grace period a default cannot be approved (NotDue)",
+          "ok": true,
+          "detail": {
+            "observed": "NotDue"
+          }
+        },
+        {
+          "name": "the guardian cannot declare a default the underwriter has not approved (NotApproved)",
+          "ok": true,
+          "detail": {
+            "observed": "NotApproved"
+          }
+        },
+        {
+          "name": "an open servicer dispute blocks default approval (DisputeOpen)",
+          "ok": true,
+          "detail": {
+            "observed": "DisputeOpen"
+          }
+        },
+        {
+          "name": "only the underwriter approves a default (NotRole for the servicer key)",
+          "ok": true,
+          "detail": {
+            "observed": "NotRole"
+          }
+        },
+        {
+          "name": "DefaultApproved event carries the reason",
+          "ok": true
+        },
+        {
+          "name": "facility is DEFAULTED",
+          "ok": true
+        },
+        {
+          "name": "StateChanged(DELINQUENT → DEFAULTED) was emitted by the manager",
+          "ok": true
+        },
+        {
+          "name": "interest accrual is frozen at default (30 days ahead projects the same legal debt)",
+          "ok": true,
+          "detail": {
+            "frozen": true,
+            "debtNow": "4000013",
+            "debtIn30Days": "4000013"
+          }
+        },
+        {
+          "name": "draws are refused while DEFAULTED",
+          "ok": true,
+          "detail": {
+            "observed": "FacilityNotActive"
+          }
+        },
+        {
+          "name": "the borrower may still repay while DEFAULTED (static repayExact is not blocked by the state gate)",
+          "ok": true,
+          "detail": {
+            "observed": "TransferFailed"
+          }
+        },
+        {
+          "name": "API projects DEFAULTED",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "schedule": {
+          "txHash": "0xcbbf32de0823b60f7b569f959489fbeb5dc70bebc9a445627a393431e61671ee",
+          "dueAt": 1789685505,
+          "grace": 60,
+          "disputeWindow": 0,
+          "dueAmount": "1000000"
+        },
+        "delinquent": {
+          "txHash": "0x97d91f6decd70f10debe9f6582cd4fe7de164dd3f7e496478d3a9366cda301f3",
+          "block": 5506228
+        },
+        "dispute": {
+          "opened": "0x31c181129e830f75e310fd1d6ac82b369453dc61ab37a01cb5e2d92b6faf455b",
+          "cleared": "0x8fc29923b6c58bc40309a64207bc61a5449c85f0ab38e01b89655d55ad1ad68d"
+        },
+        "approved": {
+          "txHash": "0x8f3d4d30391f934899e01f6b2ab3539e9c938a8ba6aa898b0cf8c8e0832eae3c",
+          "reason": "0xa980e1e1c6296f805a78a07c4e22ce6a19b3d040d3151912f3d093ce7ead59e4"
+        },
+        "defaulted": {
+          "txHash": "0x3cfc95caf9cb0a5c5f03b9ac78c8d1e819b2c8a1cd7bda14804824d564985d10",
+          "block": 5506238
+        },
+        "accrual": {
+          "frozen": true,
+          "debtNow": "4000013",
+          "debtIn30Days": "4000013"
+        }
+      },
+      "startedAt": "2026-09-17T22:50:25.145Z",
+      "finishedAt": "2026-09-17T22:56:25.806Z"
+    },
+    {
+      "id": "R5",
+      "persona": "servicer",
+      "title": "recovery: a pledged reserve is applied to the debt through the router; the reserve cannot be pulled back while debt remains",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "facility is RECOVERY",
+          "ok": true
+        },
+        {
+          "name": "ReserveFunded event: 1 tUSD pledged by the reserve owner",
+          "ok": true
+        },
+        {
+          "name": "a second wallet cannot take over the reserve (NotReserveOwner)",
+          "ok": true,
+          "detail": {
+            "observed": "NotReserveOwner"
+          }
+        },
+        {
+          "name": "the reserve cannot be returned while debt is outstanding (OutstandingDebt)",
+          "ok": true,
+          "detail": {
+            "observed": "OutstandingDebt"
+          }
+        },
+        {
+          "name": "ReserveApplied 1 tUSD → Repaid event with the RecoveryManager as payer",
+          "ok": true,
+          "detail": {
+            "txHash": "0xd473c07d632296051eaac97a3bfb2ca35241553beadad6892ef7bb4178d0db1c",
+            "block": 5506250,
+            "facilityId": "0xdf2ba9634e5a6588661937142e255d02440ba07368e30ae23a0e8fc457d96497",
+            "payer": "0xB9cc16695203d1a63eBbA0010cb8D46DefA62489",
+            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "requested": "1000000",
+            "received": "1000000",
+            "applied": "1000000",
+            "feePaid": "0",
+            "interestPaid": "13",
+            "principalPaid": "999987",
+            "excess": "0",
+            "newDebt": "3000013"
+          }
+        },
+        {
+          "name": "legal debt fell by exactly the applied reserve (accrual stays frozen)",
+          "ok": true,
+          "detail": {
+            "debtBefore": "4000013",
+            "debtAfter": "3000013"
+          }
+        },
+        {
+          "name": "API projects RECOVERY",
+          "ok": true
+        },
+        {
+          "name": "API debt equals the chain debt after the reserve was applied",
+          "ok": true,
+          "detail": {
+            "debt": "3000013",
+            "principal": "3000013"
+          }
+        }
+      ],
+      "evidence": {
+        "recovery": {
+          "txHash": "0xe992c3a8b6f52f7420a02940e2075fcd4468ad6d11dd804be35c905fd15ae975",
+          "block": 5506245
+        },
+        "reserve": {
+          "txHash": "0x0c8124f09add099aded8d41768807ec0af3f32cf68032cda2589f4eea8ff424f",
+          "owner": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+          "amount": "1000000"
+        },
+        "applied": {
+          "txHash": "0xd473c07d632296051eaac97a3bfb2ca35241553beadad6892ef7bb4178d0db1c",
+          "block": 5506250,
+          "facilityId": "0xdf2ba9634e5a6588661937142e255d02440ba07368e30ae23a0e8fc457d96497",
+          "payer": "0xB9cc16695203d1a63eBbA0010cb8D46DefA62489",
+          "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "requested": "1000000",
+          "received": "1000000",
+          "applied": "1000000",
+          "feePaid": "0",
+          "interestPaid": "13",
+          "principalPaid": "999987",
+          "excess": "0",
+          "newDebt": "3000013"
+        },
+        "api": {
+          "debt": "3000013",
+          "principal": "3000013"
+        }
+      },
+      "startedAt": "2026-09-17T22:56:25.809Z",
+      "finishedAt": "2026-09-17T22:59:18.145Z"
+    },
+    {
+      "id": "R6",
+      "persona": "treasury",
+      "title": "loss: the underwriter impairs the remainder (LP NAV falls), the treasury writes off → CLOSED_WITH_LOSS; the legal debt survives",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "impairment above the exposure is refused (ImpairmentExceedsExposure)",
+          "ok": true,
+          "detail": {
+            "observed": "ImpairmentExceedsExposure"
+          }
+        },
+        {
+          "name": "LP NAV fell by exactly the impaired amount (book loss recognised before write-off)",
+          "ok": true,
+          "detail": {
+            "txHash": "0x80733d52f77d804443d3e78e0450cd65d7729d1db5c399885c61afae9da92300",
+            "amount": "3000013",
+            "navBefore": "994000045",
+            "navAfter": "991000032"
+          }
+        },
+        {
+          "name": "vault records the impairment against the facility",
+          "ok": true
+        },
+        {
+          "name": "API LP NAV reflects the impairment",
+          "ok": true,
+          "detail": {
+            "apiNav": "991000032",
+            "chainNav": "991000032"
+          }
+        },
+        {
+          "name": "a loss id cannot be reused for the write-off approval (NotApproved)",
+          "ok": true,
+          "detail": {
+            "observed": "NotApproved"
+          }
+        },
+        {
+          "name": "the treasury cannot write off without the underwriter's approval (NotApproved)",
+          "ok": true,
+          "detail": {
+            "observed": "NotApproved"
+          }
+        },
+        {
+          "name": "only TREASURY executes the write-off (NotRole)",
+          "ok": true,
+          "detail": {
+            "observed": "NotRole"
+          }
+        },
+        {
+          "name": "LossApplied(writeOff=true) for the remaining debt",
+          "ok": true,
+          "detail": {
+            "txHash": "0xd80330b7e714d967817b1aad7669436b2ce428079c741838bc430e0c8bb2d89e",
+            "block": 5506267,
+            "loss": "3000013",
+            "navAfter": "991000032"
+          }
+        },
+        {
+          "name": "facility is CLOSED_WITH_LOSS (terminal)",
+          "ok": true
+        },
+        {
+          "name": "the vault marks the facility written off and released its impairment; NAV is unchanged by the write-off itself",
+          "ok": true,
+          "detail": {
+            "navImpaired": "991000032",
+            "navAfter": "991000032"
+          }
+        },
+        {
+          "name": "write-off is not forgiveness: the ledger still carries the legal debt",
+          "ok": true,
+          "detail": {
+            "legalDebt": "3000013"
+          }
+        },
+        {
+          "name": "no draw is possible on a written-off facility",
+          "ok": true,
+          "detail": {
+            "observed": "FacilityNotActive"
+          }
+        },
+        {
+          "name": "API projects CLOSED_WITH_LOSS",
+          "ok": true
+        },
+        {
+          "name": "API LP NAV still equals the chain NAV after the write-off",
+          "ok": true,
+          "detail": {
+            "apiNav": "991000032",
+            "chainNav": "991000032"
+          }
+        }
+      ],
+      "evidence": {
+        "impairment": {
+          "txHash": "0x80733d52f77d804443d3e78e0450cd65d7729d1db5c399885c61afae9da92300",
+          "amount": "3000013",
+          "navBefore": "994000045",
+          "navAfter": "991000032"
+        },
+        "approval": {
+          "txHash": "0xa9cf66dbb756d1102fb19e0f87f80ed933b9f09d96b4366798adfd10478f34b2",
+          "lossId": "0x96a5c77172581fd49a8a731e6a7ed7d56761bd01dca462fe8698a44901edf61f"
+        },
+        "writeOff": {
+          "txHash": "0xd80330b7e714d967817b1aad7669436b2ce428079c741838bc430e0c8bb2d89e",
+          "block": 5506267,
+          "loss": "3000013",
+          "navAfter": "991000032"
+        }
+      },
+      "startedAt": "2026-09-17T22:59:18.148Z",
+      "finishedAt": "2026-09-17T23:03:39.371Z"
+    }
+  ]
+}
