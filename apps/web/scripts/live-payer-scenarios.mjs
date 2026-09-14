@@ -211,6 +211,15 @@ async function expectRevert(fn, ifaces = [managerInterface, routerInterface, new
     return revertName(error, ifaces);
   }
 }
+/** The public CC3 RPC caps eth_getLogs at 2048 blocks; walk the range in windows. */
+async function queryLogsChunked(contract, filter, fromBlock, window = 2000) {
+  const latest = await provider.getBlockNumber();
+  const found = [];
+  for (let start = fromBlock; start <= latest; start += window) {
+    found.push(...(await contract.queryFilter(filter, start, Math.min(start + window - 1, latest))));
+  }
+  return found;
+}
 function logs(receipt, iface, name) {
   return receipt.logs.map((log) => { try { return iface.parseLog(log); } catch { return null; } }).filter((event) => event?.name === name);
 }
@@ -767,7 +776,7 @@ await scenario("K7", "borrower", "both persona facilities are repaid in full; RE
   const missing = [];
   let onchainCount = 0;
   for (const f of [facilities.aethir, facilities.gpunet]) {
-    const events = await router.queryFilter(router.filters.Repaid(f.id), manifest.deploymentBlock, "latest");
+    const events = await queryLogsChunked(router, router.filters.Repaid(f.id), manifest.deploymentBlock);
     for (const event of events) {
       onchainCount += 1;
       const row = listed.get(event.transactionHash.toLowerCase());
