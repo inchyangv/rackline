@@ -58,7 +58,14 @@ contract OpenGpuFacility is Script {
         manager.transition(env.facility, GpuTypes.FacilityState.UNDER_REVIEW, "TEST_ONLY_onboarding");
         vm.stopBroadcast();
 
-        _authorize(manager, AuthorizationVerifier(address(manager.AUTH())), underwriterKey, env.facility, env.agreement, env.limit);
+        _authorize(
+            manager,
+            AuthorizationVerifier(address(manager.AUTH())),
+            underwriterKey,
+            env.facility,
+            env.agreement,
+            env.limit
+        );
 
         vm.startBroadcast(operatorKey);
         manager.transition(env.facility, GpuTypes.FacilityState.ACTIVE, "TEST_ONLY_simulated_control");
@@ -120,14 +127,13 @@ contract OpenGpuFacility is Script {
             manifestHash: manager.EVIDENCE().verifierOf(PROVIDER).manifestHash(),
             controlAgreementVersionHash: manager.controlVersionHash(agreement, 1)
         });
-        GpuTypes.SupplementaryAssertion memory signature =
-            _sign(
-                auth,
-                key,
-                GpuTypes.AssertionPurpose.CREDIT_APPROVAL,
-                keccak256(abi.encode(approval)),
-                uint64(vm.envUint("GPU_APPROVAL_NONCE")) // per-(signer, purpose) nonce; 1 was consumed by the v2 facility
-            );
+        GpuTypes.SupplementaryAssertion memory signature = _sign(
+            auth,
+            key,
+            GpuTypes.AssertionPurpose.CREDIT_APPROVAL,
+            keccak256(abi.encode(approval)),
+            uint64(vm.envUint("GPU_APPROVAL_NONCE")) // per-(signer, purpose) nonce; 1 was consumed by the v2 facility
+        );
         vm.startBroadcast(key);
         ExposureController(address(manager.EXPOSURE())).setAuthorization(facility, limit, POLICY, agreement, 1, until);
         manager.anchorAuthorization(approval, signature);
