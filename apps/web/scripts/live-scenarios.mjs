@@ -264,6 +264,7 @@ function persist() {
       skipped: merged().filter((r) => r.status === "SKIPPED").length,
     },
     scenarios: merged(),
+    ...(prior?.history ? { history: prior.history } : {}),
   };
   mkdirSync(path.dirname(outFile), { recursive: true });
   writeFileSync(outFile, JSON.stringify(summary, null, 2) + "\n");
@@ -664,7 +665,8 @@ async function consumeStep(step, proofFile, outName) {
   const report = existsSync(reportPath) ? JSON.parse(readFileSync(reportPath, "utf8")) : null;
   const row = report?.transactions?.[0] ?? null;
   return {
-    ok: result.code === 0 && row?.status === "NATIVE_CONSUMED" && row?.financialAuditStatus === "PASSED",
+    // ALREADY_CONSUMED re-audits the canonical consumption receipt of an earlier run.
+    ok: result.code === 0 && ["NATIVE_CONSUMED", "ALREADY_CONSUMED"].includes(row?.status) && row?.financialAuditStatus === "PASSED",
     code: result.code,
     stderr: result.stderr.slice(-300),
     row: row ? { step, sourceTxHash: row.sourceTxHash, destinationTxHash: row.destinationTxHash, destinationBlock: row.destinationBlock, status: row.status, financialAudit: row.financialAudit } : null,
@@ -801,6 +803,133 @@ await scenario("D4", "borrower", "a REPAID facility cannot draw again even with 
   t.check("no wallet transaction was requested", !ui.state.walletCalls.includes("eth_sendTransaction"));
   await ui.shot("D4-repaid-facility");
   await ui.close();
+});
+
+// The additional facility used by D5/D6 (GPU_SCENARIO_FACILITY_* select a later one, e.g. v4).
+const facilityV3 = {
+  name: process.env.GPU_SCENARIO_FACILITY_NAME || "gpu080-facility-v3",
+  agreement: process.env.GPU_SCENARIO_AGREEMENT_NAME || "gpu080-SIMULATED-control-v3",
+  apiId: process.env.GPU_SCENARIO_FACILITY_API_ID || "6131NSGXQYJRXR73DP59TKEYTV",
+  receipt: process.env.GPU_SCENARIO_FACILITY_RECEIPT
+    ? path.resolve(process.env.GPU_SCENARIO_FACILITY_RECEIPT)
+    : `${repoRoot}config/gpu/evidence/native-20260914/open-facility-v3-receipt.json`,
+};
+const facilityV3Key = id(facilityV3.name);
+await scenario("D5", "operator", "an additional facility is opened on chain, registered in the API and receives its own consumed obligation", async (t) => {
+  if (!allowNativeRefresh) t.skip("GPU_SCENARIO_NATIVE_REFRESH is not 1");
+  const receipt = JSON.parse(readFileSync(facilityV3.receipt, "utf8"));
+  t.check("opening receipt names this facility and agreement", receipt.facilityId === facilityV3Key && receipt.agreementId === id(facilityV3.agreement) && receipt.receipts.length === 11, { facilityId: receipt.facilityId, transactions: receipt.receipts.length });
+  for (const row of receipt.receipts) {
+    const onchain = await provider.getTransactionReceipt(row.transactionHash);
+    if (onchain?.status !== 1) {
+      t.evidence.openingFailures = [...(t.evidence.openingFailures ?? []), row.transactionHash];
+      t.check(`opening transaction ${row.transactionHash.slice(0, 10)}… succeeded`, false, { status: onchain?.status });
+    }
+  }
+  t.check("all eleven opening transactions are canonical and successful", t.evidence.openingFailures === undefined);
+  t.evidence.openingTransactions = receipt.receipts.map((row) => ({ hash: row.transactionHash, block: parseInt(row.blockNumber, 16) }));
+  const info = await manager.facilityInfo(facilityV3Key);
+  const anchor = await manager.anchor(facilityV3Key);
+  // Before D6 the facility is ACTIVE; once D6 has completed its draw → repay cycle it is REPAID (terminal).
+  const cycled = [...(prior?.scenarios ?? []), ...results].some((r) => r.id === "D6" && r.status === "PASS" && r.evidence?.api?.facilityId === facilityV3.apiId);
+  const expectedStates = cycled ? ["ACTIVE", "REPAID"] : ["ACTIVE"];
+  const states = ["DRAFT", "UNDER_REVIEW", "CONTROL_PENDING", "ACTIVE", "DRAW_FROZEN", "DELINQUENT", "DEFAULTED", "RECOVERY", "REPAID", "RELEASED", "CLOSED_WITH_LOSS"];
+  t.evidence.chain = { state: states[Number(info.state)], expectedStates, wallet: info.wallet, controlAgreementId: info.controlAgreementId, anchorLimit: String(anchor.auth.limit), anchorValidUntil: String(anchor.auth.validUntil) };
+  t.check(`facility is ${expectedStates.join("/")} for the borrower wallet with an anchored underwriter authorization`, expectedStates.includes(states[Number(info.state)]) && info.wallet.toLowerCase() === borrowerWallet.address.toLowerCase() && info.controlAgreementId === id(facilityV3.agreement) && anchor.exists && anchor.auth.limit > 0n, t.evidence.chain);
+  const session = await login(borrowerWallet);
+  // The indexer projects state transitions a few blocks after the import; wait for it.
+  const listed = await pollApi("/v1/facilities", session.token, (data) => data.some((item) => item.facilityId === facilityV3.apiId && expectedStates.includes(item.state)), 240000, `facility ${expectedStates.join("/")} in API`);
+  const row = listed.data.find((item) => item.facilityId === facilityV3.apiId);
+  t.check(`API lists the additional facility as ${expectedStates.join("/")} for the same borrower`, Boolean(row) && expectedStates.includes(row.state) && row.borrowerId === session.borrowerId, row && { state: row.state, borrowerId: row.borrowerId });
+  const context = await pollApi(`/v1/facilities/${facilityV3.apiId}/transaction-context`, session.token, (data) => data.canonicalFacilityId?.toLowerCase() === facilityV3Key.toLowerCase(), 240000, "facility v3 context");
+  t.check("API binds the additional facility to its canonical on-chain id", context.data.canonicalFacilityId.toLowerCase() === facilityV3Key.toLowerCase() && context.data.debt === "0", { debt: context.data.debt, blocked: context.data.drawBlockedReason });
+  const assignRecord = JSON.parse(readFileSync(`${repoRoot}.artifacts/native-testnet/assign-refresh.json`, "utf8"));
+  const recognizeRecord = JSON.parse(readFileSync(`${repoRoot}.artifacts/native-testnet/recognize-refresh.json`, "utf8"));
+  t.check("recorded Sepolia obligation is assigned to the additional facility", assignRecord.facilityName === facilityV3.name && assignRecord.facilityKey === keccak256(facilityV3Key), assignRecord);
+  const deadline = Date.now() / 1000 + 1500;
+  const [recognizeProof, assignProof] = await Promise.all([officialProof("recognize-refresh", deadline), officialProof("assign-refresh", deadline)]);
+  t.check("official Attestcoin proofs became PROOF_READY for recognition and assignment", Boolean(recognizeProof && assignProof));
+  if (!(recognizeProof && assignProof)) return;
+  t.evidence.source = { recognition: recognizeProof.txHash, assignment: assignProof.txHash, obligationRef: assignRecord.obligationRef };
+  const before = (await book.facilityReceivables(facilityV3Key)).length;
+  const consumptions = [];
+  for (const [step, name] of [["recognizeObligation", "recognize-refresh"], ["assignObligation", "assign-refresh"]]) {
+    const outcome = await consumeStep(step, `.artifacts/native-testnet/${name}.proof.json`, `${name}-v3-consumption`);
+    consumptions.push(outcome.row);
+    t.check(`${step} consumed on Creditcoin and audited as proof-only (0 debt/vault mutations)`, outcome.ok, { code: outcome.code, status: outcome.row?.status, stderr: outcome.stderr });
+    if (!outcome.ok) return;
+  }
+  t.evidence.consumptions = consumptions;
+  const ids = await book.facilityReceivables(facilityV3Key);
+  const fresh = await book.receivable(ids[ids.length - 1]);
+  const now = Number((await provider.getBlock("latest")).timestamp);
+  t.evidence.receivable = { count: ids.length, net: String(fresh.net), paid: String(fresh.paid), state: String(fresh.state), evidenceValidUntil: String(fresh.evidenceValidUntil) };
+  t.check("the additional facility holds the recorded obligation as an ASSIGNED receivable with fresh evidence validity", ids.length >= 1 && ids.length <= before + 1 && fresh.net === BigInt(assignRecord.amount ?? recognizeRecord.amount) && String(fresh.state) === "2" && Number(fresh.evidenceValidUntil) > now, t.evidence.receivable);
+});
+
+await scenario("D6", "borrower", "real draw and repayment on the new facility through the browser", async (t) => {
+  if (!allowNativeRefresh) t.skip("GPU_SCENARIO_NATIVE_REFRESH is not 1");
+  const stats = await book.accountStats(sourceProviderId, sourceAccountKey);
+  const checkpoint = await run("node", ["script/gpu/native_tools.mjs", "checkpoint", "--broadcast", approval], { timeoutMs: 300000 });
+  const line = checkpoint.stdout.split("\n").find((row) => row.startsWith("{"));
+  t.check("Sepolia reserveCheckpoint mined", checkpoint.code === 0 && Boolean(line), { code: checkpoint.code, stderr: checkpoint.stderr.slice(-300) });
+  if (checkpoint.code !== 0) return;
+  const source = JSON.parse(line);
+  t.evidence.source = source;
+  console.log(`  checkpoint window closes ${new Date(source.protectedUntil * 1000).toISOString()}`);
+  const artifact = await officialProof("checkpoint-refresh", source.protectedUntil - 150);
+  t.check("official Attestcoin proof became PROOF_READY inside the window", Boolean(artifact));
+  if (!artifact) return;
+  // Operator refreshes the SIMULATED control observation (15-minute gate) right before consumption.
+  const observe = await run("node", ["script/gpu/native_tools.mjs", "observe", "--agreement", facilityV3.agreement, "--broadcast", approval], { timeoutMs: 180000 });
+  const observeLine = observe.stdout.split("\n").find((row) => row.startsWith("{"));
+  t.check("control observation refreshed on chain", observe.code === 0 && Boolean(observeLine), { code: observe.code, stderr: observe.stderr.slice(-200) });
+  if (observeLine) t.evidence.controlObservation = JSON.parse(observeLine);
+  const consumption = run("node", [
+    "script/gpu/consume-native.mjs", "--step", "reserveCheckpoint", "--proof", ".artifacts/native-testnet/checkpoint-refresh.proof.json",
+    "--out", ".artifacts/native-testnet/checkpoint-v3-consumption.json", "--broadcast", approval,
+  ], { timeoutMs: 420000 });
+  const session = await login(borrowerWallet);
+  let eligible = null;
+  try {
+    eligible = await pollApi(`/v1/facilities/${facilityV3.apiId}/transaction-context`, session.token,
+      (data, meta) => meta.freshness === "FRESH" && !data.drawBlockedReason && BigInt(data.availableDraw || 0) >= oneToken,
+      Math.max(30000, (source.protectedUntil - 90) * 1000 - Date.now()), "eligible draw on facility v3");
+  } catch (error) {
+    t.evidence.apiError = error.message.slice(0, 400);
+  }
+  t.evidence.api = eligible?.data ?? null;
+  t.check("API reports availableDraw ≥ 1 tUSD on facility v3", Boolean(eligible), eligible?.data);
+  if (!eligible) {
+    await consumption;
+    return;
+  }
+  const before = await token.balanceOf(borrowerWallet.address);
+  const outcome = await delegate({ GPU_ALLOW_TESTNET_TRANSACTIONS: "1", GPU_SMOKE_PRIVATE_KEY: roles.borrower.privateKey, GPU_REVIEW_FLOW: "borrower", GPU_REVIEW_FACILITY_ID: facilityV3.apiId }, "D6");
+  t.check("live borrower browser flow passed (borrow 1 tUSD, repay with 1.001 cap, debt 0)", outcome.code === 0 && outcome.summary?.result === "PASS", { code: outcome.code, tail: outcome.stdout.slice(-400) });
+  t.evidence.transactions = await confirmReceipts(t, outcome.submitted);
+  const repay = outcome.submitted.find((item) => item.action === "repayExact");
+  if (repay) {
+    const receipt = await provider.getTransactionReceipt(repay.hash);
+    const repaid = receipt.logs.map((log) => { try { return routerInterface.parseLog(log); } catch { return null; } }).find((event) => event?.name === "Repaid");
+    t.evidence.repaid = repaid ? Object.fromEntries(Object.entries(repaid.args.toObject()).map(([k, v]) => [k, String(v)])) : null;
+    t.check("Repaid log: principal 1 tUSD, no excess, debt 0", Boolean(repaid) && repaid.args.principalPaid === 1000000n && repaid.args.excess === 0n && repaid.args.newDebt === 0n, t.evidence.repaid);
+    const after = await token.balanceOf(borrowerWallet.address);
+    t.evidence.netTokenDelta = String(after - before);
+    t.check("net token cost equals interest + fees only (cap not transferred)", Boolean(repaid) && before - after === repaid.args.interestPaid + repaid.args.feePaid, t.evidence.netTokenDelta);
+  }
+  const now = Number((await provider.getBlock("latest")).timestamp);
+  const ledger = new Contract(config.contracts.ledger, abi("DebtLedger"), provider);
+  t.check("canonical legal debt is zero on facility v3", (await ledger.legalDebtAt(facilityV3Key, now)) === 0n);
+  const done = await consumption;
+  const report = existsSync(`${repoRoot}.artifacts/native-testnet/checkpoint-v3-consumption.json`) ? JSON.parse(readFileSync(`${repoRoot}.artifacts/native-testnet/checkpoint-v3-consumption.json`, "utf8")) : null;
+  const row = report?.transactions?.[0];
+  t.evidence.checkpointConsumption = row ? { destinationTxHash: row.destinationTxHash, destinationBlock: row.destinationBlock, status: row.status, financialAudit: row.financialAudit, protection: row.protection } : null;
+  t.check("checkpoint consumption audited as proof-only", done.code === 0 && row?.status === "NATIVE_CONSUMED" && row?.financialAuditStatus === "PASSED", { code: done.code, status: row?.status });
+  t.evidence.destinationStatsBefore = { eventsConsumed: String(stats.eventsConsumed) };
+  const refreshed = await login(borrowerWallet);
+  const final = await pollApi(`/v1/facilities/${facilityV3.apiId}/transaction-context`, refreshed.token, (data) => BigInt(data.debt) === 0n, 180000, "API debt 0 on facility v3");
+  t.check("API debt is zero on facility v3", final.data.debt === "0");
 });
 
 // ================================================================ E. Onboarding

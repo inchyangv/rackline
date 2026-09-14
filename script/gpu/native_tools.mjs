@@ -178,7 +178,8 @@ if (command === 'wallets') {
   if (amount <= 0n || amount > 100_000_000n) throw new Error('Scenario obligations are limited to 100 source tUSD')
   const account = id('mockdepin-testonly:native-integration')
   const obligationRef = id(`scenario-obligation-${Date.now()}`)
-  const facilityKey = keccak256(id('gpu080-facility-v2'))
+  const facilityName = args.includes('--facility') ? args[args.indexOf('--facility') + 1] : 'gpu080-facility-v2'
+  const facilityKey = keccak256(id(facilityName))
   const dueAt = (await provider.getBlock('latest')).timestamp + 86400
   const recognized = await source.recognizeObligation(account, obligationRef, deployer.address, environment.source.tokens[0].address, amount, dueAt)
   const recognizedReceipt = await recognized.wait()
@@ -189,8 +190,46 @@ if (command === 'wallets') {
   const directory = '.artifacts/native-testnet'
   fs.mkdirSync(directory, {recursive:true})
   fs.writeFileSync(`${directory}/recognize-refresh.json`, JSON.stringify({txHash:recognized.hash,blockNumber:recognizedReceipt.blockNumber,obligationRef,amount:String(amount),dueAt},null,2)+'\n')
-  fs.writeFileSync(`${directory}/assign-refresh.json`, JSON.stringify({txHash:assigned.hash,blockNumber:assignedReceipt.blockNumber,obligationRef,facilityKey},null,2)+'\n')
-  console.log(JSON.stringify({sourceRecognition:recognized.hash,sourceAssignment:assigned.hash,obligationRef,amount:String(amount),dueAt}))
+  fs.writeFileSync(`${directory}/assign-refresh.json`, JSON.stringify({txHash:assigned.hash,blockNumber:assignedReceipt.blockNumber,obligationRef,facilityKey,facilityName},null,2)+'\n')
+  console.log(JSON.stringify({sourceRecognition:recognized.hash,sourceAssignment:assigned.hash,obligationRef,facilityName,amount:String(amount),dueAt}))
+} else if (command === 'observe') {
+  // Operator refreshes the SIMULATED control observation (ControlRegistry.lastObservedAt gates draws for 15 minutes).
+  if (!args.includes('--broadcast') || !args.includes('--approval=user-20260914')) throw new Error('Explicit testnet broadcast and approval reference required')
+  const manifest = JSON.parse(fs.readFileSync('config/gpu/deployments/cc3-testnet.json', 'utf8'))
+  const provider = new JsonRpcProvider(manifest.rpcUrl)
+  if (Number((await provider.getNetwork()).chainId) !== 102031) throw new Error('Chain mismatch')
+  const agreementName = args.includes('--agreement') ? args[args.indexOf('--agreement') + 1] : 'gpu080-SIMULATED-control-v2'
+  const control = new Contract(manifest.contracts.ControlRegistry,
+    JSON.parse(fs.readFileSync('test/fixtures/gpu/abi/ControlRegistry.json', 'utf8')), deployer.connect(provider))
+  const tx = await control.observe(id(agreementName), 2, manifest.source.emitter)
+  const receipt = await tx.wait(2)
+  if (receipt.status !== 1) throw new Error('Control observation failed')
+  console.log(JSON.stringify({controlObservation:tx.hash,block:receipt.blockNumber,agreement:id(agreementName)}))
+} else if (command === 'open-facility') {
+  // Opens an additional TEST_ONLY facility (OpenGpuFacility.s.sol) through the same dry-run + live-RPC execution path as setup.
+  if (!args.includes('--broadcast') || !args.includes('--approval=user-20260914')) throw new Error('Explicit testnet broadcast and approval reference required')
+  const flag = (name, fallback) => args.includes(name) ? args[args.indexOf(name) + 1] : fallback
+  const rpc = 'https://rpc.cc3-testnet.creditcoin.network'
+  const provider = new JsonRpcProvider(rpc)
+  if (Number((await provider.getNetwork()).chainId) !== 102031) throw new Error('Chain mismatch')
+  const manifest = JSON.parse(fs.readFileSync('config/gpu/deployments/cc3-testnet.json', 'utf8'))
+  const environment = {...process.env, PRIVATE_KEY: deployer.privateKey,
+    GPU_MANAGER: manifest.contracts.CreditFacilityManager,
+    GPU_BORROWER: roles.borrower.address, GPU_UNDERWRITER_PRIVATE_KEY: roles.underwriter.privateKey,
+    GPU_SOURCE_EMITTER: manifest.source.emitter, GPU_SOURCE_TOKEN: manifest.source.token,
+    GPU_FACILITY_NAME: flag('--facility', 'gpu080-facility-v3'), GPU_AGREEMENT_NAME: flag('--agreement', 'gpu080-SIMULATED-control-v3'),
+    GPU_FACILITY_LIMIT: flag('--limit', '37500000'), GPU_APPROVAL_NONCE: flag('--nonce', '2')}
+  const result = spawnSync('forge', ['script', 'script/gpu/OpenGpuFacility.s.sol:OpenGpuFacility',
+    '--rpc-url', rpc, '--gas-estimate-multiplier', '500'], {env: environment, stdio: 'inherit'})
+  if (result.status !== 0) process.exit(result.status || 1)
+  if (args.includes('--dry-run')) { console.log('Dry run only; no transaction sent'); process.exit(0) }
+  await executeRpcPlan('OpenGpuFacility', provider)
+  const run = JSON.parse(fs.readFileSync('broadcast/OpenGpuFacility.s.sol/102031/run-latest.json', 'utf8'))
+  const target = flag('--receipt', '.artifacts/native-testnet/open-facility-receipt.json')
+  fs.mkdirSync(path.dirname(target), {recursive:true})
+  fs.writeFileSync(target, JSON.stringify({receipts: run.receipts, facilityName: environment.GPU_FACILITY_NAME,
+    agreementName: environment.GPU_AGREEMENT_NAME, facilityId: id(environment.GPU_FACILITY_NAME), agreementId: id(environment.GPU_AGREEMENT_NAME)}, null, 2)+'\n')
+  console.log(JSON.stringify({facilityId: id(environment.GPU_FACILITY_NAME), agreementId: id(environment.GPU_AGREEMENT_NAME), receipt: target, transactions: run.receipts.length}))
 } else if (command === 'fund-roles' || command === 'setup') {
   if (!args.includes('--broadcast') || !args.includes('--approval=user-20260914')) throw new Error('Explicit testnet broadcast and approval reference required')
   const rpc = 'https://rpc.cc3-testnet.creditcoin.network'

@@ -65,7 +65,7 @@ TEST_ONLY simulated source (`partnerRevenue=SIMULATED`).
 ## Execution record — 2026-09-14
 
 Consolidated evidence: [`evidence/native-testnet/scenarios-20260914.json`](../../../evidence/native-testnet/scenarios-20260914.json)
-— 25 scenarios PASS, 0 FAIL, 0 SKIPPED across four runs (09:32, 10:03, 10:28, 10:57 UTC; partial reruns merged with `GPU_SCENARIO_MERGE=1`).
+— 27 scenarios PASS, 0 FAIL, 0 SKIPPED across eight runs on 2026-09-14 (09:32 → 15:11 UTC; partial reruns merged with `GPU_SCENARIO_MERGE=1`).
 Two earlier checkpoint-only refreshes (Creditcoin blocks 5,485,888 and 5,486,100) were consumed and audited
 proof-only but left `eligibleUnpaid = 0`; they are retained under `history` in the evidence file.
 
@@ -90,3 +90,26 @@ proof-only but left `eligibleUnpaid = 0`; they are retained under `history` in t
 
 Every real transaction used faucet test tokens. `partnerRevenue` remains `SIMULATED`; nothing here is
 partner revenue, a production launch, or a live lending pool.
+
+### Additional facility and live draw → repay (D5/D6, facility v4)
+
+Facility v3 (`6131NSGXQYJRXR73DP59TKEYTV`) completed the same on-chain cycle first (borrow
+`0xf966056e…`, repayExact `0xc9ff4e8d…`, `Repaid` principal 1 tUSD / excess 0 / debt 0), but the
+browser script's final readback hit a strict-mode selector once two facilities were listed; the
+selector was scoped to the audited facility panel and the whole cycle was repeated on facility v4
+(`6462JC3MJGECGKYKZ8QSGR6P5T`) for a clean record. Both facilities are now `REPAID`.
+
+| Step | Chain | Transaction | Note |
+| --- | --- | --- | --- |
+| D5 open facility v4 (11 txs) | Creditcoin | [0xebf12504…](https://creditcoin-testnet.blockscout.com/tx/0xebf1250476a7f7097ecb180c789bc01937374471dd2895ec61a463abd6a30545) (`openFacility`) | blocks 5487005–5487015: agreement, registration, binding, enrolment, observation, review, authorization anchor, ACTIVE |
+| D5 recognize + assign 20 tUSD obligation | Sepolia | [0xea0ac9c0…](https://sepolia.etherscan.io/tx/0xea0ac9c03a27ce96639156a656547382e0f383231d2db58f08f9ba2271461f02), [0x0ea11ef1…](https://sepolia.etherscan.io/tx/0x0ea11ef1a5a3b4140b269b7a3cd5c120235dc1677298e49aad1eb7204d75c735) | assigned to facility v4 |
+| D5 consume recognizeObligation | Creditcoin | [0x12ba5887…](https://creditcoin-testnet.blockscout.com/tx/0x12ba5887689fc4259bd7f695dca2601f2c8ebe02d17ab6d972e88f079cbe2d01) | block 5487048, proof-only audit PASSED |
+| D5 consume assignObligation | Creditcoin | [0xe50b3ee6…](https://creditcoin-testnet.blockscout.com/tx/0xe50b3ee66a171695ef08f44f6e8ad58c7182af7cd214d7b948b150f364ef8833) | block 5487054, proof-only audit PASSED |
+| D6 reserveCheckpoint | Sepolia | [0xea0102e2…](https://sepolia.etherscan.io/tx/0xea0102e2cfd8715173a769e7aa70d0c32c89fb5c569508942db63ba62fc4055e) | protected until 1789398298 |
+| D6 control observation | Creditcoin | [0xe0e8d6d2…](https://creditcoin-testnet.blockscout.com/tx/0xe0e8d6d2e8020e386adca3a435a804c2ddea24b62fd8590732a06be1cd7311b6) | block 5487096 |
+| D6 consume reserveCheckpoint | Creditcoin | [0x8bd65ca3…](https://creditcoin-testnet.blockscout.com/tx/0x8bd65ca3e83f0c886bf9ab11e983e661a53bcfdeee6a30990ad217ccfb115ee2) | block 5487098, proof-only audit PASSED |
+| D6 browser borrow | Creditcoin | [0xd784c429…](https://creditcoin-testnet.blockscout.com/tx/0xd784c429fb961ab0063bc02cf0b42219df0009795c421c943941605baa9adb35) | block 5487106 |
+| D6 browser approve | Creditcoin | [0x71383497…](https://creditcoin-testnet.blockscout.com/tx/0x7138349797a365a81a2fc845b804cb5695d8e6d27e999f9d1af2194f3d77e346) | block 5487114 |
+| D6 browser repayExact | Creditcoin | [0xc274b66d…](https://creditcoin-testnet.blockscout.com/tx/0xc274b66d3902f34de06377abc87259b1b70dc4949c2f9cdf889ba47bf956c238) | block 5487116 |
+
+`RepaymentRouter.Repaid` for facility v4: principal `1000000`, interest `0`, fees `0`, excess `0`, new debt `0` (6-decimal units). The unused part of the 1.001 tUSD cap was not transferred.

@@ -38,10 +38,24 @@ from sqlalchemy.orm import Session
 PROVIDER = "mockdepin-testonly"
 ACCOUNT = PROVIDER + ":native-integration"
 FACILITY_KEY = keccak_hex(b"gpu080-facility-v2")
+# Borrower/legal identities are derived from the FIRST facility so later facilities join the same DB borrower.
+IDENTITY_FACILITY_KEY = FACILITY_KEY
 BORROWER_KEY = keccak_hex(b"gpu080-borrower-v2")
 AGREEMENT_KEY = keccak_hex(b"gpu080-SIMULATED-control-v2")
 POLICY_KEY = keccak_hex(b"gpu080-TEST_ONLY-policy-v2")
 TERMS_KEY = keccak_hex(b"TEST_ONLY_NO_MONETARY_VALUE")
+
+
+def configure(facility_name=None, agreement_name=None, identity_facility_name=None):
+    """Select which canonical facility/agreement names this import verifies (defaults: the v2 setup)."""
+    global FACILITY_KEY, AGREEMENT_KEY, IDENTITY_FACILITY_KEY
+    if facility_name:
+        FACILITY_KEY = keccak_hex(facility_name.encode())
+    if agreement_name:
+        AGREEMENT_KEY = keccak_hex(agreement_name.encode())
+    IDENTITY_FACILITY_KEY = (
+        keccak_hex(identity_facility_name.encode()) if identity_facility_name else keccak_hex(b"gpu080-facility-v2")
+    )
 
 
 def _require(condition, reason):
@@ -251,8 +265,11 @@ def bootstrap(engine, rpc, deployment, manifest, setup, *, roles=None, views=Non
         facts["ledger"],
         facts["control"],
     )
+    # The DB control agreement is per (provider account, version) metadata; an additional facility for the same
+    # simulated account reuses the first facility's DB agreement row while its own on-chain agreement id is kept
+    # in the facility binding provenance.
     ids = {
-        kind: stable_id(f"{did}:{kind}:{FACILITY_KEY}")
+        kind: stable_id(f"{did}:{kind}:{FACILITY_KEY if kind == 'facility' else IDENTITY_FACILITY_KEY}")
         for kind in ("legal", "borrower", "facility", "control")
     }
     now = datetime.fromtimestamp(facts["at"], UTC)
@@ -490,7 +507,9 @@ def bootstrap(engine, rpc, deployment, manifest, setup, *, roles=None, views=Non
             aggregate_id=did,
             event_type="NATIVE_TEST_METADATA_REGISTERED",
             payload=payload,
-            idempotency_key=f"native-bootstrap:{did}",
+            idempotency_key=f"native-bootstrap:{did}:{FACILITY_KEY}"
+            if FACILITY_KEY != keccak_hex(b"gpu080-facility-v2")
+            else f"native-bootstrap:{did}",
         ):
             write_audit(
                 s.connection(),
@@ -512,7 +531,11 @@ def main():
     parser.add_argument("--setup-receipt", required=True)
     for role in ("operator", "underwriter", "treasury"):
         parser.add_argument("--" + role, action="append", default=[])
+    parser.add_argument("--facility-name", default=None)
+    parser.add_argument("--agreement-name", default=None)
+    parser.add_argument("--identity-facility-name", default=None)
     args = parser.parse_args()
+    configure(args.facility_name, args.agreement_name, args.identity_facility_name)
     _, urls = load_rpc_allowlist(args.manifest)
     engine = create_engine(
         os.environ.get("HASHCREDIT_GPU_DATABASE_URL") or os.environ["GPU_DATABASE_URL"]
