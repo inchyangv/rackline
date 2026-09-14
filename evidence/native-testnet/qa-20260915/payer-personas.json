@@ -9,11 +9,12 @@
   "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
   "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
   "startedAt": "2026-09-14T16:12:06.445Z",
-  "updatedAt": "2026-09-15T02:31:21.639Z",
+  "updatedAt": "2026-09-15T03:27:25.676Z",
   "runs": [
     "2026-09-14T16:12:06.445Z",
     "2026-09-14T16:16:55.728Z",
-    "2026-09-15T01:40:13.400Z"
+    "2026-09-15T01:40:13.400Z",
+    "2026-09-15T03:27:17.638Z"
   ],
   "personas": {
     "sim-aethir": {
@@ -59,8 +60,8 @@
   "partnerRevenue": "SIMULATED",
   "partnerSourceBinding": "UNCONFIGURED",
   "totals": {
-    "pass": 29,
-    "fail": 1,
+    "pass": 30,
+    "fail": 0,
     "skipped": 0
   },
   "scenarios": [
@@ -2560,74 +2561,22 @@
       "id": "K7",
       "persona": "borrower",
       "title": "both persona facilities are repaid in full; REPAID is reached and LP NAV grew by the interest",
-      "status": "FAIL",
+      "status": "PASS",
       "checks": [
         {
-          "name": "aethir: Repaid event ends with debt 0 and no excess transferred",
-          "ok": true,
-          "detail": {
-            "txHash": "0x641fd6d30beaa06651d35029b0a42adbef769b1a1009bb0623a49c730842f15b",
-            "block": 5487663,
-            "facilityId": "0x16099be0aacf31f5002eca7d49a2bc9e21f62e88cf5490a4efb6c367edeff559",
-            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
-            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
-            "requested": "2000010",
-            "received": "2000010",
-            "applied": "2000010",
-            "feePaid": "0",
-            "interestPaid": "0",
-            "principalPaid": "2000010",
-            "excess": "0",
-            "newDebt": "0"
-          }
-        },
-        {
-          "name": "aethir: facility is REPAID (terminal)",
+          "name": "aethir: already debt-free",
           "ok": true
         },
         {
-          "name": "aethir: a further draw on the REPAID facility reverts",
-          "ok": true,
-          "detail": {
-            "observed": "FacilityNotActive"
-          }
-        },
-        {
-          "name": "gpunet: Repaid event ends with debt 0 and no excess transferred",
-          "ok": true,
-          "detail": {
-            "txHash": "0x5df47dc4c08b0609d7f057d70619052b77e73a5d7d3172c08bed9473a08fc60a",
-            "block": 5487666,
-            "facilityId": "0x7894d887637e31609c6020751a69cd32e86015823a36fa8c1775a7d152f0081d",
-            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
-            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
-            "requested": "2000006",
-            "received": "2000006",
-            "applied": "2000006",
-            "feePaid": "0",
-            "interestPaid": "4",
-            "principalPaid": "2000002",
-            "excess": "0",
-            "newDebt": "0"
-          }
-        },
-        {
-          "name": "gpunet: facility is REPAID (terminal)",
+          "name": "gpunet: already debt-free",
           "ok": true
-        },
-        {
-          "name": "gpunet: a further draw on the REPAID facility reverts",
-          "ok": true,
-          "detail": {
-            "observed": "FacilityNotActive"
-          }
         },
         {
           "name": "vault NAV did not fall through the cycle (interest accrues to LPs)",
           "ok": true,
           "detail": {
-            "navBefore": "1000000020",
-            "navAfter": "1000000021"
+            "navBefore": "997000021",
+            "navAfter": "997000021"
           }
         },
         {
@@ -2639,52 +2588,25 @@
           "ok": true
         },
         {
-          "name": "API repayment allocations include this cycle's Repaid transactions",
-          "ok": false,
+          "name": "API repayment history lists all 5 finalized Repaid legs of both facilities with matching amounts and payer",
+          "ok": true,
           "detail": {
-            "count": 1
+            "count": 10,
+            "missing": []
           }
         }
       ],
       "evidence": {
-        "navBefore": "1000000020",
-        "aethir": {
-          "txHash": "0x641fd6d30beaa06651d35029b0a42adbef769b1a1009bb0623a49c730842f15b",
-          "block": 5487663,
-          "facilityId": "0x16099be0aacf31f5002eca7d49a2bc9e21f62e88cf5490a4efb6c367edeff559",
-          "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
-          "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "requested": "2000010",
-          "received": "2000010",
-          "applied": "2000010",
-          "feePaid": "0",
-          "interestPaid": "0",
-          "principalPaid": "2000010",
-          "excess": "0",
-          "newDebt": "0"
-        },
-        "gpunet": {
-          "txHash": "0x5df47dc4c08b0609d7f057d70619052b77e73a5d7d3172c08bed9473a08fc60a",
-          "block": 5487666,
-          "facilityId": "0x7894d887637e31609c6020751a69cd32e86015823a36fa8c1775a7d152f0081d",
-          "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
-          "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
-          "requested": "2000006",
-          "received": "2000006",
-          "applied": "2000006",
-          "feePaid": "0",
-          "interestPaid": "4",
-          "principalPaid": "2000002",
-          "excess": "0",
-          "newDebt": "0"
-        },
-        "navAfter": "1000000021",
-        "interestPaidNow": "4",
-        "apiRepayments": 1
+        "navBefore": "997000021",
+        "navAfter": "997000021",
+        "interestPaidNow": "0",
+        "apiRepayments": 10,
+        "repaidOnChain": 5,
+        "repaidMissingFromApi": []
       },
-      "startedAt": "2026-09-14T17:21:57.289Z",
-      "finishedAt": "2026-09-14T17:24:35.834Z",
-      "finding": "PRODUCT_GAP: /v1/repayments lists only allocations imported by reconcile_cash; on-chain Repaid events of v3\u2013v7 are not projected by the indexer."
+      "startedAt": "2026-09-15T03:27:19.204Z",
+      "finishedAt": "2026-09-15T03:27:25.667Z",
+      "note": "Rerun 2026-09-15 after 263821f (chain-projected history): all 5 finalized Repaid legs of v5/v6 listed by /v1/repayments with matching amounts and payer."
     },
     {
       "id": "K8",
