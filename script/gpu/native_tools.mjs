@@ -46,7 +46,12 @@ async function executeRpcPlan(file, provider) {
     output.pending = [sent.hash]
     record()
     await sent.wait()
-    const receipt = await provider.send('eth_getTransactionReceipt', [sent.hash])
+    // A load-balanced public RPC can answer null for a receipt its peer just mined; re-ask before declaring failure.
+    let receipt = null
+    for (let attempt = 0; attempt < 10 && !receipt; attempt++) {
+      receipt = await provider.send('eth_getTransactionReceipt', [sent.hash]).catch(() => null)
+      if (!receipt) await new Promise(resolve => setTimeout(resolve, 3000))
+    }
     if (!receipt || Number(receipt.status) !== 1) throw new Error(`Execution halted after failed transaction ${sent.hash}`)
     output.pending = []
     output.receipts.push(receipt)
@@ -219,8 +224,12 @@ if (command === 'wallets') {
     GPU_SOURCE_EMITTER: manifest.source.emitter, GPU_SOURCE_TOKEN: manifest.source.token,
     GPU_FACILITY_NAME: flag('--facility', 'gpu080-facility-v3'), GPU_AGREEMENT_NAME: flag('--agreement', 'gpu080-SIMULATED-control-v3'),
     GPU_FACILITY_LIMIT: flag('--limit', '37500000'), GPU_APPROVAL_NONCE: flag('--nonce', '2')}
+  // The public RPC is load-balanced over replicas that lag by a few blocks; pinning the dry run a little behind
+  // the head (GPU_FORK_BLOCK_LAG, default 0 = latest) avoids "Expect block number from id" from a lagging peer.
+  const lag = Number(process.env.GPU_FORK_BLOCK_LAG || 0)
+  const pin = lag > 0 ? ['--fork-block-number', String(await provider.getBlockNumber() - lag)] : []
   const result = spawnSync('forge', ['script', 'script/gpu/OpenGpuFacility.s.sol:OpenGpuFacility',
-    '--rpc-url', rpc, '--gas-estimate-multiplier', '500'], {env: environment, stdio: 'inherit'})
+    '--rpc-url', rpc, '--gas-estimate-multiplier', '500', ...pin], {env: environment, stdio: 'inherit'})
   if (result.status !== 0) process.exit(result.status || 1)
   if (args.includes('--dry-run')) { console.log('Dry run only; no transaction sent'); process.exit(0) }
   await executeRpcPlan('OpenGpuFacility', provider)

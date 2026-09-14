@@ -82,6 +82,12 @@ const facilities = {
   // R-series: sacrificed on purpose (default → recovery → write-off); never reused.
   recovery: { name: process.env.GPU_QA_RECOVERY_FACILITY || "gpu080-facility-v8", agreement: process.env.GPU_QA_RECOVERY_AGREEMENT || "gpu080-SIMULATED-control-v8" },
 };
+// A rerun on fresh facilities needs fresh source obligations and artifact names: GPU_QA_CYCLE=c2 prefixes every
+// persona obligation ref (epoch-1 → c2-epoch-1) and every record name (qa-… → qa-c2-…).
+const cycle = (process.env.GPU_QA_CYCLE || "").toLowerCase();
+if (cycle && !/^[a-z0-9]+$/.test(cycle)) throw new Error("GPU_QA_CYCLE must be alphanumeric");
+const ref = (value) => (cycle ? `${cycle}-${value}` : value);
+const tag = (name) => (cycle ? name.replace(/^qa-/, `qa-${cycle}-`) : name);
 for (const f of Object.values(facilities)) {
   f.id = id(f.name);
   f.sourceKey = keccak256(f.id);
@@ -146,7 +152,11 @@ function run(command, commandArgs, { cwd = repoRoot, env = {}, timeoutMs = 90000
 async function sim(commandArgs, { timeoutMs = 300000 } = {}) {
   const result = await run("node", ["script/gpu/payer_sim.mjs", ...commandArgs, "--broadcast", approval], { timeoutMs });
   const line = result.stdout.split("\n").find((row) => row.startsWith('{"record":'));
-  if (result.code !== 0 || !line) throw new Error(`payer_sim ${commandArgs[0]} failed: ${result.stderr.slice(-400)}`);
+  if (result.code !== 0 || !line) {
+    // ethers dumps the whole error object; surface the reason, not the calldata
+    const reason = result.stderr.match(/shortMessage: '([^']*)'|reason: '([^']*)'|Error: ([^\n]*)/);
+    throw new Error(`payer_sim ${commandArgs[0]} failed: ${reason ? (reason[1] || reason[2] || reason[3]) : result.stderr.slice(-400)}`);
+  }
   return JSON.parse(line);
 }
 async function officialProof(name, deadlineSeconds) {
@@ -358,19 +368,19 @@ await scenario("P0", "operator", "persona payers are deployed, registered as PAY
 });
 
 const aethirEpochs = [
-  { ref: "epoch-1", amount: "12000000", facility: facilities.aethir },
-  { ref: "epoch-2", amount: "12000000", facility: facilities.aethir },
-  { ref: "epoch-3", amount: "12000000", facility: facilities.aethir },
-  { ref: "epoch-4", amount: "10000000", facility: facilities.browser },
+  { ref: ref("epoch-1"), amount: "12000000", facility: facilities.aethir },
+  { ref: ref("epoch-2"), amount: "12000000", facility: facilities.aethir },
+  { ref: ref("epoch-3"), amount: "12000000", facility: facilities.aethir },
+  { ref: ref("epoch-4"), amount: "10000000", facility: facilities.browser },
 ];
 await scenario("P1", "sim-aethir", "epoch reward obligations are recognised by the issuer and assigned to the operator's facilities", async (t) => {
   requireTransactions(t);
   const before = { revision: await escrow.accountLatestRevision(accountKey), open: await escrow.accountOpenAmount(accountKey) };
   t.evidence.source = { before: stringify(before), events: [] };
   for (const epoch of aethirEpochs) {
-    const recognized = await sim(["recognize", "--persona", "sim-aethir", "--ref", epoch.ref, "--amount", epoch.amount, "--due-seconds", "86400", "--name", `qa-aethir-${epoch.ref}-recognize`]);
+    const recognized = await sim(["recognize", "--persona", "sim-aethir", "--ref", epoch.ref, "--amount", epoch.amount, "--due-seconds", "86400", "--name", tag(`qa-aethir-${epoch.ref}-recognize`)]);
     t.evidence.source.events.push(recordEvent(recognized, epoch.facility.name));
-    const assigned = await sim(["assign", "--persona", "sim-aethir", "--ref", epoch.ref, "--facility", epoch.facility.name, "--name", `qa-aethir-${epoch.ref}-assign`]);
+    const assigned = await sim(["assign", "--persona", "sim-aethir", "--ref", epoch.ref, "--facility", epoch.facility.name, "--name", tag(`qa-aethir-${epoch.ref}-assign`)]);
     t.evidence.source.events.push(recordEvent(assigned, epoch.facility.name));
     const obligation = await escrow.obligation(accountKey, recognized.obligationRef);
     t.check(`${epoch.ref}: recognised for the SIM-AETHIR payer and assigned to ${epoch.facility.name}`, obligation.payer.toLowerCase() === personas.deployed["sim-aethir"].payer && String(obligation.net) === epoch.amount && obligation.assignedTo === epoch.facility.sourceKey && Number(obligation.status) === 1, { txHashes: [recognized.txHash, assigned.txHash], revision: String(obligation.revision) });
@@ -383,7 +393,7 @@ await scenario("P1", "sim-aethir", "epoch reward obligations are recognised by t
 await scenario("P2", "sim-aethir", "the network pays epoch-1 in full after the epoch closes (measured payout through the token path)", async (t) => {
   requireTransactions(t);
   const payerBefore = await sourceToken.balanceOf(personas.deployed["sim-aethir"].payer);
-  const paid = await sim(["payout", "--persona", "sim-aethir", "--ref", "epoch-1", "--amount", "12000000", "--settlement", "epoch-1-close", "--name", "qa-aethir-epoch-1-payout"]);
+  const paid = await sim(["payout", "--persona", "sim-aethir", "--ref", ref("epoch-1"), "--amount", "12000000", "--settlement", ref("epoch-1-close"), "--name", tag("qa-aethir-epoch-1-payout")]);
   t.evidence.event = recordEvent(paid, facilities.aethir.name);
   const obligation = await escrow.obligation(accountKey, paid.obligationRef);
   t.evidence.obligation = { net: String(obligation.net), paid: String(obligation.paid), status: Number(obligation.status), settlementSeq: paid.settlementSeq };
@@ -393,7 +403,7 @@ await scenario("P2", "sim-aethir", "the network pays epoch-1 in full after the e
 
 await scenario("P3", "sim-aethir", "a QoS/uptime adjustment reduces epoch-2 by a signed correction (SLA)", async (t) => {
   requireTransactions(t);
-  const corrected = await sim(["correct", "--persona", "sim-aethir", "--ref", "epoch-2", "--delta", "-2000000", "--reason", "SLA", "--name", "qa-aethir-epoch-2-correct"]);
+  const corrected = await sim(["correct", "--persona", "sim-aethir", "--ref", ref("epoch-2"), "--delta", "-2000000", "--reason", "SLA", "--name", tag("qa-aethir-epoch-2-correct")]);
   t.evidence.event = recordEvent(corrected, facilities.aethir.name);
   const obligation = await escrow.obligation(accountKey, corrected.obligationRef);
   t.evidence.obligation = { net: String(obligation.net), paid: String(obligation.paid), revision: String(obligation.revision), status: Number(obligation.status) };
@@ -401,17 +411,17 @@ await scenario("P3", "sim-aethir", "a QoS/uptime adjustment reduces epoch-2 by a
 });
 
 const gpunetJobs = [
-  { ref: "job-1", amount: "8000000", due: "86400" },
-  { ref: "job-2", amount: "6000000", due: "45" }, // falls due almost immediately → overdue haircut in the borrowing base
-  { ref: "job-3", amount: "5000000", due: "86400" },
+  { ref: ref("job-1"), amount: "8000000", due: "86400" },
+  { ref: ref("job-2"), amount: "6000000", due: "45" }, // falls due almost immediately → overdue haircut in the borrowing base
+  { ref: ref("job-3"), amount: "5000000", due: "86400" },
 ];
 await scenario("P4", "sim-gpunet", "marketplace job invoices are recognised and assigned; one falls due before financing", async (t) => {
   requireTransactions(t);
   t.evidence.events = [];
   for (const job of gpunetJobs) {
-    const recognized = await sim(["recognize", "--persona", "sim-gpunet", "--ref", job.ref, "--amount", job.amount, "--due-seconds", job.due, "--name", `qa-gpunet-${job.ref}-recognize`]);
+    const recognized = await sim(["recognize", "--persona", "sim-gpunet", "--ref", job.ref, "--amount", job.amount, "--due-seconds", job.due, "--name", tag(`qa-gpunet-${job.ref}-recognize`)]);
     t.evidence.events.push(recordEvent(recognized, facilities.gpunet.name));
-    const assigned = await sim(["assign", "--persona", "sim-gpunet", "--ref", job.ref, "--facility", facilities.gpunet.name, "--name", `qa-gpunet-${job.ref}-assign`]);
+    const assigned = await sim(["assign", "--persona", "sim-gpunet", "--ref", job.ref, "--facility", facilities.gpunet.name, "--name", tag(`qa-gpunet-${job.ref}-assign`)]);
     t.evidence.events.push(recordEvent(assigned, facilities.gpunet.name));
     const obligation = await escrow.obligation(accountKey, recognized.obligationRef);
     t.check(`${job.ref}: recognised for the SIM-GPUNET payer and assigned to ${facilities.gpunet.name}`, obligation.payer.toLowerCase() === personas.deployed["sim-gpunet"].payer && String(obligation.net) === job.amount && obligation.assignedTo === facilities.gpunet.sourceKey, { dueAt: String(obligation.dueAt), txHashes: [recognized.txHash, assigned.txHash] });
@@ -420,9 +430,9 @@ await scenario("P4", "sim-gpunet", "marketplace job invoices are recognised and 
 
 await scenario("P5", "sim-gpunet", "streaming partial settlements on job-1 (3 tUSD, then 2 tUSD) by the persona payer", async (t) => {
   requireTransactions(t);
-  const first = await sim(["payout", "--persona", "sim-gpunet", "--ref", "job-1", "--amount", "3000000", "--settlement", "job-1-stream-1", "--name", "qa-gpunet-job-1-payout-1"]);
+  const first = await sim(["payout", "--persona", "sim-gpunet", "--ref", ref("job-1"), "--amount", "3000000", "--settlement", ref("job-1-stream-1"), "--name", tag("qa-gpunet-job-1-payout-1")]);
   t.evidence.first = recordEvent(first, facilities.gpunet.name);
-  const second = await sim(["payout", "--persona", "sim-gpunet", "--ref", "job-1", "--amount", "2000000", "--settlement", "job-1-stream-2", "--name", "qa-gpunet-job-1-payout-2"]);
+  const second = await sim(["payout", "--persona", "sim-gpunet", "--ref", ref("job-1"), "--amount", "2000000", "--settlement", ref("job-1-stream-2"), "--name", tag("qa-gpunet-job-1-payout-2")]);
   t.evidence.second = recordEvent(second, facilities.gpunet.name);
   const obligation = await escrow.obligation(accountKey, first.obligationRef);
   t.evidence.obligation = { net: String(obligation.net), paid: String(obligation.paid), status: Number(obligation.status), seqs: [first.settlementSeq, second.settlementSeq] };
@@ -432,9 +442,9 @@ await scenario("P5", "sim-gpunet", "streaming partial settlements on job-1 (3 tU
 
 await scenario("P6", "sim-gpunet", "chargeback: the issuer reverses the second stream settlement and tokens return to the payer", async (t) => {
   requireTransactions(t);
-  const second = artifact("qa-gpunet-job-1-payout-2");
+  const second = artifact(tag("qa-gpunet-job-1-payout-2"));
   const payerBefore = await sourceToken.balanceOf(personas.deployed["sim-gpunet"].payer);
-  const cancelled = await sim(["cancel-payout", "--seq", second.settlementSeq, "--name", "qa-gpunet-job-1-chargeback"]);
+  const cancelled = await sim(["cancel-payout", "--seq", second.settlementSeq, "--name", tag("qa-gpunet-job-1-chargeback")]);
   t.evidence.event = recordEvent({ ...cancelled, persona: "sim-gpunet" }, facilities.gpunet.name);
   const obligation = await escrow.obligation(accountKey, second.obligationRef);
   t.evidence.obligation = { net: String(obligation.net), paid: String(obligation.paid), status: Number(obligation.status) };
@@ -445,7 +455,7 @@ await scenario("P6", "sim-gpunet", "chargeback: the issuer reverses the second s
 
 await scenario("P7", "sim-gpunet", "dispute: job-3 is cancelled by a full negative correction (CANCEL must zero the open amount)", async (t) => {
   requireTransactions(t);
-  const cancelled = await sim(["correct", "--persona", "sim-gpunet", "--ref", "job-3", "--delta", "-5000000", "--reason", "CANCEL", "--name", "qa-gpunet-job-3-cancel"]);
+  const cancelled = await sim(["correct", "--persona", "sim-gpunet", "--ref", ref("job-3"), "--delta", "-5000000", "--reason", "CANCEL", "--name", tag("qa-gpunet-job-3-cancel")]);
   t.evidence.event = recordEvent(cancelled, facilities.gpunet.name);
   const obligation = await escrow.obligation(accountKey, cancelled.obligationRef);
   t.evidence.obligation = { net: String(obligation.net), paid: String(obligation.paid), status: Number(obligation.status), revision: String(obligation.revision) };
@@ -454,8 +464,8 @@ await scenario("P7", "sim-gpunet", "dispute: job-3 is cancelled by a full negati
 });
 
 await scenario("P8", "misuse", "source-side misuse is rejected by the escrow (unregistered payer, stranger issuer, overpayment, bad cancel, unknown account/token)", async (t) => {
-  const result = await run("node", ["script/gpu/payer_sim.mjs", "negative", "--persona", "sim-gpunet", "--open-ref", "job-1", "--name", "qa-source-negative"], { timeoutMs: 180000 });
-  const summary = hasArtifact("qa-source-negative") ? artifact("qa-source-negative") : null;
+  const result = await run("node", ["script/gpu/payer_sim.mjs", "negative", "--persona", "sim-gpunet", "--open-ref", ref("job-1"), "--name", tag("qa-source-negative")], { timeoutMs: 180000 });
+  const summary = hasArtifact(tag("qa-source-negative")) ? artifact(tag("qa-source-negative")) : null;
   t.evidence.checks = summary?.checks ?? null;
   for (const [label, check] of Object.entries(summary?.checks ?? {})) t.check(label, check.ok, check);
   t.check("negative suite exited cleanly", result.code === 0 && summary?.allOk === true, { code: result.code, stderr: result.stderr.slice(-200) });
@@ -465,7 +475,7 @@ await scenario("P9", "stranger", "a direct deposit by a non-payer is bucketed as
   requireTransactions(t);
   const paidBefore = await escrow.accountPaidCumulative(accountKey);
   const revisionBefore = await escrow.accountLatestRevision(accountKey);
-  const deposit = await sim(["unattributed", "--amount", "1000000", "--name", "qa-unattributed-deposit"]);
+  const deposit = await sim(["unattributed", "--amount", "1000000", "--name", tag("qa-unattributed-deposit")]);
   t.evidence.deposit = deposit;
   t.check("deposit recorded with a deposit sequence and THIRD_PARTY_UNKNOWN origin (deployer is not a borrower wallet)", Boolean(deposit.depositSeq) && deposit.origin === 1, deposit);
   t.check("unattributed balance holds the deposit", BigInt(deposit.unattributedBalance) >= 1000000n);
@@ -537,14 +547,14 @@ let checkpointA = null;
 await scenario("N4", "keeper", "checkpoint A: reserve → official proof → control observations → consumption makes persona receivables eligible", async (t) => {
   requireTransactions(t);
   const stats = await book.accountStats(providerId, accountKey);
-  const checkpoint = await sim(["checkpoint", "--name", "qa-checkpoint-a"]);
+  const checkpoint = await sim(["checkpoint", "--name", tag("qa-checkpoint-a")]);
   checkpointA = checkpoint;
   t.evidence.source = checkpoint;
   console.log(`  checkpoint window closes ${new Date(checkpoint.protectedUntil * 1000).toISOString()}`);
-  const reserved = await run("node", ["script/gpu/payer_sim.mjs", "negative", "--persona", "sim-aethir", "--name", "qa-source-negative-reserved"], { timeoutMs: 180000 });
-  const reservedChecks = hasArtifact("qa-source-negative-reserved") ? artifact("qa-source-negative-reserved").checks : {};
+  const reserved = await run("node", ["script/gpu/payer_sim.mjs", "negative", "--persona", "sim-aethir", "--name", tag("qa-source-negative-reserved")], { timeoutMs: 180000 });
+  const reservedChecks = hasArtifact(tag("qa-source-negative-reserved")) ? artifact(tag("qa-source-negative-reserved")).checks : {};
   t.check("while reserved, the account rejects source mutations (AccountReserved)", reservedChecks["reserved account rejects source mutations until the window closes"]?.ok === true, reservedChecks["reserved account rejects source mutations until the window closes"] ?? { code: reserved.code });
-  const proof = await officialProof("qa-checkpoint-a", checkpoint.protectedUntil - 150);
+  const proof = await officialProof(tag("qa-checkpoint-a"), checkpoint.protectedUntil - 150);
   t.check("official proof became PROOF_READY inside the reservation window", Boolean(proof));
   if (!proof) return;
   for (const f of [facilities.aethir, facilities.gpunet]) {
@@ -553,7 +563,7 @@ await scenario("N4", "keeper", "checkpoint A: reserve → official proof → con
     t.check(`control observation refreshed for ${f.name}`, observe.code === 0 && Boolean(line), { code: observe.code, stderr: observe.stderr.slice(-200) });
     if (line) t.evidence[`observe_${f.name}`] = JSON.parse(line);
   }
-  const outcome = await consumeStep("reserveCheckpoint", "qa-checkpoint-a", facilities.aethir.name);
+  const outcome = await consumeStep("reserveCheckpoint", tag("qa-checkpoint-a"), facilities.aethir.name);
   t.evidence.consumption = outcome.row;
   t.check("checkpoint consumed on Creditcoin and audited proof-only", outcome.ok, { code: outcome.code, status: outcome.row?.status, stderr: outcome.stderr });
   if (!outcome.ok) return;
@@ -654,7 +664,7 @@ await scenario("K4", "third-party", "SIM-GPUNET facility: a settlement-rail stan
   const now = await chainNow();
   const debtBefore = await ledger.legalDebtAt(f.id, now);
   if (debtBefore === 0n) t.skip("no debt on the SIM-GPUNET facility");
-  const settlementRef = id("qa-sim-gpunet-rail-settlement-1");
+  const settlementRef = id(tag("qa-sim-gpunet-rail-settlement-1"));
   await sendTx(lpWallet, token, "approve", [config.contracts.repaymentRouter, unit(1)], "approve", { waitBlocks: 1 });
   const receipt = await sendTx(lpWallet, router, "repayFor", [f.id, unit(1), settlementRef], "repayFor 1");
   const repaid = logs(receipt, routerInterface, "Repaid")[0];
@@ -780,16 +790,16 @@ await scenario("K8", "borrower", "browser regression on a fresh facility: checkp
     while ((await sepolia.getBlock("latest")).timestamp < checkpointA.protectedUntil + 5) await sleep(15000);
   }
   const stats = await book.accountStats(providerId, accountKey);
-  const checkpoint = await sim(["checkpoint", "--name", "qa-checkpoint-b"]);
+  const checkpoint = await sim(["checkpoint", "--name", tag("qa-checkpoint-b")]);
   t.evidence.source = checkpoint;
   console.log(`  checkpoint window closes ${new Date(checkpoint.protectedUntil * 1000).toISOString()}`);
-  const proof = await officialProof("qa-checkpoint-b", checkpoint.protectedUntil - 150);
+  const proof = await officialProof(tag("qa-checkpoint-b"), checkpoint.protectedUntil - 150);
   t.check("official proof became PROOF_READY inside the window", Boolean(proof));
   if (!proof) return;
   const observe = await run("node", ["script/gpu/native_tools.mjs", "observe", "--agreement", f.agreement, "--broadcast", approval], { timeoutMs: 180000 });
   const observeLine = observe.stdout.split("\n").find((row) => row.startsWith("{"));
   t.check("control observation refreshed on chain", observe.code === 0 && Boolean(observeLine));
-  const outcome = await consumeStep("reserveCheckpoint", "qa-checkpoint-b", f.name);
+  const outcome = await consumeStep("reserveCheckpoint", tag("qa-checkpoint-b"), f.name);
   t.evidence.consumption = outcome.row;
   t.check("checkpoint B consumed and audited proof-only", outcome.ok, { status: outcome.row?.status, stderr: outcome.stderr });
   if (!outcome.ok) return;
@@ -865,8 +875,8 @@ await scenario("R1", "sim-aethir", "epoch-5 reward is recognised for the drill f
   requireTransactions(t);
   const f = facilities.recovery;
   if ((await book.facilityReceivables(f.id)).length > 0) t.skip("drill receivable already on chain");
-  const recognized = await sim(["recognize", "--persona", "sim-aethir", "--ref", recoveryRefs.epoch, "--amount", recoveryRefs.amount, "--due-seconds", "86400", "--name", `qa-aethir-${recoveryRefs.epoch}-recognize`]);
-  const assigned = await sim(["assign", "--persona", "sim-aethir", "--ref", recoveryRefs.epoch, "--facility", f.name, "--name", `qa-aethir-${recoveryRefs.epoch}-assign`]);
+  const recognized = await sim(["recognize", "--persona", "sim-aethir", "--ref", recoveryRefs.epoch, "--amount", recoveryRefs.amount, "--due-seconds", "86400", "--name", tag(`qa-aethir-${recoveryRefs.epoch}-recognize`)]);
+  const assigned = await sim(["assign", "--persona", "sim-aethir", "--ref", recoveryRefs.epoch, "--facility", f.name, "--name", tag(`qa-aethir-${recoveryRefs.epoch}-assign`)]);
   const events = [recordEvent(recognized, f.name), recordEvent(assigned, f.name)];
   t.evidence.source = events;
   const deadline = Date.now() / 1000 + 1500;
@@ -928,7 +938,7 @@ await scenario("R3", "sim-aethir", "the network pays epoch-5 to the operator aft
   if (before.debt === "0") t.skip("drill facility has no debt");
   if (before.receivables.some((r) => r.state === "PAID")) t.skip("epoch-5 already paid");
   if (checkpointC) while ((await sepolia.getBlock("latest")).timestamp < checkpointC.protectedUntil + 5) await sleep(15000);
-  const paid = await sim(["payout", "--persona", "sim-aethir", "--ref", recoveryRefs.epoch, "--amount", recoveryRefs.amount, "--settlement", `${recoveryRefs.epoch}-close`, "--name", `qa-aethir-${recoveryRefs.epoch}-payout`]);
+  const paid = await sim(["payout", "--persona", "sim-aethir", "--ref", recoveryRefs.epoch, "--amount", recoveryRefs.amount, "--settlement", `${recoveryRefs.epoch}-close`, "--name", tag(`qa-aethir-${recoveryRefs.epoch}-payout`)]);
   const event = recordEvent(paid, f.name);
   t.evidence.source = event;
   const obligation = await escrow.obligation(accountKey, paid.obligationRef);
