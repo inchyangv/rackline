@@ -772,8 +772,11 @@ await scenario("D4", "borrower", "a REPAID facility cannot draw again even with 
     controlObservation: { lastObservedAt: String(agreement.lastObservedAt), ageSeconds: block.timestamp - Number(agreement.lastObservedAt), maxAge: 900 },
   };
   t.check("facility is REPAID (terminal: only RELEASED follows)", states[Number(info.state)] === "REPAID" && (await manager.isTransitionAllowed(info.state, 3)) === false, t.evidence.chain.facilityState);
-  t.check("eligible receivables exist on chain", evaluation.eligibleReceivables > 0n, t.evidence.chain.managerEvaluation);
-  t.check("availableDraw is 0 despite eligible receivables", evaluation.availableDraw === 0n && raw.availableDraw === 0n);
+  // Eligibility is time-gated (checkpoint ≤ 15 min, control observation ≤ 15 min, evidence window); it is only
+  // non-zero when D3b ran moments ago. The invariant under test is the terminal state, so record eligibility as
+  // evidence and require the state gate itself: availableDraw 0 and a FacilityNotActive revert.
+  t.evidence.chain.eligibilityFresh = evaluation.eligibleReceivables > 0n;
+  t.check(evaluation.eligibleReceivables > 0n ? "availableDraw is 0 despite eligible receivables" : "availableDraw is 0 (eligibility gates stale at this time; state gate tested directly)", evaluation.availableDraw === 0n && raw.availableDraw === 0n, t.evidence.chain.managerEvaluation);
   let revert = null;
   try {
     await manager.borrow.staticCall(canonicalFacilityId, oneToken, oneToken, { from: borrowerWallet.address });
@@ -787,7 +790,7 @@ await scenario("D4", "borrower", "a REPAID facility cannot draw again even with 
     reason = null;
   }
   t.evidence.borrowRevert = reason ?? String(revert?.shortMessage || revert?.message || "").slice(0, 160);
-  t.check("static borrow reverts", Boolean(revert), t.evidence.borrowRevert);
+  t.check("static borrow reverts with FacilityNotActive (state gate precedes eligibility)", Boolean(revert) && reason === "FacilityNotActive", t.evidence.borrowRevert);
   const session = await login(borrowerWallet);
   const context = await facilityContext(session.token);
   const facility = await http(`/v1/facilities/${facilityId}`, { token: session.token });

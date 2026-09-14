@@ -13,11 +13,15 @@ const { Interface, AbiCoder, JsonRpcProvider, Wallet, Contract, id, ZeroHash, ke
 const abi = name => JSON.parse(fs.readFileSync(`test/fixtures/gpu/abi/${name}.json`, 'utf8'))
 const steps = {
   recognizeObligation: 'ObligationRecognizedV2', assignObligation: 'ObligationAssigned',
-  settle: 'PayoutReceived', reserveCheckpoint: 'SourceCheckpointV2',
+  correctObligation: 'ObligationCorrected', settle: 'PayoutReceived', cancelPayout: 'PayoutCancelled',
+  reserveCheckpoint: 'SourceCheckpointV2',
 }
 export const ACCOUNT = id('mockdepin-testonly:native-integration')
 export const PROVIDER = id('mockdepin-testonly')
 export const FACILITY = id('gpu080-facility-v2')
+// Report-only: which facility's eligibleUnpaid/legalDebt the summary reads (`--facility <name>`).
+const facilityArg = process.argv.indexOf('--facility')
+const REPORT_FACILITY = facilityArg >= 0 && process.argv[facilityArg + 1] ? id(process.argv[facilityArg + 1]) : FACILITY
 
 /** Transaction-local ordinal is the array index, NOT the block-global RPC logIndex. */
 export function claimFromReceipt(step, receipt, emitter, validUntil, sourceAbi = abi('SourceEscrow')) {
@@ -138,7 +142,7 @@ export async function canonicalConsumptionReceipt(destination, evidence, manifes
 
 async function main(args) {
   if (args.includes('--help')) {
-    console.log('node script/gpu/consume-native.mjs [--step recognizeObligation|assignObligation|settle|reserveCheckpoint] [--proof FILE] [--checkpoint-proof FILE] [--settle-proof FILE] [--deployment FILE] [--proof-dir DIR] [--out FILE] [--preflight] [--broadcast --approval=user-20260914]')
+    console.log('node script/gpu/consume-native.mjs [--step recognizeObligation|assignObligation|correctObligation|settle|cancelPayout|reserveCheckpoint] [--proof FILE] [--facility NAME] [--checkpoint-proof FILE] [--settle-proof FILE] [--deployment FILE] [--proof-dir DIR] [--out FILE] [--preflight] [--broadcast --approval=user-20260914]')
     return
   }
   const value = (flag, fallback) => args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback
@@ -171,10 +175,12 @@ async function main(args) {
   const chosen = value('--step', 'all')
   if (chosen !== 'all' && !steps[chosen]) throw new Error('Unknown step')
   const report = { version: 1, executionProfile: 'NATIVE_TESTNET', verificationMethod: 'ATTESTCOIN_NATIVE',
-    deploymentId: manifest.deploymentId, manifestHash: manifest.manifestHash, facilityId: FACILITY,
+    deploymentId: manifest.deploymentId, manifestHash: manifest.manifestHash, facilityId: REPORT_FACILITY,
     partnerRevenue: 'SIMULATED', partnerSourceBinding: 'UNCONFIGURED', controlProvenance: 'SIMULATED_NOT_PARTNER_E2',
     nativeAccepted: false, transactions: [] }
-  const selectedSteps = Object.keys(steps).filter(s => chosen === 'all' || s === chosen)
+  // `all` is the original four-transition deployment set; corrections/chargebacks are always consumed one step at a time.
+  const defaultSteps = ['recognizeObligation', 'assignObligation', 'settle', 'reserveCheckpoint']
+  const selectedSteps = chosen === 'all' ? defaultSteps : [chosen]
   const persist = () => {
     report.nativeAccepted = report.transactions.length === selectedSteps.length && report.transactions.every(tx => tx.nativeAccepted)
     report.financialAuditPassed = report.transactions.length === selectedSteps.length && report.transactions.every(tx => tx.financialAuditStatus === 'PASSED')
@@ -244,8 +250,8 @@ async function main(args) {
   }
   report.nativeAccepted = report.transactions.length > 0 && report.transactions.every(tx => tx.nativeAccepted)
   const at = Number((await destination.getBlock('latest')).timestamp)
-  report.eligibleUnpaid = String((await book.eligibleUnpaid(FACILITY, 900, 0, 1000, at))[0])
-  report.legalDebt = String(await ledger.legalDebtAt(FACILITY, at))
+  report.eligibleUnpaid = String((await book.eligibleUnpaid(REPORT_FACILITY, 900, 0, 1000, at))[0])
+  report.legalDebt = String(await ledger.legalDebtAt(REPORT_FACILITY, at))
   report.vaultNav = String(await vault.nav())
   const rendered = JSON.stringify(report, (_, v) => typeof v === 'bigint' ? String(v) : v, 2) + '\n'
   persist()

@@ -9,7 +9,7 @@ fs.mkdirSync(outputDir, { recursive: true })
 // `--refresh` (checkpoint-refresh) or `--refresh settle-refresh` proves one later source transition recorded by native_tools.
 const refreshIndex = process.argv.indexOf('--refresh')
 const refresh = refreshIndex >= 0
-  ? (/^[a-z-]+$/.test(process.argv[refreshIndex + 1] || '') ? process.argv[refreshIndex + 1] : 'checkpoint-refresh') : null
+  ? (/^[a-z0-9-]+$/.test(process.argv[refreshIndex + 1] || '') ? process.argv[refreshIndex + 1] : 'checkpoint-refresh') : null
 const selected = refresh ? [{hash:JSON.parse(fs.readFileSync(`${outputDir}/${refresh}.json`, 'utf8')).txHash,
   function:`${refresh}(`}] : source.transactions.filter(t => /^(recognizeObligation|assignObligation|settle|reserveCheckpoint)\(/.test(t.function || ''))
 if (!refresh && selected.length !== 4) throw new Error(`Expected four native source transitions, found ${selected.length}`)
