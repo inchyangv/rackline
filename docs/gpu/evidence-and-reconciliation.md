@@ -1,10 +1,9 @@
 # Evidence and settlement reconciliation fixtures
 
-Reference reconciler: `offchain/gpu/hashcredit_gpu/reconciliation/reference.py`.
-Golden fixtures: `test/fixtures/gpu/settlements/s-01…s-05.json` (executed by
-`offchain/gpu/tests/test_settlement_fixtures.py`), together with
-`domain-model.md` (IDs), `accounting.md` (cash pipeline), and `attestcoin/evidence-contract.md` (evidence vectors).
-The production reconciler and ledger database must reproduce these fixtures exactly.
+Reference reconciler: `offchain/gpu/hashcredit_gpu/reconciliation/reference.py`. Golden fixtures:
+`test/fixtures/gpu/settlements/s-01…s-05.json`, executed by `offchain/gpu/tests/test_settlement_fixtures.py`.
+Related: `domain-model.md` (IDs), `accounting.md` (cash pipeline), `attestcoin/evidence-contract.md`
+(evidence vectors). The production reconciler and ledger database must reproduce these fixtures exactly.
 
 ## 1. Identifiers and how they link
 

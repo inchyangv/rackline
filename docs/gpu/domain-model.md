@@ -1,9 +1,10 @@
 # Domain model, identifiers, units, paths, and API contract
 
-Machine-readable form: `config/gpu/schema/domain-v1.schema.json`; sample:
-`test/fixtures/gpu/domain/sample-v1.json`; validator: `script/gpu/validate_domain_fixture.py`.
-Field-level evidence semantics distinguish proof-bound values, claimed values, freshness checkpoints,
-and consumption keys. This document fixes names, shapes, enums, and ownership across contracts and services.
+This document fixes names, shapes, enums, and ownership across contracts and services. Field-level
+evidence semantics distinguish proof-bound values, claimed values, freshness checkpoints, and consumption keys.
+
+Machine-readable form: `config/gpu/schema/domain-v1.schema.json`. Sample: `test/fixtures/gpu/domain/sample-v1.json`.
+Validator: `script/gpu/validate_domain_fixture.py`.
 
 ## 1. Principles
 
@@ -159,18 +160,19 @@ labeled `CLAIMED`/`OBSERVED`; policy uses the proven height plus a checkpoint.
 
 ## 10. Path table
 
-| Purpose | Path | Status |
-| --- | --- | --- |
-| v2 contracts / tests | `contracts/gpu/`, `test/gpu/` | confirmed; official imports require solc ≥ 0.8.28 |
-| Python shared domain / DB / connectors | `offchain/gpu/hashcredit_gpu/`, `offchain/gpu/tests/`, `offchain/gpu/migrations/` | confirmed |
-| GPU API / worker | `offchain/api/hashcredit_api/gpu/`, `offchain/prover/hashcredit_prover/gpu/` | confirmed |
-| Official SDK tools / proof client | `offchain/attestcoin/` | confirmed |
-| Source event contracts / native verifier | `contracts/gpu/source/`, `contracts/gpu/AttestcoinRevenueVerifier.sol` | confirmed |
-| Official env manifests / fixtures | `config/attestcoin/`, `test/fixtures/gpu/attestcoin/` | confirmed |
-| Domain schemas | `config/gpu/schema/` | confirmed |
-| Domain / settlement fixtures | `test/fixtures/gpu/domain/`, `test/fixtures/gpu/settlements/` | confirmed |
-| Repository scripts | `script/gpu/` | validators, deployment, ABI export, and evidence packaging |
-| Public technical documentation | `README.md`, `TECH.md`, `docs/gpu/` | exists |
+| Purpose | Path |
+| --- | --- |
+| v2 contracts / tests (official imports require solc ≥ 0.8.28) | `contracts/gpu/`, `test/gpu/` |
+| Source event contracts / native verifier | `contracts/gpu/source/`, `contracts/gpu/AttestcoinRevenueVerifier.sol` |
+| Python shared domain / DB / connectors | `offchain/gpu/hashcredit_gpu/`, `offchain/gpu/tests/`, `offchain/gpu/migrations/` |
+| GPU API / workers | `offchain/api/hashcredit_api/gpu/`, `offchain/prover/hashcredit_prover/gpu/` |
+| Official SDK tools / proof client | `offchain/attestcoin/` |
+| Official env manifests / fixtures | `config/attestcoin/`, `test/fixtures/gpu/attestcoin/` |
+| Domain schemas | `config/gpu/schema/` |
+| Domain / settlement fixtures | `test/fixtures/gpu/domain/`, `test/fixtures/gpu/settlements/` |
+| Deployment manifest / packaged evidence | `config/gpu/deployments/`, `config/gpu/evidence/`, `evidence/` |
+| Repository scripts (validators, deployment, ABI export, evidence packaging) | `script/gpu/` |
+| Public technical documentation | `README.md`, `TECH.md`, `docs/gpu/` |
 
 ## 11. Product API v1
 

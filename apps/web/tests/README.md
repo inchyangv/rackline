@@ -1,25 +1,28 @@
 # GPU browser and unit verification
 
-From repository root:
+From the repository root:
 
 ```sh
-npm --prefix apps/web run test -- --run
-npm --prefix apps/web run test:e2e
+npm --prefix apps/web run test -- --run    # Node unit tests
+npm --prefix apps/web run test:e2e         # Playwright
 ```
 
-The Node unit runner executes the actual TypeScript demo store and GPU client helpers, including exact bigint amounts, configuration/profile rejection, and wallet-login binding. It requires no browser, network, key, or database.
+## CI suites (no network, no keys)
 
-Playwright starts Vite on `127.0.0.1:4173` and runs Chromium at desktop 1440px and mobile 390px widths. On macOS it uses the installed Google Chrome; elsewhere run `npx playwright install chromium` or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+**Unit (`tests/*.test.mjs`).** Runs the TypeScript demo store and GPU client helpers directly: exact bigint amounts, configuration/profile rejection, wallet-login binding. No browser, network, key, or database.
 
-`preview.spec.ts` exercises the isolated demo. A sentinel rejects real wallet requests, external/API calls, and POSTs. `gpu.spec.ts` exercises the connected application against an explicit HTTP and EIP-1193 fixture; it uses actual ethers ABI encoding, EIP-712 signatures, transaction simulation, exact approvals, signed fixture transactions, and receipt confirmation. Its balances/receipts are simulated and are not contract, native-testnet, partner, or cash evidence.
+**Playwright.** Starts Vite on `127.0.0.1:4173` and runs Chromium at desktop 1440px and mobile 390px. On macOS it uses the installed Google Chrome; elsewhere run `npx playwright install chromium` or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
-Connected coverage includes onboarding/session refresh/provider request, persisted proof requests, native pending versus cash/debt, bound borrow/direct repay, faucet/deposit/withdraw/partial queue/cancel/claim/recovery, role/version/idempotency checks, wrong chain/wallet changes, quote minimums, wallet rejection, simulation revert, responsive overflow, and keyboard focus confinement. Screenshots and failure traces stay beneath ignored `node_modules/.cache/playwright/test-results/`.
+- `preview.spec.ts` covers the isolated demo. A sentinel rejects real wallet requests, external/API calls, and POSTs.
+- `gpu.spec.ts` covers the connected application against an explicit HTTP and EIP-1193 fixture, with real ethers ABI encoding, EIP-712 signatures, transaction simulation, exact approvals, signed fixture transactions, and receipt confirmation. Coverage: onboarding, session refresh, provider requests, persisted proof requests, native-pending versus cash/debt, bound borrow and direct repay, faucet/deposit/withdraw/partial queue/cancel/claim/recovery, role/version/idempotency checks, wrong-chain and wallet changes, quote minimums, wallet rejection, simulation revert, responsive overflow, keyboard focus confinement.
 
-Wallet classification recognizes exactly the 23-byte delegation indicator defined by [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702#delegation-indicator); other nonempty account code selects server-side ERC-1271 validation. Classification never grants a role or bypasses the server's signature/allowlist check.
+Fixture balances and receipts are simulated; they are not contract, native-testnet, partner, or cash evidence. Screenshots and traces stay under the ignored `node_modules/.cache/playwright/`.
 
-## Actual API/PostgreSQL interoperability
+Wallet classification recognizes exactly the 23-byte [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702#delegation-indicator) delegation indicator; any other non-empty account code selects server-side ERC-1271 validation. Classification never grants a role or bypasses the server's signature and allowlist check.
 
-Run these in three terminals:
+## Local API + PostgreSQL interoperability (opt-in)
+
+Three terminals:
 
 ```sh
 .venv-py313/bin/python apps/web/scripts/api-review-server.py 4182
@@ -27,51 +30,34 @@ VITE_GPU_API_URL=http://127.0.0.1:4182 npm --prefix apps/web run dev -- --host 1
 node apps/web/scripts/api-review-browser.mjs
 ```
 
-The server creates and migrates its own ephemeral PostgreSQL cluster and runs the real GPU API. No RPC or contract is configured; financial actions fail closed. The browser signs real login challenges with public disposable test accounts, submits real HTTP onboarding and provider requests, and verifies PostgreSQL persistence after page reload on desktop and mobile. Stop the server to remove only its temporary database cluster. This remains **LOCAL** evidence and never claims native verification or actual GPU revenue.
+The server creates and migrates its own ephemeral PostgreSQL cluster and runs the real GPU API with no RPC or contract configured, so financial actions fail closed. The browser signs real login challenges with disposable public test accounts, submits real onboarding and provider requests, and verifies persistence after reload at both widths. Stopping the server removes its temporary cluster. This is LOCAL evidence only.
 
-For deployed contract/API smoke evidence, use the release execution record. A live wallet or credential is never required for CI.
+## Live testnet browser smoke (opt-in, real transactions)
 
-`scripts/live-review-browser.mjs` is an opt-in **real testnet transaction** browser smoke, separate from CI. Set `GPU_REVIEW_WEB_URL`, `GPU_REVIEW_API_URL`, a disposable test-CTC-funded wallet in `GPU_SMOKE_PRIVATE_KEY`, and `GPU_ALLOW_TESTNET_TRANSACTIONS=1`, then run `node apps/web/scripts/live-review-browser.mjs`. It rejects non-native profiles, non-test assets, chains other than 102031, existing LP positions, native transfers, arbitrary contracts/methods, and approvals/deposits above 1 tUSD. It uses actual HTTP, RPC, signatures and two-confirmation receipts for faucet-if-needed → 1 tUSD supply → queue/cancel → queue/fund/claim → remaining direct withdrawal. The key and API session stay in memory. Output contains only public wallet/deployment IDs and transaction hashes. This script's availability is not evidence that the live smoke has been run.
+`scripts/live-review-browser.mjs` runs real test-token transactions against a deployed environment. It is separate from CI, and its presence is not evidence that it has been run.
 
-For an explicitly prepared, zero-debt test borrower, set `GPU_REVIEW_FLOW=borrower` and `GPU_REVIEW_FACILITY_ID` with that borrower's funded test wallet. This mode allows only a 1 tUSD borrow and a 1.001 tUSD `repayExact` cap to the API-bound facility, then checks canonical debt is zero. A 0.001 tUSD starting balance is required for interest. It never creates a facility or bypasses eligibility. A stopped LP smoke can resume only with `GPU_REVIEW_RESUME_CANCELLED_REQUEST` identifying its already cancelled, wallet-owned request and no more than the previous 1 tUSD test position; prior deposits/requests are not repeated. The helper refreshes signed sessions before expiry, and screenshots remain in ignored cache storage.
+```sh
+GPU_REVIEW_WEB_URL=… GPU_REVIEW_API_URL=… \
+GPU_SMOKE_PRIVATE_KEY=<disposable test-CTC-funded key> \
+GPU_ALLOW_TESTNET_TRANSACTIONS=1 \
+node apps/web/scripts/live-review-browser.mjs
+```
 
-## Actual testnet LP browser evidence
+Guards: rejects non-native profiles, non-test assets, chains other than 102031, existing LP positions, native transfers, arbitrary contracts or methods, and approvals or deposits above 1 tUSD. Uses real HTTP, RPC, signatures, and two-confirmation receipts. Key and session stay in memory; output contains only public wallet, deployment, and transaction identifiers.
 
-On 2026-09-14 the connected browser used the real API/PostgreSQL and Creditcoin chain 102031 deployment `01K54G0000QN0QHY2GCA10HGXN`, with wallet `0xee684316539c3996855AA01415555D7f5Af3Ada6`. These are real **test-token** transactions, not partner-revenue or native-proof-acceptance claims.
+| Mode | Variables | Behavior |
+| --- | --- | --- |
+| LP (default) | as above | faucet-if-needed → 1 tUSD supply → queue/cancel → queue/fund/claim → withdraw the rest |
+| LP resume | `GPU_REVIEW_RESUME_CANCELLED_REQUEST` | Resumes only an already cancelled, wallet-owned request at or below the previous 1 tUSD position; repeats no deposit |
+| Borrower | `GPU_REVIEW_FLOW=borrower`, `GPU_REVIEW_FACILITY_ID`, funded borrower key | 1 tUSD borrow and a 1.001 tUSD `repayExact` cap on the API-bound facility, then checks canonical debt is zero; needs 0.001 tUSD starting balance for interest; never creates a facility or bypasses eligibility |
+| Borrower repay-only | `GPU_REVIEW_RESUME_BORROWER_REPAY=1` | Repays the prior 1–1.001 tUSD debt only; rejects borrow submissions |
+| Read-only | `GPU_REVIEW_READ_ONLY=1` (+ `GPU_REVIEW_EXPECT_REPAYMENT_TX`) | Blocks every submission; borrower mode checks debt 0 and, if set, a real `FINALIZED_ROUTER_EVENT` allocation with exact amounts and its activity-screen link |
 
-| Browser action | Confirmed transaction |
-| --- | --- |
-| Test faucet | [444f277c…](https://creditcoin-testnet.blockscout.com/tx/0x444f277cf8c2db087a853e9d4dec91e52f61ac85636337a0df9b87a1b5916240) |
-| Exact 1 tUSD approval | [a1139d1d…](https://creditcoin-testnet.blockscout.com/tx/0xa1139d1d6f939ad72194ceb0d7b424725ccbc663aa993215894aeccac128a8d9) |
-| 1 tUSD deposit | [fc21ec54…](https://creditcoin-testnet.blockscout.com/tx/0xfc21ec540e1e40441d111b9335eb8e5bb4d0e3c44e3d2b0afacc85763bbc3cf6) |
-| Request withdrawal #1 | [e0d4c120…](https://creditcoin-testnet.blockscout.com/tx/0xe0d4c12083c9278617634318b3daa6199bf6366bcda778dcb12b253894de9a66) |
-| Cancel request #1 | [8fc710b1…](https://creditcoin-testnet.blockscout.com/tx/0x8fc710b113c088a313a800b35a20ba9ad44356df2bda28bd62cf9878c5281717) |
-| Request withdrawal #2 | [b48f18e0…](https://creditcoin-testnet.blockscout.com/tx/0xb48f18e040f95aa29759ec484d7efbe980f2dc742454c7f42e2676e19c8af137) |
-| Fund the queue | [93817b78…](https://creditcoin-testnet.blockscout.com/tx/0x93817b78b42840e8e193ac0e9151dfbefd86a7a63ff678c89c758e033d6a232f) |
-| Claim funded cash | [58607208…](https://creditcoin-testnet.blockscout.com/tx/0x586072082ead746cf13264c14c75f5929129661ad5faff495c6903561144bdeb) |
-| Withdraw remaining shares | [658233c9…](https://creditcoin-testnet.blockscout.com/tx/0x658233c98f54da8f8d9863a8a6136f79d0769abc8c2a3e24500b0ab4aab7cbc4) |
+RPC reads use a 12-second timeout and at most three attempts; broadcasts are never retried automatically. The helper refreshes signed sessions before expiry.
 
-The first two automation runs stopped at a between-step Refresh lookup; confirmed on-chain state was checked before resuming the exact cancelled/pending request. No deposit or earlier request was repeated. The final resumed run passed and a subsequent **read-only** sign-in passed at both 1440px and 390px: finalized block 5484451, LP position **0 tUSD**, wallet **10,000 tUSD**, no unfilled or claimable amount, no uncaught page errors or horizontal overflow. Screenshots `native-lp-1440.png` and `native-lp-390.png` are in ignored `node_modules/.cache/playwright/`. The chain's six-block indexing finality is distinct from the two confirmations shown for transaction inclusion. Partial funding/loss recovery remain separately covered by LOCAL contract/browser tests, not this live LP cycle.
+## Live persona scenarios (opt-in)
 
-Public receipt and final-state checks are in [LP browser evidence](../../../evidence/native-testnet/lp-browser-20260914.json). All nine receipts were successful and canonical with at least 39 confirmations at the independent check.
-
-## Actual testnet borrower browser evidence
-
-The same deployment's borrower wallet `0x42E46697957766fFad9b7f55621260f99Dc204B7` completed facility `5DCNY1D03WP51EAK4V024YB60F`: [borrow 1 tUSD](https://creditcoin-testnet.blockscout.com/tx/0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee), [approve a 1.001 tUSD cap](https://creditcoin-testnet.blockscout.com/tx/0x649813a3a7e99497bf7bf56e93073f984281a1689e840921a80304bc6eb8cf75), and [repay exact execution debt](https://creditcoin-testnet.blockscout.com/tx/0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78). `RepaymentRouter.Repaid` log 13 records principal 1 tUSD, interest 0.000002 tUSD, no excess, and debt 0. The unused cap was not transferred. Actual API canonical debt 0 and the Repaid facility screen passed at desktop/mobile widths, with no uncaught browser errors or horizontal overflow.
-
-The initial run stopped after successful borrowing because the indexer watermark stalled. A repayment-only resume encountered a wallet RPC failure before approval; on-chain nonce/allowance checks confirmed nothing had been submitted. Another attempt timed out before opening the browser. The final run used the updated API and bounded read-only RPC retries, then completed without repeating the borrow. Public [borrower browser evidence](../../../evidence/native-testnet/borrower-browser-20260914.json) records all three successful canonical receipts, final debt/token balance, and these interruptions. This remains test-token evidence; partner revenue is simulated and native-proof acceptance is verified separately.
-
-After finalized-event cash reconciliation and an API restart, a new **read-only** borrower session verified `repaymentApplied=true`, `applicationEvidence=FINALIZED_ROUTER_EVENT`, all exact allocation amounts, and the actual transaction link in the Activity screen at both widths. No transaction was submitted by this readback. Reviewed screenshots `native-borrower-390.png` / `native-borrower-1440.png` and `native-repayment-activity-390.png` / `native-repayment-activity-1440.png` stay in ignored cache storage.
-
-For safe investigation, `GPU_REVIEW_RESUME_BORROWER_REPAY=1` permits only repayment of the prior 1–1.001 tUSD debt and rejects manager borrow submissions. `GPU_REVIEW_READ_ONLY=1` blocks every transaction submission; borrower mode checks debt 0. Setting `GPU_REVIEW_EXPECT_REPAYMENT_TX` requires a real API `FINALIZED_ROUTER_EVENT` allocation with the expected exact amounts and verifies its activity-screen link. RPC reads use a 12-second timeout and at most three attempts; broadcasts are never automatically retried.
-
-The protected Vercel preview `rackline-ny3lznz3r-elouanics-projects.vercel.app` built successfully from the 106-file frontend allowlist. Owner-authenticated reads confirmed `/`, `/app`, `/demo` and both scoped deep links return the app; API/missing-asset/key paths remain 404, and required JavaScript/CSS return 200 with correct content types. No preview-origin API mutation or wallet transaction was sent, and the production alias was not changed.
-
-## Live persona scenarios against the deployed environment
-
-`scripts/live-scenarios.mjs` runs the persona catalog in
-[`docs/gpu/scenarios/live-user-scenarios.md`](../../../docs/gpu/scenarios/live-user-scenarios.md)
-against the deployed web app, API, and Creditcoin CC3 Testnet. It is opt-in and separate from CI.
+`scripts/live-scenarios.mjs` runs the catalog in [`docs/gpu/scenarios/live-user-scenarios.md`](../../../docs/gpu/scenarios/live-user-scenarios.md) against the deployed web app, API, and Creditcoin CC3 Testnet.
 
 ```sh
 GPU_REVIEW_WEB_URL=https://rackline.studioliq.com \
@@ -81,16 +67,25 @@ GPU_SCENARIO_OUT=../../evidence/native-testnet/scenarios-<date>.json \
 node scripts/live-scenarios.mjs
 ```
 
-Without further flags every scenario is read-only or API-only: public pages, demo isolation,
-manifest/code-hash binding, unauthenticated access, wrong-chain/bad-signature/nonce-replay
-sign-in, unknown-wallet empty state, LP parity, over-withdraw guards, blocked draws, borrower
-onboarding and connection requests (which create pending-review rows for a fresh disposable
-wallet), foreign proof requests, staff-scope denials, CORS, session lifetime and read metadata.
-`GPU_ALLOW_TESTNET_TRANSACTIONS=1` adds the real LP cycle (delegated to `live-review-browser.mjs`);
-`GPU_SCENARIO_NATIVE_REFRESH=1` with `GPU_SCENARIO_APPROVAL=user-20260914` additionally sends new
-Sepolia source transitions (payout, new obligation, checkpoint) through the official Attestcoin path,
-consumes them on Creditcoin with the keeper key, and verifies on-chain eligibility plus the REPAID
-facility's draw refusal. `GPU_SCENARIO_ONLY=A1,B5` filters by scenario ID and `GPU_SCENARIO_MERGE=1`
-keeps prior records of filtered-out scenarios in the same output file. Screenshots go to ignored
-`node_modules/.cache/playwright/scenarios/`. Output carries public wallet, deployment and
-transaction identifiers only.
+Without further flags every scenario is read-only or API-only (public pages, demo isolation, manifest and code-hash binding, unauthenticated access, wrong-chain/bad-signature/nonce-replay sign-in, unknown-wallet empty state, LP parity, over-withdraw guards, blocked draws, onboarding and connection requests for a fresh disposable wallet, foreign proof requests, staff-scope denials, CORS, session lifetime, read metadata).
+
+| Flag | Adds |
+| --- | --- |
+| `GPU_ALLOW_TESTNET_TRANSACTIONS=1` | The real LP cycle (delegated to `live-review-browser.mjs`) |
+| `GPU_SCENARIO_NATIVE_REFRESH=1` with `GPU_SCENARIO_APPROVAL=user-<date>` | New Sepolia source transitions (payout, obligation, checkpoint) through the official Attestcoin path, consumed on Creditcoin with the keeper key; verifies on-chain eligibility and the REPAID facility's draw refusal |
+| `GPU_SCENARIO_ONLY=A1,B5` | Filters by scenario ID |
+| `GPU_SCENARIO_MERGE=1` | Keeps prior records of filtered-out scenarios in the same output file |
+
+Screenshots go to the ignored `node_modules/.cache/playwright/scenarios/`.
+
+## Recorded testnet evidence (2026-09-14)
+
+Deployment `01K54G0000QN0QHY2GCA10HGXN` on Creditcoin chain 102031, real API and PostgreSQL, faucet test tokens only. None of it is partner-revenue or native-proof-acceptance evidence; native acceptance is verified separately.
+
+**LP cycle**, wallet `0xee684316539c3996855AA01415555D7f5Af3Ada6`: nine successful canonical receipts (faucet, exact 1 tUSD approval, deposit, request #1, cancel #1, request #2, fund queue, claim, withdraw remaining), each with at least 39 confirmations at the independent check. A subsequent read-only sign-in at 1440px and 390px showed finalized block 5484451, LP position 0 tUSD, wallet 10,000 tUSD, nothing unfilled or claimable, no page errors or horizontal overflow. Two earlier runs stopped at a between-step lookup; on-chain state was checked before resuming the exact cancelled request, and no deposit or earlier request was repeated. Receipts and hashes: [`evidence/native-testnet/lp-browser-20260914.json`](../../../evidence/native-testnet/lp-browser-20260914.json).
+
+**Borrower cycle**, wallet `0x42E46697957766fFad9b7f55621260f99Dc204B7`, facility `5DCNY1D03WP51EAK4V024YB60F`: [borrow 1 tUSD](https://creditcoin-testnet.blockscout.com/tx/0x7f70742f267233e7195edec63635cc71bd80167f9e896f1f225f21f485c403ee), [approve a 1.001 tUSD cap](https://creditcoin-testnet.blockscout.com/tx/0x649813a3a7e99497bf7bf56e93073f984281a1689e840921a80304bc6eb8cf75), [repay exact execution debt](https://creditcoin-testnet.blockscout.com/tx/0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78). `RepaymentRouter.Repaid` (log 13) records principal 1 tUSD, interest 0.000002 tUSD, no excess, debt 0; the unused cap was not transferred. After finalized-event cash reconciliation a read-only session verified `repaymentApplied=true`, `applicationEvidence=FINALIZED_ROUTER_EVENT`, exact allocation amounts, and the transaction link in the Activity screen at both widths. Interruptions (indexer watermark stall after the borrow, a wallet RPC failure before approval, a timeout before the browser opened) are recorded with the on-chain checks that confirmed nothing had been submitted twice: [`evidence/native-testnet/borrower-browser-20260914.json`](../../../evidence/native-testnet/borrower-browser-20260914.json).
+
+**Persona scenarios**: 25 passed, 0 failed, across four runs. Transaction table and gate notes: [`docs/gpu/scenarios/live-user-scenarios.md`](../../../docs/gpu/scenarios/live-user-scenarios.md); evidence: [`evidence/native-testnet/scenarios-20260914.json`](../../../evidence/native-testnet/scenarios-20260914.json).
+
+**Vercel preview**: the protected preview built from the 106-file frontend allowlist; owner-authenticated reads confirmed `/`, `/app`, `/demo`, and scoped deep links return the app, while API, missing-asset, and key paths return 404. No preview-origin API mutation or wallet transaction was sent, and the production alias was not changed.

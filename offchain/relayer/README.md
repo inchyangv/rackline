@@ -1,34 +1,19 @@
-# Rackline Relayer Utility
+# hashcredit_relayer (legacy v1)
 
-This package is a standalone EIP-712 signer utility kept for compatibility experiments.
+Standalone EIP-712 signer utility from the Rackline v1 (then HashCredit) Bitcoin-SPV prototype. It is kept for provenance and regression coverage only.
 
-> Package and CLI identifiers keep their legacy `hashcredit*` names; the product is Rackline (formerly HashCredit).
+It is **not** part of the Rackline v2 GPU runtime. v2 has no relayer-signature evidence path: source facts enter through the official Attestcoin native verifier (`offchain/prover`, `offchain/attestcoin`), and the API never signs transactions. See the repository `README.md` and `TECH.md` §11.
 
-The active Rackline runtime path uses:
-- `offchain/api` for payload/proof building and verification
-- `offchain/prover` for SPV worker submission
-
-## Installation
+## Install and run
 
 ```bash
 # from this package directory
 pip install -e .
-```
-
-## Commands
-
-```bash
 hashcredit-relayer run --help
 hashcredit-relayer version
 ```
 
-## Configuration
-
-Copy `.env.example` to `.env` and configure:
-- `BITCOIN_API_URL`
-- `RPC_URL`
-- `RELAYER_PRIVATE_KEY`
-- `HASH_CREDIT_MANAGER`
+Configuration comes from `.env` (copy `.env.example`): `BITCOIN_API_URL`, `RPC_URL`, `RELAYER_PRIVATE_KEY`, `HASH_CREDIT_MANAGER`.
 
 ## Development
 
