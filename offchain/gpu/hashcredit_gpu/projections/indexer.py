@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from sqlalchemy import delete, select, update
@@ -26,6 +27,7 @@ from ..reconciliation.chain_reader import pair_repayment_events
 from .decoders import Decoder
 
 CORRECTION_REASON_CANCEL = 3  # ISourceEscrow.CorrectionReason.CANCEL, mirrored by ReceivableBook
+log = logging.getLogger(__name__)
 
 
 class FinalizedReorg(RuntimeError):
@@ -53,6 +55,17 @@ class ChainIndexer:
                 raise ValueError("RPC chain differs from deployment")
             decoder = Decoder(d.contracts)
             cursor = s.get(ChainCursor, deployment_id)
+            if cursor:
+                # Journal rows above the committed cursor are orphans (a write that never advanced the cursor);
+                # they carry no indexed fact and would otherwise crash every sync on the primary key
+                # (2026-09-17: block 5505414 kept the indexer in a crash loop for two hours).
+                orphan_logs = s.execute(delete(ChainLog).where(
+                    ChainLog.deployment_id == deployment_id, ChainLog.block_number > cursor.last_block_number)).rowcount
+                orphan_blocks = s.execute(delete(ChainBlock).where(
+                    ChainBlock.deployment_id == deployment_id, ChainBlock.number > cursor.last_block_number)).rowcount
+                if orphan_logs or orphan_blocks:
+                    log.warning("removed %d orphan block rows and %d orphan log rows above cursor %d",
+                                orphan_blocks, orphan_logs, cursor.last_block_number)
             head = self.rpc.block_number()
             last = cursor.last_block_number if cursor else d.deployment_block - 1
             finalized = cursor.finalized_block_number if cursor else d.deployment_block - 1

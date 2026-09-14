@@ -346,3 +346,22 @@ def test_credit_status_rejects_reserve_over_application(history_setup):
     rpc.height = 4
     with pytest.raises(ValueError, match="reserve application exceeds"):
         indexer.sync(ID)
+
+
+def test_orphan_journal_rows_above_the_cursor_are_swept_instead_of_crashing(setup):
+    """A block row beyond the committed cursor (2026-09-17 production incident) must not stop every later sync."""
+    from hashcredit_gpu.db.projections_models import ChainBlock, ChainCursor
+
+    engine, rpc, indexer = setup
+    rpc.height = 3
+    indexer.sync(ID)
+    with Session(engine) as s, s.begin():
+        cursor = s.get(ChainCursor, ID)
+        assert cursor.last_block_number == 3
+        s.add(ChainBlock(deployment_id=ID, number=4, hash=h(4444), parent_hash=h(3), timestamp=104, tier="PENDING"))
+    rpc.height = 5
+    result = indexer.sync(ID)
+    assert result["lastBlock"] == 5
+    with Session(engine) as s:
+        assert s.get(ChainBlock, (ID, 4)).hash == h(4)  # the canonical block replaced the orphan
+        assert s.get(ChainCursor, ID).last_block_number == 5
