@@ -27,6 +27,7 @@ import {
 import type {
   ConnectionDTO,
   ControlDTO,
+  CreditStatusDTO,
   FacilityDTO,
   OperationDTO,
   ProviderDTO,
@@ -947,9 +948,22 @@ function Facility(
       </p>
       {(read.error || tx?.drawBlockedReason) && (
         <Notice>
-          {read.error || tx?.drawBlockedReason} Direct repayment remains
-          available when the facility binding is valid.
+          {read.error ||
+            explainDrawBlock(tx?.drawBlockedReason, facility.state)}{" "}
+          Direct repayment remains available when the facility binding is
+          valid.
+          {tx?.drawBlockedReason && (
+            <code className="gpu-code">{tx.drawBlockedReason}</code>
+          )}
         </Notice>
+      )}
+      {facility.credit && !performing.has(facility.state) && (
+        <CreditStatus
+          config={context.config}
+          credit={facility.credit}
+          debt={tx?.debt}
+          amount={amount}
+        />
       )}
       <div className="gpu-actions">
         <button
@@ -985,10 +999,127 @@ function Facility(
         </a>
       </div>
       <p className="gpu-subtle">
-        Zero debt and released payment control are separate states. Current
-        control agreement: {facility.controlAgreementId || "Not established"}.
+        {facility.state === "RECOVERY" || facility.state === "CLOSED_WITH_LOSS"
+          ? "Repayments on a facility in recovery or written off reduce the legal debt and are recovered for lenders."
+          : "Zero debt and released payment control are separate states."}{" "}
+        Current control agreement:{" "}
+        {facility.controlAgreementId || "Not established"}.
       </p>
     </Panel>
+  );
+}
+
+const performing = new Set(["DRAFT", "UNDER_REVIEW", "CONTROL_PENDING", "ACTIVE"]);
+const drawBlockText: Record<string, string> = {
+  NO_ELIGIBLE_DRAW:
+    "No eligible receivables in the borrowing base right now: the source checkpoint or the control observation is older than 15 minutes, or every assigned receivable has been paid.",
+  INSUFFICIENT_VAULT_CASH: "The vault has no free cash to lend right now.",
+  EVIDENCE_STALE:
+    "Credit evidence is stale; new borrowing pauses until the indexer catches up.",
+  DRAW_REQUIREMENTS_NOT_MET:
+    "The chain refused the draw evaluation: a control or evidence requirement is not met.",
+};
+const notActiveText: Record<string, string> = {
+  DRAW_FROZEN: "Draws are frozen by the guardian.",
+  DELINQUENT: "An installment is overdue; draws resume after the cure.",
+  DEFAULTED: "The facility is in default.",
+  RECOVERY: "The facility is in recovery.",
+  REPAID: "This facility is repaid; a new facility is opened for new borrowing.",
+  RELEASED: "This facility is released.",
+  CLOSED_WITH_LOSS: "This facility was written off.",
+};
+function explainDrawBlock(code: string | null | undefined, state: string) {
+  if (!code) return "";
+  if (code === "FACILITY_NOT_ACTIVE")
+    return `${notActiveText[state] ?? "The facility is not active."} New borrowing is unavailable.`;
+  return drawBlockText[code] ?? `New borrowing is unavailable (${code}).`;
+}
+const when = (iso: string | null | undefined) =>
+  iso ? new Date(iso).toLocaleString() : "—";
+const label = (trigger: string, text: string | null) =>
+  text ? text.replace(/_/g, " ") : `reference ${addressLabel(trigger)}`;
+
+/** The explanation behind a non-performing state, from finalized manager / recovery / vault events. */
+function CreditStatus({
+  config,
+  credit,
+  debt,
+  amount,
+}: {
+  config: Config;
+  credit: CreditStatusDTO;
+  debt: string | null | undefined;
+  amount: (raw: string | null | undefined) => string;
+}) {
+  const s = credit.schedule;
+  const grace = s ? `${Math.round(s.graceSeconds / 60)} min` : null;
+  const summary: ReactNode = (() => {
+    switch (credit.state) {
+      case "DRAW_FROZEN":
+        return `Draws were frozen by the guardian on ${when(credit.stateChangedAt)} (${label(credit.stateTrigger ?? "", credit.stateTriggerText)}). Repayment stays open; the underwriter reactivates the facility.`;
+      case "DELINQUENT":
+        return s
+          ? `The installment of ${amount(s.dueAmount.amount)} due ${when(s.dueAt)} was not paid (grace ${grace}). Draws are refused until the installment is paid and the facility is cured.`
+          : `Marked delinquent on ${when(credit.stateChangedAt)}.`;
+      case "DEFAULTED":
+        return `Default approved by the underwriter on ${when(credit.defaultApprovedAt)} (${label(credit.defaultReason ?? "", credit.defaultReasonText)}) and declared on ${when(credit.stateChangedAt)}. Interest accrual is ${credit.accrualFrozen ? "frozen" : "not frozen"}; the legal debt stays payable.`;
+      case "RECOVERY":
+        return `Recovery opened on ${when(credit.stateChangedAt)}. Reserve pledged ${amount(credit.reservePledged.amount)}, applied to the debt ${amount(credit.reserveApplied.amount)}. Repayments keep reducing the legal debt.`;
+      case "REPAID":
+        return `Repaid in full on ${when(credit.stateChangedAt)}. A repaid facility does not draw again; new borrowing needs a new facility.`;
+      case "RELEASED":
+        return `Payment control was released on ${when(credit.stateChangedAt)}.`;
+      case "CLOSED_WITH_LOSS":
+        return `Written off on ${when(credit.writtenOffAt ?? credit.stateChangedAt)}: the vault recognised a loss of ${amount(credit.lossAmount?.amount)} (${label(credit.lossId ?? credit.stateTrigger ?? "", null)}). Write-off is not forgiveness — the legal debt of ${amount(debt)} remains payable and any repayment is recovered for lenders.`;
+      default:
+        return null;
+    }
+  })();
+  const facts: [string, string][] = [];
+  if (s) {
+    facts.push(["Installment due", when(s.dueAt)]);
+    facts.push(["Installment", amount(s.dueAmount.amount)]);
+    facts.push(["Grace period", grace ?? "—"]);
+  }
+  if (s?.disputed) facts.push(["Servicer dispute", "Open — default approval is blocked"]);
+  if (credit.defaultApprovedAt) facts.push(["Default approved", when(credit.defaultApprovedAt)]);
+  if (BigInt(credit.reserveApplied.amount) > 0n || BigInt(credit.reservePledged.amount) > 0n) {
+    facts.push(["Recovery reserve", `${amount(credit.reservePledged.amount)} pledged · ${amount(credit.reserveApplied.amount)} applied`]);
+  }
+  if (BigInt(credit.impairment.amount) > 0n) facts.push(["Impairment recognised", amount(credit.impairment.amount)]);
+  if (credit.lossAmount) facts.push(["Loss written off", amount(credit.lossAmount.amount)]);
+  if (credit.accrualFrozen) facts.push(["Interest accrual", "Frozen"]);
+  return (
+    <section className="gpu-credit" aria-label="Credit status">
+      <h3>Why this facility is {pretty(credit.state).toLowerCase()}</h3>
+      {summary && <p>{summary}</p>}
+      {facts.length > 0 && (
+        <dl className="gpu-facts">
+          {facts.map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <ol className="gpu-timeline">
+        {[...credit.transitions].reverse().map((t) => (
+          <li key={`${t.txHash}-${t.toState}`}>
+            <span>
+              <strong>{pretty(t.toState)}</strong> from {pretty(t.fromState).toLowerCase()} ·{" "}
+              {label(t.trigger, t.triggerText)}
+            </span>
+            <span className="gpu-subtle">
+              {when(t.at)} · <ChainLink config={config} hash={t.txHash} />
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="gpu-subtle">
+        Replayed from finalized on-chain events (state changes, recovery schedule, reserve, impairment, write-off).
+      </p>
+    </section>
   );
 }
 

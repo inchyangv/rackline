@@ -291,6 +291,50 @@ class ProjectedRepayment(Base):
     )
 
 
+class ProjectedFacilityCredit(Base):
+    """Why a facility is in its credit state (GPU-QA-0915 finding 6): the manager's state transitions with
+    their triggers, the recovery schedule, dispute / default approval, reserve pledged and applied, vault
+    impairment and write-off — all replayed from CreditFacilityManager, RecoveryManager and LendingVaultV2
+    events. Amounts are event-carried; the ledger's legal debt stays in `proj_facilities` / transaction-context.
+    """
+
+    __tablename__ = "proj_facility_credit"
+    deployment_id: Mapped[str] = mapped_column(ULID, ForeignKey("chain_deployments.deployment_id", ondelete="RESTRICT"), primary_key=True)
+    tier: Mapped[str] = mapped_column(String(10), primary_key=True)
+    facility_key: Mapped[str] = mapped_column(HEX32, primary_key=True)
+    state: Mapped[str] = mapped_column(String(24), nullable=False)
+    state_trigger: Mapped[str | None] = mapped_column(HEX32)  # bytes32 trigger of the last StateChanged
+    state_authority: Mapped[str | None] = mapped_column(String(42))
+    state_changed_at: Mapped[int | None] = mapped_column(BigInteger)  # block timestamp
+    state_tx_hash: Mapped[str | None] = mapped_column(HEX32)
+    schedule_due_at: Mapped[int | None] = mapped_column(BigInteger)
+    schedule_grace_seconds: Mapped[int | None] = mapped_column(BigInteger)
+    schedule_due_amount: Mapped[int | None] = mapped_column(MONEY)
+    schedule_set_at: Mapped[int | None] = mapped_column(BigInteger)
+    disputed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    default_reason: Mapped[str | None] = mapped_column(HEX32)  # DefaultApproved.reason
+    default_approved_at: Mapped[int | None] = mapped_column(BigInteger)
+    reserve_owner: Mapped[str | None] = mapped_column(String(42))
+    reserve_pledged: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")  # funded − applied
+    reserve_applied: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")
+    impairment: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")  # vault book impairment
+    loss_id: Mapped[str | None] = mapped_column(HEX32)  # LossApplied(writeOff=true)
+    loss_amount: Mapped[int | None] = mapped_column(MONEY)
+    written_off_at: Mapped[int | None] = mapped_column(BigInteger)
+    transitions: Mapped[list] = mapped_column(JSONB, nullable=False)  # [{from,to,trigger,authority,txHash,blockNumber,at}]
+    last_block: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    __table_args__ = (
+        CheckConstraint(f"facility_key {HEX32_CHECK}", name="ck_proj_facility_credit_key"),
+        CheckConstraint(f"state IN {_in(E.FacilityState)}", name="ck_proj_facility_credit_state"),
+        CheckConstraint(
+            "reserve_pledged >= 0 AND reserve_applied >= 0 AND impairment >= 0 AND (loss_amount IS NULL OR loss_amount >= 0)",
+            name="ck_proj_facility_credit_amounts",
+        ),
+        CheckConstraint("(loss_id IS NULL) = (written_off_at IS NULL)", name="ck_proj_facility_credit_writeoff"),
+        CheckConstraint(TIER_CHECK, name="ck_proj_facility_credit_tier"),
+    )
+
+
 class ProjectionDiscrepancy(Base):
     """Reconciliation findings (projected vs canonical eth_call at the same block); never auto-corrected."""
 

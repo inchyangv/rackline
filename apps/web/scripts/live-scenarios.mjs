@@ -632,7 +632,8 @@ await scenario("D2", "borrower", "draw is blocked while source protection is exp
   const facility = ui.page.getByRole("heading", { name: `Facility ${facilityId}`, exact: true }).locator("..");
   await facility.waitFor();
   await ui.page.getByRole("button", { name: "Refresh", exact: true }).click({ timeout: 5000 }).catch(() => {});
-  await facility.getByText(/NO_ELIGIBLE_DRAW/).waitFor();
+  // A REPAID facility reports the state gate (FACILITY_NOT_ACTIVE) since the credit-status change; older builds NO_ELIGIBLE_DRAW.
+  await facility.getByText(/FACILITY_NOT_ACTIVE|NO_ELIGIBLE_DRAW/).waitFor();
   t.check("UI shows the blocked reason", true);
   t.check("Borrow button disabled", await facility.getByRole("button", { name: "Borrow", exact: true }).isDisabled());
   t.check("Repay directly disabled with zero debt", await facility.getByRole("button", { name: "Repay directly", exact: true }).isDisabled());

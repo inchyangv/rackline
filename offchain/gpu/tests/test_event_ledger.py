@@ -143,7 +143,7 @@ def test_head_is_0002_with_ledger_tables_triggers_view(fresh_db_url):
         "recovery_events", "writeoffs", "audit_log", "correction_links", "ingest_cursors", "jobs", "outbox", "tx_intents", "exceptions",
     }
     assert expected <= tables
-    assert len(tables) == 19 + 20 + 2 + 9 + 7 + 2  # domain, ledgers, assets, projections, durable API
+    assert len(tables) == 19 + 20 + 2 + 9 + 7 + 2 + 1  # domain, ledgers, assets, projections, durable API, credit status
     assert set(LEDGER_TRIGGER_NAMES) <= triggers
     assert views == {"v_cash_ownership"}
     # 0002 -> 0001 leaves the core schema intact, then back to head with no drift

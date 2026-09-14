@@ -209,5 +209,13 @@ write-offs (`ui/earn-vault-nav.png`); the facility panel fits a 400 px viewport.
    why (overdue installment, default reason, reserve applied, loss recognised), sees no schedule / due date, and
    still reads the boilerplate "Zero debt and released payment control are separate states". Repay remaining
    enabled after a write-off is correct (collections are recoveries) but should say so.
+   **Fixed (2026-09-18):** migration `0007` adds `proj_facility_credit`, replayed from `CreditFacilityManager.
+   StateChanged`, the `RecoveryManager` schedule / dispute / default / reserve / loss events and the vault's
+   impairment and write-off events; `/v1/facilities` exposes it as `credit` (finalized events only, never database
+   metadata). `transaction-context` now reports `FACILITY_NOT_ACTIVE` ahead of eligibility for any non-active
+   state. The facility panel renders a "Why this facility is …" section (summary, installment due / grace,
+   default approval, reserve pledged / applied, impairment, loss, and the state timeline with triggers and
+   transaction links), explains every draw-block code in words, and tells a borrower in recovery or written off
+   that repayments are recovered for lenders. `live-recovery-ui.mjs` asserts all of it.
 5. **Timing envelope confirmed.** Official proofs arrived 8–10 min after each Sepolia block; the 850 s
    reservation left ~3 min for the draws; CC3 consumptions took ~90 s each this evening (20 → ~30 min).

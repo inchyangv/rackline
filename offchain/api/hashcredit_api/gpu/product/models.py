@@ -101,6 +101,50 @@ class AssetDTO(DTO):
     eligible: bool
 
 
+class CreditTransitionDTO(DTO):
+    fromState: str
+    toState: str
+    trigger: str  # bytes32 as emitted
+    triggerText: str | None  # decoded when the trigger is a short ASCII label (e.g. installment_overdue)
+    authority: str
+    txHash: str
+    blockNumber: int
+    at: datetime
+
+
+class CreditScheduleDTO(DTO):
+    dueAt: datetime
+    graceSeconds: int
+    dueAmount: Money
+    setAt: datetime
+    disputed: bool
+
+
+class CreditStatusDTO(DTO):
+    """Why the facility is in its state, replayed from finalized manager / recovery / vault events."""
+
+    state: str
+    stateTrigger: str | None
+    stateTriggerText: str | None
+    stateAuthority: str | None
+    stateChangedAt: datetime | None
+    stateTxHash: str | None
+    accrualFrozen: bool
+    schedule: CreditScheduleDTO | None
+    defaultReason: str | None
+    defaultReasonText: str | None
+    defaultApprovedAt: datetime | None
+    reserveOwner: str | None
+    reservePledged: Money
+    reserveApplied: Money
+    impairment: Money
+    lossId: str | None
+    lossAmount: Money | None
+    writtenOffAt: datetime | None
+    transitions: list[CreditTransitionDTO]
+    recordOrigin: Literal["FINALIZED_CHAIN_EVENTS"] = "FINALIZED_CHAIN_EVENTS"
+
+
 class FacilityDTO(DTO):
     facilityId: str
     borrowerId: str
@@ -124,6 +168,9 @@ class FacilityDTO(DTO):
     canonicalFinancials: None = None
     availableDraw: None = None
     financialReadiness: Literal["UNAVAILABLE_ID_BINDING", "TRANSACTION_CONTEXT_AVAILABLE"] = "UNAVAILABLE_ID_BINDING"
+    # Present only with finalized chain events (never from database metadata): state triggers, schedule, default,
+    # reserve, impairment and write-off — the explanation behind a non-performing state.
+    credit: CreditStatusDTO | None = None
 
 
 class EvidenceStages(DTO):

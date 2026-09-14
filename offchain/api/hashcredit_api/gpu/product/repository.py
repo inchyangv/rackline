@@ -12,7 +12,8 @@ from hashcredit_gpu.db import ledgers as L
 from hashcredit_gpu.db import models as M
 from hashcredit_gpu.db.assets_models import ProviderAccountLink
 from hashcredit_gpu.db.projections_models import (ChainBlock, ChainCursor, ChainDeployment, ChainLog, ProjectedEntity,
-                                                   ProjectedEvidence, ProjectedFacility, ProjectedReceivable, ProjectedRepayment)
+                                                   ProjectedEvidence, ProjectedFacility, ProjectedFacilityCredit, ProjectedReceivable,
+                                                   ProjectedRepayment)
 from hashcredit_gpu.db.product_models import OperationReview, FacilityBinding
 from hashcredit_gpu.reconciliation.chain_reader import pair_repayment_events
 
@@ -246,6 +247,26 @@ class ProductRepository:
                 recordOrigin="FINALIZED_CHAIN_EVENTS", payerAddress=row.payer, settlementRef=row.settlement_ref)
         return self.serialize(session, row)
 
+    def credit(self, session: Session, facility_key: str, projected: ProjectedFacility, asset: D.AssetRef) -> D.CreditStatusDTO | None:
+        """Finalized credit-status projection; None until the first manager state transition was finalized."""
+        c = session.get(ProjectedFacilityCredit, (self.settings.deployment_id, "FINALIZED", facility_key))
+        if c is None or c.state != projected.state:
+            return None  # a credit row behind the facility row would explain the wrong state
+        ts = lambda value: datetime.fromtimestamp(value, timezone.utc) if value is not None else None
+        schedule = None
+        if c.schedule_due_at is not None:
+            schedule = D.CreditScheduleDTO(dueAt=ts(c.schedule_due_at), graceSeconds=int(c.schedule_grace_seconds), dueAmount=money(c.schedule_due_amount, asset),
+                setAt=ts(c.schedule_set_at), disputed=c.disputed)
+        return D.CreditStatusDTO(state=c.state, stateTrigger=c.state_trigger, stateTriggerText=bytes32_text(c.state_trigger),
+            stateAuthority=c.state_authority, stateChangedAt=ts(c.state_changed_at), stateTxHash=c.state_tx_hash,
+            accrualFrozen=projected.accrual_frozen, schedule=schedule, defaultReason=c.default_reason,
+            defaultReasonText=bytes32_text(c.default_reason), defaultApprovedAt=ts(c.default_approved_at),
+            reserveOwner=c.reserve_owner, reservePledged=money(c.reserve_pledged, asset), reserveApplied=money(c.reserve_applied, asset),
+            impairment=money(c.impairment, asset), lossId=c.loss_id, lossAmount=money(c.loss_amount, asset) if c.loss_amount is not None else None,
+            writtenOffAt=ts(c.written_off_at),
+            transitions=[D.CreditTransitionDTO(fromState=t["from"], toState=t["to"], trigger=t["trigger"], triggerText=bytes32_text(t["trigger"]),
+                authority=t["authority"], txHash=t["txHash"], blockNumber=int(t["blockNumber"]), at=ts(int(t["at"]))) for t in c.transitions])
+
     def evidence(self, session: Session, row: L.Receivable) -> D.EvidenceStages:
         stages = D.EvidenceStages(earningsProvenance="SIMULATED" if row.execution_profile != "PRODUCTION" else "UNCLASSIFIED")
         if row.checkpoint_consumption_id is None:
@@ -312,7 +333,8 @@ class ProductRepository:
                 canonicalFacilityId=binding.onchain_id if binding else None,
                 recordOrigin="FINALIZED_CHAIN_EVENTS" if canonical else "DATABASE_METADATA",
                 financialReadiness="TRANSACTION_CONTEXT_AVAILABLE" if binding else "UNAVAILABLE_ID_BINDING",
-                updatedAt=datetime.fromtimestamp(block.timestamp, timezone.utc) if canonical else row.updated_at)
+                updatedAt=datetime.fromtimestamp(block.timestamp, timezone.utc) if canonical else row.updated_at,
+                credit=self.credit(session, binding.onchain_id, projected, asset) if canonical else None)
         if isinstance(row, L.Receivable):
             asset = D.AssetRef(chainId=row.asset_chain_id, address=row.asset_token_address, decimals=row.asset_decimals)
             return D.ReceivableDTO(receivableId=row.receivable_id, economicEventId=row.economic_event_id,
@@ -400,6 +422,16 @@ class ProductRepository:
                 assignee=review.assignee if review else None, owner=review.assignee if review else None,
                 audit=[{"action": a.action, "reason": (a.after or {}).get("reason"), "createdAt": a.occurred_at} for a in audit])
         raise not_configured("unsupported read model")
+
+
+def bytes32_text(value: str | None) -> str | None:
+    """A bytes32 trigger is shown as text only when it is a zero-padded printable ASCII label; hashes stay hex."""
+    if not value or len(value) != 66:
+        return None
+    raw = bytes.fromhex(value[2:]).rstrip(b"\0")
+    if not raw or b"\0" in raw or any(byte < 0x20 or byte > 0x7E for byte in raw):
+        return None
+    return raw.decode("ascii")
 
 
 def money(amount: int | Decimal, asset: D.AssetRef) -> D.Money:

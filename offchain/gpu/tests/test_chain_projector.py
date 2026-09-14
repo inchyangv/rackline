@@ -213,7 +213,10 @@ ACCOUNT = "0x" + "66" * 32
 OBLIGATION = "0x" + "77" * 32
 RECEIVABLE = "0x" + "88" * 32
 PAYER = "0x" + "99" * 20
-HISTORY_CONTRACTS = {"DebtLedger": ADDRESS, "ReceivableBook": BOOK, "RepaymentRouter": ROUTER, "LendingVaultV2": VAULT}
+MANAGER = "0x" + "aa" * 20
+RECOVERY = "0x" + "bb" * 20
+HISTORY_CONTRACTS = {"DebtLedger": ADDRESS, "ReceivableBook": BOOK, "RepaymentRouter": ROUTER, "LendingVaultV2": VAULT,
+                     "CreditFacilityManager": MANAGER, "RecoveryManager": RECOVERY}
 
 
 def history_event(rpc, contract, name, values, block, index, tx=None):
@@ -283,4 +286,63 @@ def test_receivable_history_rejects_conservation_breaks(history_setup):
     history_event(rpc, "ReceivableBook", "ReceivablePaid", {"receivableId": bytes.fromhex(RECEIVABLE[2:]), "amount": 1, "settlementSeq": 2, "unpaidAfter": 5}, 3, 1)
     rpc.height = 3
     with pytest.raises(ValueError, match="receivable payout conservation"):
+        indexer.sync(ID)
+
+
+# ---------------------------------------------------------------- credit status (why is the facility in this state)
+def b32(text: str) -> bytes:
+    return text.encode().ljust(32, b"\0")
+
+
+def test_credit_status_replays_default_recovery_and_write_off(history_setup):
+    from hashcredit_gpu.db.projections_models import ProjectedFacilityCredit
+
+    engine, rpc, indexer = history_setup
+    fid, under, guard, owner = bytes.fromhex(FACILITY[2:]), bytes.fromhex("c1" * 20), bytes.fromhex("c2" * 20), bytes.fromhex("c3" * 20)
+    STATE = {"ACTIVE": 3, "DELINQUENT": 5, "DEFAULTED": 6, "RECOVERY": 7, "CLOSED_WITH_LOSS": 10}
+    # block 2: schedule, overdue → DELINQUENT, a dispute that is opened and cleared, approved default → DEFAULTED
+    history_event(rpc, "RecoveryManager", "ScheduleSet", {"facilityId": fid, "dueAt": 150, "graceSeconds": 60, "dueAmount": 100}, 2, 4)
+    history_event(rpc, "CreditFacilityManager", "StateChanged", {"facilityId": fid, "from": STATE["ACTIVE"], "to": STATE["DELINQUENT"], "trigger": b32("installment_overdue"), "authority": bytes.fromhex(RECOVERY[2:])}, 2, 5)
+    history_event(rpc, "RecoveryManager", "DisputeSet", {"facilityId": fid, "disputed": True, "disputeUntil": 150}, 2, 6)
+    history_event(rpc, "RecoveryManager", "DisputeSet", {"facilityId": fid, "disputed": False, "disputeUntil": 150}, 2, 7)
+    history_event(rpc, "RecoveryManager", "DefaultApproved", {"facilityId": fid, "reason": b32("non_payment")}, 2, 8)
+    history_event(rpc, "CreditFacilityManager", "StateChanged", {"facilityId": fid, "from": STATE["DELINQUENT"], "to": STATE["DEFAULTED"], "trigger": b32("non_payment"), "authority": bytes.fromhex(RECOVERY[2:])}, 2, 9)
+    # block 3 (pending at height 4? no: height 5 finalizes 3): recovery, reserve 30 funded / 30 applied, impair 372, write off
+    history_event(rpc, "CreditFacilityManager", "StateChanged", {"facilityId": fid, "from": STATE["DEFAULTED"], "to": STATE["RECOVERY"], "trigger": b32("recovery_opened"), "authority": bytes.fromhex(RECOVERY[2:])}, 3, 1)
+    history_event(rpc, "RecoveryManager", "ReserveFunded", {"facilityId": fid, "owner": owner, "amount": 30}, 3, 2)
+    history_event(rpc, "RecoveryManager", "ReserveApplied", {"facilityId": fid, "amount": 30}, 3, 3)
+    history_event(rpc, "LendingVaultV2", "ImpairmentRecognized", {"facilityId": fid, "amount": 400}, 3, 4)
+    history_event(rpc, "LendingVaultV2", "ImpairmentReversed", {"facilityId": fid, "amount": 28}, 3, 5)
+    history_event(rpc, "RecoveryManager", "LossApplied", {"facilityId": fid, "lossId": b32("loss-impair"), "amount": 372, "writeOff": False}, 3, 6)
+    history_event(rpc, "LendingVaultV2", "WrittenOff", {"facilityId": fid, "principal": 372, "interest": 0, "reserveUsed": 0}, 3, 7)
+    history_event(rpc, "CreditFacilityManager", "StateChanged", {"facilityId": fid, "from": STATE["RECOVERY"], "to": STATE["CLOSED_WITH_LOSS"], "trigger": b32("loss-writeoff"), "authority": bytes.fromhex(RECOVERY[2:])}, 3, 8)
+    history_event(rpc, "RecoveryManager", "LossApplied", {"facilityId": fid, "lossId": b32("loss-writeoff"), "amount": 372, "writeOff": True}, 3, 9)
+    rpc.height = 4
+    indexer.sync(ID)
+    with Session(engine) as s:
+        final = s.get(ProjectedFacilityCredit, (ID, "FINALIZED", FACILITY))
+        # height 4 with finality depth 2 finalizes block 2 only: the default is final, the recovery is pending
+        assert (final.state, final.state_trigger, final.state_changed_at) == ("DEFAULTED", "0x" + b32("non_payment").hex(), 102)
+        assert (final.schedule_due_at, final.schedule_grace_seconds, int(final.schedule_due_amount), final.schedule_set_at) == (150, 60, 100, 102)
+        assert final.disputed is False and final.default_reason == "0x" + b32("non_payment").hex() and final.default_approved_at == 102
+        assert [t["to"] for t in final.transitions] == ["DELINQUENT", "DEFAULTED"] and final.transitions[0]["trigger"] == "0x" + b32("installment_overdue").hex()
+        assert (int(final.reserve_pledged), int(final.reserve_applied), int(final.impairment), final.loss_id) == (0, 0, 0, None)
+        pending = s.get(ProjectedFacilityCredit, (ID, "PENDING", FACILITY))
+        assert pending.state == "CLOSED_WITH_LOSS" and [t["to"] for t in pending.transitions] == ["DELINQUENT", "DEFAULTED", "RECOVERY", "CLOSED_WITH_LOSS"]
+        assert (int(pending.reserve_pledged), int(pending.reserve_applied), pending.reserve_owner) == (0, 30, "0x" + "c3" * 20)
+        assert int(pending.impairment) == 0 and pending.loss_id == "0x" + b32("loss-writeoff").hex() and int(pending.loss_amount) == 372 and pending.written_off_at == 103
+    rpc.height = 5
+    indexer.sync(ID)
+    with Session(engine) as s:
+        final = s.get(ProjectedFacilityCredit, (ID, "FINALIZED", FACILITY))
+        assert final.state == "CLOSED_WITH_LOSS" and final.written_off_at == 103 and int(final.reserve_applied) == 30
+
+
+def test_credit_status_rejects_reserve_over_application(history_setup):
+    engine, rpc, indexer = history_setup
+    fid = bytes.fromhex(FACILITY[2:])
+    history_event(rpc, "RecoveryManager", "ReserveFunded", {"facilityId": fid, "owner": bytes.fromhex("c3" * 20), "amount": 10}, 2, 4)
+    history_event(rpc, "RecoveryManager", "ReserveApplied", {"facilityId": fid, "amount": 11}, 2, 5)
+    rpc.height = 4
+    with pytest.raises(ValueError, match="reserve application exceeds"):
         indexer.sync(ID)

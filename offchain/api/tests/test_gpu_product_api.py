@@ -340,3 +340,48 @@ def test_chain_projected_history_is_listed_scoped_and_not_duplicated(setup):
     staff = login(client, wallets[2])
     assert {row["receivableId"] for row in client.get("/v1/receivables?limit=100", headers=staff).json()["data"]} >= {"0x" + "b2" * 32, projected["receivableId"]}
     assert len(client.get("/v1/repayments?limit=100", headers=staff).json()["data"]) == 2
+
+
+def test_facility_credit_status_explains_a_non_performing_state(setup):
+    """Finding 6 of the 2026-09-15 QA: a defaulted / written-off facility must say why (schedule, default reason,
+    reserve, loss) from finalized events only — never from database metadata."""
+    from hashcredit_gpu.db.product_models import FacilityBinding
+    from hashcredit_gpu.db.projections_models import ProjectedFacility, ProjectedFacilityCredit
+    client, engine, wallets, _ = setup
+    facility_key = "0x" + "31" * 32
+    label = lambda text: "0x" + text.encode().ljust(32, b"\0").hex()
+    hashed = "0x" + "a9" * 32
+    with Session(engine) as session:
+        session.add(FacilityBinding(deployment_id=DEPLOYMENT, facility_id=uid(301), onchain_id=facility_key, binding_tx_hash="0x" + "01" * 32))
+        session.add(ProjectedFacility(deployment_id=DEPLOYMENT, tier="FINALIZED", facility_key=facility_key, execution_profile="NATIVE_TESTNET",
+            state="CLOSED_WITH_LOSS", principal=3_000_013, fees=0, unpaid_interest_recorded=0, rate_bps=1000, accrual_frozen=True, last_block=10))
+        session.add(ProjectedFacilityCredit(deployment_id=DEPLOYMENT, tier="FINALIZED", facility_key=facility_key, state="CLOSED_WITH_LOSS",
+            state_trigger=hashed, state_authority="0x" + "b9" * 20, state_changed_at=1_789_440_000, state_tx_hash="0x" + "d2" * 32,
+            schedule_due_at=1_789_438_785, schedule_grace_seconds=60, schedule_due_amount=1_000_000, schedule_set_at=1_789_438_700, disputed=False,
+            default_reason=hashed, default_approved_at=1_789_439_000, reserve_owner=wallets[1].address.lower(), reserve_pledged=0, reserve_applied=1_000_000,
+            impairment=0, loss_id=hashed, loss_amount=3_000_013, written_off_at=1_789_440_000, last_block=10,
+            transitions=[{"from": "ACTIVE", "to": "DELINQUENT", "trigger": label("installment_overdue"), "authority": "0x" + "b9" * 20, "txHash": "0x" + "d0" * 32, "blockNumber": 9, "at": 1_789_438_900},
+                         {"from": "DELINQUENT", "to": "DEFAULTED", "trigger": hashed, "authority": "0x" + "b9" * 20, "txHash": "0x" + "d1" * 32, "blockNumber": 9, "at": 1_789_439_100},
+                         {"from": "DEFAULTED", "to": "RECOVERY", "trigger": label("recovery_opened"), "authority": "0x" + "b9" * 20, "txHash": "0x" + "d1" * 32, "blockNumber": 10, "at": 1_789_439_500},
+                         {"from": "RECOVERY", "to": "CLOSED_WITH_LOSS", "trigger": hashed, "authority": "0x" + "b9" * 20, "txHash": "0x" + "d2" * 32, "blockNumber": 10, "at": 1_789_440_000}]))
+        session.commit()
+    headers = login(client, wallets[0])
+    row = client.get(f"/v1/facilities/{uid(301)}", headers=headers).json()["data"]
+    assert row["state"] == "CLOSED_WITH_LOSS" and row["recordOrigin"] == "FINALIZED_CHAIN_EVENTS"
+    credit = row["credit"]
+    assert credit["recordOrigin"] == "FINALIZED_CHAIN_EVENTS" and credit["accrualFrozen"] is True
+    assert credit["schedule"] == {"dueAt": "2026-09-15T02:19:45Z", "graceSeconds": 60, "setAt": "2026-09-15T02:18:20Z", "disputed": False,
+        "dueAmount": {"amount": "1000000", "asset": {"chainId": 102031, "address": TOKEN, "decimals": 6}}}
+    assert credit["defaultReason"] == hashed and credit["defaultReasonText"] is None  # a keccak reference stays hex
+    assert credit["defaultApprovedAt"] == "2026-09-15T02:23:20Z"
+    assert credit["reserveApplied"]["amount"] == "1000000" and credit["reserveOwner"] == wallets[1].address.lower()
+    assert credit["lossId"] == hashed and credit["lossAmount"]["amount"] == "3000013" and credit["writtenOffAt"] == "2026-09-15T02:40:00Z"
+    assert [t["toState"] for t in credit["transitions"]] == ["DELINQUENT", "DEFAULTED", "RECOVERY", "CLOSED_WITH_LOSS"]
+    assert [t["triggerText"] for t in credit["transitions"]] == ["installment_overdue", None, "recovery_opened", None]
+    # a stale credit row (behind the facility state) must not explain the wrong state
+    with Session(engine) as session:
+        session.get(ProjectedFacility, (DEPLOYMENT, "FINALIZED", facility_key)).state = "RELEASED"
+        session.commit()
+    assert client.get(f"/v1/facilities/{uid(301)}", headers=headers).json()["data"]["credit"] is None
+    # borrower 2 never sees borrower 1's facility, credit included
+    assert client.get(f"/v1/facilities/{uid(301)}", headers=login(client, wallets[1])).status_code == 404

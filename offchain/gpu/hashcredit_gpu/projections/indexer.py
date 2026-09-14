@@ -15,6 +15,7 @@ from ..db.projections_models import (
     ProjectedEntity,
     ProjectedEvidence,
     ProjectedFacility,
+    ProjectedFacilityCredit,
     ProjectedReceivable,
     ProjectedRepayment,
     ReorgJournal,
@@ -215,6 +216,7 @@ def replay(s: Session, d: ChainDeployment) -> None:
         ProjectedEntity,
         ProjectedEvidence,
         ProjectedFacility,
+        ProjectedFacilityCredit,
         ProjectedReceivable,
         ProjectedRepayment,
     ):
@@ -232,17 +234,22 @@ def replay(s: Session, d: ChainDeployment) -> None:
         if log.contract_name == "AttestcoinRevenueVerifier"
         and log.event_name == "SourceEventVerified"
     }
-    repaid_blocks = {log.block_number for log in logs if log.event_name == "Repaid"}
+    # Block timestamps are needed for repayment legs and for the credit-status timeline.
+    timed_blocks = {
+        log.block_number
+        for log in logs
+        if log.event_name == "Repaid" or (log.contract_name, log.event_name) in CREDIT_EVENTS
+    }
     blocks = {
         b.number: b
         for b in s.scalars(
             select(ChainBlock).where(
-                ChainBlock.deployment_id == d.deployment_id, ChainBlock.number.in_(repaid_blocks)
+                ChainBlock.deployment_id == d.deployment_id, ChainBlock.number.in_(timed_blocks)
             )
         )
-    } if repaid_blocks else {}
+    } if timed_blocks else {}
     for tier in ("FINALIZED", "PENDING"):
-        facilities, entities, receivables = {}, {}, {}
+        facilities, entities, receivables, credits = {}, {}, {}, {}
         tier_logs = [log for log in logs if tier == "PENDING" or log.tier == tier]
         _project_repayments(s, d, tier, tier_logs, blocks)
         for log in logs:
@@ -336,6 +343,8 @@ def replay(s: Session, d: ChainDeployment) -> None:
                 )
             if contract == "ReceivableBook":
                 _project_receivable(s, d, tier, log, receivables)
+            if (contract, ev) in CREDIT_EVENTS:
+                _project_credit(s, d, tier, log, credits, blocks)
             kind = {
                 "LendingVaultV2": "VAULT",
                 "ProviderRegistry": "PROVIDER",
@@ -398,6 +407,98 @@ def replay(s: Session, d: ChainDeployment) -> None:
                 }
             entity.last_block = log.block_number
         s.flush()
+
+
+#: (contract, event) pairs folded into the credit-status read model.
+CREDIT_EVENTS = {
+    ("CreditFacilityManager", "StateChanged"),
+    ("RecoveryManager", "ScheduleSet"),
+    ("RecoveryManager", "DisputeSet"),
+    ("RecoveryManager", "DefaultApproved"),
+    ("RecoveryManager", "ReserveFunded"),
+    ("RecoveryManager", "ReserveApplied"),
+    ("RecoveryManager", "LossApplied"),
+    ("LendingVaultV2", "ImpairmentRecognized"),
+    ("LendingVaultV2", "ImpairmentReversed"),
+    ("LendingVaultV2", "WrittenOff"),
+}
+
+
+def _project_credit(
+    s: Session, d: ChainDeployment, tier: str, log: ChainLog, credits: dict, blocks: dict
+) -> None:
+    """Fold a manager / recovery / vault event into why-is-it-in-this-state (event-carried values only)."""
+    a, ev = log.decoded, log.event_name
+    key = a["facilityId"]
+    block = blocks.get(log.block_number)
+    if block is None:
+        raise ValueError("credit event lacks its canonical block journal row")
+    at = block.timestamp
+    c = credits.get(key)
+    if c is None:
+        c = credits[key] = ProjectedFacilityCredit(
+            deployment_id=d.deployment_id,
+            tier=tier,
+            facility_key=key,
+            state="DRAFT",
+            disputed=False,
+            reserve_pledged=0,
+            reserve_applied=0,
+            impairment=0,
+            transitions=[],
+            last_block=log.block_number,
+        )
+        s.add(c)
+    c.last_block = log.block_number
+    if ev == "StateChanged":
+        states = list(FacilityState)
+        c.state = states[int(a["to"])].value
+        c.state_trigger, c.state_authority = a["trigger"], a["authority"]
+        c.state_changed_at, c.state_tx_hash = at, log.tx_hash
+        c.transitions = [
+            *c.transitions,
+            {
+                "from": states[int(a["from"])].value,
+                "to": c.state,
+                "trigger": a["trigger"],
+                "authority": a["authority"],
+                "txHash": log.tx_hash,
+                "blockNumber": log.block_number,
+                "at": at,
+            },
+        ]
+    elif ev == "ScheduleSet":
+        c.schedule_due_at = int(a["dueAt"])
+        c.schedule_grace_seconds = int(a["graceSeconds"])
+        c.schedule_due_amount = int(a["dueAmount"])
+        c.schedule_set_at = at
+        c.disputed = False
+    elif ev == "DisputeSet":
+        c.disputed = bool(a["disputed"])
+        if c.disputed:
+            c.default_reason, c.default_approved_at = None, None
+    elif ev == "DefaultApproved":
+        c.default_reason, c.default_approved_at = a["reason"], at
+    elif ev == "ReserveFunded":
+        c.reserve_owner = a["owner"]
+        c.reserve_pledged += int(a["amount"])
+    elif ev == "ReserveApplied":
+        amount = int(a["amount"])
+        if amount > c.reserve_pledged:
+            raise ValueError("reserve application exceeds the pledged reserve")
+        c.reserve_pledged -= amount
+        c.reserve_applied += amount
+    elif ev == "ImpairmentRecognized":
+        c.impairment += int(a["amount"])
+    elif ev == "ImpairmentReversed":
+        amount = int(a["amount"])
+        if amount > c.impairment:
+            raise ValueError("impairment reversal exceeds the recognised impairment")
+        c.impairment -= amount
+    elif ev == "WrittenOff":
+        c.impairment = 0  # the vault releases the book impairment when the facility leaves the performing book
+    elif ev == "LossApplied" and bool(a["writeOff"]):
+        c.loss_id, c.loss_amount, c.written_off_at = a["lossId"], int(a["amount"]), at
 
 
 def _project_receivable(s: Session, d: ChainDeployment, tier: str, log: ChainLog, receivables: dict) -> None:

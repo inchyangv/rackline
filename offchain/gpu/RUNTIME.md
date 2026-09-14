@@ -1,6 +1,6 @@
 # GPU worker runtime
 
-Operations reference for the Rackline v2 background services in `hashcredit_prover.gpu`. The services use PostgreSQL migrations through `0006` and the pinned official `@gluwa/usc-sdk@0.18.0` / `@gluwa/asc-contracts@0.2.1` packages. Native operation has no mock, signature, operator-acceptance, or SPV fallback.
+Operations reference for the Rackline v2 background services in `hashcredit_prover.gpu`. The services use PostgreSQL migrations through `0007` and the pinned official `@gluwa/usc-sdk@0.18.0` / `@gluwa/asc-contracts@0.2.1` packages. Native operation has no mock, signature, operator-acceptance, or SPV fallback.
 
 Four facts are stored separately and never inferred from one another: proof-service readiness, application native acceptance, source-event consumption, and destination cash.
 
@@ -37,7 +37,7 @@ python -m hashcredit_prover.gpu.control_monitor --deployment-id DEPLOYMENT_ULID
 
 Each service accepts `--once` for a single pass.
 
-- **Chain indexer.** Keeps a deployment-block cursor, replays pending reorgs, and refuses to rewrite finalized history. `--reconcile` compares debt and LP shares against canonical views at the same block. Every sync replays the read models from the canonical journal, including the receivable and repayment history (`proj_receivables`, `proj_repayments`) that `/v1/receivables` and `/v1/repayments` merge with reviewed ledger imports.
+- **Chain indexer.** Keeps a deployment-block cursor, replays pending reorgs, and refuses to rewrite finalized history. `--reconcile` compares debt and LP shares against canonical views at the same block. Every sync replays the read models from the canonical journal, including the receivable and repayment history (`proj_receivables`, `proj_repayments`) that `/v1/receivables` and `/v1/repayments` merge with reviewed ledger imports, and the facility credit status (`proj_facility_credit`: state triggers, recovery schedule, default approval, reserve, impairment, write-off) that `/v1/facilities` exposes as `credit`.
 - **Proof worker.** Fetches official proof artifacts, prepares deployment-bound calldata, and, only with a reviewed plan, dispatches transactions. The SDK's cache-wait diagnostics are kept off stdout so the CLI returns one JSON value.
 - **Control monitor.** Records payment-control observations as review cases. Stale proof or partner API availability never defaults a facility or disables repayment.
 

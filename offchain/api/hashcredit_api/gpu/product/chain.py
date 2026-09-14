@@ -16,6 +16,8 @@ from hashcredit_gpu.db.projections_models import ChainLog
 from ..errors import ApiError, not_configured, not_found
 from ..permissions.deps import Principal, current_principal
 
+FACILITY_ACTIVE = 3  # GpuTypes.FacilityState.ACTIVE
+
 ALIASES = {"vault": "LendingVaultV2", "asset": "GpuTestToken", "manager": "CreditFacilityManager",
            "repaymentRouter": "RepaymentRouter", "ledger": "DebtLedger", "roles": "ProtocolRoles"}
 
@@ -128,6 +130,7 @@ class ContractReads:
         return result
 
     def facility(self, session, meta, row, wallet):
+        """Execution-time debt and draw quote; `drawBlockedReason` names the first gate that refuses a draw."""
         binding = session.get(FacilityBinding, (self.settings.deployment_id, row.facility_id))
         if binding is None:
             raise not_configured("facility has no verified on-chain ID binding")
@@ -145,6 +148,9 @@ class ContractReads:
         reason, available = None, None
         if meta.freshness != "FRESH":
             reason = "EVIDENCE_STALE"
+        elif info[6] is not None and int(info[6]) != FACILITY_ACTIVE:
+            # Frozen, delinquent, defaulted, in recovery, repaid or written off: the state gate precedes eligibility.
+            reason, available = "FACILITY_NOT_ACTIVE", "0"
         else:
             try:
                 evaluation = c("evaluateDraw", 0)

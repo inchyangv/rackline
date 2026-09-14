@@ -113,7 +113,26 @@ for (const target of targets) {
     check(`${target.apiId}: Current chain debt shows the ledger's legal debt (${exact(target.debt)})`, debtText?.startsWith(exact(target.debt)), { debtText });
     check(`${target.apiId}: Repay directly stays enabled while legal debt remains (recovery collections)`, !repayDisabled);
   }
-  check(`${target.apiId}: draw-blocked notice rendered`, noticeText.length > 0, { noticeText: noticeText.slice(0, 160) });
+  check(`${target.apiId}: draw-blocked notice names the state gate in words (FACILITY_NOT_ACTIVE)`, noticeText.includes("FACILITY_NOT_ACTIVE") && /not active|frozen|default|recovery|written off|repaid|released/i.test(noticeText), { noticeText: noticeText.slice(0, 200) });
+  // Credit status: why the facility is in this state (finalized manager / recovery / vault events).
+  const credit = panel.locator(".gpu-credit");
+  const hasCredit = (await credit.count()) > 0;
+  const creditText = hasCredit ? (await credit.textContent())?.replace(/\s+/g, " ").trim() ?? "" : "";
+  const timeline = hasCredit ? await credit.locator(".gpu-timeline li").allTextContents() : [];
+  row.creditText = creditText.slice(0, 600);
+  row.timeline = timeline.map((t) => t.replace(/\s+/g, " ").trim());
+  check(`${target.apiId}: credit status section explains the ${target.state} state`, hasCredit && creditText.startsWith(`Why this facility is ${pretty(target.state).toLowerCase()}`), { creditText: creditText.slice(0, 200) });
+  const expectations = {
+    DELINQUENT: [/installment of .* due .* was not paid/i, /Installment due/],
+    DEFAULTED: [/Default approved by the underwriter on/i, /Interest accrual is frozen/i, /Installment due/],
+    RECOVERY: [/Recovery opened on/i, /Recovery reserve/, /applied/],
+    CLOSED_WITH_LOSS: [/Written off on/i, /loss of/i, /Write-off is not forgiveness/i, /Loss written off/],
+  }[target.state] ?? [];
+  for (const pattern of expectations) check(`${target.apiId}: credit status mentions ${pattern}`, pattern.test(creditText), { creditText: creditText.slice(0, 300) });
+  check(`${target.apiId}: state timeline lists the transitions with triggers and transaction links`, timeline.length >= 1 && timeline.every((t) => /from/.test(t)) && (await credit.locator(".gpu-timeline a[href*='/tx/']").count()) >= 1, { timeline: row.timeline.slice(0, 5) });
+  if (["DEFAULTED", "RECOVERY", "CLOSED_WITH_LOSS"].includes(target.state)) {
+    check(`${target.apiId}: the timeline reaches back to the delinquency (installment overdue)`, timeline.some((t) => /installment overdue/i.test(t)), { timeline: row.timeline.slice(0, 6) });
+  }
   await ui.shot(`facility-${target.apiId}-${target.state}`);
 }
 await ui.shot("borrow-page");
