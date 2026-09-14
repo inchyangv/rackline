@@ -8,3 +8,6 @@ dockerfilePath = "Dockerfile"
 preDeployCommand = "python -m hashcredit_api.gpu.server --initialize"
 startCommand = "python -m hashcredit_api.gpu.server"
 healthcheckPath = "/health"
+# A worker that exits (finalized reorg, conservation break, unexpected exception) must come back and keep
+# alerting rather than sit CRASHED: the indexer stayed down 2026-09-15 → 09-17 on a transient chain-change error.
+restartPolicyType = "ALWAYS"

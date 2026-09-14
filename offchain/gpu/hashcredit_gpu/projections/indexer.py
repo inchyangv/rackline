@@ -32,6 +32,11 @@ class FinalizedReorg(RuntimeError):
     """Operator reconciliation required; no automatic rewrite of finalized financial facts."""
 
 
+class TransientChainChange(ValueError):
+    """The chain moved (or the RPC answered inconsistently) while a chunk was being read; the transaction was
+    rolled back and the persistent cursor is untouched, so the caller simply retries the chunk."""
+
+
 class ChainIndexer:
     def __init__(self, engine, rpc):
         self.engine, self.rpc = engine, rpc
@@ -94,9 +99,9 @@ class ChainIndexer:
             for number in range(last + 1, end + 1):
                 block = self.rpc.get_block(number)
                 if not block or int(block["number"], 16) != number:
-                    raise ValueError("canonical block unavailable")
+                    raise TransientChainChange("canonical block unavailable")
                 if parent_hash and block["parentHash"].lower() != parent_hash:
-                    raise ValueError("chain changed while indexing; retry atomically")
+                    raise TransientChainChange("chain changed while indexing; retry atomically")
                 parent_hash = block["hash"].lower()
                 s.add(
                     ChainBlock(
@@ -122,10 +127,10 @@ class ChainIndexer:
                 ):
                     number = int(raw["blockNumber"], 16)
                     if number <= last or number > end or raw.get("removed"):
-                        raise ValueError("RPC returned log outside canonical requested range")
+                        raise TransientChainChange("RPC returned log outside canonical requested range")
                     block = s.get(ChainBlock, (deployment_id, number))
                     if raw["blockHash"].lower() != block.hash:
-                        raise ValueError("log belongs to another block hash")
+                        raise TransientChainChange("log belongs to another block hash")
                     position = (raw["blockHash"], raw["transactionHash"], raw["logIndex"])
                     if position in seen:
                         continue
@@ -139,7 +144,7 @@ class ChainIndexer:
                         or receipt["blockHash"].lower() != block.hash
                         or int(receipt["status"], 16) != 1
                     ):
-                        raise ValueError("log lacks canonical successful receipt")
+                        raise TransientChainChange("log lacks canonical successful receipt")
                     decoded = decoder.decode(raw["address"], raw["topics"], raw["data"])
                     if decoder.contract_of(raw["address"]) is None:
                         raise ValueError("RPC returned unregistered contract")
@@ -166,7 +171,7 @@ class ChainIndexer:
                     self.rpc.get_block(end)["hash"].lower()
                     != s.get(ChainBlock, (deployment_id, end)).hash
                 ):
-                    raise ValueError("chain changed before index commit")
+                    raise TransientChainChange("chain changed before index commit")
             if end < d.deployment_block:
                 return {
                     "deploymentId": deployment_id,

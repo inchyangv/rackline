@@ -9,6 +9,10 @@ Four facts are stored separately and never inferred from one another: proof-serv
 | Setting | Purpose |
 | --- | --- |
 | `HASHCREDIT_GPU_DATABASE_URL` (or `GPU_DATABASE_URL`) | PostgreSQL connection; supply through the deployment's secret store |
+| `GPU_ALERT_WEBHOOK_URL` | https incoming webhook (Slack or Discord) for operator alerts from the indexer and the monitor; unset = alerts are logged only |
+| `GPU_ALERT_REPEAT_SECONDS` | minimum interval between repeats of the same alert key (default 900) |
+| `GPU_INDEXER_ALERT_AFTER_SECONDS` | indexer: seconds of consecutive failed syncs before the stall alert (default 120) |
+| `GPU_INDEXER_STALE_ALERT_SECONDS` | monitor: projector-cursor age that raises the indexer-stale alert (default 300, the API's staleness bound) |
 | `GPU_ATTESTCOIN_MANIFEST` | Attestcoin environment manifest, for example `config/attestcoin/cc3-testnet.sepolia.release.json` |
 | `ATTESTCOIN_CLI` | Built SDK CLI (`offchain/attestcoin/dist/src/cli.js`; `/opt/attestcoin/dist/src/cli.js` in the container) |
 | `GPU_ARTIFACT_DIR` | Persistent proof artifact directory |
@@ -37,7 +41,8 @@ python -m hashcredit_prover.gpu.control_monitor --deployment-id DEPLOYMENT_ULID
 
 Each service accepts `--once` for a single pass.
 
-- **Chain indexer.** Keeps a deployment-block cursor, replays pending reorgs, and refuses to rewrite finalized history. `--reconcile` compares debt and LP shares against canonical views at the same block. Every sync replays the read models from the canonical journal, including the receivable and repayment history (`proj_receivables`, `proj_repayments`) that `/v1/receivables` and `/v1/repayments` merge with reviewed ledger imports, and the facility credit status (`proj_facility_credit`: state triggers, recovery schedule, default approval, reserve, impairment, write-off) that `/v1/facilities` exposes as `credit`.
+- **Chain indexer.** Keeps a deployment-block cursor, replays pending reorgs, and refuses to rewrite finalized history. Transient conditions (the chain moved under a chunk, RPC or database unavailable) are retried in-process with exponential backoff (1 s → 60 s) and never touch the cursor; after `GPU_INDEXER_ALERT_AFTER_SECONDS` of consecutive failures an `indexer-stalled` alert is raised and resolved on the next successful sync. A finalized reorg or an event-conservation break is reported as critical and the process exits; `railway.toml` sets `restartPolicyType = "ALWAYS"` so the worker comes back and keeps alerting instead of sitting CRASHED (as it did 2026-09-15 → 09-17). `--reconcile` compares debt and LP shares against canonical views at the same block. Every sync replays the read models from the canonical journal, including the receivable and repayment history (`proj_receivables`, `proj_repayments`) that `/v1/receivables` and `/v1/repayments` merge with reviewed ledger imports, and the facility credit status (`proj_facility_credit`: state triggers, recovery schedule, default approval, reserve, impairment, write-off) that `/v1/facilities` exposes as `credit`.
+- **Control monitor** also acts as the indexer watchdog: every 30 s it reads the projector cursor and raises a critical `indexer-stale` alert when it is missing or older than `GPU_INDEXER_STALE_ALERT_SECONDS` (the API is then answering `EVIDENCE_STALE` and new draws are paused), resolving it once the cursor moves again. It is independent of the indexer process, so a hung indexer is reported even when it never crashes.
 - **Proof worker.** Fetches official proof artifacts, prepares deployment-bound calldata, and, only with a reviewed plan, dispatches transactions. The SDK's cache-wait diagnostics are kept off stdout so the CLI returns one JSON value.
 - **Control monitor.** Records payment-control observations as review cases. Stale proof or partner API availability never defaults a facility or disables repayment.
 

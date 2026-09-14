@@ -14,10 +14,35 @@ from hashcredit_gpu.db.projections_models import (
     ChainDeployment,
     ProjectedFacility,
 )
+from hashcredit_gpu.monitoring.alerts import Alerter
 from hashcredit_gpu.monitoring.service import assess_facility, record_findings
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import DisconnectionError, OperationalError
 from sqlalchemy.orm import Session
+
+
+def indexer_freshness(engine, deployment_id, *, max_age_seconds=300, now=None):
+    """Deployment-level watchdog on the projector cursor (independent of the indexer process itself)."""
+    now = now or datetime.now(UTC)
+    with Session(engine) as s:
+        cursor = s.get(ChainCursor, deployment_id)
+        if cursor is None:
+            return {"state": "MISSING", "ageSeconds": None, "lastBlock": None}
+        age = (now - cursor.updated_at).total_seconds()
+        return {"state": "FRESH" if age <= max_age_seconds else "STALE", "ageSeconds": int(age), "lastBlock": cursor.last_block_number}
+
+
+def watch_indexer(engine, deployment_id, alerter, *, max_age_seconds=300, now=None):
+    """Alert (deduplicated) while the projector cursor is missing or stale; resolve once it moves again."""
+    status = indexer_freshness(engine, deployment_id, max_age_seconds=max_age_seconds, now=now)
+    if status["state"] == "FRESH":
+        alerter.alert("indexer-stale", f"projector cursor fresh again (last block {status['lastBlock']})", resolved=True)
+    elif status["state"] == "MISSING":
+        alerter.alert("indexer-stale", f"no projector cursor for deployment {deployment_id}: the indexer has never synced", severity="critical")
+    else:
+        alerter.alert("indexer-stale", f"projector cursor is {status['ageSeconds']} s old (last block {status['lastBlock']}); "
+                      f"the API reports EVIDENCE_STALE and new draws are paused until the indexer catches up", severity="critical")
+    return status
 
 
 def run_once(engine, deployment_id):
@@ -59,16 +84,23 @@ def main():
     engine = create_engine(
         os.environ.get("HASHCREDIT_GPU_DATABASE_URL") or os.environ["GPU_DATABASE_URL"]
     )
+    alerter = Alerter.from_env("gpu-monitor")
+    max_age = int(os.environ.get("GPU_INDEXER_STALE_ALERT_SECONDS") or 300)
+    log = logging.getLogger(__name__)
+    log.info("monitor alerts %s", "webhook configured" if alerter.configured else "log-only (GPU_ALERT_WEBHOOK_URL unset)")
     try:
         while True:
             try:
-                print({"monitorFindings": run_once(engine, args.deployment_id)}, flush=True)
+                findings = run_once(engine, args.deployment_id)
+                indexer = watch_indexer(engine, args.deployment_id, alerter, max_age_seconds=max_age)
+                print({"monitorFindings": findings, "indexer": indexer}, flush=True)
             except (OperationalError, DisconnectionError) as exc:
-                logging.getLogger(__name__).warning(
-                    "monitor database unavailable (%s)", type(exc).__name__
-                )
+                log.warning("monitor database unavailable (%s)", type(exc).__name__)
                 if args.once:
                     raise
+            except Exception as exc:
+                alerter.alert("monitor-crash", f"control monitor stopped on {type(exc).__name__}: {exc}", severity="critical")
+                raise
             if args.once:
                 return
             time.sleep(30)
