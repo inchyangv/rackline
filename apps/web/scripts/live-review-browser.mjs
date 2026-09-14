@@ -621,8 +621,11 @@ try {
         .locator("strong"),
     ).toHaveText("0 tUSD", { timeout: 120000 });
   } else {
+    // A borrower may hold several facilities; scope the readback to the audited facility panel.
     await expect(
       page
+        .getByRole("heading", { name: `Facility ${facilityId}`, exact: true })
+        .locator("..")
         .getByText("Current chain debt", { exact: true })
         .locator("..")
         .locator("dd"),
