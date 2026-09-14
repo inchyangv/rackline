@@ -216,6 +216,10 @@ write-offs (`ui/earn-vault-nav.png`); the facility panel fits a 400 px viewport.
    state. The facility panel renders a "Why this facility is …" section (summary, installment due / grace,
    default approval, reserve pledged / applied, impairment, loss, and the state timeline with triggers and
    transaction links), explains every draw-block code in words, and tells a borrower in recovery or written off
-   that repayments are recovered for lenders. `live-recovery-ui.mjs` asserts all of it.
+   that repayments are recovered for lenders. `live-recovery-ui.mjs` asserts all of it: rerun against the deployed
+   app on 2026-09-17 15:15 UTC after the deploy (`recovery-ui-explained.json`, 34/34 PASS; screenshot
+   `ui/panel-v9-CLOSED_WITH_LOSS-explained.png`). The projection replayed the full v8/v9 history — onboarding →
+   active → delinquent (installment overdue) → defaulted → recovery → closed with loss — with schedule, default
+   approval, reserve and loss figures identical to the drill evidence.
 5. **Timing envelope confirmed.** Official proofs arrived 8–10 min after each Sepolia block; the 850 s
    reservation left ~3 min for the draws; CC3 consumptions took ~90 s each this evening (20 → ~30 min).
