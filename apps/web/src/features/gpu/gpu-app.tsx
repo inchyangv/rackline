@@ -1486,6 +1486,11 @@ function Activity(context: Context) {
               <Badge>
                 {pretty(item.state)} · revision {item.revision}
               </Badge>
+              <Badge>
+                {item.recordOrigin === "FINALIZED_CHAIN_EVENTS"
+                  ? "Finalized chain events"
+                  : "Reviewed ledger import"}
+              </Badge>
               <span>
                 Unpaid{" "}
                 {exactAmount(
@@ -1589,6 +1594,9 @@ function Activity(context: Context) {
                   ? "Applied · finalized event"
                   : "Application unconfirmed"}
               </Badge>
+              {item.payerAddress && (
+                <span className="gpu-subtle">payer {item.payerAddress}</span>
+              )}
               <ChainLink config={context.config} hash={item.onchainTxHash} />
             </div>
             <dl className="gpu-facts">

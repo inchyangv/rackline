@@ -15,11 +15,16 @@ from ..db.projections_models import (
     ProjectedEntity,
     ProjectedEvidence,
     ProjectedFacility,
+    ProjectedReceivable,
+    ProjectedRepayment,
     ReorgJournal,
 )
 from ..domain.enums import ExecutionProfile, FacilityState
 from ..receivables.service import lock
+from ..reconciliation.chain_reader import pair_repayment_events
 from .decoders import Decoder
+
+CORRECTION_REASON_CANCEL = 3  # ISourceEscrow.CorrectionReason.CANCEL, mirrored by ReceivableBook
 
 
 class FinalizedReorg(RuntimeError):
@@ -206,7 +211,13 @@ class ChainIndexer:
 
 def replay(s: Session, d: ChainDeployment) -> None:
     """Rebuild small pilot read models solely from canonical raw logs, never API commands."""
-    for model in (ProjectedEntity, ProjectedEvidence, ProjectedFacility):
+    for model in (
+        ProjectedEntity,
+        ProjectedEvidence,
+        ProjectedFacility,
+        ProjectedReceivable,
+        ProjectedRepayment,
+    ):
         s.execute(delete(model).where(model.deployment_id == d.deployment_id))
     logs = list(
         s.scalars(
@@ -221,8 +232,19 @@ def replay(s: Session, d: ChainDeployment) -> None:
         if log.contract_name == "AttestcoinRevenueVerifier"
         and log.event_name == "SourceEventVerified"
     }
+    repaid_blocks = {log.block_number for log in logs if log.event_name == "Repaid"}
+    blocks = {
+        b.number: b
+        for b in s.scalars(
+            select(ChainBlock).where(
+                ChainBlock.deployment_id == d.deployment_id, ChainBlock.number.in_(repaid_blocks)
+            )
+        )
+    } if repaid_blocks else {}
     for tier in ("FINALIZED", "PENDING"):
-        facilities, entities = {}, {}
+        facilities, entities, receivables = {}, {}, {}
+        tier_logs = [log for log in logs if tier == "PENDING" or log.tier == tier]
+        _project_repayments(s, d, tier, tier_logs, blocks)
         for log in logs:
             if tier == "FINALIZED" and log.tier != tier:
                 continue
@@ -312,6 +334,8 @@ def replay(s: Session, d: ChainDeployment) -> None:
                         log_index=log.log_index,
                     )
                 )
+            if contract == "ReceivableBook":
+                _project_receivable(s, d, tier, log, receivables)
             kind = {
                 "LendingVaultV2": "VAULT",
                 "ProviderRegistry": "PROVIDER",
@@ -374,3 +398,128 @@ def replay(s: Session, d: ChainDeployment) -> None:
                 }
             entity.last_block = log.block_number
         s.flush()
+
+
+def _project_receivable(s: Session, d: ChainDeployment, tier: str, log: ChainLog, receivables: dict) -> None:
+    """Fold one ReceivableBook event into the receivable read model (event-carried amounts only)."""
+    a, ev = log.decoded, log.event_name
+    key = a.get("receivableId")
+    if not key:
+        return  # CheckpointRecorded / FacilityRegistered / UnattributedPayoutRecorded carry no receivable
+    r = receivables.get(key)
+    if ev == "ReceivableRecognized":
+        if r is not None:
+            raise ValueError("receivable recognised twice in the canonical journal")
+        r = ProjectedReceivable(
+            deployment_id=d.deployment_id,
+            tier=tier,
+            receivable_key=key,
+            account_key=a["accountKey"],
+            obligation_ref=a["obligationRef"],
+            state="OPEN",
+            net=int(a["net"]),
+            paid=0,
+            revision=1,
+            disputed=False,
+            recognition_tx_hash=log.tx_hash,
+            last_tx_hash=log.tx_hash,
+            first_block=log.block_number,
+            last_block=log.block_number,
+            history=[],
+        )
+        receivables[key] = r
+        s.add(r)
+    elif r is None:
+        raise ValueError("receivable event before its recognition in the canonical journal")
+    elif ev == "ReceivableAssigned":
+        r.facility_key = a["facilityId"]
+        r.state = "ASSIGNED"
+        r.revision = int(a["revision"])
+    elif ev == "ReceivableCorrected":
+        r.net += int(a["delta"])
+        r.revision = int(a["revision"])
+        if int(a["reason"]) == CORRECTION_REASON_CANCEL:
+            r.state = "CANCELLED"
+    elif ev == "ReceivablePaid":
+        r.paid += int(a["amount"])
+        r.revision += 1  # the book bumps the revision on an attributed payout (no revision in the log)
+        if r.net - r.paid != int(a["unpaidAfter"]):
+            raise ValueError("receivable payout conservation discrepancy")
+        if r.paid == r.net:
+            r.state = "PAID"
+    elif ev == "ReceivablePayoutCancelled":
+        r.paid -= int(a["amount"])
+        r.revision += 1
+        if r.state == "PAID":
+            r.state = "ASSIGNED" if r.facility_key else "OPEN"
+    elif ev == "ReceivableDisputed":
+        r.disputed = bool(a["disputed"])
+    else:
+        return
+    if r.net < 0 or r.paid < 0 or r.paid > r.net:
+        raise ValueError("receivable amount conservation discrepancy")
+    r.last_tx_hash, r.last_block = log.tx_hash, log.block_number
+    r.history = [
+        *r.history,
+        {
+            "event": ev,
+            "txHash": log.tx_hash,
+            "blockNumber": log.block_number,
+            "logIndex": log.log_index,
+            "args": a,
+        },
+    ]
+
+
+def _project_repayments(s: Session, d: ChainDeployment, tier: str, logs: list, blocks: dict) -> None:
+    """One row per paired manager/router Repaid leg; unpaired Repaid logs are not history."""
+    by_tx: dict[str, list] = {}
+    for log in logs:
+        by_tx.setdefault(log.tx_hash, []).append(log)
+    for log in logs:
+        if log.event_name != "Repaid" or log.contract_name not in {"RepaymentRouter", "CreditFacilityManager"}:
+            continue
+        facility_key = log.decoded.get("facilityId")
+        if not facility_key:
+            continue
+        paired = pair_repayment_events(
+            by_tx[log.tx_hash], d.contracts, log.log_index, facility_key, allow_settlement_ref=True
+        )
+        if paired is None:
+            continue
+        repaid, allocated, vault_receipt = paired
+        allocation, cash, repayment = allocated.decoded, vault_receipt.decoded, repaid.decoded
+        fee, interest, principal = (int(allocation[k]) for k in ("feePaid", "interestPaid", "principalPaid"))
+        received, excess, new_debt = int(repayment["received"]), int(repayment["excess"]), int(repayment["newDebt"])
+        if (
+            fee + interest + principal + excess != received
+            or int(cash["received"]) != received
+            or int(cash["excess"]) != excess
+            or int(allocation["newDebt"]) != new_debt
+        ):
+            raise ValueError("repayment event conservation discrepancy")
+        block = blocks.get(repaid.block_number)
+        if block is None or block.hash != repaid.block_hash:
+            raise ValueError("repayment log is not anchored in the canonical block journal")
+        s.add(
+            ProjectedRepayment(
+                deployment_id=d.deployment_id,
+                tier=tier,
+                tx_hash=repaid.tx_hash,
+                log_index=repaid.log_index,
+                facility_key=facility_key,
+                repaid_contract=repaid.contract_name,
+                payer=repayment["payer"],
+                settlement_ref=repayment.get("settlementRef"),
+                requested=int(repayment["requested"]),
+                received=received,
+                fee_paid=fee,
+                interest_paid=interest,
+                principal_paid=principal,
+                excess=excess,
+                new_debt=new_debt,
+                block_number=repaid.block_number,
+                block_hash=repaid.block_hash,
+                block_timestamp=block.timestamp,
+            )
+        )

@@ -223,6 +223,74 @@ class ProjectedEntity(Base):
     )
 
 
+class ProjectedReceivable(Base):
+    """Receivable read model replayed from ReceivableBook events (GPU-QA-0915: history mirrors were import-only).
+
+    The book only writes after the immutable verifier accepted the source log in the same transaction, so a row
+    here is finalized chain fact — but it carries no proof-request lifecycle; the ledger `receivables` table keeps
+    that when an import exists. Amounts are the event-carried values; `unpaid_after` is checked against them.
+    """
+
+    __tablename__ = "proj_receivables"
+    deployment_id: Mapped[str] = mapped_column(ULID, ForeignKey("chain_deployments.deployment_id", ondelete="RESTRICT"), primary_key=True)
+    tier: Mapped[str] = mapped_column(String(10), primary_key=True)
+    receivable_key: Mapped[str] = mapped_column(HEX32, primary_key=True)  # on-chain bytes32 receivable id
+    account_key: Mapped[str] = mapped_column(HEX32, nullable=False)
+    obligation_ref: Mapped[str] = mapped_column(HEX32, nullable=False)
+    facility_key: Mapped[str | None] = mapped_column(HEX32)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    net: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")
+    paid: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    disputed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    recognition_tx_hash: Mapped[str] = mapped_column(HEX32, nullable=False)
+    last_tx_hash: Mapped[str] = mapped_column(HEX32, nullable=False)
+    first_block: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    last_block: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    history: Mapped[list] = mapped_column(JSONB, nullable=False)  # [{event, txHash, blockNumber, logIndex, args}]
+    __table_args__ = (
+        CheckConstraint(f"receivable_key {HEX32_CHECK} AND account_key {HEX32_CHECK} AND obligation_ref {HEX32_CHECK}", name="ck_proj_receivables_keys"),
+        CheckConstraint(f"recognition_tx_hash {HEX32_CHECK} AND last_tx_hash {HEX32_CHECK}", name="ck_proj_receivables_hashes"),
+        CheckConstraint("state IN ('OPEN','ASSIGNED','PAID','CANCELLED')", name="ck_proj_receivables_state"),
+        CheckConstraint("net >= 0 AND paid >= 0 AND paid <= net AND revision >= 1", name="ck_proj_receivables_amounts"),
+        CheckConstraint(TIER_CHECK, name="ck_proj_receivables_tier"),
+        Index("ix_proj_receivables_account", "deployment_id", "tier", "account_key"),
+        Index("ix_proj_receivables_facility", "deployment_id", "tier", "facility_key"),
+    )
+
+
+class ProjectedRepayment(Base):
+    """One direct repayment leg per Repaid event, paired with its DebtLedger.Allocated and vault receipt."""
+
+    __tablename__ = "proj_repayments"
+    deployment_id: Mapped[str] = mapped_column(ULID, ForeignKey("chain_deployments.deployment_id", ondelete="RESTRICT"), primary_key=True)
+    tier: Mapped[str] = mapped_column(String(10), primary_key=True)
+    tx_hash: Mapped[str] = mapped_column(HEX32, primary_key=True)
+    log_index: Mapped[int] = mapped_column(Integer, primary_key=True)  # the Repaid log
+    facility_key: Mapped[str] = mapped_column(HEX32, nullable=False)
+    repaid_contract: Mapped[str] = mapped_column(String(48), nullable=False)
+    payer: Mapped[str] = mapped_column(String(42), nullable=False)
+    settlement_ref: Mapped[str | None] = mapped_column(HEX32)
+    requested: Mapped[int] = mapped_column(MONEY, nullable=False)
+    received: Mapped[int] = mapped_column(MONEY, nullable=False)
+    fee_paid: Mapped[int] = mapped_column(MONEY, nullable=False)
+    interest_paid: Mapped[int] = mapped_column(MONEY, nullable=False)
+    principal_paid: Mapped[int] = mapped_column(MONEY, nullable=False)
+    excess: Mapped[int] = mapped_column(MONEY, nullable=False)
+    new_debt: Mapped[int] = mapped_column(MONEY, nullable=False)
+    block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    block_hash: Mapped[str] = mapped_column(HEX32, nullable=False)
+    block_timestamp: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    __table_args__ = (
+        CheckConstraint(f"tx_hash {HEX32_CHECK} AND facility_key {HEX32_CHECK} AND block_hash {HEX32_CHECK}", name="ck_proj_repayments_hashes"),
+        CheckConstraint(f"payer {ADDR_CHECK}", name="ck_proj_repayments_payer"),
+        CheckConstraint("repaid_contract IN ('RepaymentRouter','CreditFacilityManager')", name="ck_proj_repayments_contract"),
+        CheckConstraint("requested >= 0 AND received >= 0 AND fee_paid >= 0 AND interest_paid >= 0 AND principal_paid >= 0 AND excess >= 0 AND new_debt >= 0 AND fee_paid + interest_paid + principal_paid + excess = received", name="ck_proj_repayments_amounts"),
+        CheckConstraint(TIER_CHECK, name="ck_proj_repayments_tier"),
+        Index("ix_proj_repayments_facility", "deployment_id", "tier", "facility_key"),
+    )
+
+
 class ProjectionDiscrepancy(Base):
     """Reconciliation findings (projected vs canonical eth_call at the same block); never auto-corrected."""
 

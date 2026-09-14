@@ -20,7 +20,7 @@ from .conftest import _dsn
 
 REPO = Path(__file__).resolve().parents[3]
 DOMAIN_FIXTURE = REPO / "test" / "fixtures" / "gpu" / "domain" / "sample-v1.json"
-HEAD = "0005"  # Durable product API (root-owned migration)
+HEAD = "0006"  # Chain-projected receivable/repayment history (0006) over the durable product API (0005)
 
 
 def _tables(url: str) -> set[str]:
@@ -43,7 +43,7 @@ def test_empty_database_to_head_and_back(fresh_db_url):
     assert len(_tables(fresh_db_url)) == 19 + 20 + 1 + 2  # + GPU-017 provider_account_links, asset_review_flags (0003)
     upgrade(fresh_db_url, "head")
     assert current(fresh_db_url) == HEAD
-    assert len(_tables(fresh_db_url)) == 19 + 20 + 1 + 2 + 9 + 7  # projector + durable API tables
+    assert len(_tables(fresh_db_url)) == 19 + 20 + 1 + 2 + 9 + 7 + 2  # projector + durable API + history projections
     assert schema_diff(fresh_db_url) == [], "ORM metadata and migrated schema drifted"
     downgrade(fresh_db_url, "base")
     assert current(fresh_db_url) is None

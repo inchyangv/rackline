@@ -4,13 +4,15 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from eth_utils import keccak
 from sqlalchemy import create_engine, exists, or_, select, text
 from sqlalchemy.orm import Session
 
 from hashcredit_gpu.db import ledgers as L
 from hashcredit_gpu.db import models as M
 from hashcredit_gpu.db.assets_models import ProviderAccountLink
-from hashcredit_gpu.db.projections_models import ChainBlock, ChainCursor, ChainDeployment, ChainLog, ProjectedEvidence, ProjectedFacility
+from hashcredit_gpu.db.projections_models import (ChainBlock, ChainCursor, ChainDeployment, ChainLog, ProjectedEntity,
+                                                   ProjectedEvidence, ProjectedFacility, ProjectedReceivable, ProjectedRepayment)
 from hashcredit_gpu.db.product_models import OperationReview, FacilityBinding
 from hashcredit_gpu.reconciliation.chain_reader import pair_repayment_events
 
@@ -121,6 +123,128 @@ class ProductRepository:
                 (L.ExceptionCase.entity_table == "proof_requests") & L.ExceptionCase.entity_id.in_(proofs)))
             return q, L.ExceptionCase.exception_id
         raise not_configured("read model is not available")
+
+    HISTORY_RESOURCES = ("receivables", "repayments")
+
+    def history(self, session: Session, resource: str, principal: Principal, staff: bool) -> list[tuple[str, object]]:
+        """Ledger rows plus canonical chain-projected rows that no ledger import covers, in one stable key order.
+
+        Ledger imports keep their proof-request lifecycle and sort first (key "0:<ulid>"); finalized chain rows
+        sort after them (key "1:<bytes32>" / "1:<tx>:<index>"). Scope is the same as every other read: the
+        borrower's own provider accounts and facilities, or staff.
+        """
+        deployment_id = self.settings.deployment_id
+        accounts = list(session.scalars(self.accounts(principal, staff)))
+        account_keys = {"0x" + keccak(text=account).hex(): account for account in accounts}
+        facilities = list(session.scalars(self.facilities(principal, staff)))
+        bindings = {b.onchain_id.lower(): b.facility_id for b in session.scalars(select(FacilityBinding).where(
+            FacilityBinding.deployment_id == deployment_id, FacilityBinding.facility_id.in_(facilities)))} if facilities else {}
+        query, key = self.query(resource, principal, staff)
+        ledger = list(session.scalars(query.order_by(key)))
+        rows: list[tuple[str, object]] = [("0:" + str(getattr(row, key.key)), row) for row in ledger]
+        if resource == "receivables":
+            covered = {("0x" + keccak(text=row.provider_account_id).hex(), row.obligation_ref.lower()) for row in ledger}
+            # A receivable belongs to a provider account; facility bindings never widen that scope.
+            projected = session.scalars(select(ProjectedReceivable).where(
+                ProjectedReceivable.deployment_id == deployment_id, ProjectedReceivable.tier == "FINALIZED",
+                ProjectedReceivable.account_key.in_(list(account_keys))).order_by(ProjectedReceivable.receivable_key)) if account_keys else []
+            for row in projected:
+                if (row.account_key, row.obligation_ref.lower()) in covered:
+                    continue
+                rows.append(("1:" + row.receivable_key, row))
+        else:
+            covered = set()
+            for row in ledger:
+                receipt = session.get(L.CashReceipt, row.cash_receipt_id)
+                if row.onchain_tx_hash and receipt is not None:
+                    covered.add((row.onchain_tx_hash.lower(), receipt.log_index))
+            projected = session.scalars(select(ProjectedRepayment).where(
+                ProjectedRepayment.deployment_id == deployment_id, ProjectedRepayment.tier == "FINALIZED",
+                ProjectedRepayment.facility_key.in_(list(bindings))).order_by(ProjectedRepayment.block_number, ProjectedRepayment.tx_hash, ProjectedRepayment.log_index)) if bindings else []
+            for row in projected:
+                if (row.tx_hash, row.log_index) in covered:
+                    continue
+                rows.append((f"1:{row.block_number:012d}:{row.tx_hash}:{row.log_index:06d}", row))
+        return rows
+
+    def history_ids(self, key: str, row) -> set[str]:
+        """Public identifiers under which one history row may be fetched as an item."""
+        if isinstance(row, ProjectedReceivable):
+            return {row.receivable_key}
+        if isinstance(row, ProjectedRepayment):
+            return {f"{row.tx_hash}:{row.log_index}"}
+        return {key.split(":", 1)[1]}
+
+    def _account_of(self, session: Session, account_key: str, principal: Principal, staff: bool) -> M.ProviderAccount | None:
+        for account in session.scalars(select(M.ProviderAccount).where(M.ProviderAccount.provider_account_id.in_(self.accounts(principal, staff)))):
+            if "0x" + keccak(text=account.provider_account_id).hex() == account_key:
+                return account
+        return None
+
+    def _source_asset(self, session: Session, account: M.ProviderAccount | None, provider: M.Provider | None) -> D.AssetRef:
+        """Source-chain denomination: the provider's admitted token as projected from ProviderRegistry.TokenAdmitted."""
+        if provider is not None:
+            entity = session.get(ProjectedEntity, (self.settings.deployment_id, "FINALIZED", "PROVIDER",
+                                                   "0x" + keccak(text=provider.provider_id).hex()))
+            admitted = (entity.state if entity else {}).get("TokenAdmitted")
+            if admitted and int(admitted["chainId"]) == provider.source_chain_id:
+                return D.AssetRef(chainId=provider.source_chain_id, address=admitted["token"], decimals=int(admitted["decimals"]))
+        if account is not None:
+            ledger = session.scalar(select(L.Receivable).where(L.Receivable.provider_account_id == account.provider_account_id,
+                L.Receivable.execution_profile == self.settings.execution_profile).order_by(L.Receivable.receivable_id))
+            if ledger is not None:
+                return D.AssetRef(chainId=ledger.asset_chain_id, address=ledger.asset_token_address, decimals=ledger.asset_decimals)
+        raise not_configured("source asset denomination is not projected for this provider")
+
+    def _block_time(self, session: Session, number: int) -> datetime:
+        block = session.get(ChainBlock, (self.settings.deployment_id, number))
+        if block is None or block.tier != "FINALIZED":
+            raise not_configured("projected history is not anchored in the finalized block journal")
+        return datetime.fromtimestamp(block.timestamp, timezone.utc)
+
+    def serialize_history(self, session: Session, row, principal: Principal, staff: bool):
+        """Chain-projected receivable/repayment rows; ledger rows go through `serialize`."""
+        deployment_id = self.settings.deployment_id
+        if isinstance(row, ProjectedReceivable):
+            account = self._account_of(session, row.account_key, principal, staff)
+            binding = session.scalar(select(FacilityBinding).where(FacilityBinding.deployment_id == deployment_id,
+                FacilityBinding.onchain_id == row.facility_key)) if row.facility_key else None
+            if account is None:
+                raise not_configured("projected receivable has no reviewed provider account")
+            provider = session.get(M.Provider, account.provider_id)
+            # The recognition consumption proves the log; the book only records after native verification.
+            consumed = session.scalar(select(ProjectedEvidence).where(ProjectedEvidence.deployment_id == deployment_id,
+                ProjectedEvidence.tier == "FINALIZED", ProjectedEvidence.consumption_tx_hash == row.recognition_tx_hash)
+                .order_by(ProjectedEvidence.log_index))
+            canonical = bool(consumed and consumed.verified_in_same_tx and consumed.execution_profile == self.settings.execution_profile)
+            method = consumed.verification_method if consumed else None
+            stages = D.EvidenceStages(earningsProvenance="SIMULATED" if self.settings.execution_profile != "PRODUCTION" else "UNCLASSIFIED",
+                verificationMethod=method, sourceEventId=consumed.source_event_id if consumed else None, nativeCanonical=canonical,
+                nativeStatus="CONSUMED" if canonical and method == "ATTESTCOIN_NATIVE" else None)
+            asset = self._source_asset(session, account, provider)
+            return D.ReceivableDTO(receivableId=row.receivable_key,
+                economicEventId=f"{account.provider_id}/{account.external_account_id}/OBLIGATION_RECOGNIZED/{row.obligation_ref}",
+                providerAccountId=account.provider_account_id,
+                facilityId=binding.facility_id if binding else None, state=row.state, revision=row.revision,
+                gross=money(row.net, asset), net=money(row.net, asset), paidAmount=money(row.paid, asset),
+                unpaidAmount=money(row.net - row.paid, asset), periodFrom=None, periodTo=None, dueAt=None,
+                updatedAt=self._block_time(session, row.last_block), evidence=stages,
+                recordOrigin="FINALIZED_CHAIN_EVENTS", canonicalReceivableId=row.receivable_key)
+        if isinstance(row, ProjectedRepayment):
+            binding = session.scalar(select(FacilityBinding).where(FacilityBinding.deployment_id == deployment_id,
+                FacilityBinding.onchain_id == row.facility_key))
+            facility = session.get(M.Facility, binding.facility_id) if binding else None
+            if facility is None:
+                raise not_configured("projected repayment has no reviewed facility binding")
+            asset = D.AssetRef(chainId=facility.loan_chain_id, address=facility.loan_token_address, decimals=facility.loan_decimals)
+            return D.RepaymentDTO(repaymentAllocationId=f"{row.tx_hash}:{row.log_index}", facilityId=facility.facility_id,
+                cashReceiptId=None, received=money(row.received, asset), feePaid=money(row.fee_paid, asset),
+                interestPaid=money(row.interest_paid, asset), principalPaid=money(row.principal_paid, asset),
+                excess=money(row.excess, asset), recordedNewDebt=money(row.new_debt, asset), onchainTxHash=row.tx_hash,
+                allocatedAt=self._block_time(session, row.block_number), repaymentApplied=True,
+                applicationEvidence="FINALIZED_ROUTER_EVENT" if row.repaid_contract == "RepaymentRouter" else "FINALIZED_MANAGER_EVENT",
+                recordOrigin="FINALIZED_CHAIN_EVENTS", payerAddress=row.payer, settlementRef=row.settlement_ref)
+        return self.serialize(session, row)
 
     def evidence(self, session: Session, row: L.Receivable) -> D.EvidenceStages:
         stages = D.EvidenceStages(earningsProvenance="SIMULATED" if row.execution_profile != "PRODUCTION" else "UNCLASSIFIED")

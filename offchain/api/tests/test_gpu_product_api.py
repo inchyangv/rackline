@@ -264,3 +264,79 @@ print("BTC-free factory and typed OpenAPI OK")
 def test_wrong_chain_profile_fails_closed(profile, chain):
     with pytest.raises(ValueError):
         ProductSettings(execution_profile=profile, chain_id=chain)
+
+
+def _keccak(text):
+    from eth_utils import keccak
+    return "0x" + keccak(text=text).hex()
+
+
+def _seed_history(engine, wallets):
+    """Chain-projected receivables/repayments for borrower 1 (facility 301) plus one for borrower 2's account."""
+    from hashcredit_gpu.db.product_models import FacilityBinding
+    from hashcredit_gpu.db.projections_models import ProjectedEntity, ProjectedEvidence, ProjectedReceivable, ProjectedRepayment
+    facility_key, other_key = "0x" + "31" * 32, "0x" + "32" * 32
+    with Session(engine) as session:
+        session.add(FacilityBinding(deployment_id=DEPLOYMENT, facility_id=uid(301), onchain_id=facility_key, binding_tx_hash="0x" + "01" * 32))
+        session.add(FacilityBinding(deployment_id=DEPLOYMENT, facility_id=uid(302), onchain_id=other_key, binding_tx_hash="0x" + "02" * 32))
+        session.add(ProjectedEntity(deployment_id=DEPLOYMENT, tier="FINALIZED", kind="PROVIDER", entity_key=_keccak("mockdepin-testonly"),
+            state={"TokenAdmitted": {"chainId": "11155111", "token": TOKEN, "decimals": "6"}}, last_block=10))
+        session.add(ProjectedEvidence(deployment_id=DEPLOYMENT, tier="FINALIZED", source_event_id="0x" + "e1" * 32, economic_event_key="0x" + "e2" * 32,
+            consumer_address="0x" + "aa" * 20, meaning="0", manifest_hash="0x" + "ab" * 32, verification_method="ATTESTCOIN_NATIVE",
+            execution_profile="NATIVE_TESTNET", verified_in_same_tx=True, proven_height=7, proven_tx_index=1, proven_log_ordinal=0,
+            consumption_tx_hash="0x" + "c1" * 32, block_number=10, block_hash=BLOCK, log_index=3))
+        # the ledger import of account-1's first obligation is re-keyed to its on-chain ref: that chain row must not be
+        # duplicated, while a new obligation (0x..79) must appear
+        session.get(L.Receivable, uid(410)).obligation_ref = "0x" + "70" * 32
+        for ref in ("0x" + "70" * 32, "0x" + "79" * 32):
+            session.add(ProjectedReceivable(deployment_id=DEPLOYMENT, tier="FINALIZED", receivable_key=_keccak("rcv:" + ref),
+                account_key=_keccak("mockdepin-testonly:account-1"), obligation_ref=ref,
+                facility_key=facility_key, state="ASSIGNED", net=10_000_000, paid=3_000_000, revision=5, disputed=False,
+                recognition_tx_hash="0x" + "c1" * 32, last_tx_hash="0x" + "c2" * 32, first_block=10, last_block=10, history=[]))
+        session.add(ProjectedReceivable(deployment_id=DEPLOYMENT, tier="FINALIZED", receivable_key="0x" + "b2" * 32,
+            account_key=_keccak("mockdepin-testonly:account-2"), obligation_ref="0x" + "7a" * 32, facility_key=other_key,
+            state="OPEN", net=5, paid=0, revision=1, disputed=False, recognition_tx_hash="0x" + "c3" * 32, last_tx_hash="0x" + "c3" * 32,
+            first_block=10, last_block=10, history=[]))
+        session.add(ProjectedRepayment(deployment_id=DEPLOYMENT, tier="FINALIZED", tx_hash="0x" + "d1" * 32, log_index=6, facility_key=facility_key,
+            repaid_contract="RepaymentRouter", payer=wallets[1].address.lower(), settlement_ref="0x" + "ab" * 32, requested=1_000_000,
+            received=1_000_000, fee_paid=0, interest_paid=2, principal_paid=999_998, excess=0, new_debt=2_000_002, block_number=10, block_hash=BLOCK, block_timestamp=1_789_400_000))
+        session.add(ProjectedRepayment(deployment_id=DEPLOYMENT, tier="FINALIZED", tx_hash="0x" + "d2" * 32, log_index=1, facility_key=other_key,
+            repaid_contract="RepaymentRouter", payer=wallets[1].address.lower(), settlement_ref=None, requested=1, received=1, fee_paid=0,
+            interest_paid=0, principal_paid=1, excess=0, new_debt=0, block_number=10, block_hash=BLOCK, block_timestamp=1_789_400_000))
+        session.commit()
+
+
+def test_chain_projected_history_is_listed_scoped_and_not_duplicated(setup):
+    client, engine, wallets, _ = setup
+    _seed_history(engine, wallets)
+    headers = login(client, wallets[0])
+    rows = client.get("/v1/receivables?limit=100", headers=headers).json()["data"]
+    origins = {row["receivableId"]: row["recordOrigin"] for row in rows}
+    assert sorted(origins.values()) == ["FINALIZED_CHAIN_EVENTS", "LEDGER_IMPORT", "LEDGER_IMPORT"]
+    projected = next(row for row in rows if row["recordOrigin"] == "FINALIZED_CHAIN_EVENTS")
+    assert projected["receivableId"] == _keccak("rcv:0x" + "79" * 32) == projected["canonicalReceivableId"]
+    assert projected["facilityId"] == uid(301) and projected["providerAccountId"] == "mockdepin-testonly:account-1"
+    assert projected["unpaidAmount"] == {"amount": "7000000", "asset": {"chainId": 11155111, "address": TOKEN, "decimals": 6}}
+    assert projected["state"] == "ASSIGNED" and projected["revision"] == 5
+    assert projected["evidence"]["nativeStatus"] == "CONSUMED" and projected["evidence"]["nativeCanonical"] is True
+    assert projected["evidence"]["sourceEventId"] == "0x" + "e1" * 32 and projected["evidence"]["proofRequestId"] is None
+    assert "0x" + "b2" * 32 not in origins  # borrower 2's chain receivable is invisible to borrower 1
+    item = client.get(f"/v1/receivables/{projected['receivableId']}", headers=headers)
+    assert item.status_code == 200 and item.json()["data"]["recordOrigin"] == "FINALIZED_CHAIN_EVENTS"
+    assert client.get("/v1/receivables/0x" + "b2" * 32, headers=headers).status_code == 404
+    repayments = client.get("/v1/repayments?limit=100", headers=headers).json()["data"]
+    assert [row["repaymentAllocationId"] for row in repayments] == ["0x" + "d1" * 32 + ":6"]
+    leg = repayments[0]
+    assert leg["facilityId"] == uid(301) and leg["recordOrigin"] == "FINALIZED_CHAIN_EVENTS" and leg["cashReceiptId"] is None
+    assert leg["principalPaid"]["amount"] == "999998" and leg["recordedNewDebt"]["amount"] == "2000002"
+    assert leg["repaymentApplied"] is True and leg["applicationEvidence"] == "FINALIZED_ROUTER_EVENT"
+    assert leg["payerAddress"] == wallets[1].address.lower() and leg["settlementRef"] == "0x" + "ab" * 32
+    assert client.get("/v1/repayments/0x" + "d1" * 32 + ":6", headers=headers).status_code == 200
+    # pagination cursors span both origins
+    first = client.get("/v1/receivables?limit=2", headers=headers).json()
+    rest = client.get("/v1/receivables", params={"limit": 2, "cursor": first["pagination"]["nextCursor"]}, headers=headers).json()
+    assert len(first["data"]) == 2 and [row["recordOrigin"] for row in rest["data"]] == ["FINALIZED_CHAIN_EVENTS"]
+    # staff see everyone's chain history
+    staff = login(client, wallets[2])
+    assert {row["receivableId"] for row in client.get("/v1/receivables?limit=100", headers=staff).json()["data"]} >= {"0x" + "b2" * 32, projected["receivableId"]}
+    assert len(client.get("/v1/repayments?limit=100", headers=staff).json()["data"]) == 2

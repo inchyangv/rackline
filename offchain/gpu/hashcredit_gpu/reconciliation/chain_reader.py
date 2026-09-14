@@ -38,8 +38,11 @@ def _uint(value):
     return result
 
 
-def pair_repayment_events(logs, contract_addresses, target_index, facility_key):
+def pair_repayment_events(logs, contract_addresses, target_index, facility_key, allow_settlement_ref=False):
     """Pair one direct accounting leg; malformed or unsupported evidence fails closed.
+
+    `allow_settlement_ref` admits a router Repaid that carries a caller-supplied settlement reference
+    (third-party `repayFor`); cash reconciliation keeps the default and treats it as unsupported.
 
     Every configured manager/router Repaid is a boundary, including unsupported
     settlement repayments. AllocationApplied is never an alternative cash anchor.
@@ -84,7 +87,8 @@ def pair_repayment_events(logs, contract_addresses, target_index, facility_key):
                and allocated.log_index < event.log_index < next_leg for event in same_tx):
             return None
         a, v, r = allocated.decoded, vault.decoded, repaid.decoded
-        if repaid.contract_name == "RepaymentRouter" and r["settlementRef"].lower() != _ZERO_REF:
+        if (repaid.contract_name == "RepaymentRouter" and not allow_settlement_ref
+                and r["settlementRef"].lower() != _ZERO_REF):
             return None
         amounts = [_uint(a[key]) for key in ("feePaid", "interestPaid", "principalPaid", "excess", "newDebt")]
         received, applied, excess = (_uint(v[key]) for key in ("received", "applied", "excess"))
