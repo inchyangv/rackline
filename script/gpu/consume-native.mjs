@@ -138,7 +138,7 @@ export async function canonicalConsumptionReceipt(destination, evidence, manifes
 
 async function main(args) {
   if (args.includes('--help')) {
-    console.log('node script/gpu/consume-native.mjs [--step recognizeObligation|assignObligation|settle|reserveCheckpoint] [--checkpoint-proof FILE] [--deployment FILE] [--proof-dir DIR] [--out FILE] [--preflight] [--broadcast --approval=user-20260914]')
+    console.log('node script/gpu/consume-native.mjs [--step recognizeObligation|assignObligation|settle|reserveCheckpoint] [--proof FILE] [--checkpoint-proof FILE] [--settle-proof FILE] [--deployment FILE] [--proof-dir DIR] [--out FILE] [--preflight] [--broadcast --approval=user-20260914]')
     return
   }
   const value = (flag, fallback) => args.includes(flag) ? args[args.indexOf(flag) + 1] : fallback
@@ -206,7 +206,9 @@ async function main(args) {
     persist()
   }
   for (const step of selectedSteps) {
-    const artifactPath = step === 'reserveCheckpoint' ? value('--checkpoint-proof', null) : null
+    // A single selected step may read an explicit official proof artifact instead of the proof directory.
+    const artifactPath = value('--proof', null) && chosen === step ? value('--proof', null)
+      : step === 'reserveCheckpoint' ? value('--checkpoint-proof', null) : step === 'settle' ? value('--settle-proof', null) : null
     const artifact = JSON.parse(fs.readFileSync(artifactPath ?? path.join(value('--proof-dir', '.artifacts/native-testnet'), `${step}.proof.json`), 'utf8'))
     if (artifact.status !== 'PROOF_READY' || artifact.nativeAccepted !== false || artifact.manifestHash !== manifest.manifestHash ||
         artifact.executionProfile !== 'NATIVE_TESTNET' || artifact.verificationMethod !== 'ATTESTCOIN_NATIVE') throw new Error(`${step}: bound official proof is not ready`)

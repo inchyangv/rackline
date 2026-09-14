@@ -6,9 +6,12 @@ const manifestPath = 'config/attestcoin/cc3-testnet.sepolia.release.json'
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
 const outputDir = '.artifacts/native-testnet'
 fs.mkdirSync(outputDir, { recursive: true })
-const refresh = process.argv.includes('--refresh')
-const selected = refresh ? [{hash:JSON.parse(fs.readFileSync(`${outputDir}/checkpoint-refresh.json`, 'utf8')).txHash,
-  function:'checkpoint-refresh('}] : source.transactions.filter(t => /^(recognizeObligation|assignObligation|settle|reserveCheckpoint)\(/.test(t.function || ''))
+// `--refresh` (checkpoint-refresh) or `--refresh settle-refresh` proves one later source transition recorded by native_tools.
+const refreshIndex = process.argv.indexOf('--refresh')
+const refresh = refreshIndex >= 0
+  ? (/^[a-z-]+$/.test(process.argv[refreshIndex + 1] || '') ? process.argv[refreshIndex + 1] : 'checkpoint-refresh') : null
+const selected = refresh ? [{hash:JSON.parse(fs.readFileSync(`${outputDir}/${refresh}.json`, 'utf8')).txHash,
+  function:`${refresh}(`}] : source.transactions.filter(t => /^(recognizeObligation|assignObligation|settle|reserveCheckpoint)\(/.test(t.function || ''))
 if (!refresh && selected.length !== 4) throw new Error(`Expected four native source transitions, found ${selected.length}`)
 let pending = false
 for (const transaction of selected) {

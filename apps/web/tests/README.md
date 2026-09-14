@@ -66,3 +66,31 @@ After finalized-event cash reconciliation and an API restart, a new **read-only*
 For safe investigation, `GPU_REVIEW_RESUME_BORROWER_REPAY=1` permits only repayment of the prior 1–1.001 tUSD debt and rejects manager borrow submissions. `GPU_REVIEW_READ_ONLY=1` blocks every transaction submission; borrower mode checks debt 0. Setting `GPU_REVIEW_EXPECT_REPAYMENT_TX` requires a real API `FINALIZED_ROUTER_EVENT` allocation with the expected exact amounts and verifies its activity-screen link. RPC reads use a 12-second timeout and at most three attempts; broadcasts are never automatically retried.
 
 The protected Vercel preview `rackline-ny3lznz3r-elouanics-projects.vercel.app` built successfully from the 106-file frontend allowlist. Owner-authenticated reads confirmed `/`, `/app`, `/demo` and both scoped deep links return the app; API/missing-asset/key paths remain 404, and required JavaScript/CSS return 200 with correct content types. No preview-origin API mutation or wallet transaction was sent, and the production alias was not changed.
+
+## Live persona scenarios against the deployed environment
+
+`scripts/live-scenarios.mjs` runs the persona catalog in
+[`docs/gpu/scenarios/live-user-scenarios.md`](../../../docs/gpu/scenarios/live-user-scenarios.md)
+against the deployed web app, API, and Creditcoin CC3 Testnet. It is opt-in and separate from CI.
+
+```sh
+GPU_REVIEW_WEB_URL=https://rackline.studioliq.com \
+GPU_REVIEW_API_URL=https://api-rackline.studioliq.com \
+GPU_SCENARIO_KEYS=../../keys/gpu-native-testnet.json \
+GPU_SCENARIO_OUT=../../evidence/native-testnet/scenarios-<date>.json \
+node scripts/live-scenarios.mjs
+```
+
+Without further flags every scenario is read-only or API-only: public pages, demo isolation,
+manifest/code-hash binding, unauthenticated access, wrong-chain/bad-signature/nonce-replay
+sign-in, unknown-wallet empty state, LP parity, over-withdraw guards, blocked draws, borrower
+onboarding and connection requests (which create pending-review rows for a fresh disposable
+wallet), foreign proof requests, staff-scope denials, CORS, session lifetime and read metadata.
+`GPU_ALLOW_TESTNET_TRANSACTIONS=1` adds the real LP cycle (delegated to `live-review-browser.mjs`);
+`GPU_SCENARIO_NATIVE_REFRESH=1` with `GPU_SCENARIO_APPROVAL=user-20260914` additionally sends new
+Sepolia source transitions (payout, new obligation, checkpoint) through the official Attestcoin path,
+consumes them on Creditcoin with the keeper key, and verifies on-chain eligibility plus the REPAID
+facility's draw refusal. `GPU_SCENARIO_ONLY=A1,B5` filters by scenario ID and `GPU_SCENARIO_MERGE=1`
+keeps prior records of filtered-out scenarios in the same output file. Screenshots go to ignored
+`node_modules/.cache/playwright/scenarios/`. Output carries public wallet, deployment and
+transaction identifiers only.

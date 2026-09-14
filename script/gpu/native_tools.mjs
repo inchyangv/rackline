@@ -137,6 +137,60 @@ if (command === 'wallets') {
   fs.mkdirSync(directory, {recursive:true})
   fs.writeFileSync(`${directory}/checkpoint-refresh.json`, JSON.stringify({txHash:tx.hash,blockNumber:receipt.blockNumber,protectedUntil:until},null,2)+'\n')
   console.log(JSON.stringify({sourceCheckpoint:tx.hash,block:receipt.blockNumber,protectedUntil:until}))
+} else if (command === 'settle') {
+  // TEST_ONLY source payout by the registered payer. Renews receivable evidence once proven and consumed.
+  if (!args.includes('--broadcast') || !args.includes('--approval=user-20260914')) throw new Error('Explicit testnet broadcast and approval reference required')
+  const environment = JSON.parse(fs.readFileSync('config/attestcoin/cc3-testnet.sepolia.release.json', 'utf8'))
+  const provider = new JsonRpcProvider('https://ethereum-sepolia-rpc.publicnode.com')
+  if (Number((await provider.getNetwork()).chainId) !== 11155111) throw new Error('Source chain mismatch')
+  const signer = deployer.connect(provider)
+  const escrowAddress = environment.source.emitters[0].address
+  const tokenAddress = environment.source.tokens[0].address
+  const source = new Contract(escrowAddress, JSON.parse(fs.readFileSync('test/fixtures/gpu/abi/SourceEscrow.json', 'utf8')), signer)
+  const token = new Contract(tokenAddress, JSON.parse(fs.readFileSync('test/fixtures/gpu/abi/GpuTestToken.json', 'utf8')), signer)
+  const amount = BigInt(args.includes('--amount') ? args[args.indexOf('--amount') + 1] : '1000000')
+  if (amount <= 0n || amount > 1_000_000n) throw new Error('Scenario payouts are limited to 1 source tUSD')
+  const account = id('mockdepin-testonly:native-integration')
+  const obligationRef = id('gpu080-obligation-v2')
+  const settlementId = id(`scenario-settlement-${Date.now()}`)
+  if ((await token.allowance(deployer.address, escrowAddress)) < amount) {
+    const approval = await token.approve(escrowAddress, amount)
+    if ((await approval.wait()).status !== 1) throw new Error('Source approval failed')
+  }
+  const estimate = await source.settle.estimateGas(account, obligationRef, tokenAddress, amount, settlementId)
+  const tx = await source.settle(account, obligationRef, tokenAddress, amount, settlementId, {gasLimit: estimate * 3n / 2n})
+  const receipt = await tx.wait()
+  if (receipt.status !== 1) throw new Error('Source settlement failed')
+  const directory = '.artifacts/native-testnet'
+  fs.mkdirSync(directory, {recursive:true})
+  fs.writeFileSync(`${directory}/settle-refresh.json`, JSON.stringify({txHash:tx.hash,blockNumber:receipt.blockNumber,amount:String(amount)},null,2)+'\n')
+  console.log(JSON.stringify({sourceSettlement:tx.hash,block:receipt.blockNumber,amount:String(amount)}))
+} else if (command === 'obligation') {
+  // TEST_ONLY issuer recognises and assigns a NEW simulated obligation. Consumption creates a receivable with fresh evidence.
+  if (!args.includes('--broadcast') || !args.includes('--approval=user-20260914')) throw new Error('Explicit testnet broadcast and approval reference required')
+  const environment = JSON.parse(fs.readFileSync('config/attestcoin/cc3-testnet.sepolia.release.json', 'utf8'))
+  const provider = new JsonRpcProvider('https://ethereum-sepolia-rpc.publicnode.com')
+  if (Number((await provider.getNetwork()).chainId) !== 11155111) throw new Error('Source chain mismatch')
+  const signer = deployer.connect(provider)
+  const source = new Contract(environment.source.emitters[0].address,
+    JSON.parse(fs.readFileSync('test/fixtures/gpu/abi/SourceEscrow.json', 'utf8')), signer)
+  const amount = BigInt(args.includes('--amount') ? args[args.indexOf('--amount') + 1] : '10000000')
+  if (amount <= 0n || amount > 100_000_000n) throw new Error('Scenario obligations are limited to 100 source tUSD')
+  const account = id('mockdepin-testonly:native-integration')
+  const obligationRef = id(`scenario-obligation-${Date.now()}`)
+  const facilityKey = keccak256(id('gpu080-facility-v2'))
+  const dueAt = (await provider.getBlock('latest')).timestamp + 86400
+  const recognized = await source.recognizeObligation(account, obligationRef, deployer.address, environment.source.tokens[0].address, amount, dueAt)
+  const recognizedReceipt = await recognized.wait()
+  if (recognizedReceipt.status !== 1) throw new Error('Source recognition failed')
+  const assigned = await source.assignObligation(account, obligationRef, facilityKey)
+  const assignedReceipt = await assigned.wait()
+  if (assignedReceipt.status !== 1) throw new Error('Source assignment failed')
+  const directory = '.artifacts/native-testnet'
+  fs.mkdirSync(directory, {recursive:true})
+  fs.writeFileSync(`${directory}/recognize-refresh.json`, JSON.stringify({txHash:recognized.hash,blockNumber:recognizedReceipt.blockNumber,obligationRef,amount:String(amount),dueAt},null,2)+'\n')
+  fs.writeFileSync(`${directory}/assign-refresh.json`, JSON.stringify({txHash:assigned.hash,blockNumber:assignedReceipt.blockNumber,obligationRef,facilityKey},null,2)+'\n')
+  console.log(JSON.stringify({sourceRecognition:recognized.hash,sourceAssignment:assigned.hash,obligationRef,amount:String(amount),dueAt}))
 } else if (command === 'fund-roles' || command === 'setup') {
   if (!args.includes('--broadcast') || !args.includes('--approval=user-20260914')) throw new Error('Explicit testnet broadcast and approval reference required')
   const rpc = 'https://rpc.cc3-testnet.creditcoin.network'

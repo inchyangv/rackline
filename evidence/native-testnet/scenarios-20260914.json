@@ -1,0 +1,1929 @@
+{
+  "schemaVersion": "1.0",
+  "executionProfile": "NATIVE_TESTNET",
+  "scope": "LIVE_USER_SCENARIOS",
+  "webUrl": "https://rackline.studioliq.com",
+  "apiUrl": "https://api-rackline.studioliq.com",
+  "chainId": 102031,
+  "deploymentId": "01K54G0000QN0QHY2GCA10HGXN",
+  "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2",
+  "startedAt": "2026-09-14T09:32:22.435Z",
+  "updatedAt": "2026-09-14T11:08:34.433Z",
+  "runs": [
+    "2026-09-14T09:32:22.435Z",
+    "2026-09-14T10:03:45.855Z",
+    "2026-09-14T10:28:34.715Z",
+    "2026-09-14T10:57:58.596Z"
+  ],
+  "wallets": {
+    "lp": "0xee684316539c3996855AA01415555D7f5Af3Ada6",
+    "borrower": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+    "keeper": "0x0013B177FF9fedB1781769F5F0f01fF9f79dB233"
+  },
+  "partnerRevenue": "SIMULATED",
+  "nativeProofAcceptance": "REFRESHED_CHECKPOINT_CONSUMED",
+  "totals": {
+    "pass": 25,
+    "fail": 0,
+    "skipped": 0
+  },
+  "scenarios": [
+    {
+      "id": "A1",
+      "persona": "visitor",
+      "title": "public pages render at desktop and mobile widths",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "GET / is 200 HTML",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "GET /app is 200 HTML",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "GET /demo is 200 HTML",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "/ fits 1440px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app fits 1440px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app shows Connect wallet at 1440px",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors at 1440px",
+          "ok": true,
+          "detail": []
+        },
+        {
+          "name": "/ fits 390px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app fits 390px without horizontal overflow",
+          "ok": true
+        },
+        {
+          "name": "/app shows Connect wallet at 390px",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors at 390px",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:22.435Z",
+      "finishedAt": "2026-09-14T09:32:27.971Z"
+    },
+    {
+      "id": "A2",
+      "persona": "visitor",
+      "title": "fixture demo makes no API or RPC calls",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "demo renders interactive controls",
+          "ok": true,
+          "detail": {
+            "buttons": 21
+          }
+        },
+        {
+          "name": "no API or RPC origin request from /demo",
+          "ok": true,
+          "detail": []
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {
+        "requestsObserved": []
+      },
+      "startedAt": "2026-09-14T09:32:27.972Z",
+      "finishedAt": "2026-09-14T09:32:28.899Z"
+    },
+    {
+      "id": "A3",
+      "persona": "visitor",
+      "title": "public API binding equals the committed deployment manifest",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/health alive",
+          "ok": true,
+          "detail": {
+            "status": "alive",
+            "service": "rackline-gpu-api",
+            "schemaVersion": "1.0"
+          }
+        },
+        {
+          "name": "/ready ready and FRESH",
+          "ok": true,
+          "detail": {
+            "status": "ready",
+            "freshness": "FRESH",
+            "block": 5485784
+          }
+        },
+        {
+          "name": "/ready deployment matches manifest",
+          "ok": true
+        },
+        {
+          "name": "/v1/config deployment matches manifest",
+          "ok": true
+        },
+        {
+          "name": "config.contracts.vault matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0x864f7ca37a640766d6e0a662c0a356d9b5813e75",
+            "manifest": "0x864f7ca37a640766d6e0a662c0a356d9b5813e75"
+          }
+        },
+        {
+          "name": "config.contracts.manager matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d",
+            "manifest": "0xa5a6c3237d424de0aaa00ed5859fcd7d6011226d"
+          }
+        },
+        {
+          "name": "config.contracts.repaymentRouter matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0xd4dcecfbb505a428e3c99363c23e58bfdb37949b",
+            "manifest": "0xd4dcecfbb505a428e3c99363c23e58bfdb37949b"
+          }
+        },
+        {
+          "name": "config.contracts.ledger matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0xe045da25b405f994802d7b5a32ed4331a3db1ecb",
+            "manifest": "0xe045da25b405f994802d7b5a32ed4331a3db1ecb"
+          }
+        },
+        {
+          "name": "config.contracts.roles matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0x421b075c3713339f57daf4c4564bc991cbeedb20",
+            "manifest": "0x421b075c3713339f57daf4c4564bc991cbeedb20"
+          }
+        },
+        {
+          "name": "config.contracts.asset matches manifest",
+          "ok": true,
+          "detail": {
+            "api": "0x03115387f28660088faa6a9b00aa21cc2ad1ade5",
+            "manifest": "0x03115387f28660088faa6a9b00aa21cc2ad1ade5"
+          }
+        },
+        {
+          "name": "config asset matches manifest",
+          "ok": true
+        },
+        {
+          "name": "LendingVaultV2 on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "CreditFacilityManager on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "RepaymentRouter on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "DebtLedger on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "ReceivableBook on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "EvidenceBook on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "AttestcoinRevenueVerifier on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "GpuTestToken on-chain code hash matches manifest",
+          "ok": true
+        },
+        {
+          "name": "vault asset is the configured test token",
+          "ok": true
+        },
+        {
+          "name": "token is TEST_ONLY",
+          "ok": true
+        },
+        {
+          "name": "ready block is at or behind RPC head",
+          "ok": true,
+          "detail": {
+            "ready": 5485784,
+            "head": 5485790
+          }
+        }
+      ],
+      "evidence": {
+        "rpcHead": 5485790
+      },
+      "startedAt": "2026-09-14T09:32:28.900Z",
+      "finishedAt": "2026-09-14T09:32:32.340Z"
+    },
+    {
+      "id": "A4",
+      "persona": "visitor",
+      "title": "unauthenticated and garbage-token requests are denied",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/me without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/me garbage token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/lp without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/lp garbage token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/facilities without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/facilities garbage token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/operations without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/operations garbage token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/connection-requests without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/connection-requests garbage token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "/v1/proofs without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "/v1/proofs garbage token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "POST /v1/onboarding without token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        },
+        {
+          "name": "unsigned JWT-shaped token \u2192 401",
+          "ok": true,
+          "detail": {
+            "status": 401
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:32.341Z",
+      "finishedAt": "2026-09-14T09:32:35.126Z"
+    },
+    {
+      "id": "B1",
+      "persona": "misuse",
+      "title": "wallet on Ethereum mainnet must switch before sign-in",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "rejected switch shows an error",
+          "ok": true,
+          "detail": {
+            "alertText": "User rejected the network switch."
+          }
+        },
+        {
+          "name": "rejected switch issued no challenge",
+          "ok": true,
+          "detail": [
+            "GET /v1/config"
+          ]
+        },
+        {
+          "name": "no Overview without the correct chain",
+          "ok": true
+        },
+        {
+          "name": "switch was requested",
+          "ok": true
+        },
+        {
+          "name": "accepted switch asks to connect again",
+          "ok": true
+        },
+        {
+          "name": "no challenge before the second connect",
+          "ok": true
+        },
+        {
+          "name": "sign-in succeeds after the switch",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:35.127Z",
+      "finishedAt": "2026-09-14T09:32:39.205Z"
+    },
+    {
+      "id": "B2",
+      "persona": "misuse",
+      "title": "challenge signed by a different key is rejected",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "verify rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:39.206Z",
+      "finishedAt": "2026-09-14T09:32:39.837Z"
+    },
+    {
+      "id": "B3",
+      "persona": "misuse",
+      "title": "nonce replay is rejected",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "first verify succeeds",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "replayed verify rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:39.838Z",
+      "finishedAt": "2026-09-14T09:32:40.477Z"
+    },
+    {
+      "id": "B4",
+      "persona": "misuse",
+      "title": "unknown nonce and mismatched chain are rejected",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "unknown nonce rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        },
+        {
+          "name": "mainnet chainId rejected",
+          "ok": true,
+          "detail": {
+            "status": 401,
+            "code": "UNAUTHENTICATED"
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:40.478Z",
+      "finishedAt": "2026-09-14T09:32:41.157Z"
+    },
+    {
+      "id": "B5",
+      "persona": "unknown-wallet",
+      "title": "first sign-in shows an empty, honest state",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/me roles empty and no borrower",
+          "ok": true,
+          "detail": {
+            "wallet": "0x2D7470cC43F1bED50Fa55D299fC23E75Deff8bDC",
+            "borrowerId": null,
+            "roles": []
+          }
+        },
+        {
+          "name": "borrow view asks to register a profile",
+          "ok": true
+        },
+        {
+          "name": "vault position is 0 tUSD",
+          "ok": true,
+          "detail": {
+            "position": "0 tUSD"
+          }
+        },
+        {
+          "name": "withdraw disabled with zero shares",
+          "ok": true
+        },
+        {
+          "name": "operations scope denied for unknown wallet",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "fits 1440px",
+          "ok": true
+        },
+        {
+          "name": "fits 390px",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T09:32:41.168Z",
+      "finishedAt": "2026-09-14T09:33:46.059Z"
+    },
+    {
+      "id": "C1",
+      "persona": "lp",
+      "title": "read-only LP position parity between chain, API and UI",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/lp 200 for this deployment",
+          "ok": true
+        },
+        {
+          "name": "API shares equal chain shares",
+          "ok": true,
+          "detail": {
+            "chain": {
+              "shares": "0",
+              "walletBalance": "10000000000",
+              "nav": "1000000002",
+              "totalShares": "1000000000000"
+            },
+            "api": {
+              "shares": "0",
+              "walletBalance": "10000000000",
+              "nav": "1000000002",
+              "totalShares": "1000000000000"
+            }
+          }
+        },
+        {
+          "name": "API wallet balance equals chain balance",
+          "ok": true
+        },
+        {
+          "name": "API NAV equals chain NAV",
+          "ok": true
+        },
+        {
+          "name": "API total shares equal chain supply",
+          "ok": true
+        },
+        {
+          "name": "UI position equals API share assets",
+          "ok": true,
+          "detail": {
+            "position": "0 tUSD",
+            "shareAssets": "0"
+          }
+        },
+        {
+          "name": "prior withdrawal history is visible in the API",
+          "ok": true,
+          "detail": {
+            "rows": 2
+          }
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {
+        "chain": {
+          "shares": "0",
+          "walletBalance": "10000000000",
+          "nav": "1000000002",
+          "totalShares": "1000000000000"
+        },
+        "api": {
+          "shares": "0",
+          "walletBalance": "10000000000",
+          "nav": "1000000002",
+          "totalShares": "1000000000000"
+        }
+      },
+      "startedAt": "2026-09-14T09:33:46.060Z",
+      "finishedAt": "2026-09-14T09:33:51.357Z"
+    },
+    {
+      "id": "C3",
+      "persona": "lp",
+      "title": "over-withdraw is blocked in the UI and by the contract",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Withdraw button disabled",
+          "ok": true
+        },
+        {
+          "name": "Join withdrawal queue disabled",
+          "ok": true
+        },
+        {
+          "name": "static withdraw of 1 share reverts with zero balance",
+          "ok": true,
+          "detail": "execution reverted (unknown custom error)"
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "revert": "execution reverted (unknown custom error)"
+      },
+      "startedAt": "2026-09-14T09:33:51.358Z",
+      "finishedAt": "2026-09-14T09:33:54.918Z"
+    },
+    {
+      "id": "C2",
+      "persona": "lp",
+      "title": "full liquidity cycle with real testnet transactions",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "live LP browser flow passed",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "tail": "22c4962b258d5\"},{\"action\":\"processWithdrawals\",\"hash\":\"0x17715bb9850384e0d51e9f5ba2b30c72754c55e194c561e6572d2debddc9d05a\"},{\"action\":\"claimWithdrawal\",\"hash\":\"0x0e2a4d3596f081dc9db11784dd3228bfa1e8a9a66101aa494b6490d8c37d1538\"},{\"action\":\"withdraw\",\"hash\":\"0x580dac3744cf02033111462702b2724309fb2a1aa9c0d6e6f217a87b8e9a470a\"}],\"nativeProofAcceptance\":\"NOT_ASSERTED\",\"partnerRevenue\":\"NOT_ASSERTED\"}\n"
+          }
+        },
+        {
+          "name": "approve receipt 0xcb5cbc61\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485798
+          }
+        },
+        {
+          "name": "deposit receipt 0xeaf67a5d\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485800
+          }
+        },
+        {
+          "name": "requestWithdrawal receipt 0x68968e27\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485807
+          }
+        },
+        {
+          "name": "cancelWithdrawal receipt 0xeafa872d\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485814
+          }
+        },
+        {
+          "name": "requestWithdrawal receipt 0x7281044f\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485822
+          }
+        },
+        {
+          "name": "processWithdrawals receipt 0x17715bb9\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485830
+          }
+        },
+        {
+          "name": "claimWithdrawal receipt 0x0e2a4d35\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485837
+          }
+        },
+        {
+          "name": "withdraw receipt 0x580dac37\u2026 succeeded",
+          "ok": true,
+          "detail": {
+            "block": 5485845
+          }
+        },
+        {
+          "name": "cycle includes approve",
+          "ok": true
+        },
+        {
+          "name": "cycle includes deposit",
+          "ok": true
+        },
+        {
+          "name": "cycle includes requestWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "cycle includes cancelWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "cycle includes requestWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "cycle includes processWithdrawals",
+          "ok": true
+        },
+        {
+          "name": "cycle includes claimWithdrawal",
+          "ok": true
+        },
+        {
+          "name": "final LP shares are zero",
+          "ok": true,
+          "detail": {
+            "shares": "0"
+          }
+        },
+        {
+          "name": "token balance returned within 1 tUSD of the start (queue fill may round)",
+          "ok": true,
+          "detail": {
+            "transactions": [
+              {
+                "action": "approve",
+                "hash": "0xcb5cbc61f6cd1e4e2d5470e899c87b4a50253715c34ede8c68497b6e4e3bd1a8",
+                "block": 5485798,
+                "status": 1
+              },
+              {
+                "action": "deposit",
+                "hash": "0xeaf67a5d2cc4ffba3efd448857cff254433204a808d0f7cde63c88474d81cc8d",
+                "block": 5485800,
+                "status": 1
+              },
+              {
+                "action": "requestWithdrawal",
+                "hash": "0x68968e2768111accaba7f1cac22c7f927ed6beeefa1cc8f9118dcd62ba22c67b",
+                "block": 5485807,
+                "status": 1
+              },
+              {
+                "action": "cancelWithdrawal",
+                "hash": "0xeafa872d93a0f32875188905e0d699bee54f00289315611a4521f92a88959e6a",
+                "block": 5485814,
+                "status": 1
+              },
+              {
+                "action": "requestWithdrawal",
+                "hash": "0x7281044f7f333cf164ed0478149d1576fa04508af3404b345ca22c4962b258d5",
+                "block": 5485822,
+                "status": 1
+              },
+              {
+                "action": "processWithdrawals",
+                "hash": "0x17715bb9850384e0d51e9f5ba2b30c72754c55e194c561e6572d2debddc9d05a",
+                "block": 5485830,
+                "status": 1
+              },
+              {
+                "action": "claimWithdrawal",
+                "hash": "0x0e2a4d3596f081dc9db11784dd3228bfa1e8a9a66101aa494b6490d8c37d1538",
+                "block": 5485837,
+                "status": 1
+              },
+              {
+                "action": "withdraw",
+                "hash": "0x580dac3744cf02033111462702b2724309fb2a1aa9c0d6e6f217a87b8e9a470a",
+                "block": 5485845,
+                "status": 1
+              }
+            ],
+            "walletBalanceBefore": "10000000000",
+            "walletBalanceAfter": "9999999999",
+            "gasSpentWei": "1648613500000000"
+          }
+        }
+      ],
+      "evidence": {
+        "transactions": [
+          {
+            "action": "approve",
+            "hash": "0xcb5cbc61f6cd1e4e2d5470e899c87b4a50253715c34ede8c68497b6e4e3bd1a8",
+            "block": 5485798,
+            "status": 1
+          },
+          {
+            "action": "deposit",
+            "hash": "0xeaf67a5d2cc4ffba3efd448857cff254433204a808d0f7cde63c88474d81cc8d",
+            "block": 5485800,
+            "status": 1
+          },
+          {
+            "action": "requestWithdrawal",
+            "hash": "0x68968e2768111accaba7f1cac22c7f927ed6beeefa1cc8f9118dcd62ba22c67b",
+            "block": 5485807,
+            "status": 1
+          },
+          {
+            "action": "cancelWithdrawal",
+            "hash": "0xeafa872d93a0f32875188905e0d699bee54f00289315611a4521f92a88959e6a",
+            "block": 5485814,
+            "status": 1
+          },
+          {
+            "action": "requestWithdrawal",
+            "hash": "0x7281044f7f333cf164ed0478149d1576fa04508af3404b345ca22c4962b258d5",
+            "block": 5485822,
+            "status": 1
+          },
+          {
+            "action": "processWithdrawals",
+            "hash": "0x17715bb9850384e0d51e9f5ba2b30c72754c55e194c561e6572d2debddc9d05a",
+            "block": 5485830,
+            "status": 1
+          },
+          {
+            "action": "claimWithdrawal",
+            "hash": "0x0e2a4d3596f081dc9db11784dd3228bfa1e8a9a66101aa494b6490d8c37d1538",
+            "block": 5485837,
+            "status": 1
+          },
+          {
+            "action": "withdraw",
+            "hash": "0x580dac3744cf02033111462702b2724309fb2a1aa9c0d6e6f217a87b8e9a470a",
+            "block": 5485845,
+            "status": 1
+          }
+        ],
+        "walletBalanceBefore": "10000000000",
+        "walletBalanceAfter": "9999999999",
+        "gasSpentWei": "1648613500000000"
+      },
+      "startedAt": "2026-09-14T09:33:54.918Z",
+      "finishedAt": "2026-09-14T09:47:42.240Z"
+    },
+    {
+      "id": "D1",
+      "persona": "borrower",
+      "title": "read-only facility history and finalized repayment evidence",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "read-only borrower audit passed (debt 0, Repaid allocation, activity link)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "tail": "\":\"borrower\",\"resumedCancelledRequest\":null,\"resumedPendingRequest\":null,\"resumedBorrowerRepay\":false,\"expectedRepaymentHash\":\"0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78\",\"chainId\":102031,\"deploymentId\":\"01K54G0000QN0QHY2GCA10HGXN\",\"wallet\":\"0x42E46697957766fFad9b7f55621260f99Dc204B7\",\"transactions\":[],\"nativeProofAcceptance\":\"NOT_ASSERTED\",\"partnerRevenue\":\"NOT_ASSERTED\"}\n"
+          }
+        },
+        {
+          "name": "read-only run submitted nothing",
+          "ok": true
+        },
+        {
+          "name": "facility is REPAID with zero recorded principal",
+          "ok": true,
+          "detail": {
+            "state": "REPAID"
+          }
+        },
+        {
+          "name": "prior Repaid log: principal 1 tUSD, interest 2 units, no excess, debt 0",
+          "ok": true,
+          "detail": {
+            "facilityId": "0x2515ccdafaee79ff908308cb41af249ed0b88f5baf64d187d28d7eebf0e76bc3",
+            "payer": "0x42E46697957766fFad9b7f55621260f99Dc204B7",
+            "settlementRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "requested": "1000002",
+            "received": "1000002",
+            "applied": "1000002",
+            "feePaid": "0",
+            "interestPaid": "2",
+            "principalPaid": "1000000",
+            "excess": "0",
+            "newDebt": "0"
+          }
+        }
+      ],
+      "evidence": {
+        "priorRepaymentHash": "0xa369810d67bb59695e7acc87d4163d1a1257876d6fba28635ee154dd1bc2fe78"
+      },
+      "startedAt": "2026-09-14T09:47:42.242Z",
+      "finishedAt": "2026-09-14T09:47:52.789Z"
+    },
+    {
+      "id": "D2",
+      "persona": "borrower",
+      "title": "draw is blocked while source protection is expired; repayment path stays honest",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "transaction-context 200",
+          "ok": true,
+          "detail": {
+            "status": 200
+          }
+        },
+        {
+          "name": "API reports NO_ELIGIBLE_DRAW with zero availableDraw",
+          "ok": true,
+          "detail": {
+            "availableDraw": "0",
+            "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+            "debt": "0"
+          }
+        },
+        {
+          "name": "chain eligibleUnpaid is zero",
+          "ok": true
+        },
+        {
+          "name": "debt is zero",
+          "ok": true
+        },
+        {
+          "name": "static borrow reverts on chain",
+          "ok": true,
+          "detail": "execution reverted (unknown custom error)"
+        },
+        {
+          "name": "UI shows the blocked reason",
+          "ok": true
+        },
+        {
+          "name": "Borrow button disabled",
+          "ok": true
+        },
+        {
+          "name": "Repay directly disabled with zero debt",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "chainEligibility": {
+          "eligible": "0",
+          "evidenceValidUntil": "0",
+          "checkpointAge": "0",
+          "at": 1789379265
+        },
+        "api": {
+          "availableDraw": "0",
+          "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+          "debt": "0"
+        },
+        "borrowRevert": "execution reverted (unknown custom error)"
+      },
+      "startedAt": "2026-09-14T09:47:52.790Z",
+      "finishedAt": "2026-09-14T09:47:58.461Z"
+    },
+    {
+      "id": "D3",
+      "persona": "operator",
+      "title": "new source transitions (payout, new obligation) are proven and consumed without touching debt or cash",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Sepolia payout (1 source tUSD) mined by the registered payer",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "name": "Sepolia recognition + assignment of a new obligation mined by the issuer",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "name": "official Attestcoin proofs became PROOF_READY for all three source transitions",
+          "ok": true
+        },
+        {
+          "name": "settle consumed on Creditcoin and audited as proof-only (0 debt/vault mutations)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "recognizeObligation consumed on Creditcoin and audited as proof-only (0 debt/vault mutations)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "assignObligation consumed on Creditcoin and audited as proof-only (0 debt/vault mutations)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "original receivable paid increased by the measured payout",
+          "ok": true,
+          "detail": {
+            "paid": "27000000",
+            "evidenceValidUntil": "1789378395",
+            "revision": "5"
+          }
+        },
+        {
+          "name": "a payout does not renew evidence validity (contract semantics)",
+          "ok": true
+        },
+        {
+          "name": "new receivable is ASSIGNED to the facility with fresh evidence validity",
+          "ok": true,
+          "detail": {
+            "net": "10000000",
+            "paid": "0",
+            "state": "2",
+            "evidenceValidUntil": "1789404060",
+            "facilityId": "0x2515ccdafaee79ff908308cb41af249ed0b88f5baf64d187d28d7eebf0e76bc3"
+          }
+        },
+        {
+          "name": "source transitions created no destination debt",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "before": {
+          "receivables": 1,
+          "paid": "26000000",
+          "evidenceValidUntil": "1789378395",
+          "revision": "4"
+        },
+        "source": {
+          "payout": {
+            "sourceSettlement": "0x06f26351f1eb5e80348e6e657b0e41f47d0278453b901a69fcb4e83666173d43",
+            "block": 11702313,
+            "amount": "1000000"
+          },
+          "obligation": {
+            "sourceRecognition": "0x92133b4501b1134f4485edbfadbfec0c4d39b3f9f4a188b0fa7157eef5258222",
+            "sourceAssignment": "0x00a0fed57e54f4606e2213685c17dee5dc7e316f3b784ef00dd5b865dee72a6f",
+            "obligationRef": "0x42ada7239082ebe22e4cd4545137dd94254d18373d6f928705936e670e12bad2",
+            "amount": "10000000",
+            "dueAt": 1789468140
+          }
+        },
+        "proofs": {
+          "settle": {
+            "height": "11702313",
+            "txHash": "0x06f26351f1eb5e80348e6e657b0e41f47d0278453b901a69fcb4e83666173d43"
+          },
+          "recognizeObligation": {
+            "height": "11702314",
+            "txHash": "0x92133b4501b1134f4485edbfadbfec0c4d39b3f9f4a188b0fa7157eef5258222"
+          },
+          "assignObligation": {
+            "height": "11702315",
+            "txHash": "0x00a0fed57e54f4606e2213685c17dee5dc7e316f3b784ef00dd5b865dee72a6f"
+          }
+        },
+        "consumptions": [
+          {
+            "step": "settle",
+            "sourceTxHash": "0x06f26351f1eb5e80348e6e657b0e41f47d0278453b901a69fcb4e83666173d43",
+            "destinationTxHash": "0xcbf3313880a1b1fe4871338e54719f94d507377336bc3e89034d249a4af12186",
+            "destinationBlock": 5486052,
+            "status": "NATIVE_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5486051,
+                "afterBlock": 5486052,
+                "blockHash": "0x5039353834576182be280dab1053c750b1d161af48efca01eab075f5324b5169",
+                "cashBefore": "1000000003",
+                "cashAfter": "1000000003",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          },
+          {
+            "step": "recognizeObligation",
+            "sourceTxHash": "0x92133b4501b1134f4485edbfadbfec0c4d39b3f9f4a188b0fa7157eef5258222",
+            "destinationTxHash": "0x3fb0e5816d7d9f23fea8a6304e8f982d3d802ed4ab4789236eb886da9430f0f2",
+            "destinationBlock": 5486058,
+            "status": "NATIVE_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5486057,
+                "afterBlock": 5486058,
+                "blockHash": "0x8ab976c6e8433c1f58dfc9e4f2c5b1624129d8f49fd4661191cdd5272f68fe11",
+                "cashBefore": "1000000003",
+                "cashAfter": "1000000003",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          },
+          {
+            "step": "assignObligation",
+            "sourceTxHash": "0x00a0fed57e54f4606e2213685c17dee5dc7e316f3b784ef00dd5b865dee72a6f",
+            "destinationTxHash": "0x40d4a77628ac61ebf1243280b6dbdf0af33fe478e6c75b2e3c1c801e63a56b3d",
+            "destinationBlock": 5486064,
+            "status": "NATIVE_CONSUMED",
+            "financialAudit": {
+              "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+              "debtMutationEvents": 0,
+              "vaultMutationEvents": 0,
+              "vaultAssetTransfers": 0,
+              "cash": {
+                "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+                "beforeBlock": 5486063,
+                "afterBlock": 5486064,
+                "blockHash": "0x44bd6f9db44d196bc13adbee6fb91e51d5a9b44a04e1d56cd5f029e344a654fb",
+                "cashBefore": "1000000003",
+                "cashAfter": "1000000003",
+                "externalTransactionCashDelta": "0",
+                "proofTransactionCashDelta": "0",
+                "externalTransfers": []
+              }
+            }
+          }
+        ],
+        "after": {
+          "receivables": 2,
+          "original": {
+            "paid": "27000000",
+            "evidenceValidUntil": "1789378395",
+            "revision": "5"
+          },
+          "newReceivable": {
+            "net": "10000000",
+            "paid": "0",
+            "state": "2",
+            "evidenceValidUntil": "1789404060",
+            "facilityId": "0x2515ccdafaee79ff908308cb41af249ed0b88f5baf64d187d28d7eebf0e76bc3"
+          }
+        },
+        "destinationStats": {
+          "eventsConsumed": "7",
+          "openAmount": "83000000",
+          "paidCumulative": "27000000"
+        }
+      },
+      "startedAt": "2026-09-14T10:28:34.736Z",
+      "finishedAt": "2026-09-14T10:42:34.483Z"
+    },
+    {
+      "id": "D3b",
+      "persona": "operator",
+      "title": "native checkpoint refresh makes receivables eligible on chain",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "Sepolia reserveCheckpoint mined",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "stderr": ""
+          }
+        },
+        {
+          "name": "official Attestcoin proof became PROOF_READY inside the window",
+          "ok": true
+        },
+        {
+          "name": "checkpoint consumed on Creditcoin and audited as proof-only (0 debt/vault mutations)",
+          "ok": true,
+          "detail": {
+            "code": 0,
+            "status": "NATIVE_CONSUMED",
+            "stderr": ""
+          }
+        },
+        {
+          "name": "consumed checkpoint reconciles with consumed events (revision == eventsConsumed)",
+          "ok": true,
+          "detail": {
+            "seq": "7",
+            "latestRevision": "7",
+            "observedAt": "1789383492",
+            "protectedUntil": "1789384318"
+          }
+        },
+        {
+          "name": "on-chain eligibleUnpaid > 0 while the checkpoint is fresh",
+          "ok": true,
+          "detail": {
+            "block": 5486171,
+            "at": 1789384080,
+            "eligibleUnpaid": "10000000",
+            "evidenceValidUntil": "1789384318",
+            "checkpointAge": "588",
+            "checkpoint": {
+              "seq": "7",
+              "latestRevision": "7",
+              "observedAt": "1789383492",
+              "protectedUntil": "1789384318"
+            }
+          }
+        },
+        {
+          "name": "API canonical block includes the consumption",
+          "ok": true,
+          "detail": {
+            "canonicalBlock": 5486166,
+            "availableDraw": "0",
+            "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+            "debt": "0"
+          }
+        }
+      ],
+      "evidence": {
+        "destinationStats": {
+          "eventsConsumed": "7",
+          "openAmount": "83000000",
+          "paidCumulative": "27000000"
+        },
+        "source": {
+          "sourceCheckpoint": "0x5631af3e72d93722b02a35ae70d89529969c7b2e88e0699c20e5f66fb7f18ded",
+          "block": 11702455,
+          "protectedUntil": 1789384318,
+          "observedAt": 1789383492
+        },
+        "proof": {
+          "status": "PROOF_READY",
+          "height": "11702455",
+          "txHash": "0x5631af3e72d93722b02a35ae70d89529969c7b2e88e0699c20e5f66fb7f18ded",
+          "manifestHash": "sha256:27f290dd50b0f4a773269fb1cdc64fb5ec648c0acf64cfc2fbe0cc4a6c5976b2"
+        },
+        "consumption": {
+          "step": "reserveCheckpoint",
+          "sourceTxHash": "0x5631af3e72d93722b02a35ae70d89529969c7b2e88e0699c20e5f66fb7f18ded",
+          "destinationTxHash": "0xd3e0afe343241e83d95914d62bbe3a6b5059fdd6228af7fd89f706fc26ffb854",
+          "destinationBlock": 5486166,
+          "status": "NATIVE_CONSUMED",
+          "financialAudit": {
+            "method": "CANONICAL_TRANSACTION_RECEIPT_EVENTS",
+            "debtMutationEvents": 0,
+            "vaultMutationEvents": 0,
+            "vaultAssetTransfers": 0,
+            "cash": {
+              "method": "PINNED_BLOCK_TOKEN_TRANSFER_RECONCILIATION",
+              "beforeBlock": 5486165,
+              "afterBlock": 5486166,
+              "blockHash": "0x2f2e0e5c59a8959b451e5514777a68444a1a528e4674854e55d4717eb8556404",
+              "cashBefore": "1000000003",
+              "cashAfter": "1000000003",
+              "externalTransactionCashDelta": "0",
+              "proofTransactionCashDelta": "0",
+              "externalTransfers": []
+            }
+          }
+        },
+        "chain": {
+          "block": 5486171,
+          "at": 1789384080,
+          "eligibleUnpaid": "10000000",
+          "evidenceValidUntil": "1789384318",
+          "checkpointAge": "588",
+          "checkpoint": {
+            "seq": "7",
+            "latestRevision": "7",
+            "observedAt": "1789383492",
+            "protectedUntil": "1789384318"
+          }
+        },
+        "api": {
+          "canonicalBlock": 5486166,
+          "availableDraw": "0",
+          "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+          "debt": "0"
+        }
+      },
+      "startedAt": "2026-09-14T10:57:58.618Z",
+      "finishedAt": "2026-09-14T11:08:27.944Z"
+    },
+    {
+      "id": "D4",
+      "persona": "borrower",
+      "title": "a REPAID facility cannot draw again even with fresh evidence and a fresh checkpoint",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "facility is REPAID (terminal: only RELEASED follows)",
+          "ok": true,
+          "detail": "REPAID"
+        },
+        {
+          "name": "eligible receivables exist on chain",
+          "ok": true,
+          "detail": {
+            "eligibleReceivables": "10000000",
+            "receivableLimit": "5000000",
+            "availableDraw": "0",
+            "evidenceValidUntil": "1789384318",
+            "checkpointAge": "603"
+          }
+        },
+        {
+          "name": "availableDraw is 0 despite eligible receivables",
+          "ok": true
+        },
+        {
+          "name": "static borrow reverts",
+          "ok": true,
+          "detail": "FacilityNotActive"
+        },
+        {
+          "name": "API reports REPAID and blocks the draw",
+          "ok": true,
+          "detail": {
+            "state": "REPAID",
+            "availableDraw": "0",
+            "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+            "debt": "0"
+          }
+        },
+        {
+          "name": "UI Borrow disabled",
+          "ok": true
+        },
+        {
+          "name": "UI Repay disabled with zero debt",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "chain": {
+          "block": 5486172,
+          "at": 1789384095,
+          "facilityState": "REPAID",
+          "managerEvaluation": {
+            "eligibleReceivables": "10000000",
+            "receivableLimit": "5000000",
+            "availableDraw": "0",
+            "evidenceValidUntil": "1789384318",
+            "checkpointAge": "603"
+          },
+          "exposureEvaluation": {
+            "eligibleReceivables": "10000000",
+            "availableDraw": "0"
+          },
+          "controlObservation": {
+            "lastObservedAt": "1789358955",
+            "ageSeconds": 25140,
+            "maxAge": 900
+          }
+        },
+        "borrowRevert": "FacilityNotActive",
+        "api": {
+          "state": "REPAID",
+          "availableDraw": "0",
+          "drawBlockedReason": "NO_ELIGIBLE_DRAW",
+          "debt": "0"
+        }
+      },
+      "startedAt": "2026-09-14T11:08:27.946Z",
+      "finishedAt": "2026-09-14T11:08:34.379Z"
+    },
+    {
+      "id": "E1",
+      "persona": "unknown-wallet",
+      "title": "borrower onboarding through the app is persisted and idempotent",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "UI confirms pending review",
+          "ok": true
+        },
+        {
+          "name": "exactly one onboarding POST",
+          "ok": true,
+          "detail": [
+            "GET /v1/config",
+            "POST /gpu/auth/challenge",
+            "POST /gpu/auth/verify",
+            "GET /v1/lp",
+            "GET /v1/providers",
+            "POST /v1/onboarding",
+            "GET /v1/providers"
+          ]
+        },
+        {
+          "name": "/v1/me shows borrower role after reconnect",
+          "ok": true,
+          "detail": {
+            "wallet": "0x2D7470cC43F1bED50Fa55D299fC23E75Deff8bDC",
+            "borrowerId": "01M2FNR2HWKPY9D5B2189H6J3C",
+            "roles": [
+              "borrower"
+            ]
+          }
+        },
+        {
+          "name": "already-linked wallet returns the same borrower (201)",
+          "ok": true,
+          "detail": {
+            "status": 201
+          }
+        },
+        {
+          "name": "identical replay returns the identical response",
+          "ok": true,
+          "detail": {
+            "data": {
+              "state": "PENDING_REVIEW",
+              "borrowerId": "01M2FNR2HWKPY9D5B2189H6J3C",
+              "refreshSession": true
+            },
+            "schemaVersion": "1.0",
+            "financialAuthorization": false
+          }
+        },
+        {
+          "name": "same key with a different payload \u2192 409 IDEMPOTENCY_CONFLICT",
+          "ok": true,
+          "detail": {
+            "status": 409,
+            "code": "IDEMPOTENCY_CONFLICT"
+          }
+        },
+        {
+          "name": "stale pre-onboarding token remains usable for reads only until expiry",
+          "ok": true
+        },
+        {
+          "name": "no localStorage token persistence",
+          "ok": true
+        },
+        {
+          "name": "no uncaught page errors",
+          "ok": true,
+          "detail": []
+        }
+      ],
+      "evidence": {
+        "borrowerId": "01M2FNR2HWKPY9D5B2189H6J3C"
+      },
+      "startedAt": "2026-09-14T10:00:01.026Z",
+      "finishedAt": "2026-09-14T10:00:06.729Z"
+    },
+    {
+      "id": "E2",
+      "persona": "new-borrower",
+      "title": "provider connection request is persisted across reload",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "UI confirms the request",
+          "ok": true
+        },
+        {
+          "name": "request listed as PENDING_REVIEW",
+          "ok": true,
+          "detail": {
+            "applicationId": "01M2FNR8TXGK16677ESK3HNW2X",
+            "providerId": "mockdepin-testonly",
+            "externalAccountId": "scenario-e2-1789380010468",
+            "state": "PENDING_REVIEW",
+            "createdAt": "2026-09-14T10:00:10.839569+00:00"
+          }
+        },
+        {
+          "name": "request visible after reload as pending review",
+          "ok": true
+        },
+        {
+          "name": "duplicate account request returns the same application",
+          "ok": true,
+          "detail": {
+            "status": 202,
+            "id": "01M2FNR8TXGK16677ESK3HNW2X"
+          }
+        },
+        {
+          "name": "credentialConfigured stays false",
+          "ok": true
+        },
+        {
+          "name": "no wallet transaction was requested",
+          "ok": true
+        },
+        {
+          "name": "fits 1440px",
+          "ok": true
+        },
+        {
+          "name": "fits 390px",
+          "ok": true
+        }
+      ],
+      "evidence": {
+        "applicationId": "01M2FNR8TXGK16677ESK3HNW2X"
+      },
+      "startedAt": "2026-09-14T10:00:06.730Z",
+      "finishedAt": "2026-09-14T10:00:14.490Z"
+    },
+    {
+      "id": "E3",
+      "persona": "new-borrower",
+      "title": "proof request for a foreign provider account is refused",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "foreign provider account \u2192 404",
+          "ok": true,
+          "detail": {
+            "status": 404,
+            "code": "NOT_FOUND"
+          }
+        },
+        {
+          "name": "no proof request recorded for this wallet",
+          "ok": true,
+          "detail": {
+            "count": 0
+          }
+        },
+        {
+          "name": "another borrower's facility is not readable",
+          "ok": true,
+          "detail": {
+            "status": 404
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T10:00:14.491Z",
+      "finishedAt": "2026-09-14T10:00:15.713Z"
+    },
+    {
+      "id": "F1",
+      "persona": "lp-and-borrower",
+      "title": "staff scopes are denied to customer wallets",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "lp /v1/operations \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "lp /v1/recoveries \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "lp operations action \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "borrower /v1/operations \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "borrower /v1/recoveries \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "borrower operations action \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "LP cannot read the borrower's facility",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "LP cannot read the borrower's transaction context",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T10:00:15.714Z",
+      "finishedAt": "2026-09-14T10:00:18.761Z"
+    },
+    {
+      "id": "F2",
+      "persona": "keeper-underwriter-treasury",
+      "title": "staff roles are not inferred from deployment keys",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "keeper wallet has no API roles",
+          "ok": true,
+          "detail": {
+            "roles": []
+          }
+        },
+        {
+          "name": "keeper /v1/operations \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "underwriter wallet has no API roles",
+          "ok": true,
+          "detail": {
+            "roles": []
+          }
+        },
+        {
+          "name": "underwriter /v1/operations \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        },
+        {
+          "name": "treasury wallet has no API roles",
+          "ok": true,
+          "detail": {
+            "roles": []
+          }
+        },
+        {
+          "name": "treasury /v1/operations \u2192 403",
+          "ok": true,
+          "detail": {
+            "status": 403
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T10:00:18.762Z",
+      "finishedAt": "2026-09-14T10:00:20.744Z"
+    },
+    {
+      "id": "G1",
+      "persona": "any",
+      "title": "CORS echoes only the allowed origin",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "allowed origin echoed",
+          "ok": true,
+          "detail": {
+            "header": "https://rackline.studioliq.com"
+          }
+        },
+        {
+          "name": "foreign origin not echoed",
+          "ok": true,
+          "detail": {
+            "header": null
+          }
+        },
+        {
+          "name": "foreign preflight not allowed",
+          "ok": true,
+          "detail": {
+            "status": 400
+          }
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T10:00:20.746Z",
+      "finishedAt": "2026-09-14T10:00:21.353Z"
+    },
+    {
+      "id": "G2",
+      "persona": "any",
+      "title": "session lifetime is bounded",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "session lifetime \u2264 1 hour",
+          "ok": true,
+          "detail": {
+            "lifetime": 900
+          }
+        }
+      ],
+      "evidence": {
+        "lifetimeSeconds": 900
+      },
+      "startedAt": "2026-09-14T10:00:21.356Z",
+      "finishedAt": "2026-09-14T10:00:21.799Z"
+    },
+    {
+      "id": "G3",
+      "persona": "any",
+      "title": "authenticated reads carry consistent deployment metadata",
+      "status": "PASS",
+      "checks": [
+        {
+          "name": "/v1/facilities bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/facilities never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/receivables bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/receivables never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/settlements bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/settlements never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/repayments bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/repayments never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/connections bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/connections never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/control-agreements bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/control-agreements never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/lp bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/lp never claims financial authorization",
+          "ok": true
+        },
+        {
+          "name": "/v1/providers bound to this deployment and fresh",
+          "ok": true,
+          "detail": {
+            "status": 200,
+            "block": 5485894,
+            "head": 5485900,
+            "freshness": "FRESH"
+          }
+        },
+        {
+          "name": "/v1/providers never claims financial authorization",
+          "ok": true
+        }
+      ],
+      "evidence": {},
+      "startedAt": "2026-09-14T10:00:21.800Z",
+      "finishedAt": "2026-09-14T10:00:25.218Z"
+    }
+  ],
+  "history": {
+    "note": "Earlier attempts today are kept for honesty; their on-chain effects are real and were audited proof-only.",
+    "checkpointOnlyRefreshes": [
+      {
+        "run": "2026-09-14T09:32:22Z",
+        "sepoliaCheckpoint": "0x7c2c67a36c8284d033dba3ec308a818df140048aa7dedcda504f7b8b99d8294d",
+        "creditcoinConsumption": "0xfa4b0f7e13bd39893aa4d372994195809b38004e8fab7983797309eacd2fc665",
+        "block": 5485888,
+        "outcome": "consumed and audited; eligibleUnpaid stayed 0 because receivable evidence had expired at 09:33 UTC"
+      },
+      {
+        "run": "2026-09-14T10:03:45Z",
+        "payoutConsumption": "0xb855cfca56571eab29b5ce140e49bfae699cb11b8496107744aa5dcebf325c9c",
+        "creditcoinConsumption": "0x19196fbd3003edce439c4008dd74a6ea2932354092a699dbcd6c1e57aa2d6e8c",
+        "block": 5486100,
+        "outcome": "payout consumed (paid 25\u219226 source tUSD) but a payout never renews evidence validity; checkpoint consumed, eligibleUnpaid stayed 0"
+      }
+    ]
+  }
+}
