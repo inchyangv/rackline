@@ -546,6 +546,8 @@ await scenario("N3", "misuse", "a consumed source log cannot be consumed twice (
 let checkpointA = null;
 await scenario("N4", "keeper", "checkpoint A: reserve → official proof → control observations → consumption makes persona receivables eligible", async (t) => {
   requireTransactions(t);
+  // An earlier (aborted) reservation may still protect the account; a reservation inside the window reverts.
+  while ((await sepolia.getBlock("latest")).timestamp < Number(await escrow.protectedUntil(accountKey)) + 5) await sleep(15000);
   const stats = await book.accountStats(providerId, accountKey);
   const checkpoint = await sim(["checkpoint", "--name", tag("qa-checkpoint-a")]);
   checkpointA = checkpoint;
@@ -786,9 +788,7 @@ await scenario("K8", "borrower", "browser regression on a fresh facility: checkp
   if (!f.apiId) t.skip("browser facility not registered in the API");
   const snapshot = await facilitySnapshot(f);
   if (snapshot.state !== "ACTIVE") t.skip(`facility is ${snapshot.state}`);
-  if (checkpointA) {
-    while ((await sepolia.getBlock("latest")).timestamp < checkpointA.protectedUntil + 5) await sleep(15000);
-  }
+  while ((await sepolia.getBlock("latest")).timestamp < Number(await escrow.protectedUntil(accountKey)) + 5) await sleep(15000);
   const stats = await book.accountStats(providerId, accountKey);
   const checkpoint = await sim(["checkpoint", "--name", tag("qa-checkpoint-b")]);
   t.evidence.source = checkpoint;

@@ -261,8 +261,17 @@ async function main(args) {
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main(process.argv.slice(2)).catch(error => {
     // RPC exceptions can carry credential URLs or request contexts. Never print those, keys, or complete errors.
+    // A custom revert is decoded against the app ABIs so an operator sees the named refusal, not a selector.
+    const data = error.data ?? error.info?.error?.data
+    let revert = null
+    if (typeof data === 'string' && data.length >= 10) {
+      for (const name of ['ReceivableBook', 'EvidenceBook', 'AttestcoinRevenueVerifier', 'AccountRegistry']) {
+        try { const parsed = new Interface(abi(name)).parseError(data); if (parsed) { revert = `${name}.${parsed.name}(${parsed.args.map(String).join(', ')})`; break } } catch { /* next */ }
+      }
+      revert ??= `selector ${data.slice(0, 10)}`
+    }
     console.error(JSON.stringify({ status: 'FAILED', code: error.code ?? 'NATIVE_CONSUME_FAILED',
-      reason: error.shortMessage ?? (error.code ? 'Native preflight/transaction failed' : error.message) }))
+      reason: error.shortMessage ?? (error.code ? 'Native preflight/transaction failed' : error.message), ...(revert ? { revert } : {}) }))
     process.exitCode = 1
   })
 }
