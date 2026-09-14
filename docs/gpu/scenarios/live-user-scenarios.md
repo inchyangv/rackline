@@ -44,6 +44,8 @@ TEST_ONLY simulated source (`partnerRevenue=SIMULATED`).
 | D3 | Operator | New source transitions are proven and consumed | Sepolia `settle` (1 source tUSD by the registered payer) plus `recognizeObligation` + `assignObligation` of a new 10 tUSD obligation → official proofs → Creditcoin consumption; original `paid` +1 (a payout never renews evidence validity), a new ASSIGNED receivable with fresh validity, proof-only receipts, destination debt still 0 | yes (3 Sepolia + 3 CC3) |
 | D3b | Operator | Native checkpoint refresh through the official Attestcoin path | Sepolia `reserveCheckpoint` → official proof → Creditcoin consumption; proof-only receipt (0 debt/vault mutations); consumed revision equals consumed events; on-chain `eligibleUnpaid > 0` while the checkpoint is fresh; API canonical block passes the consumption | yes (Sepolia + CC3) |
 | D4 | Borrower | Re-draw on a REPAID facility | Facility state REPAID is terminal (`isTransitionAllowed(REPAID, ACTIVE) = false`); eligible receivables exist yet `availableDraw = 0`; static `borrow` reverts; API reports REPAID + blocked; UI Borrow/Repay disabled; no wallet transaction | no |
+| D5 | Operator | Open an additional facility | `OpenGpuFacility.s.sol` (11 CC3 txs: agreement, book registration, `openFacility`, binding, enrolment, observation, review transitions, underwriter authorization anchor, ACTIVE); imported into the API DB with `bootstrap_native --facility-name`; a new 20 tUSD Sepolia obligation assigned to it is proven and consumed | yes (11 CC3 + 2 Sepolia + 2 CC3) |
+| D6 | Borrower | Real draw and repayment on the new facility | control observation refreshed → checkpoint proven and consumed → browser borrow 1 tUSD → repay with 1.001 cap; `Repaid` log principal 1, excess 0; debt 0 on chain and in the API | yes (Sepolia + 2 CC3 + 3 wallet) |
 | E1 | Unknown wallet | Borrower onboarding via the app | `POST /v1/onboarding` 201; identical replay returns the same borrower; different payload with the same key → 409; `/v1/me` shows borrower role after reconnect | no |
 | E2 | New borrower | Provider connection request | `POST /v1/connections` 202 PENDING_REVIEW; visible after reload; duplicate account returns the same application | no |
 | E3 | New borrower | Proof request for a foreign provider account | 404, and `/v1/proofs` stays empty | no |
@@ -53,26 +55,12 @@ TEST_ONLY simulated source (`partnerRevenue=SIMULATED`).
 | G2 | Any | Session lifetime | `expiresAt − now ≤ 3600 s` | no |
 | G3 | Any | Read metadata consistency | every authenticated read carries the deployment id / manifest hash; canonical block is within 60 blocks of the RPC head | no |
 
-Order matters: D2 runs before D3/D3b (they restore on-chain eligibility) and D4 runs after D3b
-while the checkpoint is still fresh, so the REPAID gate is observed with live evidence rather than
-stale evidence. D1 covers the completed real borrow → repay cycle of 2026-09-14 (read-only).
+### Ordering and gates
 
-The deployed TEST_ONLY facility `5DCNY1D03WP51EAK4V024YB60F` has completed its single lifecycle:
-`CreditFacilityManager` moves a facility to `REPAID` when debt reaches zero and allows only
-`REPAID → RELEASED`. A second live draw therefore needs a newly opened and approved facility
-(on-chain `SetupGpuFacility` for a new facility id plus API bootstrap), which this suite does not
-perform. The control observation (`ControlRegistry.lastObservedAt`) is also older than
-`controlObservationMaxAge` (15 minutes) and would need a fresh operator observation before any draw.
-
-Two independent freshness gates control eligibility, and both were exercised on 2026-09-14:
-`ReceivableBook.eligibleUnpaid` requires the receivable's `evidenceValidUntil` (six hours after
-its last consumed source event) to be in the future **and** a consumed checkpoint younger than
-`checkpointMaxAge` (15 minutes) whose revision/paid totals reconcile with the consumed events.
-The first checkpoint-only refresh of the day was consumed and audited but left `eligibleUnpaid=0`
-because the receivable evidence had expired at 09:33 UTC. Only recognition, assignment and
-correction events refresh `evidenceValidUntil`; a payout does not. D3 therefore recognises and
-assigns a new obligation before D3b refreshes the checkpoint.
-`GPU_SCENARIO_MERGE=1` lets a partial rerun (`GPU_SCENARIO_ONLY=D3,D3b,D4`) keep earlier records.
+- D2 runs before D3/D3b (they restore on-chain eligibility); D4 runs after D3b while the checkpoint is still fresh, so the REPAID gate is observed with live evidence. D1 is a read-only view of the completed borrow → repay cycle of 2026-09-14.
+- `REPAID` is terminal. `CreditFacilityManager` moves a facility to `REPAID` when debt reaches zero and allows only `REPAID → RELEASED`. A second live draw needs a newly opened and approved facility (`SetupGpuFacility` for a new facility ID plus API bootstrap), which this suite does not perform. The control observation (`ControlRegistry.lastObservedAt`) is also older than `controlObservationMaxAge` (15 minutes) and would need a fresh operator observation before any draw.
+- Two independent freshness gates control eligibility, and both were exercised: `ReceivableBook.eligibleUnpaid` requires the receivable's `evidenceValidUntil` (six hours after its last consumed recognition, assignment, or correction event; a payout does not refresh it) to be in the future, **and** a consumed checkpoint younger than `checkpointMaxAge` (15 minutes) whose revision and paid totals reconcile with consumed events. The first checkpoint-only refresh of the day was consumed and audited but left `eligibleUnpaid=0` because receivable evidence had expired at 09:33 UTC; D3 therefore recognises and assigns a new obligation before D3b refreshes the checkpoint.
+- `GPU_SCENARIO_MERGE=1` lets a partial rerun (`GPU_SCENARIO_ONLY=D3,D3b,D4`) keep earlier records.
 
 ## Execution record — 2026-09-14
 

@@ -1,8 +1,7 @@
 # Permissions, control agreements, and state transitions
 
-This document complements `docs/gpu/domain-model.md` and defines who may act,
-how those actions are authenticated, and which state
-transitions are legal. Nothing here grants a partner-side right.
+This document complements `docs/gpu/domain-model.md`. It defines who may act, how those actions are
+authenticated, and which state transitions are legal. Nothing here grants a partner-side right.
 
 ## 1. Actors
 
