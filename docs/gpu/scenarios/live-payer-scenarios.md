@@ -4,7 +4,8 @@ Companion to [`live-user-scenarios.md`](live-user-scenarios.md). That catalog co
 (visitor, LP, borrower, operator, attacker). This one covers the counterparties we do not control — the
 DePIN networks that pay a GPU operator — and the credit operations that only make sense once such payers exist:
 partial payments, adjustments, chargebacks, cancelled invoices, overdue invoices, freezes, delinquency, third-party
-repayment.
+repayment — and, on a facility sacrificed for the purpose, non-payment: default, recovery reserve, impairment and
+write-off.
 
 Runner: `apps/web/scripts/live-payer-scenarios.mjs`. Source-side tooling: `script/gpu/payer_sim.mjs`.
 Persona registry: `config/gpu/scenarios/payer-personas.json`. Evidence: `evidence/native-testnet/qa-<date>/`.
@@ -36,8 +37,8 @@ audited on its own.
 ## Scenario matrix
 
 Facilities: `gpu080-facility-v5` (SIM-AETHIR), `gpu080-facility-v6` (SIM-GPUNET), `gpu080-facility-v7` (browser
-regression). All three were opened with `native_tools.mjs open-facility` (11 Creditcoin transactions each) and
-imported into the API with `bootstrap_native --facility-name`.
+regression), `gpu080-facility-v8` (recovery drill, sacrificed). All were opened with `native_tools.mjs open-facility`
+(11 Creditcoin transactions each) and imported into the API with `bootstrap_native --facility-name`.
 
 | ID | Persona | Scenario | Expected result | Real tx |
 | --- | --- | --- | --- | --- |
@@ -64,6 +65,13 @@ imported into the API with `bootstrap_native --facility-name`.
 | K7 | Borrower | Full repayment | v5 and v6 `repayExact` with cap → debt 0, excess 0 → REPAID; redraw reverts; NAV not lower; API debt 0; `/v1/repayments` lists the txs | CC3 ×4 |
 | K8 | Borrower (browser) | UI regression on v7 | checkpoint B → proof → observation → consumption; eligible 10 / draw 5; browser borrow 1 → repay 1.001 cap; Repaid principal 1, excess 0; REPAID | Sepolia ×1, CC3 ×2, wallet ×3 |
 | K9 | LP | Read parity | `/v1/lp` shares/NAV equal chain; no borrower-owned residue | no |
+| R0 | Operator | Recovery-drill facility | v8 ACTIVE for the borrower wallet; manager and vault bound to `RecoveryManager`; drill wallets hold UNDERWRITER / GUARDIAN / SERVICER / TREASURY; API lists it; no debt, no receivables | no |
+| R1 | SIM-AETHIR | Epoch-5 financing basis | epoch-5 (12 tUSD) recognised and assigned to v8; official proofs; both consumed proof-only; one ASSIGNED receivable | Sepolia ×2, CC3 ×2 |
+| R2 | Borrower | Checkpoint C and draw | reserve → proof → observation v8 → consumption; eligible 12 / draw 6; Borrowed 4; API principal 4, availableDraw 2 | Sepolia ×1, CC3 ×3 |
+| R3 | SIM-AETHIR | Paid after financing | payer settles epoch-5 in full → proof → consumption; receivable PAID; eligible 0, availableDraw 0; legal debt still 4 tUSD (a source payout never reduces destination debt); API `NO_ELIGIBLE_DRAW` with debt 4 | Sepolia ×1, CC3 ×1 |
+| R4 | Underwriter / guardian / servicer | Default | `setSchedule` (due +90 s, grace 60 s) → `markDelinquent` → `NotDue` inside grace → `declareDefault` without approval `NotApproved` → servicer dispute → `DisputeOpen` → dispute cleared → servicer key `NotRole` → `approveDefault` → `declareDefault` → DEFAULTED (API); accrual frozen (30 days ahead = same debt); draw refused; repay path open | CC3 ×6 |
+| R5 | Servicer / third party | Recovery reserve | `beginRecovery` → RECOVERY (API); LP wallet pledges 1 tUSD (`fundReserve`); borrower cannot take the reserve (`NotReserveOwner`); `returnReserve` refused (`OutstandingDebt`); `applyReserve` → router `Repaid` with payer = RecoveryManager; debt −1 exactly; API debt equal | CC3 ×4 |
+| R6 | Underwriter / treasury | Impairment and write-off | impair above exposure refused; impair remaining 3.000013 → NAV −3.000013 (API equal); loss-id reuse refused; write-off without approval refused; underwriter key refused (`NotRole`); `approveWriteOff` → treasury `writeOff` → `LossApplied(writeOff)`; CLOSED_WITH_LOSS (API); impairment released, NAV unchanged by the write-off; ledger still carries the legal debt; draw refused | CC3 ×3 |
 
 ### Ordering and gates
 
@@ -74,21 +82,25 @@ imported into the API with `bootstrap_native --facility-name`.
 - Eligibility needs a consumed checkpoint (< 15 min old, `latestRevision == eventsConsumed`), receivable
   evidence within its validity window, and a control observation < 15 min old — N4/K8 refresh all three.
 - Official proofs for Sepolia transactions take ~8–10 min; the 850 s reservation leaves 2–4 minutes for draws.
+- R-scenarios run on their own facility after K8 (they need a free source account for checkpoint C and the
+  epoch-5 payout) and leave it CLOSED_WITH_LOSS; the vault keeps the written-off facility on its books.
 
-## Execution record — 2026-09-14 16:12 → 17:40 UTC (2026-09-15 KST)
+## Execution record — 2026-09-14 16:12 → 17:40 UTC and 2026-09-15 01:40 → 02:31 UTC
 
 Evidence: [`evidence/native-testnet/qa-20260915/payer-personas.json`](../../../evidence/native-testnet/qa-20260915/payer-personas.json)
-(this suite, 23 scenarios) and [`regression.json`](../../../evidence/native-testnet/qa-20260915/regression.json)
+(this suite, 30 scenarios) and [`regression.json`](../../../evidence/native-testnet/qa-20260915/regression.json)
 (the user-scenario catalog, 27 scenarios, run the same evening).
 
 | Suite | PASS | FAIL | SKIPPED | Note |
 | --- | --- | --- | --- | --- |
 | Payer personas + credit operations (P/N/K) | 22 | 1 | 0 | K2 and K3 each had one harness check amended after the run (recorded in the evidence under `amendment`; every product check passed). K7 fails on a real gap, see findings. |
+| Non-payment drill (R0–R6, facility v8) | 7 | 0 | 0 | R4 had one harness check amended (static `repayExact` without an allowance, same pattern as K3; R5 then repaid through the router for real). Every product check passed. |
 | User scenarios (A–G) | 23 | 0 | 4 | D3/D3b/D5/D6 skipped as superseded by this suite (same paths, fresh facilities). C2 needed a rerun after a transient API connection reset (harness poll hardened). D4 rerun on facility v4 inside checkpoint A's window. |
 
 Real transactions: 29 Sepolia (6 persona setup, 20 persona transitions, 1 unattributed deposit, 2 checkpoints)
 and 91 Creditcoin (33 facility opening, 22 consumptions, 3 control observations, 20 credit operations, 13 LP
-including the aborted first C2 attempt and its cleanup withdrawal). All with faucet tokens; `partnerRevenue=SIMULATED`.
+including the aborted first C2 attempt and its cleanup withdrawal) on 2026-09-14, plus 4 Sepolia and 24
+Creditcoin for the non-payment drill on 2026-09-15. All with faucet tokens; `partnerRevenue=SIMULATED`.
 
 ### Persona source transitions and their consumptions
 
@@ -124,6 +136,30 @@ reverts on chain.
 | final `repayExact` | v5, v6 | `0x641fd6d3…`, `0x5df47dc4…` | debt 0, excess 0, REPAID; NAV 1000.000020 → 1000.000021 |
 | browser borrow 1 / approve / repay 1.001 cap | v7 | `0x7bda729a…`, `0xd06377aa…`, `0x29cccafa…` | Repaid principal 1, excess 0; net cost 0; REPAID |
 
+### Non-payment drill (facility v8, 2026-09-15 01:40 → 02:31 UTC)
+
+Facility `gpu080-facility-v8` (API `5KG50B0YW3NSBS91ZZH14YJH92`, opened with approval nonce 7, 11 Creditcoin
+transactions) was financed and then deliberately not repaid. Real transactions: 4 Sepolia, 24 Creditcoin.
+
+| Step | Transaction | Result |
+| --- | --- | --- |
+| epoch-5 recognise + assign (Sepolia 11706740–41) | `0x618e1a20…`, `0xb31ab7ca…` → consumed `0xdd90e670…`, `0x7b81b205…` | one ASSIGNED 12 tUSD receivable, payer SIM-AETHIR |
+| checkpoint C (Sepolia 11706802) → observation → consumption | `0x8c41e47a…` → `0xeaa098ee…` (block 5489744) | eligible 12 tUSD, availableDraw 6 |
+| borrow 4 tUSD | `0xc4bca806…` (block 5489750) | debt 4; API principal 4, availableDraw 2 |
+| epoch-5 paid in full by the payer (Sepolia 11706866) → consumption | `0xe0dca832…` → `0xc3aab248…` (block 5489796) | receivable PAID; eligible 0; debt 4.000009 unchanged; API `NO_ELIGIBLE_DRAW` |
+| schedule → `markDelinquent` | `0xf398b160…` → `0x9e77145d…` (block 5489810) | DELINQUENT; `NotDue` inside the 60 s grace |
+| dispute opened / cleared | `0xa43f5de2…` / `0x19500bbf…` | `approveDefault` refused `DisputeOpen` while open |
+| `approveDefault` → `declareDefault` | `0x28e05018…` → `0x546919ae…` (block 5489820) | DEFAULTED; accrual frozen at 4.000013 (30 days ahead identical); API DEFAULTED |
+| `beginRecovery` | `0xc313f319…` (block 5489827) | RECOVERY (API) |
+| `fundReserve` 1 tUSD (LP wallet) → `applyReserve` | `0x00d77eb5…` → `0x2b9153d8…` (block 5489832) | `Repaid` payer = RecoveryManager, interest 13 + principal 999,987; debt 3.000013 (API equal) |
+| `impair` 3.000013 | `0x7059a9fa…` | vault NAV 1000.000034 → 997.000021; `/v1/lp` equal |
+| `approveWriteOff` → `writeOff` (treasury) | `0x7686b0e3…` → `0xd2608048…` (block 5489848) | `LossApplied(writeOff=true, 3.000013)`; CLOSED_WITH_LOSS (API); impairment released, NAV unchanged; ledger legal debt 3.000013 remains |
+
+Negative paths exercised on the way: `NotApproved` (declare before approval; write-off before approval; reused
+loss id), `DisputeOpen`, `NotRole` (servicer approving a default; underwriter executing a write-off),
+`NotReserveOwner`, `OutstandingDebt`, `ImpairmentExceedsExposure`, `FacilityNotActive` (draw while DEFAULTED and
+after the write-off).
+
 ### Findings
 
 1. **API history mirrors are import-only (product gap, medium).** `/v1/receivables` and `/v1/repayments` show
@@ -139,5 +175,13 @@ reverts on chain.
 3. **Harness: window-relative read-backs.** Post-draw eligibility (K2) and static `repayExact` without an
    allowance (K3) produced misleading failures; both checks were made state-aware. Recorded as amendments, not
    hidden.
-4. **Timing envelope confirmed.** Official proofs arrived 8–10 min after each Sepolia block; the 850 s
+4. **Non-payment path holds end to end (product, confirmed).** The one scenario the product exists for — the
+   network paid the operator directly and the operator did not repay — behaves as designed on chain and in the
+   API: the paid receivable drops out of the borrowing base immediately, the debt is untouched by the source
+   payout, the default needs an underwriter approval that a servicer dispute can block, accrual freezes at
+   default, a third-party reserve is applied through the ordinary router (`Repaid.payer` = RecoveryManager),
+   impairment hits LP NAV before the write-off, and the write-off closes the facility without forgiving the legal
+   debt. Residual: the borrower UI was not driven through DEFAULTED / RECOVERY / CLOSED_WITH_LOSS (API projection
+   verified only), and the TEST_ONLY vault now permanently carries one written-off facility (NAV 997.000021).
+5. **Timing envelope confirmed.** Official proofs arrived 8–10 min after each Sepolia block; the 850 s
    reservation left ~3 min for the draws; CC3 consumptions took ~90 s each this evening (20 → ~30 min).
