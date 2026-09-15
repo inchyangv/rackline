@@ -93,7 +93,7 @@ Evidence: [`evidence/native-testnet/qa-20260915/payer-personas.json`](../../../e
 
 | Suite | PASS | FAIL | SKIPPED | Note |
 | --- | --- | --- | --- | --- |
-| Payer personas + credit operations (P/N/K) | 22 | 1 | 0 | K2 and K3 each had one harness check amended after the run (recorded in the evidence under `amendment`; every product check passed). K7 fails on a real gap, see findings. |
+| Payer personas + credit operations (P/N/K) | 23 | 0 | 0 | K2 and K3 each had one harness check amended after the run (recorded in the evidence under `amendment`; every product check passed). K7 failed on a real gap (finding 1), was fixed in `263821f` and re-run to PASS on 2026-09-15 (all five finalized Repaid legs of v5/v6 mirrored by the API). |
 | Non-payment drill (R0–R6, facility v8) | 7 | 0 | 0 | R4 had one harness check amended (static `repayExact` without an allowance, same pattern as K3; R5 then repaid through the router for real). Every product check passed. |
 | User scenarios (A–G) | 23 | 0 | 4 | D3/D3b/D5/D6 skipped as superseded by this suite (same paths, fresh facilities). C2 needed a rerun after a transient API connection reset (harness poll hardened). D4 rerun on facility v4 inside checkpoint A's window. |
 

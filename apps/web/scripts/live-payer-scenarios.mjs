@@ -748,9 +748,26 @@ await scenario("K7", "borrower", "both persona facilities are repaid in full; RE
     const context = await pollApi(`/v1/facilities/${f.apiId}/transaction-context`, fresh.token, (data) => BigInt(data.debt) === 0n, 180000, `API debt 0 (${f.name})`);
     t.check(`API debt is zero on ${f.name}`, context.data.debt === "0");
   }
+  // The API history must mirror every finalized Repaid of both facilities, whether sent in this run or earlier.
   const repayments = await http("/v1/repayments?limit=100", { token: fresh.token });
   t.evidence.apiRepayments = repayments.json?.data?.length ?? null;
-  t.check("API repayment allocations include this cycle's Repaid transactions", repayments.status === 200 && Object.values(t.evidence).some((v) => v?.txHash) && repayments.json.data.some((row) => JSON.stringify(row).toLowerCase().includes((t.evidence.aethir?.txHash ?? t.evidence.gpunet?.txHash ?? "").toLowerCase())), { count: t.evidence.apiRepayments });
+  const listed = new Map((repayments.json?.data ?? []).map((row) => [`${row.onchainTxHash?.toLowerCase()}`, row]));
+  const missing = [];
+  let onchainCount = 0;
+  for (const f of [facilities.aethir, facilities.gpunet]) {
+    const events = await router.queryFilter(router.filters.Repaid(f.id), manifest.deploymentBlock, "latest");
+    for (const event of events) {
+      onchainCount += 1;
+      const row = listed.get(event.transactionHash.toLowerCase());
+      const matches = row && row.facilityId === f.apiId && row.repaymentApplied === true
+        && BigInt(row.principalPaid.amount) === event.args.principalPaid && BigInt(row.interestPaid.amount) === event.args.interestPaid
+        && BigInt(row.recordedNewDebt.amount) === event.args.newDebt && (row.payerAddress ?? "").toLowerCase() === event.args.payer.toLowerCase();
+      if (!matches) missing.push({ facility: f.name, txHash: event.transactionHash, listed: Boolean(row) });
+    }
+  }
+  t.evidence.repaidOnChain = onchainCount;
+  t.evidence.repaidMissingFromApi = missing;
+  t.check(`API repayment history lists all ${onchainCount} finalized Repaid legs of both facilities with matching amounts and payer`, repayments.status === 200 && onchainCount > 0 && missing.length === 0, { count: t.evidence.apiRepayments, missing });
 });
 
 await scenario("K8", "borrower", "browser regression on a fresh facility: checkpoint B → observation → consumption → borrow 1 / repay through the UI", async (t) => {
