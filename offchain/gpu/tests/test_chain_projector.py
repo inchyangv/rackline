@@ -203,3 +203,84 @@ def test_reconciliation_separates_accrual_view_lag_from_mismatch(setup, monkeypa
     with Session(engine) as s:
         kinds = list(s.scalars(select(ProjectionDiscrepancy.classification)))
         assert sorted(kinds) == ["DISCREPANCY", "EXPECTED_LAG"]
+
+
+# ---------------------------------------------------------------- history projections (receivables, repayments)
+BOOK = "0x" + "33" * 20
+ROUTER = "0x" + "44" * 20
+VAULT = "0x" + "55" * 20
+ACCOUNT = "0x" + "66" * 32
+OBLIGATION = "0x" + "77" * 32
+RECEIVABLE = "0x" + "88" * 32
+PAYER = "0x" + "99" * 20
+HISTORY_CONTRACTS = {"DebtLedger": ADDRESS, "ReceivableBook": BOOK, "RepaymentRouter": ROUTER, "LendingVaultV2": VAULT}
+
+
+def history_event(rpc, contract, name, values, block, index, tx=None):
+    decoder = Decoder(HISTORY_CONTRACTS)
+    ev = next(e for e in decoder.events[contract].values() if e.name == name)
+    topics = [ev.topic0] + ["0x" + encode([t], [values[k]]).hex() for k, t in ev.indexed]
+    data = "0x" + encode([t for _, t in ev.unindexed], [values[k] for k, _ in ev.unindexed]).hex()
+    rpc.logs.append({
+        "address": HISTORY_CONTRACTS[contract], "topics": topics, "data": data, "blockNumber": hex(block),
+        "blockHash": rpc.blocks[block]["hash"], "transactionHash": tx or h(100 + block),
+        "transactionIndex": "0x0", "logIndex": hex(index),
+    })
+
+
+@pytest.fixture
+def history_setup(migrated_db_url):
+    engine, rpc = create_engine(migrated_db_url), RPC()
+    with Session(engine) as s, s.begin():
+        s.add(ChainDeployment(deployment_id=ID, chain_id=31337, execution_profile="LOCAL_MOCK", env_id="local",
+                              manifest_hash="sha256:" + "a" * 64, deployment_block=1, contracts=HISTORY_CONTRACTS, finality_depth=2))
+    fid, rid, acct, ref = (bytes.fromhex(x[2:]) for x in (FACILITY, RECEIVABLE, ACCOUNT, OBLIGATION))
+    # block 1: recognise 12, assign, correct −2 (SLA), pay 3 (unpaid 7), then a chargeback of the 3
+    history_event(rpc, "ReceivableBook", "ReceivableRecognized", {"receivableId": rid, "accountKey": acct, "obligationRef": ref, "net": 12}, 1, 0)
+    history_event(rpc, "ReceivableBook", "ReceivableAssigned", {"receivableId": rid, "facilityId": fid, "revision": 2}, 1, 1)
+    history_event(rpc, "ReceivableBook", "ReceivableCorrected", {"receivableId": rid, "delta": -2, "revision": 3, "reason": 2}, 1, 2)
+    history_event(rpc, "ReceivableBook", "ReceivablePaid", {"receivableId": rid, "amount": 3, "settlementSeq": 1, "unpaidAfter": 7}, 1, 3)
+    history_event(rpc, "ReceivableBook", "ReceivablePayoutCancelled", {"receivableId": rid, "amount": 3, "settlementSeq": 1}, 1, 4)
+    # block 1: the facility ledger (500 drawn) so the debt projection conserves through the allocation
+    history_event(rpc, "DebtLedger", "FacilityOpened", {"facilityId": fid, "termsVersionId": bytes(32), "rateBps": 1000, "openedAt": 101}, 1, 5)
+    history_event(rpc, "DebtLedger", "Drawn", {"facilityId": fid, "amount": 500, "newPrincipal": 500}, 1, 6)
+    # block 2: a third-party repayFor leg (Accrued → Allocated → RepaymentReceived → Repaid with a settlement ref)
+    history_event(rpc, "DebtLedger", "Accrued", {"facilityId": fid, "interestUnits": 2, "from": 101, "to": 102, "rateBps": 1000}, 2, 0)
+    history_event(rpc, "DebtLedger", "Allocated", {"facilityId": fid, "feePaid": 0, "interestPaid": 2, "principalPaid": 98, "excess": 0, "newDebt": 402}, 2, 1)
+    history_event(rpc, "LendingVaultV2", "RepaymentReceived", {"facilityId": fid, "received": 100, "applied": 100, "excess": 0}, 2, 2)
+    history_event(rpc, "RepaymentRouter", "Repaid", {"facilityId": fid, "payer": bytes.fromhex(PAYER[2:]), "settlementRef": bytes.fromhex("ab" * 32),
+                  "requested": 100, "received": 100, "applied": 100, "feePaid": 0, "interestPaid": 2, "principalPaid": 98, "excess": 0, "newDebt": 402}, 2, 3)
+    # block 3 (pending at height 3): a Repaid without its Allocated leg is never history
+    history_event(rpc, "RepaymentRouter", "Repaid", {"facilityId": fid, "payer": bytes.fromhex(PAYER[2:]), "settlementRef": bytes(32),
+                  "requested": 5, "received": 5, "applied": 5, "feePaid": 0, "interestPaid": 0, "principalPaid": 5, "excess": 0, "newDebt": 397}, 3, 0)
+    yield engine, rpc, ChainIndexer(engine, rpc)
+    engine.dispose()
+
+
+def test_receivable_and_repayment_history_replay_from_finalized_logs(history_setup):
+    from hashcredit_gpu.db.projections_models import ProjectedReceivable, ProjectedRepayment
+
+    engine, rpc, indexer = history_setup
+    rpc.height = 4
+    indexer.sync(ID)
+    with Session(engine) as s:
+        r = s.get(ProjectedReceivable, (ID, "FINALIZED", RECEIVABLE))
+        assert (r.account_key, r.obligation_ref, r.facility_key) == (ACCOUNT, OBLIGATION, FACILITY)
+        assert (int(r.net), int(r.paid), r.state, r.revision) == (10, 0, "ASSIGNED", 5)
+        assert [e["event"] for e in r.history] == ["ReceivableRecognized", "ReceivableAssigned", "ReceivableCorrected", "ReceivablePaid", "ReceivablePayoutCancelled"]
+        assert r.recognition_tx_hash == h(101) and r.last_block == 1
+        repayments = list(s.scalars(select(ProjectedRepayment).where(ProjectedRepayment.deployment_id == ID)))
+        by_tier = {(x.tier, x.block_number) for x in repayments}
+        assert ("FINALIZED", 2) in by_tier and ("PENDING", 2) in by_tier and ("PENDING", 3) not in by_tier
+        leg = next(x for x in repayments if x.tier == "FINALIZED")
+        assert (int(leg.interest_paid), int(leg.principal_paid), int(leg.new_debt), leg.payer, leg.repaid_contract) == (2, 98, 402, PAYER, "RepaymentRouter")
+        assert leg.settlement_ref == "0x" + "ab" * 32 and leg.block_timestamp == 102
+
+
+def test_receivable_history_rejects_conservation_breaks(history_setup):
+    engine, rpc, indexer = history_setup
+    # a payout whose unpaidAfter does not follow from the event-carried net/paid is a journal discrepancy
+    history_event(rpc, "ReceivableBook", "ReceivablePaid", {"receivableId": bytes.fromhex(RECEIVABLE[2:]), "amount": 1, "settlementSeq": 2, "unpaidAfter": 5}, 3, 1)
+    rpc.height = 3
+    with pytest.raises(ValueError, match="receivable payout conservation"):
+        indexer.sync(ID)

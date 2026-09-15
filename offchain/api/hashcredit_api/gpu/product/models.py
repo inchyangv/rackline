@@ -157,6 +157,10 @@ class ReceivableDTO(DTO):
     dueAt: datetime | None
     updatedAt: datetime
     evidence: EvidenceStages
+    # LEDGER_IMPORT rows come from the reviewed ledger (with their proof-request lifecycle); FINALIZED_CHAIN_EVENTS
+    # rows are replayed from ReceivableBook events on the canonical journal and carry no import-only fields.
+    recordOrigin: Literal["LEDGER_IMPORT", "FINALIZED_CHAIN_EVENTS"] = "LEDGER_IMPORT"
+    canonicalReceivableId: str | None = None
 
 
 class CashDTO(DTO):
@@ -201,7 +205,7 @@ class ControlDTO(DTO):
 class RepaymentDTO(DTO):
     repaymentAllocationId: str
     facilityId: str
-    cashReceiptId: str
+    cashReceiptId: str | None
     received: Money
     feePaid: Money
     interestPaid: Money
@@ -212,6 +216,9 @@ class RepaymentDTO(DTO):
     allocatedAt: datetime
     repaymentApplied: bool | None
     applicationEvidence: Literal["FINALIZED_MANAGER_EVENT", "FINALIZED_ROUTER_EVENT", "UNCONFIRMED_LEDGER_RECORD"]
+    recordOrigin: Literal["LEDGER_IMPORT", "FINALIZED_CHAIN_EVENTS"] = "LEDGER_IMPORT"
+    payerAddress: str | None = None
+    settlementRef: str | None = None
 
 
 class RecoveryDTO(DTO):

@@ -71,6 +71,13 @@ def build_product_router() -> APIRouter:
             repository = request.app.state.product
             with repository.session() as session:
                 metadata = repository.metadata(session)
+                if resource in repository.HISTORY_RESOURCES:
+                    # Ledger imports merged with finalized chain projections; keys are opaque and totally ordered.
+                    history = [(k, row) for k, row in repository.history(session, resource, p, staff) if last is None or k > last]
+                    rows = history[:limit + 1]
+                    next_cursor = encode_cursor(resource, rows[limit - 1][0]) if len(rows) > limit else None
+                    return {"schemaVersion": "1.0", "data": [repository.serialize_history(session, row, p, staff) for _, row in rows[:limit]],
+                            "meta": metadata, "pagination": {"limit": limit, "nextCursor": next_cursor}}
                 query, key = repository.query(resource, p, staff)
                 if last is not None:
                     query = query.where(key > last)
@@ -84,6 +91,12 @@ def build_product_router() -> APIRouter:
             repository = request.app.state.product
             with repository.session() as session:
                 metadata = repository.metadata(session)
+                if resource in repository.HISTORY_RESOURCES:
+                    match = next((row for k, row in repository.history(session, resource, p, staff)
+                                  if objectId in repository.history_ids(k, row)), None)
+                    if match is None:
+                        raise not_found()
+                    return {"schemaVersion": "1.0", "data": repository.serialize_history(session, match, p, staff), "meta": metadata}
                 query, key = repository.query(resource, p, staff)
                 row = session.scalar(query.where(key == objectId))
                 if row is None:

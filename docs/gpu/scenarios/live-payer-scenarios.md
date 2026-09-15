@@ -131,6 +131,9 @@ reverts on chain.
    `Repaid` allocations across facilities v2–v7; the API lists one of each. `transaction-context`
    (debt, principal, availableDraw) reads the chain directly and was correct throughout, so credit decisions are
    unaffected — but the borrower's receivable and repayment history in the app is incomplete. K7 records this.
+   **Fixed after the run:** migration `0006` adds `proj_receivables` / `proj_repayments`, replayed from finalized
+   `ReceivableBook` and `RepaymentRouter`/`DebtLedger`/`LendingVaultV2` events on every indexer sync; the API
+   merges them with ledger imports (`recordOrigin: FINALIZED_CHAIN_EVENTS` vs `LEDGER_IMPORT`).
 2. **Harness: API polls did not tolerate a transient connection reset** (C2 first attempt). Fixed in
    `live-review-browser.mjs` (`pollRead`).
 3. **Harness: window-relative read-backs.** Post-draw eligibility (K2) and static `repayExact` without an
