@@ -94,13 +94,13 @@ Evidence: [`evidence/native-testnet/qa-20260915/payer-personas.json`](../../../e
 | Suite | PASS | FAIL | SKIPPED | Note |
 | --- | --- | --- | --- | --- |
 | Payer personas + credit operations (P/N/K) | 23 | 0 | 0 | K2 and K3 each had one harness check amended after the run (recorded in the evidence under `amendment`; every product check passed). K7 failed on a real gap (finding 1), was fixed in `263821f` and re-run to PASS on 2026-09-15 (all five finalized Repaid legs of v5/v6 mirrored by the API). |
-| Non-payment drill (R0–R6, facility v8) | 7 | 0 | 0 | R4 had one harness check amended (static `repayExact` without an allowance, same pattern as K3; R5 then repaid through the router for real). Every product check passed. |
+| Non-payment drill (R0–R6, facilities v8 and v9) | 7 + 7 | 0 | 0 | R4 had one harness check amended (static `repayExact` without an allowance, same pattern as K3; R5 then repaid through the router for real). Every product check passed. |
 | User scenarios (A–G) | 23 | 0 | 4 | D3/D3b/D5/D6 skipped as superseded by this suite (same paths, fresh facilities). C2 needed a rerun after a transient API connection reset (harness poll hardened). D4 rerun on facility v4 inside checkpoint A's window. |
 
 Real transactions: 29 Sepolia (6 persona setup, 20 persona transitions, 1 unattributed deposit, 2 checkpoints)
 and 91 Creditcoin (33 facility opening, 22 consumptions, 3 control observations, 20 credit operations, 13 LP
 including the aborted first C2 attempt and its cleanup withdrawal) on 2026-09-14, plus 4 Sepolia and 24
-Creditcoin for the non-payment drill on 2026-09-15. All with faucet tokens; `partnerRevenue=SIMULATED`.
+Creditcoin for the non-payment drill on 2026-09-15 (v8), and the same again for v9. All with faucet tokens; `partnerRevenue=SIMULATED`.
 
 ### Persona source transitions and their consumptions
 
@@ -160,6 +160,26 @@ loss id), `DisputeOpen`, `NotRole` (servicer approving a default; underwriter ex
 `NotReserveOwner`, `OutstandingDebt`, `ImpairmentExceedsExposure`, `FacilityNotActive` (draw while DEFAULTED and
 after the write-off).
 
+### Browser check of the non-performing states (facility v9, 2026-09-15 03:35 → 04:35 UTC)
+
+To see DEFAULTED and RECOVERY in the deployed app (v8 had already moved on to CLOSED_WITH_LOSS), the drill was run
+a second time on `gpu080-facility-v9` (API `3MHTNXNB7M9Y7MDTSRCRE6KA83`, approval nonce 8, epoch-6) with a
+five-minute hold at each state (`GPU_QA_RECOVERY_PAUSE_MS`). Evidence `recovery-drill-v9.json` (7/7 PASS, same
+checks as v8; NAV 997.000035 → 994.000021) and the read-only browser runner
+`apps/web/scripts/live-recovery-ui.mjs` (`recovery-ui-defaulted.json` 19/19, `recovery-ui-recovery.json` 13/13,
+`recovery-ui-closed.json` 20/20; screenshots in `ui/`). The synthetic wallet signs the login only; no transaction
+was requested.
+
+| State | Badge | Borrow | Repay directly | Debt shown | Notice | Screenshot |
+| --- | --- | --- | --- | --- | --- | --- |
+| DEFAULTED (v9) | "Defaulted" | disabled | enabled | 4.000014 tUSD (= ledger legal debt; interest frozen at 0.000014) | `NO_ELIGIBLE_DRAW` | `ui/panel-v9-DEFAULTED.png` |
+| RECOVERY (v9) | "Recovery" | disabled | enabled | 3.000014 tUSD after the 1 tUSD reserve | `NO_ELIGIBLE_DRAW` | `ui/panel-v9-RECOVERY.png` |
+| CLOSED_WITH_LOSS (v8, v9) | "Closed with loss" | disabled | enabled | 3.000013 / 3.000014 tUSD (legal debt survives the write-off) | `NO_ELIGIBLE_DRAW` | `ui/panel-v8-CLOSED_WITH_LOSS.png`, `ui/panel-v9-CLOSED_WITH_LOSS.png` |
+
+Activity lists the reserve repayments (`0x2b9153d8…` v8, `0x8f076d01…` v9) as "Applied · finalized event" with
+the RecoveryManager as payer; the Earn page shows "Vault net assets" 994.000021 tUSD equal to the chain after two
+write-offs (`ui/earn-vault-nav.png`); the facility panel fits a 400 px viewport.
+
 ### Findings
 
 1. **API history mirrors are import-only (product gap, medium).** `/v1/receivables` and `/v1/repayments` show
@@ -181,7 +201,13 @@ after the write-off).
    payout, the default needs an underwriter approval that a servicer dispute can block, accrual freezes at
    default, a third-party reserve is applied through the ordinary router (`Repaid.payer` = RecoveryManager),
    impairment hits LP NAV before the write-off, and the write-off closes the facility without forgiving the legal
-   debt. Residual: the borrower UI was not driven through DEFAULTED / RECOVERY / CLOSED_WITH_LOSS (API projection
-   verified only), and the TEST_ONLY vault now permanently carries one written-off facility (NAV 997.000021).
+   debt. The borrower UI was then driven through DEFAULTED / RECOVERY / CLOSED_WITH_LOSS on v9 (table above).
+   The TEST_ONLY vault now permanently carries two written-off facilities (NAV 994.000021).
+6. **UI: non-performing states are correct but unexplained (product gap, low).** The panel shows the right badge,
+   blocks Borrow and keeps Repay open, but the only explanation is the raw `NO_ELIGIBLE_DRAW` code — the same
+   text a healthy facility shows when its checkpoint expired. A defaulted or written-off borrower is not told
+   why (overdue installment, default reason, reserve applied, loss recognised), sees no schedule / due date, and
+   still reads the boilerplate "Zero debt and released payment control are separate states". Repay remaining
+   enabled after a write-off is correct (collections are recoveries) but should say so.
 5. **Timing envelope confirmed.** Official proofs arrived 8–10 min after each Sepolia block; the 850 s
    reservation left ~3 min for the draws; CC3 consumptions took ~90 s each this evening (20 → ~30 min).
