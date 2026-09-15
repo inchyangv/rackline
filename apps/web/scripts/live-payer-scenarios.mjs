@@ -975,7 +975,8 @@ await scenario("R4", "underwriter", "no repayment: schedule → DELINQUENT → d
   const draw = await expectRevert(() => manager.connect(borrowerWallet).borrow.staticCall(f.id, unit(1), 0));
   t.check("draws are refused while DEFAULTED", draw !== "NO_REVERT", { observed: draw });
   const repayable = await expectRevert(() => router.connect(borrowerWallet).repayExact.staticCall(f.id, unit(1)));
-  t.check("the borrower may still repay while DEFAULTED (static repayExact does not revert)", repayable === "NO_REVERT", { observed: repayable });
+  // Without a router allowance the static call still reaches the token pull (TransferFailed): the state gate did not block it.
+  t.check("the borrower may still repay while DEFAULTED (static repayExact is not blocked by the state gate)", ["NO_REVERT", "TransferFailed"].includes(repayable), { observed: repayable });
   const fresh = await login(borrowerWallet);
   const listed = await pollApi("/v1/facilities?limit=100", fresh.token, (data) => data.some((item) => item.facilityId === f.apiId && item.state === "DEFAULTED"), 240000, "API DEFAULTED");
   t.check("API projects DEFAULTED", listed.data.some((item) => item.facilityId === f.apiId && item.state === "DEFAULTED"));
