@@ -15,7 +15,7 @@ env:
 jobs:
   check:
     name: Foundry project
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -46,7 +46,7 @@ jobs:
 
   slither:
     name: Slither Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -61,7 +61,7 @@ jobs:
       - name: Build contracts
         run: forge build --build-info --skip test --skip script
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -70,7 +70,7 @@ jobs:
 
       # Run beside the installed Forge binary, not in an isolated Docker action.
       # Analyzer/compiler versions must match the finding IDs reviewed in .slither.db.json.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           cache: pip
@@ -87,7 +87,7 @@ jobs:
         id: slither
 
       - name: Upload Slither Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: slither-report
@@ -98,7 +98,7 @@ jobs:
 
   python-tests:
     name: Python Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
@@ -121,7 +121,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -173,7 +173,7 @@ jobs:
 
   web:
     name: Web lint, build, unit and browser regression
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -182,12 +182,12 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.4.2
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install GPU API for generated schema parity
         run: pip install -e ./offchain/gpu -e ./offchain/api
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: npm
@@ -203,7 +203,7 @@ jobs:
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
       - run: npm --prefix apps/web run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: web-browser-failure-evidence
@@ -212,12 +212,12 @@ jobs:
 
   attestcoin-local:
     name: Official Attestcoin artifacts and LOCAL conformance
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: npm
